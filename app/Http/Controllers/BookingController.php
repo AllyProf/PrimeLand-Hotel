@@ -2777,18 +2777,32 @@ class BookingController extends Controller
 
             // Notify guest
             try {
-                \App\Models\Notification::create([
-                    'user_id' => \App\Models\User::where('email', $booking->guest_email)->value('id'),
-                    'type' => 'extension_rejected',
-                    'title' => 'Extension Request Rejected',
-                    'message' => 'Your checkout extension request has been rejected.',
-                    'icon' => 'fa-times-circle',
-                    'color' => 'danger',
-                    'role' => 'customer',
-                    'notifiable_id' => $booking->id,
-                    'notifiable_type' => Booking::class,
-                    'link' => route('customer.dashboard'),
-                ]);
+                // Find the guest user ID from either User or Guest table
+                $guestUserId = \App\Models\User::where('email', $booking->guest_email)->value('id');
+                if (!$guestUserId) {
+                    $guestUserId = \App\Models\Guest::where('email', $booking->guest_email)->value('id');
+                }
+
+                // Only create notification if we found a valid user
+                if ($guestUserId) {
+                    \App\Models\Notification::create([
+                        'user_id' => $guestUserId,
+                        'type' => 'extension_rejected',
+                        'title' => 'Extension Request Rejected',
+                        'message' => 'Your checkout extension request has been rejected.',
+                        'icon' => 'fa-times-circle',
+                        'color' => 'danger',
+                        'role' => 'customer',
+                        'notifiable_id' => $booking->id,
+                        'notifiable_type' => Booking::class,
+                        'link' => route('customer.dashboard'),
+                    ]);
+                } else {
+                    \Log::warning('Could not create extension rejection notification - guest user not found', [
+                        'booking_id' => $booking->id,
+                        'guest_email' => $booking->guest_email
+                    ]);
+                }
             } catch (\Exception $e) {
                 \Log::error('Failed to create rejection notification: ' . $e->getMessage());
             }

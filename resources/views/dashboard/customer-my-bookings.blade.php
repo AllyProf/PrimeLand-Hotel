@@ -128,11 +128,6 @@
                 <button onclick="viewBookingDetails({{ $booking->id }})" class="btn btn-sm btn-info btn-block" style="width: 100%;">
                   <i class="fa fa-eye"></i> View Details
                 </button>
-                @if($booking->status === 'confirmed' && $booking->payment_status === 'paid' && $booking->check_in_status === 'pending')
-                  <button class="btn btn-sm btn-success btn-block" onclick="checkInBooking({{ $booking->id }}, '{{ $booking->booking_reference }}')" style="width: 100%;">
-                    <i class="fa fa-sign-in"></i> Check In
-                  </button>
-                @endif
                 @if($booking->check_in_status === 'checked_in')
                   <a href="{{ route('customer.bookings.checkout-bill', $booking) }}" class="btn btn-sm btn-warning btn-block" style="width: 100%;">
                     <i class="fa fa-file-text"></i> View Bill
@@ -245,12 +240,6 @@
                   <button onclick="viewBookingDetails({{ $booking->id }})" class="btn btn-sm btn-info" title="View Details">
                     <i class="fa fa-eye"></i> View
                   </button>
-                  @if($booking->status === 'confirmed' && $booking->payment_status === 'paid' && $booking->check_in_status === 'pending')
-                    {{-- Date restriction removed for testing - check-in button always active --}}
-                    <button class="btn btn-sm btn-success mt-1" onclick="checkInBooking({{ $booking->id }}, '{{ $booking->booking_reference }}')">
-                      <i class="fa fa-sign-in"></i> Check In
-                    </button>
-                  @endif
                   @if($booking->check_in_status === 'checked_in')
                   <a href="{{ route('customer.bookings.checkout-bill', $booking) }}" class="btn btn-sm btn-warning mt-1" title="View Bill">
                     <i class="fa fa-file-text"></i> Bill

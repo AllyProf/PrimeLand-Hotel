@@ -1,6 +1,141 @@
 @extends('dashboard.layouts.app')
 
 @section('content')
+<style>
+  /* Fix horizontal scroll and responsiveness issues */
+  .tile {
+    overflow-x: hidden;
+    word-wrap: break-word;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+  }
+  
+  /* Wrap buttons with long text */
+  .btn {
+    white-space: normal !important;
+    word-wrap: break-word;
+    height: auto !important;
+  }
+  
+  /* Fix flex titles on mobile */
+  .tile-title-w-btn {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  /* Status Card System (Mimicking Active Booking Alert Style) */
+  .status-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .status-card {
+    background: #fcfcfc;
+    border: 1px solid #f0f0f0;
+    border-left: 4px solid #e77a3a;
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    align-items: flex-start;
+    flex: 1 1 calc(50% - 6px); /* 2 columns */
+    min-width: 140px;
+    transition: all 0.2s ease;
+  }
+
+  .status-card:hover {
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .status-card.full-width {
+    flex: 1 1 100%;
+  }
+
+  .status-card i {
+    font-size: 1.4rem;
+    color: #e77a3a;
+    margin-right: 12px;
+    margin-top: 3px;
+    width: 24px;
+    text-align: center;
+  }
+
+  .status-card-content {
+    flex-grow: 1;
+    min-width: 0;
+  }
+
+  .status-card-label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+
+  .status-card-value {
+    display: block;
+    font-weight: 700;
+    color: #333;
+    font-size: 14px;
+    word-wrap: break-word;
+  }
+
+  /* Different color themes for cards */
+  .status-card.info { border-left-color: #17a2b8; }
+  .status-card.info i { color: #17a2b8; }
+  .status-card.success { border-left-color: #28a745; }
+  .status-card.success i { color: #28a745; }
+  .status-card.danger { border-left-color: #dc3545; }
+  .status-card.danger i { color: #dc3545; }
+  .status-card.primary { border-left-color: #007bff; }
+  .status-card.primary i { color: #007bff; }
+
+  /* Mobile Grid System */
+  @media (max-width: 767px) {
+    .app-title h1 { font-size: 20px !important; }
+    .welcome-title { font-size: 18px !important; }
+    .tile { padding: 15px !important; }
+    
+    .status-card {
+      padding: 10px;
+    }
+    
+    .status-card-value {
+      font-size: 13px;
+    }
+
+    /* Input group fix inside status cards */
+    .status-card .input-group {
+      width: 100% !important;
+      margin-top: 5px;
+    }
+    
+    /* Quick Actions row */
+    .quick-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 0;
+    }
+    
+    .quick-actions-row > div {
+      flex: 1 1 calc(50% - 5px) !important;
+      width: calc(50% - 5px) !important;
+      max-width: none !important;
+      padding: 0 !important;
+      margin-bottom: 0 !important;
+    }
+  }
+</style>
 <div class="app-title">
   <div>
     <h1 id="time-greeting" style="font-size: 28px; font-weight: 600; margin: 0;">
@@ -481,7 +616,7 @@
   <div class="col-md-12">
     <div class="tile" style="background: linear-gradient(135deg, #e77a3a 0%, #d66a2a 100%); color: white;">
       <div class="tile-body">
-        <div class="row">
+        <div class="row quick-actions-row">
           @if($hasActiveStay)
           <div class="col-md-3 col-sm-6 col-6 mb-2">
             <a href="{{ route('customer.restaurant') }}" class="btn btn-light btn-block" style="min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none;">
@@ -574,91 +709,109 @@
           </div>
         </div>
         @endif
-        <div class="row">
-          <div class="col-md-6">
-            <table class="table table-borderless">
-              @if($isCorporate && $company)
-              <tr>
-                <td style="width: 40%;"><strong><i class="fa fa-building" style="color: #e77a3a;"></i> Company:</strong></td>
-                <td><strong>{{ $company->name }}</strong></td>
-              </tr>
-              @endif
-              <tr>
-                <td style="width: 40%;"><strong><i class="fa fa-home" style="color: #e77a3a;"></i> Room Number:</strong></td>
-                <td><span class="badge badge-primary" style="font-size: 14px; padding: 6px 12px;">{{ $currentRoom->room_number ?? 'N/A' }}</span></td>
-              </tr>
-              <tr>
-                <td><strong><i class="fa fa-bed" style="color: #e77a3a;"></i> Room Type:</strong></td>
-                <td><strong>{{ $currentRoom->room_type ?? 'N/A' }}</strong></td>
-              </tr>
-              <tr>
-                <td><strong><i class="fa fa-calendar" style="color: #e77a3a;"></i> Check-in:</strong></td>
-                <td>{{ $currentBooking->check_in->format('M d, Y') }}</td>
-              </tr>
-              <tr>
-                <td><strong><i class="fa fa-calendar-times-o" style="color: #e77a3a;"></i> Check-out:</strong></td>
-                <td>{{ $currentBooking->check_out->format('M d, Y') }}</td>
-              </tr>
-              @if($isCorporate)
-              <tr>
-                <td colspan="2" class="pt-2">
-                  <div class="d-flex flex-wrap gap-2">
-                    <span class="badge badge-success" style="background-color: #28a745; font-size: 11px;">
-                      <i class="fa fa-bed"></i> Room Charges: Company Paid
-                    </span>
-                    <span class="badge {{ $paymentResponsibility == 'self' ? 'badge-warning' : 'badge-info' }}" style="font-size: 11px;">
-                      <i class="fa fa-cutlery"></i> Services: {{ $paymentResponsibility == 'self' ? 'Self-Paid' : 'Company Paid' }}
-                    </span>
-                  </div>
-                </td>
-              </tr>
-              @endif
-            </table>
+
+        @php
+          // Get room-specific WiFi, fallback to hotel-wide WiFi
+          $roomWifiNetwork = $currentRoom->wifi_network_name ?? $wifiNetworkName ?? 'PrimeLand_Hotel';
+          $roomWifiPassword = $currentRoom->wifi_password ?? $wifiPassword ?? null;
+        @endphp
+
+        <div class="status-grid">
+          @if($isCorporate && $company)
+          <div class="status-card full-width primary">
+            <i class="fa fa-building"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Company Booking</span>
+              <span class="status-card-value">{{ $company->name }}</span>
+            </div>
           </div>
-          <div class="col-md-6">
-            <table class="table table-borderless">
-              @php
-                // Get room-specific WiFi, fallback to hotel-wide WiFi
-                $roomWifiNetwork = $currentRoom->wifi_network_name ?? $wifiNetworkName ?? 'PrimeLand_Hotel';
-                $roomWifiPassword = $currentRoom->wifi_password ?? $wifiPassword ?? null;
-              @endphp
-              <tr>
-                <td style="width: 40%;"><strong><i class="fa fa-wifi" style="color: #e77a3a;"></i> WiFi Network:</strong></td>
-                <td><strong>{{ $roomWifiNetwork }}</strong></td>
-              </tr>
+          @endif
+
+          <!-- Row 1: Room Number & Check-in -->
+          <div class="status-card primary">
+            <i class="fa fa-home"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Room Number</span>
+              <span class="status-card-value">
+                <span class="badge badge-primary" style="padding: 4px 8px;">{{ $currentRoom->room_number ?? 'N/A' }}</span>
+              </span>
+            </div>
+          </div>
+          <div class="status-card info">
+            <i class="fa fa-calendar"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Check-in Date</span>
+              <span class="status-card-value">{{ $currentBooking->check_in->format('M d, Y') }}</span>
+            </div>
+          </div>
+
+          <!-- Row 2: Room Type & Check-out -->
+          <div class="status-card info">
+            <i class="fa fa-bed"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Room Type</span>
+              <span class="status-card-value">{{ $currentRoom->room_type ?? 'N/A' }}</span>
+            </div>
+          </div>
+          <div class="status-card warning" style="border-left-color: #ffc107;">
+            <i class="fa fa-calendar-times-o" style="color: #ffc107;"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Check-out Date</span>
+              <span class="status-card-value">{{ $currentBooking->check_out->format('M d, Y') }}</span>
+            </div>
+          </div>
+
+          <!-- Row 3: WiFi Password (Full Width) -->
+          <div class="status-card full-width info">
+            <i class="fa fa-key"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">WiFi Password</span>
               @if($roomWifiPassword)
-              <tr>
-                <td><strong><i class="fa fa-key" style="color: #e77a3a;"></i> WiFi Password:</strong></td>
-                <td>
-                  <div class="input-group" style="max-width: 300px;">
-                    <input type="password" class="form-control" id="wifiPasswordDisplay" value="{{ $roomWifiPassword }}" readonly style="font-family: monospace; font-weight: bold;">
-                    <div class="input-group-append">
-                      <button class="btn btn-outline-secondary" type="button" onclick="toggleWifiPassword()" title="Show/Hide Password">
-                        <i class="fa fa-eye" id="wifiPasswordToggle"></i>
-                      </button>
-                      <button class="btn btn-outline-primary" type="button" onclick="copyWifiPassword()" title="Copy Password">
-                        <i class="fa fa-copy"></i>
-                      </button>
-                    </div>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="wifiPasswordDisplay" value="{{ $roomWifiPassword }}" readonly style="font-family: monospace; font-weight: bold; background: white; border-right: none;">
+                  <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" onclick="toggleWifiPassword()" style="background: white; border-left: none;">
+                      <i class="fa fa-eye" id="wifiPasswordToggle" style="margin: 0; font-size: 14px; position: static;"></i>
+                    </button>
+                    <button class="btn btn-outline-primary" type="button" onclick="copyWifiPassword()" style="background: white;">
+                      <i class="fa fa-copy" style="margin: 0; font-size: 14px; position: static;"></i>
+                    </button>
                   </div>
-                </td>
-              </tr>
+                </div>
               @else
-              <tr>
-                <td colspan="2" class="text-muted">
-                  <i class="fa fa-info-circle"></i> WiFi password not set for this room. Please contact reception.
-                </td>
-              </tr>
+                <span class="status-card-value text-muted">Not Set</span>
               @endif
-              <tr>
-                <td colspan="2" class="pt-3">
-                  <button class="btn btn-warning btn-block" onclick="openReportIssueModal()" style="min-height: 45px;">
-                    <i class="fa fa-exclamation-triangle fa-lg"></i> Report an Issue
-                  </button>
-                </td>
-              </tr>
-            </table>
+            </div>
           </div>
+
+          <!-- Row 4: WiFi Network & Report Issue -->
+          <div class="status-card info">
+            <i class="fa fa-wifi"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">WiFi Network</span>
+              <span class="status-card-value">{{ $roomWifiNetwork }}</span>
+            </div>
+          </div>
+          <div class="status-card danger" style="cursor: pointer; background: #fff5f5; border-color: #feb2b2; border-left-color: #dc3545;" onclick="openReportIssueModal()">
+            <i class="fa fa-exclamation-triangle"></i>
+            <div class="status-card-content">
+              <span class="status-card-label" style="color: #c53030;">Reception</span>
+              <span class="status-card-value" style="color: #dc3545;">Report Issue</span>
+            </div>
+          </div>
+
+          @if($isCorporate)
+          <div class="status-card full-width success">
+            <i class="fa fa-info-circle"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Payment Policy</span>
+              <div class="d-flex flex-wrap gap-2 mt-1">
+                <span class="badge badge-success" style="font-size: 10px;">Room: Company Paid</span>
+                <span class="badge {{ $paymentResponsibility == 'self' ? 'badge-warning' : 'badge-info' }}" style="font-size: 10px;">Services: {{ $paymentResponsibility == 'self' ? 'Self-Paid' : 'Company Paid' }}</span>
+              </div>
+            </div>
+          </div>
+          @endif
         </div>
       </div>
     </div>
@@ -887,50 +1040,63 @@
           </div>
         </div>
         @endif
-        <table class="table table-borderless">
-          <tr>
-            <td><strong>Total Bill{{ $hasCorporateBooking ? ' (Your Portion)' : '' }}:</strong></td>
-            <td class="text-right">
-              @if($isTanzanian)
-                <strong>{{ number_format($totalBillTZS, 2) }} TZS</strong>
-              @else
-                <strong>${{ number_format($totalBillUSD, 2) }}</strong><br>
-                <small class="text-muted">≈ {{ number_format($totalBillTZS, 2) }} TZS</small>
-              @endif
-            </td>
-          </tr>
-          <tr>
-            <td><strong>Amount Paid:</strong></td>
-            <td class="text-right">
-              @if($isTanzanian)
-                <strong style="color: #28a745;">{{ number_format($totalPaidTZS, 2) }} TZS</strong>
-              @else
-                <strong style="color: #28a745;">${{ number_format($totalPaidUSD, 2) }}</strong><br>
-                <small class="text-muted">≈ {{ number_format($totalPaidTZS, 2) }} TZS</small>
-              @endif
-            </td>
-          </tr>
-          @if($outstandingUSD > 0 || $outstandingTZS > 0)
-          <tr style="border-top: 2px solid #e0e0e0;">
-            <td><strong>Outstanding Balance:</strong></td>
-            <td class="text-right">
-              @if($isTanzanian)
-                <strong style="color: #dc3545; font-size: 18px;">{{ number_format($outstandingTZS, 2) }} TZS</strong>
-              @else
-                <strong style="color: #dc3545; font-size: 18px;">${{ number_format($outstandingUSD, 2) }}</strong><br>
-                <small class="text-muted">≈ {{ number_format($outstandingTZS, 2) }} TZS</small>
-              @endif
-            </td>
-          </tr>
-          @else
-          <tr style="border-top: 2px solid #e0e0e0;">
-            <td><strong>Status:</strong></td>
-            <td class="text-right">
-              <span class="badge badge-success">All Paid</span>
-            </td>
-          </tr>
-          @endif
-        </table>
+        <div class="status-grid">
+          <!-- Row 1: Total Bill & Amount Paid -->
+          <div class="status-card info">
+            <i class="fa fa-file-text-o"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Total Bill{{ $hasCorporateBooking ? ' (Your Portion)' : '' }}</span>
+              <span class="status-card-value">
+                @if($isTanzanian)
+                  {{ number_format($totalBillTZS, 2) }} TZS
+                @else
+                  ${{ number_format($totalBillUSD, 2) }}
+                @endif
+              </span>
+            </div>
+          </div>
+          <div class="status-card success">
+            <i class="fa fa-check-circle"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Amount Paid</span>
+              <span class="status-card-value text-success">
+                @if($isTanzanian)
+                  {{ number_format($totalPaidTZS, 2) }} TZS
+                @else
+                  ${{ number_format($totalPaidUSD, 2) }}
+                @endif
+              </span>
+            </div>
+          </div>
+
+          <!-- Row 2: Balance & Status -->
+          <div class="status-card {{ $outstandingUSD > 0 ? 'danger' : 'success' }}" style="{{ $outstandingUSD > 0 ? 'background: #fff5f5;' : '' }}">
+            <i class="fa fa-money"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Balance Due</span>
+              <span class="status-card-value {{ $outstandingUSD > 0 ? 'text-danger' : 'text-success' }}">
+                @if($isTanzanian)
+                  {{ number_format($outstandingTZS, 2) }} TZS
+                @else
+                  ${{ number_format($outstandingUSD, 2) }}
+                @endif
+              </span>
+            </div>
+          </div>
+          <div class="status-card {{ $outstandingUSD > 0 ? 'info' : 'success' }}">
+            <i class="fa fa-credit-card"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Payment Status</span>
+              <span class="status-card-value">
+                @if($outstandingUSD > 0)
+                  <span class="badge badge-warning">Pending Payment</span>
+                @else
+                  <span class="badge badge-success">All Settled</span>
+                @endif
+              </span>
+            </div>
+          </div>
+        </div>
         @if($outstandingUSD > 0 && $bookingWithOutstanding)
         <div class="alert alert-info mt-3" style="background-color: #e7f3ff; border-left: 4px solid #2196F3;">
           <div class="d-flex align-items-center">
@@ -958,44 +1124,55 @@
     <div class="tile">
       <h3 class="tile-title"><i class="fa fa-hotel"></i> Hotel Information</h3>
       <div class="tile-body">
-        <h5 style="color: #e07632; margin-bottom: 15px;"><strong>PRIMELAND HOTEL</strong></h5>
-        <table class="table table-borderless">
-          <tr>
-            <td style="width: 30px;"><i class="fa fa-map-marker" style="color: #e07632;"></i></td>
-            <td>
-              <strong>Location:</strong><br>
-              <small>Sokoine Road - Moshi Kilimanjaro - Tanzania</small>
-            </td>
-          </tr>
-          <tr>
-            <td><i class="fa fa-phone" style="color: #e07632;"></i></td>
-            <td>
-              <strong>Phone:</strong><br>
-              <small><a href="tel:+255677155156">0677-155-156</a> / <a href="tel:+255677155157">+255 677-155-157</a></small>
-            </td>
-          </tr>
-          <tr>
-            <td><i class="fa fa-envelope" style="color: #e07632;"></i></td>
-            <td>
-              <strong>Email:</strong><br>
-              <small><a href="mailto:info@primelandhotel.co.tz">info@primelandhotel.co.tz</a></small><br>
-              <small><a href="mailto:infoprimelandhotel@gmail.com">infoprimelandhotel@gmail.com</a></small>
-            </td>
-          </tr>
-          <tr>
-            <td><i class="fa fa-clock-o" style="color: #e07632;"></i></td>
-            <td>
-              <strong>Check-in:</strong> 2:00 PM<br>
-              <strong>Check-out:</strong> 11:00 AM
-            </td>
-          </tr>
-          <tr>
-            <td><i class="fa fa-phone-square" style="color: #e07632;"></i></td>
-            <td>
-              <strong>Front Desk:</strong> 24/7 Available
-            </td>
-          </tr>
-        </table>
+        <div class="status-grid">
+          <!-- Row 1: Location & Phone -->
+          <div class="status-card primary">
+            <i class="fa fa-map-marker"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Location</span>
+              <span class="status-card-value" style="font-size: 12px;">Sokoine Road, Moshi</span>
+            </div>
+          </div>
+          <div class="status-card primary">
+            <i class="fa fa-phone"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Reception</span>
+              <span class="status-card-value"><a href="tel:+255677155156" style="color: inherit;">0677155156</a></span>
+            </div>
+          </div>
+
+          <!-- Row 2: Email & Front Desk -->
+          <div class="status-card primary">
+            <i class="fa fa-envelope"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Email Support</span>
+              <span class="status-card-value" style="font-size: 11px;">info@primelandhotel...</span>
+            </div>
+          </div>
+          <div class="status-card info">
+            <i class="fa fa-phone-square"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Front Desk</span>
+              <span class="status-card-value">24/7 Available</span>
+            </div>
+          </div>
+
+          <!-- Row 3: Check-in & Check-out Times -->
+          <div class="status-card info">
+            <i class="fa fa-clock-o"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Check-in Time</span>
+              <span class="status-card-value">2:00 PM onwards</span>
+            </div>
+          </div>
+          <div class="status-card info">
+            <i class="fa fa-sign-out"></i>
+            <div class="status-card-content">
+              <span class="status-card-label">Check-out Time</span>
+              <span class="status-card-value">By 11:00 AM</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
