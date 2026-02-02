@@ -87,7 +87,7 @@
     }
     gallerySlider();
 
-    //------- Mailchimp js --------//  
+    //------- Mailchimp js (Removed to prevent errors) --------//  
 
     /* ===== Parallax Effect===== */
 
