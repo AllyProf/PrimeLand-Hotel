@@ -3878,20 +3878,8 @@ h6 {
     width: 24px;
     height: 24px;
   }
-
-  .location-float {
-    width: 45px;
-    height: 45px;
-    bottom: 70px;
-    left: 15px;
-    font-size: 22px;
-    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
-  }
-
-  .location-float i {
-    font-size: 24px;
-  }
 }
+
 
 /* Location Floating Button */
 .location-float {
@@ -3958,5 +3946,21 @@ h6 {
     font-size: 24px;
   }
 }
+
+@media (max-width: 480px) {
+  .location-float {
+    width: 45px;
+    height: 45px;
+    bottom: 70px;
+    left: 15px;
+    font-size: 22px;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  .location-float i {
+    font-size: 22px;
+  }
+}
+
 
 /*# sourceMappingURL=style.css.map */
