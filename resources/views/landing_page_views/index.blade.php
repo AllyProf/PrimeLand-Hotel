@@ -2474,7 +2474,7 @@
                 <div class="row">
                     <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
                         <div class="categories_post">
-                            <img src="{{ asset('gallery_photos/coffee_.jpg') }}" alt="Breakfast">
+                            <img src="{{ asset('hotel_gallery/coffee_.jpg') }}" alt="Breakfast">
                             <div class="categories_details">
                                 <div class="categories_text">
                                     <a href="#"><h5>Breakfast</h5></a>
@@ -2486,7 +2486,7 @@
                     </div>
                     <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
                         <div class="categories_post">
-                            <img src="{{ asset('gallery_photos/restaurant_(1).jpg') }}" alt="Lunch">
+                            <img src="{{ asset('hotel_gallery/restaurant_.jpg') }}" alt="Lunch">
                             <div class="categories_details">
                                 <div class="categories_text">
                                     <a href="#"><h5>Lunch</h5></a>
@@ -2498,7 +2498,7 @@
                     </div>
                     <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
                         <div class="categories_post">
-                            <img src="{{ asset('gallery_photos/restaurant.jpg') }}" alt="Dinner">
+                            <img src="{{ asset('hotel_gallery/restaurant_.jpg') }}" alt="Dinner">
                             <div class="categories_details">
                                 <div class="categories_text">
                                     <a href="#"><h5>Dinner</h5></a>
