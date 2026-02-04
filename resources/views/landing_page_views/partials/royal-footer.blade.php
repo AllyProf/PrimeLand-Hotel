@@ -124,7 +124,7 @@
                     <h6 class="footer_title">Follow Us</h6>
                     <p style="color: rgba(255,255,255,0.8); margin-bottom: 20px;">Connect with us on social media</p>
                     <div class="footer-social-icons">
-                        <a href="https://www.instagram.com/primeland_hotel?igsh=MWV4OHhwcjI1dzhtZQ==" class="social-media-icon" target="_blank" title="Instagram" style="color: #E1306C; font-size: 36px; margin-right: 25px;">
+                        <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" class="social-media-icon" target="_blank" title="Instagram" style="color: #E1306C; font-size: 36px; margin-right: 25px;">
                             <i class="fa fa-instagram"></i>
                         </a>
                         <a href="#" class="social-media-icon" target="_blank" title="Facebook" style="color: #1877F2; font-size: 36px; margin-right: 25px;">
