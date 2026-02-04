@@ -1445,10 +1445,13 @@ class ReceptionController extends Controller
             'total_service_charges_tsh' => $totalServiceChargesTsh,
         ]);
         
-        // Deactivate guest account
-        $user = \App\Models\Guest::where('email', $booking->guest_email)->first();
-        if ($user) {
-            $user->update(['is_active' => false]);
+        // Only deactivate guest account if they have checked out
+        // If still checked in, keep account active so they can access dashboard and services
+        if ($booking->check_in_status === 'checked_out') {
+            $user = \App\Models\Guest::where('email', $booking->guest_email)->first();
+            if ($user) {
+                $user->update(['is_active' => false]);
+            }
         }
         
         return response()->json([

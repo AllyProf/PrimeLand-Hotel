@@ -143,9 +143,9 @@
                         $now = \Carbon\Carbon::now();
                         $checkInDate = $firstBooking ? \Carbon\Carbon::parse($firstBooking->check_in)->setTime(10, 0, 0) : null;
                         if ($checkInDate) {
-                          $diffInDays = $now->diffInDays($checkInDate, false);
-                          $diffInHours = $now->diffInHours($checkInDate, false);
-                          $diffInMinutes = $now->diffInMinutes($checkInDate, false);
+                          $diffInDays = (int)$now->diffInDays($checkInDate, false);
+                          $diffInHours = (int)$now->diffInHours($checkInDate, false);
+                          $diffInMinutes = (int)$now->diffInMinutes($checkInDate, false);
                         }
                       @endphp
                       @if($checkInDate && $checkInDate->isPast())
@@ -228,9 +228,9 @@
                       @php
                         $now = \Carbon\Carbon::now();
                         $checkInDate = \Carbon\Carbon::parse($booking->check_in)->setTime(10, 0, 0);
-                        $diffInDays = $now->diffInDays($checkInDate, false);
-                        $diffInHours = $now->diffInHours($checkInDate, false);
-                        $diffInMinutes = $now->diffInMinutes($checkInDate, false);
+                        $diffInDays = (int)$now->diffInDays($checkInDate, false);
+                        $diffInHours = (int)$now->diffInHours($checkInDate, false);
+                        $diffInMinutes = (int)$now->diffInMinutes($checkInDate, false);
                       @endphp
                       @if($checkInDate->isPast())
                         @php
@@ -310,9 +310,9 @@
                 $now = \Carbon\Carbon::now();
                 $checkInDate = $firstBooking ? \Carbon\Carbon::parse($firstBooking->check_in)->setTime(10, 0, 0) : null;
                 if ($checkInDate) {
-                  $diffInDays = $now->diffInDays($checkInDate, false);
-                  $diffInHours = $now->diffInHours($checkInDate, false);
-                  $diffInMinutes = $now->diffInMinutes($checkInDate, false);
+                  $diffInDays = (int)$now->diffInDays($checkInDate, false);
+                  $diffInHours = (int)$now->diffInHours($checkInDate, false);
+                  $diffInMinutes = (int)$now->diffInMinutes($checkInDate, false);
                 }
               @endphp
               <div class="mobile-checkin-card checkin-row corporate-booking-group" 
@@ -372,9 +372,9 @@
               @php
                 $now = \Carbon\Carbon::now();
                 $checkInDate = \Carbon\Carbon::parse($booking->check_in)->setTime(10, 0, 0);
-                $diffInDays = $now->diffInDays($checkInDate, false);
-                $diffInHours = $now->diffInHours($checkInDate, false);
-                $diffInMinutes = $now->diffInMinutes($checkInDate, false);
+                $diffInDays = (int)$now->diffInDays($checkInDate, false);
+                $diffInHours = (int)$now->diffInHours($checkInDate, false);
+                $diffInMinutes = (int)$now->diffInMinutes($checkInDate, false);
               @endphp
               <div class="mobile-checkin-card checkin-row" 
                    style="background: white; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"

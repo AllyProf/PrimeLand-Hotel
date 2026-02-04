@@ -421,7 +421,7 @@
                   <td>
                     @if($isCorporateCompanyPaid)
                         <span class="badge badge-info"><i class="fa fa-building"></i> Company</span>
-                    @elseif($request->payment_status === 'paid')
+                    @elseif($request->payment_status === 'paid' || (isset($outstandingBalanceTsh) && $outstandingBalanceTsh <= 50))
                         <span class="badge badge-success"><i class="fa fa-check"></i> Paid</span>
                     @elseif($request->payment_method === 'room_charge')
                         <span class="badge badge-warning"><i class="fa fa-bed"></i> Room Charge</span>

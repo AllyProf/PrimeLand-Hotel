@@ -720,12 +720,61 @@
   background: #28a745;
 }
 
-.room-availability-badge.soon-available {
-  background: #ff9800;
+.room-availability-badge.soon-available,
+.room-availability-badge.cleaning-required {
+  background: #17a2b8;
+}
+
+.room-availability-badge.occupied {
+  background: #dc3545;
+}
+
+.room-card.unselectable {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.room-card.unselectable .room-image-container::after {
+  content: 'NOT SELECTABLE';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  padding: 5px 15px;
+  font-weight: bold;
+  font-size: 10px;
+  border-radius: 4px;
+  z-index: 4;
+  pointer-events: none;
 }
 
 .room-availability-badge i {
   margin-right: 4px;
+}
+
+.room-guest-list {
+  padding: 8px 0;
+  border-top: 1px dashed #eee;
+  margin-top: 8px;
+}
+
+.room-guest-item {
+  font-size: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.remove-guest-btn {
+  color: #dc3545;
+  cursor: pointer;
+  padding: 0 4px;
 }
 
 .room-card-body {
@@ -1168,6 +1217,7 @@ function validateStep(currentStep) {
     const totalPrice = document.getElementById('total_price').value.trim();
     const paymentMethod = document.getElementById('payment_method').value.trim();
     const amountPaid = document.getElementById('amount_paid').value.trim();
+    const paymentReference = document.getElementById('payment_reference').value.trim();
     
     if (!totalPrice || parseFloat(totalPrice) <= 0) {
       isValid = false;
@@ -1179,10 +1229,15 @@ function validateStep(currentStep) {
       errorMessages.push('Payment Method is required');
       document.getElementById('payment_method').classList.add('is-invalid');
     }
-    if (!amountPaid || parseFloat(amountPaid) < 0) {
+    
+    // Payment reference is required ONLY for non-cash methods
+    const nonCashMethods = ['online', 'bank', 'mobile', 'card', 'other'];
+    if (nonCashMethods.includes(paymentMethod) && !paymentReference) {
       isValid = false;
-      errorMessages.push('Amount Paid is required');
-      document.getElementById('amount_paid').classList.add('is-invalid');
+      errorMessages.push('Payment Reference is required for ' + paymentMethod);
+      document.getElementById('payment_reference').classList.add('is-invalid');
+    } else {
+      document.getElementById('payment_reference').classList.remove('is-invalid');
     }
   }
   
@@ -1266,6 +1321,11 @@ window.changeWizardStep = function(step) {
       el.classList.add('active');
     }
   });
+  
+  // Special handling for guest assignment progress
+  if (step === 4) {
+    updateGuestAssignmentProgress();
+  }
   
   // Special handling for preview and payment
   if (step === 6) {
@@ -1598,30 +1658,43 @@ function createRoomCard(room) {
     imageUrl = imgPath.startsWith('http') ? imgPath : storageBase + '/' + imgPath;
   }
   
+  // Determine selection availability
+  const canSelect = room.can_select !== false;
+
   const card = document.createElement('div');
-  card.className = 'room-card';
+  card.className = 'room-card' + (canSelect ? '' : ' unselectable');
   card.setAttribute('data-room-id', room.id);
   card.setAttribute('data-room-price', room.price_per_night);
   card.setAttribute('data-room-capacity', room.capacity || 1);
+  card.setAttribute('data-can-select', canSelect);
   
   // Check if room has assigned guest
-  const assignedGuest = bookingData.guests.find(g => g.room_id == room.id);
-  const hasGuest = assignedGuest !== undefined;
-  
-  if (hasGuest) {
-    card.classList.add('has-guest');
-  }
+  const hasGuest = bookingData.guests.some(g => g.room_id == room.id);
   
   // Determine availability status
-  const isAvailableNow = room.is_available_now !== false;
-  const isSoonAvailable = room.is_soon_available === true;
+  const isAvailableNow = room.status === 'available';
   let availabilityBadge = '';
   
   if (isAvailableNow) {
     availabilityBadge = '<div class="room-availability-badge available-now"><i class="fa fa-check-circle"></i> Available</div>';
-  } else if (isSoonAvailable) {
-    const checkoutDate = room.checkout_date ? new Date(room.checkout_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-    availabilityBadge = '<div class="room-availability-badge soon-available"><i class="fa fa-clock-o"></i> Available ' + checkoutDate + '</div>';
+  } else if (room.status === 'to_be_cleaned') {
+    availabilityBadge = '<div class="room-availability-badge cleaning-required"><i class="fa fa-broom"></i> Needs Cleaning</div>';
+  } else if (room.status === 'occupied') {
+    let checkoutDisplay = 'Today';
+    if (room.checkout_date && room.checkout_date !== 'Today') {
+      try {
+        const dateObj = new Date(room.checkout_date + 'T12:00:00');
+        if (!isNaN(dateObj.getTime())) {
+          checkoutDisplay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+      } catch (e) {
+        checkoutDisplay = room.checkout_date;
+      }
+    }
+    availabilityBadge = '<div class="room-availability-badge occupied"><i class="fa fa-user"></i> Occupied - Leaves ' + checkoutDisplay + '</div>';
+  } else if (room.is_soon_available) {
+    let checkoutDateDisplay = room.checkout_date === 'Today' ? 'Today' : (room.checkout_date || '');
+    availabilityBadge = '<div class="room-availability-badge soon-available"><i class="fa fa-clock-o"></i> Available ' + checkoutDateDisplay + '</div>';
   }
   
   // Build HTML (matching manual booking structure)
@@ -1656,11 +1729,14 @@ function createRoomCard(room) {
   
   // Show guest info if assigned
   if (hasGuest) {
-    cardHtml += '<div class="room-guest-info">';
-    cardHtml += '<div class="mb-2"><strong><i class="fa fa-user"></i> Guest:</strong> ' + assignedGuest.full_name + '</div>';
-    cardHtml += '<div><span class="badge badge-' + (assignedGuest.payment_responsibility === 'company' ? 'info' : 'warning') + '">';
-    cardHtml += assignedGuest.payment_responsibility === 'company' ? '<i class="fa fa-building"></i> Company Paid' : '<i class="fa fa-user"></i> Self-Paid';
-    cardHtml += '</span></div>';
+    const guestsInRoom = bookingData.guests.filter(g => g.room_id == room.id);
+    cardHtml += '<div class="room-guest-list">';
+    guestsInRoom.forEach((g, idx) => {
+      cardHtml += '<div class="room-guest-item">';
+      cardHtml += '<span><i class="fa fa-user-circle"></i> ' + g.full_name + '</span>';
+      cardHtml += '<i class="fa fa-times-circle remove-guest-btn" onclick="removeGuestFromRoom(event, \'' + room.id + '\', ' + idx + ')" title="Remove guest"></i>';
+      cardHtml += '</div>';
+    });
     cardHtml += '</div>';
   }
   
@@ -1671,53 +1747,84 @@ function createRoomCard(room) {
   
   // Add click handler
   card.addEventListener('click', function(e) {
-    // Don't open modal if clicking on guest info section
-    if (!e.target.closest('.room-guest-info')) {
-      openGuestModal(room.id, room.room_number);
+    // Don't open modal if clicking on remove button
+    if (e.target.classList.contains('remove-guest-btn')) return;
+    
+    if (!canSelect) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Room Not Ready',
+        text: 'This room is currently occupied or needs cleaning and cannot be selected for today.',
+        confirmButtonColor: '#e77a3a'
+      });
+      return;
     }
+    
+    // Check if room has reached capacity
+    const roomCapacity = parseInt(room.capacity) || 1;
+    const currentGuests = bookingData.guests.filter(g => g.room_id == room.id).length;
+    
+    // Also check total guests limit
+    const totalGuestsNeeded = bookingData.booking.number_of_guests || 0;
+    const totalAssigned = bookingData.guests.length;
+    
+    if (totalAssigned >= totalGuestsNeeded) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Limit Reached',
+        text: 'You have already assigned the total number of guests (' + totalGuestsNeeded + ').',
+        confirmButtonColor: '#e77a3a'
+      });
+      return;
+    }
+    
+    if (currentGuests >= roomCapacity) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Room Capacity Reached',
+        text: 'This room can only accommodate ' + roomCapacity + ' guest(s).',
+        confirmButtonColor: '#e77a3a'
+      });
+      return;
+    }
+    
+    openGuestModal(room.id, room.room_number);
   });
   
   col.appendChild(card);
   return col;
 }
 
+// Global removal function
+window.removeGuestFromRoom = function(event, roomId, index) {
+  event.stopPropagation();
+  const guestsInRoom = bookingData.guests.filter(g => g.room_id == roomId);
+  const guestToRemove = guestsInRoom[index];
+  
+  if (guestToRemove) {
+    const globalIndex = bookingData.guests.indexOf(guestToRemove);
+    if (globalIndex !== -1) {
+      bookingData.guests.splice(globalIndex, 1);
+      updateGuestAssignmentProgress();
+      displayRoomCards(bookingData.rooms, bookingData.room_status, bookingData.booking.room_types_needed);
+    }
+  }
+};
+
 // Open guest assignment modal
 function openGuestModal(roomId, roomNumber) {
   document.getElementById('modal_room_id').value = roomId;
   document.getElementById('modal_room_number').textContent = roomNumber;
   
-  // Check if room already has a guest
-  const existingGuest = bookingData.guests.find(g => g.room_id == roomId);
+  // Always reset form for a new guest assignment
   const form = document.getElementById('guestAssignmentForm');
+  form.reset();
   
-  if (existingGuest) {
-    // Pre-fill form with existing guest data
-    document.getElementById('guest_full_name').value = existingGuest.full_name || '';
-    document.getElementById('guest_email').value = existingGuest.email || '';
-    document.getElementById('guest_phone').value = existingGuest.phone || '';
-    document.getElementById('guest_country').value = existingGuest.country || '';
-    document.getElementById('payment_responsibility').value = existingGuest.payment_responsibility || 'company';
-    document.getElementById('guest_special_requests').value = existingGuest.special_requests || '';
-    
-    // Pre-fill department notifications
-    if (existingGuest.notify_departments) {
-      existingGuest.notify_departments.forEach(dept => {
-        const checkbox = document.getElementById('notify_guest_' + dept);
-        if (checkbox) {
-          checkbox.checked = true;
-          updateGuestDepartmentCard(checkbox);
-        }
-      });
-    }
-  } else {
-    form.reset();
-    document.getElementById('modal_room_id').value = roomId;
-    // Clear department checkboxes
-    document.querySelectorAll('input[name="guest_notify_departments[]"]').forEach(cb => {
-      cb.checked = false;
-      updateGuestDepartmentCard(cb);
-    });
-  }
+  // Clear department checkboxes
+  document.querySelectorAll('input[name="guest_notify_departments[]"]').forEach(cb => {
+    cb.checked = false;
+    updateGuestDepartmentCard(cb);
+  });
   
   // Show modal
   $('#guestAssignmentModal').modal('show');
@@ -1725,14 +1832,6 @@ function openGuestModal(roomId, roomNumber) {
   // Populate country dropdown
   setTimeout(function() {
     populateCountryDropdown();
-    
-    // Pre-fill country if editing existing guest
-    if (existingGuest && existingGuest.country) {
-      const countrySelect = document.getElementById('guest_country');
-      if (countrySelect) {
-        countrySelect.value = existingGuest.country;
-      }
-    }
   }, 100);
 }
 
@@ -1762,13 +1861,8 @@ function saveGuestAssignment() {
     notify_departments: notifyDepartments
   };
   
-  // Check if guest already exists for this room
-  const existingIndex = bookingData.guests.findIndex(g => g.room_id == roomId);
-  if (existingIndex !== -1) {
-    bookingData.guests[existingIndex] = guestData;
-  } else {
-    bookingData.guests.push(guestData);
-  }
+  // Always push - we allow multiple guests per room up to capacity
+  bookingData.guests.push(guestData);
   
   // Update UI
   updateGuestAssignmentProgress();
@@ -1964,16 +2058,26 @@ document.getElementById('corporateBookingForm').addEventListener('submit', funct
   
   if (bookingData.guests.length < bookingData.booking.number_of_guests) {
     Swal.fire({
-      icon: 'warning',
+      icon: 'question',
       title: 'Incomplete Assignment',
-      text: 'Please assign all guests to rooms before submitting.',
+      text: 'You have only assigned ' + bookingData.guests.length + ' of ' + bookingData.booking.number_of_guests + ' guests. Do you want to proceed with the current assignments?',
+      showCancelButton: true,
       confirmButtonColor: '#e77a3a',
-      confirmButtonText: 'OK'
+      confirmButtonText: 'Yes, proceed',
+      cancelButtonText: 'No, assign more'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        processSubmission();
+      }
     });
-    changeWizardStep(4);
     return;
   }
   
+  processSubmission();
+});
+
+function processSubmission() {
+  const form = document.getElementById('corporateBookingForm');
   // Prepare form data
   const formData = new FormData();
   formData.append('_token', '{{ csrf_token() }}');
@@ -2006,7 +2110,7 @@ document.getElementById('corporateBookingForm').addEventListener('submit', funct
   formData.append('recommended_price', recommendedPrice);
   
   // Show loading
-  const submitBtn = this.querySelector('button[type="submit"]');
+  const submitBtn = form.querySelector('button[type="submit"]');
   const originalText = submitBtn.innerHTML;
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Submitting...';
@@ -2099,7 +2203,7 @@ document.getElementById('corporateBookingForm').addEventListener('submit', funct
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalText;
     });
-});
+}
 </script>
 <script src="{{ asset('dashboard_assets/js/plugins/select2.min.js') }}"></script>
 <script>

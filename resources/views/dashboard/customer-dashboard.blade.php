@@ -294,7 +294,7 @@
                       in <strong><span class="countdown-checkout-{{ $booking->id }}" data-date="{{ $alert['date']->format('Y-m-d H:i:s') }}">{{ $alert['days_until'] }} day(s)</span></strong>
                     </p>
                     <p class="mb-0" style="font-size: 12px; color: #666;">
-                      Check-out: <strong>{{ $alert['date']->format('M d, Y') }}</strong> at <strong>11:00 AM</strong>
+                      Check-out: <strong>{{ $alert['date']->format('M d, Y') }}</strong> at <strong>4:00 PM</strong>
                       @if($isCorporate)
                         <br><small style="font-size: 11px; margin-top: 5px; display: inline-block;">
                           <span class="badge badge-success" style="background-color: #28a745; font-size: 10px;">
@@ -976,6 +976,12 @@
           $outstandingUSD = $totalBillUSD - $totalPaidUSD;
           $outstandingTZS = $totalBillTZS - $totalPaidTZS;
           
+          // Clear negligible balances (e.g., due to exchange rate rounding)
+          if (abs($outstandingTZS) < 50) {
+              $outstandingTZS = 0;
+              $outstandingUSD = 0;
+          }
+          
           // Get guest type from the first active booking
           $guestType = $activeBookings->first()->guest_type ?? 'international';
           $isTanzanian = $guestType === 'tanzanian';
@@ -1073,12 +1079,12 @@
           <div class="status-card {{ $outstandingUSD > 0 ? 'danger' : 'success' }}" style="{{ $outstandingUSD > 0 ? 'background: #fff5f5;' : '' }}">
             <i class="fa fa-money"></i>
             <div class="status-card-content">
-              <span class="status-card-label">Balance Due</span>
+              <span class="status-card-label">{{ ($isTanzanian ? $outstandingTZS : $outstandingUSD) < 0 ? 'Credit Balance' : 'Balance Due' }}</span>
               <span class="status-card-value {{ $outstandingUSD > 0 ? 'text-danger' : 'text-success' }}">
                 @if($isTanzanian)
-                  {{ number_format($outstandingTZS, 2) }} TZS
+                  {{ number_format(abs($outstandingTZS), 2) }} TZS
                 @else
-                  ${{ number_format($outstandingUSD, 2) }}
+                  ${{ number_format(abs($outstandingUSD), 2) }}
                 @endif
               </span>
             </div>
@@ -1162,14 +1168,14 @@
             <i class="fa fa-clock-o"></i>
             <div class="status-card-content">
               <span class="status-card-label">Check-in Time</span>
-              <span class="status-card-value">2:00 PM onwards</span>
+              <span class="status-card-value">4:00 PM onwards</span>
             </div>
           </div>
           <div class="status-card info">
             <i class="fa fa-sign-out"></i>
             <div class="status-card-content">
               <span class="status-card-label">Check-out Time</span>
-              <span class="status-card-value">By 11:00 AM</span>
+              <span class="status-card-value">By 4:00 PM</span>
             </div>
           </div>
         </div>
@@ -3121,7 +3127,7 @@ function updateCheckInButton(button, checkInDateTime) {
                 node.nodeType === 3 && node.textContent.trim().includes('Check')
             );
             if (textNode) {
-                textNode.textContent = textNode.textContent.replace(/Check-in at 2:00 PM|Available at 2:00 PM/, '').trim();
+                textNode.textContent = textNode.textContent.replace(/Check-in at 4:00 PM|Available at 4:00 PM/, '').trim();
             }
             // Remove the small text if it exists
             const smallText = button.querySelector('small');
@@ -3130,7 +3136,7 @@ function updateCheckInButton(button, checkInDateTime) {
             }
             // Update button text for quick action buttons
             const strongText = button.querySelector('strong');
-            if (strongText && strongText.textContent.includes('Check-in at 2:00 PM')) {
+            if (strongText && strongText.textContent.includes('Check-in at 4:00 PM')) {
                 strongText.textContent = 'Check In Now';
             }
         }
@@ -3154,7 +3160,7 @@ function updateCheckOutButton(button, checkOutDateTime) {
         
         // Update button text
         const strongText = button.querySelector('strong');
-        if (strongText && strongText.textContent.includes('Check-out at 11:00 AM')) {
+        if (strongText && strongText.textContent.includes('Check-out at 4:00 PM')) {
             strongText.textContent = 'Check Out Now';
         }
     } else if (!canCheckOut && !button.disabled) {
@@ -3189,8 +3195,8 @@ function initializeCountdownTimers() {
     // Check-out countdowns for Active Bookings table
     document.querySelectorAll('[class*="countdown-checkout-booking-"]').forEach(function(element) {
         const targetDate = new Date(element.getAttribute('data-date'));
-        // Set check-out time to 11:00 AM
-        targetDate.setHours(11, 0, 0, 0);
+        // Set check-out time to 4:00 PM (16:00)
+        targetDate.setHours(16, 0, 0, 0);
         updateBookingCheckOutCountdown(element, targetDate);
         setInterval(function() {
             updateBookingCheckOutCountdown(element, targetDate);
@@ -3200,8 +3206,8 @@ function initializeCountdownTimers() {
     // Check-out countdowns (real-time for alerts)
     document.querySelectorAll('[class*="countdown-checkout-"]:not([class*="countdown-checkout-booking-"])').forEach(function(element) {
         const targetDate = new Date(element.getAttribute('data-date'));
-        // Set check-out time to 11:00 AM
-        targetDate.setHours(11, 0, 0, 0);
+        // Set check-out time to 4:00 PM (16:00)
+        targetDate.setHours(16, 0, 0, 0);
         updateCountdownRealTime(element, targetDate);
         setInterval(function() {
             updateCountdownRealTime(element, targetDate);
@@ -3599,6 +3605,10 @@ function submitIssueReport(button) {
             }, function() {
                 $('#reportIssueModal').modal('hide');
                 form.reset();
+                // Increment notification badge immediately
+                if (typeof incrementNotificationBadge === 'function') {
+                    incrementNotificationBadge(1);
+                }
             });
         } else {
             let errorMsg = data.message || 'An error occurred. Please try again.';

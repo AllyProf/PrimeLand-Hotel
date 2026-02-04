@@ -346,9 +346,8 @@ class NotificationService
             // Head chef needs to act on: booking notifications (for special requests), service requests
             $actionRequiredTypes = ['booking', 'service_request'];
         } elseif ($userRole === 'guest' || $userRole === 'customer') {
-            // Customers don't need to act on notifications - they're just informational
-            // But we can show extension status updates
-            $actionRequiredTypes = [];
+            // Customers see status updates as actionable so they pop up
+            $actionRequiredTypes = ['service_request', 'extension_request', 'payment', 'issue_report'];
         }
         
         if (empty($actionRequiredTypes)) {

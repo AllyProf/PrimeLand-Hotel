@@ -891,8 +891,40 @@
   background: #28a745;
 }
 
-.room-availability-badge.soon-available {
-  background: #ff9800;
+.room-availability-badge.soon-available,
+.room-availability-badge.cleaning-required {
+  background: #17a2b8;
+}
+
+.room-availability-badge.occupied {
+  background: #dc3545;
+}
+
+.room-card.unselectable {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.room-card.unselectable:hover .room-card-inner {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-color: #e0e0e0;
+}
+
+.room-card.unselectable .room-image-container::after {
+  content: 'NOT SELECTABLE';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  padding: 5px 15px;
+  font-weight: bold;
+  font-size: 10px;
+  border-radius: 4px;
+  z-index: 4;
+  pointer-events: none;
 }
 
 .room-availability-badge i {
@@ -2116,6 +2148,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Fetch available rooms when room type and dates are selected
   function fetchAvailableRooms() {
+    if (!roomTypeSelect || !checkInInput || !checkOutInput) {
+      console.error('Required form elements not found');
+      return;
+    }
+
     const roomType = roomTypeSelect.value;
     const checkIn = checkInInput.value;
     const checkOut = checkOutInput.value;
@@ -2125,13 +2162,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const roomSelectHint = document.getElementById('room_select_hint');
     const hiddenRoomInput = document.getElementById('room_id');
 
+    if (!roomsContainer || !roomsGrid || !roomsLoading) return;
+
     if (!roomType || !checkIn || !checkOut) {
       roomsContainer.style.display = 'none';
       const summaryContainer = document.getElementById('availability_summary');
       if (summaryContainer) summaryContainer.style.display = 'none';
-      hiddenRoomInput.value = '';
-      hiddenRoomInput.removeAttribute('required');
-      // showOtherRoomsBtn.style.display = 'none'; // Button removed
+      if (hiddenRoomInput) {
+        hiddenRoomInput.value = '';
+        hiddenRoomInput.removeAttribute('required');
+      }
       return;
     }
 
@@ -2169,10 +2209,16 @@ document.addEventListener('DOMContentLoaded', function() {
           if (summaryContainer && summaryPills) {
             summaryContainer.style.display = 'block';
             
-            // Combine all available rooms
-            const allAvailable = [];
-            if (data.available_rooms) allAvailable.push(...data.available_rooms);
-            if (data.other_available_rooms) allAvailable.push(...data.other_available_rooms);
+            // Combine all available rooms safely
+            let allAvailable = [];
+            if (data.available_rooms) {
+              const rooms = Array.isArray(data.available_rooms) ? data.available_rooms : Object.values(data.available_rooms);
+              allAvailable = allAvailable.concat(rooms);
+            }
+            if (data.other_available_rooms) {
+              const otherRooms = Array.isArray(data.other_available_rooms) ? data.other_available_rooms : Object.values(data.other_available_rooms);
+              allAvailable = allAvailable.concat(otherRooms);
+            }
             
             // Count by type
             const counts = {};
@@ -2196,33 +2242,63 @@ document.addEventListener('DOMContentLoaded', function() {
               const count = counts[type];
               const isSelectedType = type === roomType;
               const pill = document.createElement('div');
-              pill.className = `d-flex align-items-center mr-3 mb-2 p-2 px-3 ${isSelectedType ? 'bg-primary text-white' : 'bg-light text-dark'}`;
+              pill.className = `d-flex align-items-center mr-3 mb-2 p-2 px-3 ${isSelectedType ? 'bg-primary text-white shadow-sm' : 'bg-light text-dark border'}`;
               pill.style.borderRadius = '30px';
               pill.style.fontSize = '14px';
               pill.style.fontWeight = '500';
-              pill.style.border = isSelectedType ? 'none' : '1px solid #ddd';
+              pill.style.cursor = 'pointer';
+              pill.style.transition = 'all 0.2s ease-in-out';
               
               const icon = type === 'Single' ? 'user' : (type === 'Double' ? 'users' : 'bed');
               pill.innerHTML = `<i class="fa fa-${icon} mr-2"></i> ${type}: <strong>${count}</strong>`;
+              pill.title = isSelectedType ? 'Current selection' : `Switch to ${type} rooms`;
+              
+              // Add click event to switch type
+              pill.onclick = function() {
+                if (!isSelectedType) {
+                  const select = document.getElementById('room_type');
+                  if (select) {
+                    select.value = type;
+                    select.dispatchEvent(new Event('change'));
+                  }
+                }
+              };
+              
+              // Add hover effects
+              pill.onmouseover = function() {
+                this.classList.add('shadow-sm');
+                if (!isSelectedType) this.style.borderColor = '#e77a3a';
+                this.style.transform = 'translateY(-1px)';
+              };
+              pill.onmouseout = function() {
+                if (!isSelectedType) {
+                  this.classList.remove('shadow-sm');
+                  this.style.borderColor = '#ddd';
+                }
+                this.style.transform = 'translateY(0)';
+              };
+              
               summaryPills.appendChild(pill);
             });
           }
 
-          if (data.available_rooms.length === 0) {
+          const rooms = Array.isArray(data.available_rooms) ? data.available_rooms : Object.values(data.available_rooms);
+          
+          if (rooms.length === 0) {
             roomsGrid.innerHTML = '<div class="col-12"><div class="alert alert-info"><i class="fa fa-info-circle"></i> No rooms available for the selected room type and dates. Please try different dates or room type.</div></div>';
             roomSelectHint.textContent = 'No rooms available for the selected room type and dates';
-            hiddenRoomInput.value = '';
+            if (hiddenRoomInput) hiddenRoomInput.value = '';
           } else {
-            roomSelectHint.textContent = `${data.available_rooms.length} room(s) available - Select a room below`;
+            roomSelectHint.textContent = `${rooms.length} room(s) available - Select a room below`;
             roomsGrid.innerHTML = '';
             
             // Create room cards
-            data.available_rooms.forEach(room => {
+            rooms.forEach(room => {
               const roomCard = createRoomCard(room);
               roomsGrid.appendChild(roomCard);
             });
             
-            hiddenRoomInput.setAttribute('required', 'required');
+            if (hiddenRoomInput) hiddenRoomInput.setAttribute('required', 'required');
           }
         } else {
           roomsGrid.innerHTML = '<div class="col-12"><div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> Error loading rooms. Please try again.</div></div>';
@@ -2257,23 +2333,39 @@ document.addEventListener('DOMContentLoaded', function() {
       imageUrl = imgPath.startsWith('http') ? imgPath : storageBase + '/' + imgPath;
     }
     
-    const card = document.createElement('div');
-    card.className = 'room-card';
-    card.setAttribute('data-room-id', room.id);
-    card.setAttribute('data-room-price', room.price_per_night);
-    card.setAttribute('data-room-capacity', room.capacity || 1);
-    
     // Determine availability status
-    const isAvailableNow = room.is_available_now !== false;
-    const isSoonAvailable = room.is_soon_available === true;
+    const isAvailableNow = room.status === 'available';
+    const canSelect = room.can_select !== false;
     let availabilityBadge = '';
     
     if (isAvailableNow) {
       availabilityBadge = '<div class="room-availability-badge available-now"><i class="fa fa-check-circle"></i> Available</div>';
-    } else if (isSoonAvailable) {
-      const checkoutDate = room.checkout_date ? new Date(room.checkout_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-      availabilityBadge = '<div class="room-availability-badge soon-available"><i class="fa fa-clock-o"></i> Available ' + checkoutDate + '</div>';
+    } else if (room.status === 'to_be_cleaned') {
+      availabilityBadge = '<div class="room-availability-badge cleaning-required"><i class="fa fa-broom"></i> Needs Cleaning</div>';
+    } else if (room.status === 'occupied') {
+      let checkoutDisplay = 'Today';
+      if (room.checkout_date && room.checkout_date !== 'Today') {
+        try {
+          const dateObj = new Date(room.checkout_date + 'T12:00:00');
+          if (!isNaN(dateObj.getTime())) {
+            checkoutDisplay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }
+        } catch (e) {
+          checkoutDisplay = room.checkout_date;
+        }
+      }
+      availabilityBadge = '<div class="room-availability-badge occupied"><i class="fa fa-user"></i> Occupied - Leaves ' + checkoutDisplay + '</div>';
+    } else {
+      let checkoutDateDisplay = room.checkout_date === 'Today' ? 'Today' : (room.checkout_date || '');
+      availabilityBadge = '<div class="room-availability-badge soon-available"><i class="fa fa-clock-o"></i> Available ' + checkoutDateDisplay + '</div>';
     }
+    
+    const card = document.createElement('div');
+    card.className = 'room-card' + (canSelect ? '' : ' unselectable');
+    card.setAttribute('data-room-id', room.id);
+    card.setAttribute('data-room-price', room.price_per_night);
+    card.setAttribute('data-room-capacity', room.capacity || 1);
+    card.setAttribute('data-can-select', canSelect);
     
     // Build HTML using string concatenation to avoid template literal issues
     let cardHtml = '<div class="room-card-inner">';
@@ -2313,6 +2405,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Select room function (with toggle/deselect capability)
   function selectRoom(roomId, cardElement) {
+    const canSelect = cardElement.getAttribute('data-can-select') !== 'false';
+    if (!canSelect) {
+      swal({
+        title: "Room Not Ready",
+        text: "This room is currently occupied or needs cleaning and cannot be selected for today. Please choose an available room or contact housekeeping.",
+        type: "warning",
+        confirmButtonColor: "#e77a3a"
+      });
+      return;
+    }
+
     const hiddenRoomInput = document.getElementById('room_id');
     const isCurrentlySelected = cardElement.classList.contains('selected');
     

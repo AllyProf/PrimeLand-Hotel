@@ -50,7 +50,7 @@ class BookingController extends Controller
     private function assignAvailableRoom($roomType, $checkIn, $checkOut)
     {
         return Room::where('room_type', $roomType)
-            ->where('status', 'available')
+            ->whereIn('status', ['available', 'occupied', 'to_be_cleaned'])
             ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                 // Block rooms for bookings (pending or confirmed) that are valid
                 $query->whereIn('status', ['pending', 'confirmed'])
@@ -87,6 +87,7 @@ class BookingController extends Controller
                           });
                       });
             })
+            ->orderBy('status', 'asc') // available comes before occupied
             ->orderBy('room_number', 'asc') // Assign in order
             ->first();
     }
@@ -3424,130 +3425,97 @@ class BookingController extends Controller
         $checkOut = Carbon::parse($validated['check_out']);
         $roomTypes = $validated['room_types'];
 
-        $allAvailableRooms = collect();
-        $availableNowIds = collect();
-
-        // Get available rooms for each room type
-        foreach ($roomTypes as $roomType) {
-            // Get all available rooms of the specified type that don't have conflicts
-            $availableRooms = Room::where('room_type', $roomType)
-                ->where('status', 'available')
-                ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                    $query->whereIn('status', ['pending', 'confirmed'])
-                          ->where(function ($q) use ($checkIn, $checkOut) {
-                              $q->where('check_in', '<', $checkOut)
-                                ->where('check_out', '>', $checkIn);
+        // Base query for all potentially available rooms
+        $baseQuery = Room::whereIn('room_type', $roomTypes)
+            ->whereIn('status', ['available', 'occupied', 'to_be_cleaned'])
+            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
+                $query->whereIn('status', ['pending', 'confirmed'])
+                      ->where(function ($q) use ($checkIn, $checkOut) {
+                          $q->where('check_in', '<', $checkOut)
+                            ->where('check_out', '>', $checkIn);
+                      })
+                      ->where(function ($q) {
+                          $q->where(function ($statusQ) {
+                              $statusQ->where('status', 'confirmed')
+                                      ->where(function ($paymentQ) {
+                                          $paymentQ->whereIn('payment_status', ['paid', 'partial'])
+                                                  ->orWhere(function ($subQ) {
+                                                      $subQ->where('payment_status', 'pending')
+                                                           ->where(function ($deadlineQ) {
+                                                               $deadlineQ->whereNull('payment_deadline')
+                                                                        ->orWhere('payment_deadline', '>', Carbon::now());
+                                                           });
+                                                  });
+                                      });
                           })
-                          ->where(function ($q) {
-                              $q->where(function ($statusQ) {
-                                  $statusQ->where('status', 'confirmed')
-                                          ->where(function ($paymentQ) {
-                                              $paymentQ->whereIn('payment_status', ['paid', 'partial'])
-                                                      ->orWhere(function ($subQ) {
-                                                          $subQ->where('payment_status', 'pending')
-                                                               ->where(function ($deadlineQ) {
-                                                                   $deadlineQ->whereNull('payment_deadline')
-                                                                            ->orWhere('payment_deadline', '>', Carbon::now());
-                                                               });
-                                                      });
-                                          });
-                              })
-                              ->orWhere(function ($pendingQ) {
-                                  $pendingQ->where('status', 'pending')
-                                          ->where(function ($expireQ) {
-                                              $expireQ->whereNull('expires_at')
-                                                     ->orWhere('expires_at', '>', Carbon::now());
-                                          });
-                              });
+                          ->orWhere(function ($pendingQ) {
+                              $pendingQ->where('status', 'pending')
+                                      ->where(function ($expireQ) {
+                                          $expireQ->whereNull('expires_at')
+                                                 ->orWhere('expires_at', '>', Carbon::now());
+                                      });
                           });
-                })
-                ->get();
+                      });
+            });
 
-            $availableNowIds = $availableNowIds->merge($availableRooms->pluck('id'));
+        $allAvailableRooms = $baseQuery->orderBy('room_type', 'asc')
+            ->orderBy('status', 'asc')
+            ->orderBy('room_number', 'asc')
+            ->get();
 
-            // Get rooms that will be available soon
-            $soonAvailableRooms = Room::where('room_type', $roomType)
-                ->where('status', 'available')
-                ->whereHas('bookings', function ($query) use ($checkIn) {
-                    $query->whereIn('status', ['confirmed'])
-                          ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                          ->where(function ($paymentQ) {
-                              $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                          });
-                })
-                ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                    $query->whereIn('status', ['pending', 'confirmed'])
-                          ->where('check_in', '>=', $checkIn->format('Y-m-d'))
-                          ->where('check_in', '<', $checkOut->format('Y-m-d'))
-                          ->where(function ($q) {
-                              $q->where(function ($statusQ) {
-                                  $statusQ->where('status', 'confirmed')
-                                          ->where(function ($paymentQ) {
-                                              $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                                          });
-                              })
-                              ->orWhere(function ($pendingQ) {
-                                  $pendingQ->where('status', 'pending')
-                                          ->where(function ($expireQ) {
-                                              $expireQ->whereNull('expires_at')
-                                                     ->orWhere('expires_at', '>', Carbon::now());
-                                          });
-                              });
-                          });
-                })
-                ->get();
+        $mapRoom = function ($room) use ($checkIn) {
+            $images = $room->images ?? [];
+            $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
 
-            // Merge and add to collection
-            $typeRooms = $availableRooms->merge($soonAvailableRooms)->unique('id');
-            $allAvailableRooms = $allAvailableRooms->merge($typeRooms);
-        }
+            // Room is available now if status is available
+            $isAvailableNow = $room->status === 'available';
+            
+            // For soon available, find current checkout date
+            $checkoutDate = null;
+            $isSoonAvailable = !$isAvailableNow;
+            
+            if ($isSoonAvailable) {
+                // Find the booking that is currently occupying the room or just checked out
+                $currentBooking = $room->bookings()
+                    ->whereIn('status', ['confirmed'])
+                    ->where('check_out', '<=', $checkIn->format('Y-m-d'))
+                    ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
+                    ->orderBy('check_out', 'desc')
+                    ->first();
 
-        // Remove duplicates and format response
-        $allAvailableRooms = $allAvailableRooms->unique('id');
+                if ($currentBooking) {
+                    $checkoutDate = Carbon::parse($currentBooking->check_out)->format('Y-m-d');
+                } else if ($room->status === 'to_be_cleaned') {
+                    $checkoutDate = 'Today';
+                }
+            }
+
+            $canSelect = true;
+            if ($checkIn->isToday() && $room->status !== 'available') {
+                $canSelect = false;
+            }
+
+            return [
+                'id' => $room->id,
+                'room_number' => $room->room_number,
+                'room_type' => $room->room_type,
+                'price_per_night' => $room->price_per_night,
+                'capacity' => $room->capacity ?? 1,
+                'bed_type' => $room->bed_type ?? null,
+                'floor_location' => $room->floor_location ?? null,
+                'image' => $firstImage,
+                'images' => $images,
+                'is_available_now' => $isAvailableNow,
+                'is_soon_available' => $isSoonAvailable,
+                'checkout_date' => $checkoutDate,
+                'status' => $room->status,
+                'can_select' => $canSelect,
+            ];
+        };
 
         return response()->json([
             'success' => true,
-            'available_rooms' => $allAvailableRooms->map(function ($room) use ($availableNowIds, $checkIn) {
-                // Get first image or default
-                $images = $room->images ?? [];
-                $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
-                
-                // Check if room is available now or soon to be available
-                $isAvailableNow = $availableNowIds->contains($room->id);
-                $isSoonAvailable = !$isAvailableNow;
-                
-                // Get checkout date if soon available
-                $checkoutDate = null;
-                if ($isSoonAvailable) {
-                    $currentBooking = $room->bookings()
-                        ->whereIn('status', ['confirmed'])
-                        ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                        ->where(function ($paymentQ) {
-                            $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                        })
-                        ->orderBy('check_out', 'desc')
-                        ->first();
-                    
-                    if ($currentBooking) {
-                        $checkoutDate = Carbon::parse($currentBooking->check_out)->format('Y-m-d');
-                    }
-                }
-                
-                return [
-                    'id' => $room->id,
-                    'room_number' => $room->room_number,
-                    'room_type' => $room->room_type,
-                    'price_per_night' => $room->price_per_night,
-                    'capacity' => $room->capacity ?? 1,
-                    'bed_type' => $room->bed_type ?? null,
-                    'floor_location' => $room->floor_location ?? null,
-                    'image' => $firstImage,
-                    'images' => $images,
-                    'is_available_now' => $isAvailableNow,
-                    'is_soon_available' => $isSoonAvailable,
-                    'checkout_date' => $checkoutDate,
-                ];
-            })->values(),
+            'available_rooms' => $allAvailableRooms->map($mapRoom)->values(),
         ]);
     }
 
@@ -3565,9 +3533,8 @@ class BookingController extends Controller
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
 
-        // Get all available rooms of the specified type that don't have conflicts
-        $availableRooms = Room::where('room_type', $validated['room_type'])
-            ->where('status', 'available')
+        // Base query for all potentially available rooms (available, occupied, to_be_cleaned)
+        $baseQuery = Room::whereIn('status', ['available', 'occupied', 'to_be_cleaned'])
             ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
                 $query->whereIn('status', ['pending', 'confirmed'])
                       ->where(function ($q) use ($checkIn, $checkOut) {
@@ -3596,219 +3563,92 @@ class BookingController extends Controller
                                       });
                           });
                       });
-            })
+            });
+
+        // Get rooms for the selected type
+        $allRoomsOfType = (clone $baseQuery)->where('room_type', $validated['room_type'])
+            ->orderBy('status', 'asc') // available first
             ->orderBy('room_number', 'asc')
             ->get();
 
-        // Get rooms that will be available soon (checking out on or before check-in date)
-        $soonAvailableRooms = Room::where('room_type', $validated['room_type'])
-            ->where('status', 'available')
-            ->whereHas('bookings', function ($query) use ($checkIn) {
-                $query->whereIn('status', ['confirmed'])
-                      ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                      ->where(function ($paymentQ) {
-                          $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                      });
-            })
-            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                // But don't have conflicts after check-in
-                $query->whereIn('status', ['pending', 'confirmed'])
-                      ->where('check_in', '>=', $checkIn->format('Y-m-d'))
-                      ->where('check_in', '<', $checkOut->format('Y-m-d'))
-                      ->where(function ($q) {
-                          $q->where(function ($statusQ) {
-                              $statusQ->where('status', 'confirmed')
-                                      ->where(function ($paymentQ) {
-                                          $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                                      });
-                          })
-                          ->orWhere(function ($pendingQ) {
-                              $pendingQ->where('status', 'pending')
-                                      ->where(function ($expireQ) {
-                                          $expireQ->whereNull('expires_at')
-                                                 ->orWhere('expires_at', '>', Carbon::now());
-                                      });
-                          });
-                      });
-            })
-            ->orderBy('room_number', 'asc')
-            ->get();
-
-        // Merge and deduplicate
-        $allRooms = $availableRooms->merge($soonAvailableRooms)->unique('id');
-
-        // Also get all other available rooms (for the "view other rooms" option)
-        $otherAvailableRooms = Room::where('status', 'available')
-            ->where('room_type', '!=', $validated['room_type'])
-            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                $query->whereIn('status', ['pending', 'confirmed'])
-                      ->where(function ($q) use ($checkIn, $checkOut) {
-                          $q->where('check_in', '<', $checkOut)
-                            ->where('check_out', '>', $checkIn);
-                      })
-                      ->where(function ($q) {
-                          $q->where(function ($statusQ) {
-                              $statusQ->where('status', 'confirmed')
-                                      ->where(function ($paymentQ) {
-                                          $paymentQ->whereIn('payment_status', ['paid', 'partial'])
-                                                  ->orWhere(function ($subQ) {
-                                                      $subQ->where('payment_status', 'pending')
-                                                           ->where(function ($deadlineQ) {
-                                                               $deadlineQ->whereNull('payment_deadline')
-                                                                        ->orWhere('payment_deadline', '>', Carbon::now());
-                                                           });
-                                                  });
-                                      });
-                          })
-                          ->orWhere(function ($pendingQ) {
-                              $pendingQ->where('status', 'pending')
-                                      ->where(function ($expireQ) {
-                                          $expireQ->whereNull('expires_at')
-                                                 ->orWhere('expires_at', '>', Carbon::now());
-                                      });
-                          });
-                      });
-            })
+        // Get rooms for other types
+        $allOtherRooms = (clone $baseQuery)->where('room_type', '!=', $validated['room_type'])
             ->orderBy('room_type', 'asc')
+            ->orderBy('status', 'asc')
             ->orderBy('room_number', 'asc')
             ->get();
 
-        // Get other rooms that will be available soon
-        $otherSoonAvailableRooms = Room::where('status', 'available')
-            ->where('room_type', '!=', $validated['room_type'])
-            ->whereHas('bookings', function ($query) use ($checkIn) {
-                $query->whereIn('status', ['confirmed'])
-                      ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                      ->where(function ($paymentQ) {
-                          $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                      });
-            })
-            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                $query->whereIn('status', ['pending', 'confirmed'])
-                      ->where('check_in', '>=', $checkIn->format('Y-m-d'))
-                      ->where('check_in', '<', $checkOut->format('Y-m-d'))
-                      ->where(function ($q) {
-                          $q->where(function ($statusQ) {
-                              $statusQ->where('status', 'confirmed')
-                                      ->where(function ($paymentQ) {
-                                          $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                                      });
-                          })
-                          ->orWhere(function ($pendingQ) {
-                              $pendingQ->where('status', 'pending')
-                                      ->where(function ($expireQ) {
-                                          $expireQ->whereNull('expires_at')
-                                                 ->orWhere('expires_at', '>', Carbon::now());
-                                      });
-                          });
-                      });
-            })
-            ->orderBy('room_type', 'asc')
-            ->orderBy('room_number', 'asc')
-            ->get();
+        $mapRoom = function ($room) use ($checkIn) {
+            $images = $room->images ?? [];
+            $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
 
-        // Merge and deduplicate other rooms
-        $allOtherRooms = $otherAvailableRooms->merge($otherSoonAvailableRooms)->unique('id');
+            // Room is available now if status is available
+            $isAvailableNow = $room->status === 'available';
+            
+            // For soon available, find current checkout date
+            $checkoutDate = null;
+            $isSoonAvailable = !$isAvailableNow;
+            
+            if ($isSoonAvailable) {
+                // Find the booking that is currently occupying the room or just checked out
+                $currentBooking = $room->bookings()
+                    ->whereIn('status', ['confirmed'])
+                    ->where('check_out', '<=', $checkIn->format('Y-m-d'))
+                    ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
+                    ->orderBy('check_out', 'desc')
+                    ->first();
+
+                if ($currentBooking) {
+                    $checkoutDate = Carbon::parse($currentBooking->check_out)->format('Y-m-d');
+                } else if ($room->status === 'to_be_cleaned') {
+                    $checkoutDate = 'Today';
+                }
+            }
+
+            // Logic for selectable:
+            // If check-in is today, and room status is NOT available (i.e. occupied or needs cleaning), disallow selection.
+            $canSelect = true;
+            if ($checkIn->isToday() && $room->status !== 'available') {
+                $canSelect = false;
+            }
+
+            return [
+                'id' => $room->id,
+                'room_number' => $room->room_number,
+                'room_type' => $room->room_type,
+                'price_per_night' => $room->price_per_night,
+                'capacity' => $room->capacity ?? 1,
+                'bed_type' => $room->bed_type ?? null,
+                'floor_location' => $room->floor_location ?? null,
+                'image' => $firstImage,
+                'images' => $images,
+                'is_available_now' => $isAvailableNow,
+                'is_soon_available' => $isSoonAvailable,
+                'checkout_date' => $checkoutDate,
+                'status' => $room->status,
+                'can_select' => $canSelect,
+            ];
+        };
 
         return response()->json([
             'success' => true,
-            'available_rooms' => $allRooms->map(function ($room) use ($availableRooms, $checkIn) {
-                // Get first image or default
-                $images = $room->images ?? [];
-                $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
-                
-                // Check if room is available now or soon to be available
-                $isAvailableNow = $availableRooms->contains('id', $room->id);
-                $isSoonAvailable = !$isAvailableNow;
-                
-                // Get checkout date if soon available
-                $checkoutDate = null;
-                if ($isSoonAvailable) {
-                    $currentBooking = $room->bookings()
-                        ->whereIn('status', ['confirmed'])
-                        ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                        ->where(function ($paymentQ) {
-                            $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                        })
-                        ->orderBy('check_out', 'desc')
-                        ->first();
-                    
-                    if ($currentBooking) {
-                        $checkoutDate = Carbon::parse($currentBooking->check_out)->format('Y-m-d');
-                    }
-                }
-                
-                return [
-                    'id' => $room->id,
-                    'room_number' => $room->room_number,
-                    'room_type' => $room->room_type,
-                    'price_per_night' => $room->price_per_night,
-                    'capacity' => $room->capacity ?? 1,
-                    'bed_type' => $room->bed_type ?? null,
-                    'floor_location' => $room->floor_location ?? null,
-                    'image' => $firstImage,
-                    'images' => $images,
-                    'is_available_now' => $isAvailableNow,
-                    'is_soon_available' => $isSoonAvailable,
-                    'checkout_date' => $checkoutDate,
-                ];
-            }),
-            'other_available_rooms' => $allOtherRooms->map(function ($room) use ($otherAvailableRooms, $checkIn) {
-                // Get first image or default
-                $images = $room->images ?? [];
-                $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
-                
-                // Check if room is available now or soon to be available
-                $isAvailableNow = $otherAvailableRooms->contains('id', $room->id);
-                $isSoonAvailable = !$isAvailableNow;
-                
-                // Get checkout date if soon available
-                $checkoutDate = null;
-                if ($isSoonAvailable) {
-                    $currentBooking = $room->bookings()
-                        ->whereIn('status', ['confirmed'])
-                        ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                        ->where(function ($paymentQ) {
-                            $paymentQ->whereIn('payment_status', ['paid', 'partial']);
-                        })
-                        ->orderBy('check_out', 'desc')
-                        ->first();
-                    
-                    if ($currentBooking) {
-                        $checkoutDate = Carbon::parse($currentBooking->check_out)->format('Y-m-d');
-                    }
-                }
-                
-                return [
-                    'id' => $room->id,
-                    'room_number' => $room->room_number,
-                    'room_type' => $room->room_type,
-                    'price_per_night' => $room->price_per_night,
-                    'capacity' => $room->capacity ?? 1,
-                    'bed_type' => $room->bed_type ?? null,
-                    'floor_location' => $room->floor_location ?? null,
-                    'image' => $firstImage,
-                    'images' => $images,
-                    'is_available_now' => $isAvailableNow,
-                    'is_soon_available' => $isSoonAvailable,
-                    'checkout_date' => $checkoutDate,
-                ];
-            }),
+            'available_rooms' => $allRoomsOfType->map($mapRoom)->values(),
+            'other_available_rooms' => $allOtherRooms->map($mapRoom)->values(),
         ]);
     }
 
     public function createManual()
     {
-        // Get room types for dropdown
+        // Get room types for dropdown - include any type that has potentially bookable rooms
         $roomTypes = Room::select('room_type')
-            ->where('status', 'available')
+            ->whereIn('status', ['available', 'occupied', 'to_be_cleaned'])
             ->distinct()
             ->orderBy('room_type')
             ->pluck('room_type');
         
-        // Get average capacity per room type (for auto-filling number of guests)
+        // Get average capacity per room type
         $roomTypeCapacities = Room::select('room_type', DB::raw('AVG(capacity) as avg_capacity'))
-            ->where('status', 'available')
+            ->whereIn('status', ['available', 'occupied', 'to_be_cleaned'])
             ->groupBy('room_type')
             ->pluck('avg_capacity', 'room_type')
             ->map(function($capacity) {

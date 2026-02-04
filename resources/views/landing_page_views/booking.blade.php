@@ -4815,7 +4815,7 @@
                 </ul>
                 
                 <h3>3. Check-in and Check-out</h3>
-                <p>Check-in time is from 14:00 (2:00 PM). Check-out time is before 11:00 (11:00 AM). Early check-in and late check-out may be available upon request and subject to availability.</p>
+                <p>Check-in time is from 16:00 (4:00 PM). Check-out time is before 16:00 (4:00 PM). Early check-in and late check-out may be available upon request and subject to availability.</p>
                 
                 <h3>4. Guest Responsibilities</h3>
                 <p>Guests are responsible for any damage to hotel property. Smoking is prohibited in all rooms. Pets are only allowed in designated pet-friendly rooms.</p>

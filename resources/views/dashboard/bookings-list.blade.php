@@ -2925,7 +2925,12 @@ function updateCheckIn(bookingId, checkInStatus) {
     showLoaderOnConfirm: true
   }, function(isConfirm) {
     if (isConfirm) {
-      fetch('{{ route("admin.bookings.update-checkin", ":id") }}'.replace(':id', bookingId), {
+      @php
+        $checkInUpdateRoute = (str_starts_with(request()->route()->getName() ?? '', 'admin.')) 
+          ? 'admin.bookings.update-checkin' 
+          : 'reception.bookings.update-checkin';
+      @endphp
+      fetch('{{ route($checkInUpdateRoute, ":id") }}'.replace(':id', bookingId), {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',

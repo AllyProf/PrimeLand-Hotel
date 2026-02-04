@@ -1045,6 +1045,26 @@
         });
       }
 
+      function incrementNotificationBadge(count = 1) {
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+          const currentCount = parseInt(badge.textContent.trim().replace('+', '')) || 0;
+          const newCount = currentCount + count;
+          badge.textContent = newCount > 99 ? '99+' : newCount;
+          updateNotificationTitle();
+        } else {
+          const notificationLink = document.querySelector('.app-nav__item[data-toggle="dropdown"]');
+          if (notificationLink) {
+            const newBadge = document.createElement('span');
+            newBadge.className = 'badge badge-danger notification-badge';
+            newBadge.style.cssText = 'position: absolute; top: -5px; right: -8px; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; min-width: 18px; height: 18px; text-align: center; line-height: 14px; z-index: 1000; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2);';
+            newBadge.textContent = count > 99 ? '99+' : count;
+            notificationLink.appendChild(newBadge);
+            updateNotificationTitle();
+          }
+        }
+      }
+
       // Toast Notification System for Action Required Notifications
       // Load previously shown notification IDs from localStorage
       const storedShownIds = localStorage.getItem('shownToastNotificationIds');
@@ -1094,9 +1114,9 @@
           shouldShow = notification.type === 'booking' || 
                        notification.type === 'service_request';
         }
-        // Customer: don't show toast notifications (they're informational only, not actionable)
+        // Customer: show toast notifications for status updates
         else if (userRole === 'customer') {
-          shouldShow = false;
+          shouldShow = true;
         }
         
         if (!shouldShow) {
@@ -1262,12 +1282,36 @@
         })
         .then(function(data) {
           if (data.success && data.notifications && data.notifications.length > 0) {
+            let newNotificationsCount = 0;
             data.notifications.forEach(function(notification) {
               if (!shownToastIds.has(notification.id) && !notification.is_read) {
                 // Add to queue instead of showing immediately
                 showToastNotification(notification);
+                newNotificationsCount++;
               }
             });
+            
+            // Update badge count if there are new notifications
+            if (newNotificationsCount > 0) {
+              const badge = document.querySelector('.notification-badge');
+              if (badge) {
+                const currentCount = parseInt(badge.textContent.trim().replace('+', '')) || 0;
+                const newCount = currentCount + newNotificationsCount;
+                badge.textContent = newCount > 99 ? '99+' : newCount;
+                updateNotificationTitle();
+              } else {
+                // Create badge if it doesn't exist
+                const notificationLink = document.querySelector('.app-nav__item[data-toggle="dropdown"]');
+                if (notificationLink) {
+                  const newBadge = document.createElement('span');
+                  newBadge.className = 'badge badge-danger notification-badge';
+                  newBadge.style.cssText = 'position: absolute; top: -5px; right: -8px; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; min-width: 18px; height: 18px; text-align: center; line-height: 14px; z-index: 1000; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2);';
+                  newBadge.textContent = newNotificationsCount > 99 ? '99+' : newNotificationsCount;
+                  notificationLink.appendChild(newBadge);
+                  updateNotificationTitle();
+                }
+              }
+            }
           }
         })
         .catch(function(error) {

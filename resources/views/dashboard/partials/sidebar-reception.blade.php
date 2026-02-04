@@ -47,7 +47,7 @@
 </li>
 
 <li class="treeview {{ str_contains($activePage, 'reception/day-services') || str_contains($activePage, 'reception/service-catalog') ? 'is-expanded' : '' }}">
-    <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa- coffee"></i><span class="app-menu__label">Day Services</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+    <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-coffee"></i><span class="app-menu__label">Day Services</span><i class="treeview-indicator fa fa-angle-right"></i></a>
     <ul class="treeview-menu">
         <li><a class="treeview-item" href="{{ route('reception.day-services.index') }}"><i class="icon fa fa-list-alt"></i> All Services</a></li>
         <li><a class="treeview-item" href="{{ route('reception.service-catalog.index') }}"><i class="icon fa fa-list"></i> Service Catalog</a></li>
@@ -58,7 +58,7 @@
 
 <li><a class="app-menu__item {{ str_contains($activePage, 'reception/guests') ? 'active' : '' }}" href="{{ route('reception.guests') }}"><i class="app-menu__icon fa fa-users"></i><span class="app-menu__label">Guest List</span></a></li>
 
-<li><a class="app-menu__item {{ str_contains($activePage, 'reception/service-requests') ? 'active' : '' }}" href="{{ route('reception.service-requests') }}"><i class="app-menu__icon fa fa-concierge-bell"></i><span class="app-menu__label">Service Requests</span> @if($badges['service_requests'] > 0)<span class="badge badge-warning badge-pill ml-2">{{ $badges['service_requests'] }}</span>@endif</a></li>
+<li><a class="app-menu__item {{ str_contains($activePage, 'reception/service-requests') ? 'active' : '' }}" href="{{ route('reception.service-requests') }}"><i class="app-menu__icon fa fa-bell"></i><span class="app-menu__label">Service Requests</span> @if($badges['service_requests'] > 0)<span class="badge badge-warning badge-pill ml-2">{{ $badges['service_requests'] }}</span>@endif</a></li>
 
 {{-- 3. FACILITY STATUS --}}
 <li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Facility Status</li>
