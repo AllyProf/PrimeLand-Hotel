@@ -79,7 +79,7 @@ class ReceptionController extends Controller
             
             // Group corporate bookings by company_id
             // Get unique company IDs first
-            $companyIds = $query->whereNotNull('company_id')->distinct()->pluck('company_id');
+            $companyIds = (clone $query)->reorder()->whereNotNull('company_id')->distinct()->pluck('company_id');
             
             // Get bookings grouped by company
             $groupedBookings = collect();
