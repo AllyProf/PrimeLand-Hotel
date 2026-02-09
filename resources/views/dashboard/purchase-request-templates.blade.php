@@ -262,6 +262,7 @@ function addTemplateItem(itemData = null) {
                         <label>Category</label>
                         <select class="form-control template-item-category" name="items[${index}][category]" onchange="toggleTemplateWaterSize(${index}, this.value)">
                             <option value="">Select Category</option>
+                            @if($routePrefix === 'admin' || $routePrefix === 'bar-keeper')
                             <optgroup label="Bar & Beverages">
                                 <option value="spirits" ${itemData && itemData.category === 'spirits' ? 'selected' : ''}>Spirits</option>
                                 <option value="wines" ${itemData && itemData.category === 'wines' ? 'selected' : ''}>Wines</option>
@@ -273,6 +274,7 @@ function addTemplateItem(itemData = null) {
                                 <option value="hot_beverages" ${itemData && itemData.category === 'hot_beverages' ? 'selected' : ''}>Hot Beverages</option>
                                 <option value="cocktails" ${itemData && itemData.category === 'cocktails' ? 'selected' : ''}>Cocktails</option>
                             </optgroup>
+                            @endif
                             @if($routePrefix === 'admin' || $routePrefix === 'chef-master')
                             <optgroup label="Kitchen & Food">
                                 <option value="meat_poultry" ${itemData && itemData.category === 'meat_poultry' ? 'selected' : ''}>Meat & Poultry</option>

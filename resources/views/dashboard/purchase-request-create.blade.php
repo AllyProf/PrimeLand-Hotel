@@ -121,6 +121,7 @@
                       <label>Category</label>
                       <select class="form-control item-category" name="items[{{ $index }}][category]">
                         <option value="">Select Category</option>
+                        @if($routePrefix === 'admin' || $routePrefix === 'chef-master')
                         <optgroup label="Food & Kitchen">
                             <option value="meat_poultry" {{ $preItem['category'] == 'meat_poultry' ? 'selected' : '' }}>Meat & Poultry</option>
                             <option value="seafood" {{ $preItem['category'] == 'seafood' ? 'selected' : '' }}>Seafood & Fish</option>
@@ -131,6 +132,8 @@
                             <option value="bakery" {{ $preItem['category'] == 'bakery' ? 'selected' : '' }}>Bakery & Bread</option>
                             <option value="oils_fats" {{ $preItem['category'] == 'oils_fats' ? 'selected' : '' }}>Cooking Oil & Fats</option>
                         </optgroup>
+                        @endif
+                        @if($routePrefix === 'admin' || $routePrefix === 'bar-keeper')
                         <optgroup label="Bar & Beverages">
                             <option value="non_alcoholic_beverage" {{ $preItem['category'] == 'non_alcoholic_beverage' || $preItem['category'] == 'drinks' || $preItem['category'] == 'juices' ? 'selected' : '' }}>Soda / Soft Drinks / Juices</option>
                             <option value="alcoholic_beverage" {{ $preItem['category'] == 'alcoholic_beverage' || $preItem['category'] == 'beer' ? 'selected' : '' }}>Beer / Cider</option>
@@ -138,6 +141,7 @@
                             <option value="wines" {{ $preItem['category'] == 'wines' ? 'selected' : '' }}>Wines</option>
                             <option value="water" {{ $preItem['category'] == 'water' ? 'selected' : '' }}>Water</option>
                         </optgroup>
+                        @endif
                         <optgroup label="Other">
                             <option value="cleaning_supplies" {{ $preItem['category'] == 'cleaning_supplies' ? 'selected' : '' }}>Cleaning Supplies</option>
                             <option value="linens" {{ $preItem['category'] == 'linens' ? 'selected' : '' }}>Linens / Housekeeping</option>
@@ -230,6 +234,7 @@
                       <label>Category</label>
                       <select class="form-control item-category" name="items[0][category]" onchange="toggleWaterSizeField(this)">
                         <option value="">Select Category</option>
+                        @if($routePrefix === 'admin' || $routePrefix === 'chef-master')
                         <optgroup label="Food & Kitchen">
                             <option value="meat_poultry">Meat & Poultry</option>
                             <option value="seafood">Seafood & Fish</option>
@@ -240,6 +245,8 @@
                             <option value="bakery">Bakery & Bread</option>
                             <option value="oils_fats">Cooking Oil & Fats</option>
                         </optgroup>
+                        @endif
+                        @if($routePrefix === 'admin' || $routePrefix === 'bar-keeper')
                         <optgroup label="Bar & Beverages">
                             <option value="non_alcoholic_beverage">Soda / Soft Drinks / Juices</option>
                             <option value="alcoholic_beverage">Beer / Cider</option>
@@ -247,6 +254,7 @@
                             <option value="wines">Wines</option>
                             <option value="water">Water</option>
                         </optgroup>
+                        @endif
                         <optgroup label="Other">
                             <option value="cleaning_supplies">Cleaning Supplies</option>
                             <option value="linens">Linens / Housekeeping</option>
