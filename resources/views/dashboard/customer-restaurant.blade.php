@@ -720,10 +720,10 @@
                 };
 
                 if (item.isFood) {
-                    payload.service_id = 2; // Generic Food Order (ID from DB)
+                    payload.service_id = 4; // Generic Food Order (ID from DB)
                     payload.service_specific_data = { food_id: item.id };
                 } else {
-                    payload.service_id = 1; // Generic Bar Order (ID from DB)
+                    payload.service_id = 3; // Generic Bar Order (ID from DB)
                     payload.product_id = item.productId;
                     payload.product_variant_id = item.variantId;
                     payload.selling_method = item.method; 

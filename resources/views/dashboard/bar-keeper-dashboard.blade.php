@@ -945,6 +945,7 @@ function callApi(url, method, data) {
                         <option value="mixx_by_yass">Mixx by Yass</option>
                         <option value="nmb">NMB Bank</option>
                         <option value="crdb">CRDB Bank</option>
+                        <option value="kcb">KCB Bank</option>
                     </select>
                 </div>
                 <div class="form-group" id="refFieldContainer" style="display: none;">
@@ -984,6 +985,7 @@ function callApi(url, method, data) {
                         <option value="mixx_by_yass">Mixx by Yass</option>
                         <option value="nmb">NMB Bank</option>
                         <option value="crdb">CRDB Bank</option>
+                        <option value="kcb">KCB Bank</option>
                     </select>
                 </div>
                 <div class="form-group" id="ceremonyRefFieldContainer" style="display: none;">

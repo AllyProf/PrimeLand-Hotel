@@ -97,7 +97,7 @@
                             <td>
                                 <div class="btn-group-vertical w-100">
                                     @if($order->status === 'preparing')
-                                        <button class="btn btn-success btn-sm mb-1" onclick="completeOrder({{ $order->id }}, '{{ $itemName }}')">
+                                        <button class="btn btn-success btn-sm mb-1" onclick="completeOrder({{ $order->id }}, '{{ $itemName }}', '{{ $order->payment_status }}', {{ $order->is_walk_in ? 'true' : 'false' }}, {{ $order->total_price_tsh ?? 0 }})">
                                             <i class="fa fa-check"></i> Mark Served
                                         </button>
                                     @else
@@ -172,37 +172,88 @@
         window.open(url, 'KitchenDocketPrint', 'width=400,height=600');
     }
 
-    function completeOrder(id, name) {
-        Swal.fire({
-            title: 'Confirm Service',
-            text: "Are you sure you have prepared and served " + name + "?",
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            confirmButtonText: 'Yes, Served!'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ url('restaurant/food/orders') }}/" + id + "/complete",
-                    type: 'POST',
-                    data: {
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            Swal.fire('Success', response.message, 'success').then(() => {
-                                window.location.reload();
-                            });
+    function completeOrder(id, name, paymentStatus, isWalkIn, amount) {
+        if (paymentStatus === 'unpaid' || paymentStatus === 'pending') {
+            // Payment Options
+            let inputOptions = {
+                'cash': 'Cash',
+                'kcb': 'KCB',  // Added KCB as requested
+                'mpesa': 'M-Pesa',
+                'tigopesa': 'Tigo Pesa',
+                'card': 'Credit/Debit Card'
+            };
+
+            if (!isWalkIn) {
+                inputOptions['room_charge'] = 'Room Charge';
+            }
+
+            Swal.fire({
+                title: 'Payment Required',
+                text: "Order for " + name + " is UNPAID. Amount: " + new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(amount),
+                icon: 'warning',
+                input: 'select',
+                inputOptions: inputOptions,
+                inputPlaceholder: 'Select payment method',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Pay & Mark Served',
+                inputValidator: (value) => {
+                    return new Promise((resolve) => {
+                        if (value) {
+                            resolve()
                         } else {
-                            Swal.fire('Error', response.message, 'error');
+                            resolve('You must select a payment method!')
                         }
-                    },
-                    error: function(xhr) {
-                        console.error(xhr);
-                        var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error completing order.';
-                        Swal.fire('Error', msg, 'error');
-                    }
-                });
+                    })
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    processCompletion(id, result.value);
+                }
+            });
+        } else {
+            // Already paid
+            Swal.fire({
+                title: 'Confirm Service',
+                text: "Are you sure you have prepared and served " + name + "?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Yes, Served!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    processCompletion(id, null);
+                }
+            });
+        }
+    }
+
+    function processCompletion(id, paymentMethod) {
+        let data = {
+            _token: "{{ csrf_token() }}"
+        };
+
+        if (paymentMethod) {
+            data.payment_method = paymentMethod;
+        }
+
+        $.ajax({
+            url: "{{ url('restaurant/food/orders') }}/" + id + "/complete",
+            type: 'POST',
+            data: data,
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire('Success', response.message, 'success').then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', response.message, 'error');
+                }
+            },
+            error: function(xhr) {
+                console.error(xhr);
+                var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Error completing order.';
+                Swal.fire('Error', msg, 'error');
             }
         });
     }

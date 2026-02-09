@@ -380,6 +380,9 @@ Route::prefix('manager')->group(function () {
 
     // Mirror Bookings and common operations for Reception and Manager
     Route::middleware(['check.auth', 'role:manager,reception,super_admin'])->group(function () {
+        // Search routes for returning guests and companies
+        Route::get('/bookings/search/guests', [BookingController::class, 'searchGuests'])->name('admin.bookings.search.guests');
+        Route::get('/bookings/search/companies', [BookingController::class, 'searchCompanies'])->name('admin.bookings.search.companies');
         
         Route::get('/bookings/manual/create', [BookingController::class, 'createManual'])->name('admin.bookings.manual.create');
         Route::post('/bookings/manual/store', [BookingController::class, 'storeManual'])->name('admin.bookings.manual.store');

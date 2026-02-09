@@ -25,6 +25,9 @@
         $checkInRoute = ($role === 'manager') 
           ? 'admin.reservations.check-in' 
           : 'reception.reservations.check-in';
+        
+        // Get default check-in time from settings
+        $defaultCheckInTime = \App\Models\HotelSetting::getValue('default_checkin_time', '14:00');
       @endphp
       
       <!-- Booking Type Tabs -->
@@ -141,7 +144,10 @@
                     <td>
                       @php
                         $now = \Carbon\Carbon::now();
-                        $checkInDate = $firstBooking ? \Carbon\Carbon::parse($firstBooking->check_in)->setTime(10, 0, 0) : null;
+                        $cTime = ($firstBooking->arrival_time ?? $firstBooking->room->checkin_time ?? $defaultCheckInTime);
+                        $tParts = explode(':', $cTime);
+                        $checkInDate = $firstBooking ? \Carbon\Carbon::parse($firstBooking->check_in)->setTime((int)$tParts[0], (int)($tParts[1] ?? 0), 0) : null;
+                        
                         if ($checkInDate) {
                           $diffInDays = (int)$now->diffInDays($checkInDate, false);
                           $diffInHours = (int)$now->diffInHours($checkInDate, false);
@@ -172,11 +178,13 @@
                       @elseif($checkInDate && $diffInDays == 0)
                         @if($diffInHours > 0)
                           <span class="badge badge-warning">
-                            <i class="fa fa-clock"></i> {{ $diffInHours }} hour(s) remaining
+                            <i class="fa fa-clock-o"></i> 
+                            @php $remMin = $diffInMinutes % 60; @endphp
+                            {{ $diffInHours }}h {{ $remMin > 0 ? $remMin.'m' : '' }} remaining
                           </span>
                         @elseif($diffInMinutes > 0)
                           <span class="badge badge-warning">
-                            <i class="fa fa-clock"></i> {{ $diffInMinutes }} minute(s) remaining
+                            <i class="fa fa-clock-o"></i> {{ $diffInMinutes }} minute(s) remaining
                           </span>
                         @else
                           <span class="badge badge-success">
@@ -227,7 +235,9 @@
                     <td>
                       @php
                         $now = \Carbon\Carbon::now();
-                        $checkInDate = \Carbon\Carbon::parse($booking->check_in)->setTime(10, 0, 0);
+                        $cTime = ($booking->arrival_time ?? $booking->room->checkin_time ?? $defaultCheckInTime);
+                        $tParts = explode(':', $cTime);
+                        $checkInDate = \Carbon\Carbon::parse($booking->check_in)->setTime((int)$tParts[0], (int)($tParts[1] ?? 0), 0);
                         $diffInDays = (int)$now->diffInDays($checkInDate, false);
                         $diffInHours = (int)$now->diffInHours($checkInDate, false);
                         $diffInMinutes = (int)$now->diffInMinutes($checkInDate, false);
@@ -256,11 +266,13 @@
                       @elseif($diffInDays == 0)
                         @if($diffInHours > 0)
                           <span class="badge badge-warning">
-                            <i class="fa fa-clock"></i> {{ $diffInHours }} hour(s) remaining
+                            <i class="fa fa-clock-o"></i> 
+                            @php $remMin = $diffInMinutes % 60; @endphp
+                            {{ $diffInHours }}h {{ $remMin > 0 ? $remMin.'m' : '' }} remaining
                           </span>
                         @elseif($diffInMinutes > 0)
                           <span class="badge badge-warning">
-                            <i class="fa fa-clock"></i> {{ $diffInMinutes }} minute(s) remaining
+                            <i class="fa fa-clock-o"></i> {{ $diffInMinutes }} minute(s) remaining
                           </span>
                         @else
                           <span class="badge badge-success">
@@ -308,7 +320,10 @@
                 $totalPrice = $companyBookings->sum('total_price');
                 $totalNights = $firstBooking ? $firstBooking->check_in->diffInDays($firstBooking->check_out) : 0;
                 $now = \Carbon\Carbon::now();
-                $checkInDate = $firstBooking ? \Carbon\Carbon::parse($firstBooking->check_in)->setTime(10, 0, 0) : null;
+                $cTime = ($firstBooking->arrival_time ?? $firstBooking->room->checkin_time ?? $defaultCheckInTime);
+                $tParts = explode(':', $cTime);
+                $checkInDate = $firstBooking ? \Carbon\Carbon::parse($firstBooking->check_in)->setTime((int)$tParts[0], (int)($tParts[1] ?? 0), 0) : null;
+                
                 if ($checkInDate) {
                   $diffInDays = (int)$now->diffInDays($checkInDate, false);
                   $diffInHours = (int)$now->diffInHours($checkInDate, false);
@@ -371,7 +386,9 @@
             @foreach($bookings as $booking)
               @php
                 $now = \Carbon\Carbon::now();
-                $checkInDate = \Carbon\Carbon::parse($booking->check_in)->setTime(10, 0, 0);
+                $cTime = ($booking->arrival_time ?? $booking->room->checkin_time ?? $defaultCheckInTime);
+                $tParts = explode(':', $cTime);
+                $checkInDate = \Carbon\Carbon::parse($booking->check_in)->setTime((int)$tParts[0], (int)($tParts[1] ?? 0), 0);
                 $diffInDays = (int)$now->diffInDays($checkInDate, false);
                 $diffInHours = (int)$now->diffInHours($checkInDate, false);
                 $diffInMinutes = (int)$now->diffInMinutes($checkInDate, false);
@@ -437,11 +454,13 @@
                 @elseif($diffInDays == 0)
                   @if($diffInHours > 0)
                     <span class="badge badge-warning">
-                      <i class="fa fa-clock"></i> {{ $diffInHours }} hour(s) remaining
+                      <i class="fa fa-clock-o"></i> 
+                      @php $remMin = $diffInMinutes % 60; @endphp
+                      {{ $diffInHours }}h {{ $remMin > 0 ? $remMin.'m' : '' }} remaining
                     </span>
                   @elseif($diffInMinutes > 0)
                     <span class="badge badge-warning">
-                      <i class="fa fa-clock"></i> {{ $diffInMinutes }} minute(s) remaining
+                      <i class="fa fa-clock-o"></i> {{ $diffInMinutes }} minute(s) remaining
                     </span>
                   @else
                     <span class="badge badge-success">

@@ -3093,7 +3093,7 @@ class BookingController extends Controller
                     'country_code' => '+255', // Default, can be improved
                     'check_in' => $checkIn->format('Y-m-d'),
                     'check_out' => $checkOut->format('Y-m-d'),
-                    'arrival_time' => '10:00', // Default check-in time
+                    'arrival_time' => '14:00', // Default check-in time
                     'number_of_guests' => 1, // Each booking is for one guest
                     'total_price' => $roomCostUSD, // Store in USD (company pays in USD)
                     'recommended_price' => $validated['recommended_price'] ?? $roomCostUSD, // Store in USD
@@ -4278,5 +4278,65 @@ class BookingController extends Controller
         }
 
         return view('dashboard.customer-restaurant', compact('activeBooking', 'drinks', 'foodItems'));
+    }
+
+    /**
+     * Search for existing guests for auto-fill
+     */
+    public function searchGuests(Request $request)
+    {
+        $query = $request->get('q');
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $guests = Guest::where('name', 'like', "%{$query}%")
+            ->orWhere('email', 'like', "%{$query}%")
+            ->orWhere('phone', 'like', "%{$query}%")
+            ->limit(10)
+            ->get();
+
+        // Attach last booking info
+        $guests->transform(function ($guest) {
+            $lastBooking = Booking::where('guest_email', $guest->email)
+                ->orderBy('check_in', 'desc')
+                ->first();
+            
+            if ($lastBooking) {
+                $guest->last_booking_date = \Carbon\Carbon::parse($lastBooking->check_in)->format('M d, Y');
+                $guest->last_booking_details = [
+                    'room' => $lastBooking->room_number ?? ($lastBooking->room ? $lastBooking->room->room_number : 'N/A'),
+                    'type' => $lastBooking->room_type ?? ($lastBooking->room ? $lastBooking->room->room_type : 'N/A'),
+                    'dates' => \Carbon\Carbon::parse($lastBooking->check_in)->format('M d') . ' - ' . \Carbon\Carbon::parse($lastBooking->check_out)->format('M d, Y'),
+                    'status' => $lastBooking->status,
+                    'total_price' => number_format($lastBooking->total_price, 2)
+                ];
+            } else {
+                $guest->last_booking_date = 'Never';
+                $guest->last_booking_details = null;
+            }
+            return $guest;
+        });
+
+        return response()->json($guests);
+    }
+
+    /**
+     * Search for existing companies for auto-fill
+     */
+    public function searchCompanies(Request $request)
+    {
+        $query = $request->get('q');
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $companies = \App\Models\Company::where('name', 'like', "%{$query}%")
+            ->orWhere('email', 'like', "%{$query}%")
+            ->orWhere('phone', 'like', "%{$query}%")
+            ->limit(10)
+            ->get();
+
+        return response()->json($companies);
     }
 }

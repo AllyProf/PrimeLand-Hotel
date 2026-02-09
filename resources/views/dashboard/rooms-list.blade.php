@@ -364,9 +364,9 @@
 <div class="modal fade" id="roomDetailsModal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Room Details</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+      <div class="modal-header" style="background: #e77a3a; color: white;">
+        <h5 class="modal-title"><i class="fa fa-bed"></i> Room Details Information</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -904,12 +904,41 @@ function resetFilters() {
   padding: 10px;
 }
 
-.room-details-view h5 {
+.preview-container {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.preview-section {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.preview-section:last-child {
+  margin-bottom: 0;
+}
+
+.preview-section h5 {
   color: #e77a3a;
   margin-bottom: 15px;
   font-weight: 600;
   border-bottom: 2px solid #e77a3a;
   padding-bottom: 8px;
+}
+
+.preview-section table {
+  margin-bottom: 0;
+}
+
+.preview-section th {
+  background-color: #fcfcfc;
+  width: 35%;
+  color: #666;
+  font-weight: 600;
 }
 
 .room-details-view .table-sm td {
@@ -965,18 +994,18 @@ window.viewRoom = function(roomId) {
       
       // Build Basic Information table rows
       let basicInfoRows = `
-        <tr><td><strong>Room Number:</strong></td><td>${room.room_number}</td></tr>
-        <tr><td><strong>Room Type:</strong></td><td><span class="badge badge-primary">${room.room_type}</span></td></tr>
-        <tr><td><strong>Capacity:</strong></td><td>${room.capacity} Guest(s)</td></tr>
+        <tr><th>Room Number:</th><td>${room.room_number}</td></tr>
+        <tr><th>Room Type:</th><td><span class="badge badge-primary">${room.room_type}</span></td></tr>
+        <tr><th>Capacity:</th><td>${room.capacity} Guest(s)</td></tr>
       `;
       if (isValid(room.bed_type)) {
-        basicInfoRows += `<tr><td><strong>Bed Type:</strong></td><td>${room.bed_type}</td></tr>`;
+        basicInfoRows += `<tr><th>Bed Type:</th><td>${room.bed_type}</td></tr>`;
       }
       if (isValid(room.floor_location)) {
-        basicInfoRows += `<tr><td><strong>Floor Location:</strong></td><td>${room.floor_location}</td></tr>`;
+        basicInfoRows += `<tr><th>Floor Location:</th><td>${room.floor_location}</td></tr>`;
       }
       if (isValid(room.bathroom_type)) {
-        basicInfoRows += `<tr><td><strong>Bathroom Type:</strong></td><td>${room.bathroom_type}</td></tr>`;
+        basicInfoRows += `<tr><th>Bathroom Type:</th><td>${room.bathroom_type}</td></tr>`;
       }
       
       // Get exchange rate
@@ -992,76 +1021,105 @@ window.viewRoom = function(roomId) {
       // Build Pricing Information table rows
       let pricingRows = `
         <tr><td colspan="2" style="background: #f8f9fa; padding: 8px;"><small class="text-muted"><i class="fa fa-info-circle"></i> Exchange Rate: 1 USD = ${exchangeRate.toLocaleString()} TZS</small></td></tr>
-        <tr><td><strong>Price/Night:</strong></td><td>${formatPrice(room.price_per_night)}</td></tr>
+        <tr><th>Price/Night:</th><td>${formatPrice(room.price_per_night)}</td></tr>
       `;
       if (isValid(room.extra_guest_fee) && parseFloat(room.extra_guest_fee) > 0) {
-        pricingRows += `<tr><td><strong>Extra Guest Fee:</strong></td><td>${formatPrice(room.extra_guest_fee)}</td></tr>`;
+        pricingRows += `<tr><th>Extra Guest Fee:</th><td>${formatPrice(room.extra_guest_fee)}</td></tr>`;
       }
       if (isValid(room.peak_season_price) && parseFloat(room.peak_season_price) > 0) {
-        pricingRows += `<tr><td><strong>Peak Season:</strong></td><td>${formatPrice(room.peak_season_price)}</td></tr>`;
+        pricingRows += `<tr><th>Peak Season:</th><td>${formatPrice(room.peak_season_price)}</td></tr>`;
       }
       if (isValid(room.off_season_price) && parseFloat(room.off_season_price) > 0) {
-        pricingRows += `<tr><td><strong>Off Season:</strong></td><td>${formatPrice(room.off_season_price)}</td></tr>`;
+        pricingRows += `<tr><th>Off Season:</th><td>${formatPrice(room.off_season_price)}</td></tr>`;
       }
       if (isValid(room.discount_percentage) && parseFloat(room.discount_percentage) > 0) {
-        pricingRows += `<tr><td><strong>Discount:</strong></td><td>${room.discount_percentage}%</td></tr>`;
+        pricingRows += `<tr><th>Discount:</th><td>${room.discount_percentage}%</td></tr>`;
       }
       if (isValid(room.promo_code)) {
-        pricingRows += `<tr><td><strong>Promo Code:</strong></td><td>${room.promo_code}</td></tr>`;
+        pricingRows += `<tr><th>Promo Code:</th><td>${room.promo_code}</td></tr>`;
       }
       
       // Build Check-in/out table rows
       let checkinRows = '';
       if (isValid(room.checkin_time)) {
-        checkinRows += `<tr><td><strong>Check-in Time:</strong></td><td>${room.checkin_time}</td></tr>`;
+        checkinRows += `<tr><th>Check-in Time:</th><td>${room.checkin_time}</td></tr>`;
       }
       if (isValid(room.checkout_time)) {
-        checkinRows += `<tr><td><strong>Check-out Time:</strong></td><td>${room.checkout_time}</td></tr>`;
+        checkinRows += `<tr><th>Check-out Time:</th><td>${room.checkout_time}</td></tr>`;
       }
       
       // Build Additional Info table rows
       let additionalInfoRows = `
-        <tr><td><strong>Pet Friendly:</strong></td><td>${room.pet_friendly ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-secondary">No</span>'}</td></tr>
-        <tr><td><strong>Smoking Allowed:</strong></td><td>${room.smoking_allowed ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-secondary">No</span>'}</td></tr>
+        <tr><th>Pet Friendly:</th><td>${room.pet_friendly ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-secondary">No</span>'}</td></tr>
+        <tr><th>Smoking Allowed:</th><td>${room.smoking_allowed ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-secondary">No</span>'}</td></tr>
       `;
       if (isValid(room.sku_code)) {
-        additionalInfoRows += `<tr><td><strong>SKU Code:</strong></td><td>${room.sku_code}</td></tr>`;
+        additionalInfoRows += `<tr><th>SKU Code:</th><td>${room.sku_code}</td></tr>`;
       }
       
       const detailsHtml = `
         <div class="room-details-view">
-          <div class="row">
-            <div class="col-md-6">
-              <h5><i class="fa fa-bed"></i> Basic Information</h5>
-              <table class="table table-sm table-bordered">
-                ${basicInfoRows}
-              </table>
+          <div class="preview-container">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="preview-section h-100">
+                  <h5><i class="fa fa-bed"></i> Basic Information</h5>
+                  <table class="table table-sm table-bordered">
+                    ${basicInfoRows}
+                  </table>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="preview-section h-100">
+                  <h5><i class="fa fa-dollar"></i> Pricing Information</h5>
+                  <table class="table table-sm table-bordered">
+                    ${pricingRows}
+                  </table>
+                </div>
+              </div>
             </div>
-            <div class="col-md-6">
-              <h5><i class="fa fa-dollar"></i> Pricing Information</h5>
-              <table class="table table-sm table-bordered">
-                ${pricingRows}
-              </table>
+            
+            ${room.description ? `
+            <div class="preview-section mt-4">
+              <h5><i class="fa fa-file-text"></i> Description</h5>
+              <p style="white-space: pre-wrap; word-wrap: break-word;">${room.description}</p>
+            </div>` : ''}
+            
+            ${amenitiesHtml ? `
+            <div class="preview-section mt-4">
+              <h5><i class="fa fa-star"></i> Amenities & Features</h5>
+              <div class="amenities-list">${amenitiesHtml}</div>
+            </div>` : ''}
+            
+            <div class="preview-section mt-4">
+              <h5><i class="fa fa-image"></i> Room Images</h5>
+              <div class="d-flex flex-wrap">${imagesHtml}</div>
             </div>
+            
+            <div class="row mt-4">
+              ${checkinRows ? `
+              <div class="col-md-6">
+                <div class="preview-section h-100">
+                  <h5><i class="fa fa-clock-o"></i> Check-in/out</h5>
+                  <table class="table table-sm table-bordered">${checkinRows}</table>
+                </div>
+              </div>` : ''}
+              <div class="col-md-6">
+                <div class="preview-section h-100">
+                  <h5><i class="fa fa-info-circle"></i> Additional Info</h5>
+                  <table class="table table-sm table-bordered">
+                    ${additionalInfoRows}
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            ${room.special_notes ? `
+            <div class="preview-section mt-4">
+              <h5><i class="fa fa-sticky-note"></i> Special Notes</h5>
+              <p class="alert alert-info mb-0">${room.special_notes}</p>
+            </div>` : ''}
           </div>
-          ${room.description ? `<div class="row mt-3"><div class="col-12"><h5><i class="fa fa-file-text"></i> Description</h5><p>${room.description}</p></div></div>` : ''}
-          ${amenitiesHtml ? `<div class="row mt-3"><div class="col-12"><h5><i class="fa fa-star"></i> Amenities</h5><div>${amenitiesHtml}</div></div></div>` : ''}
-          <div class="row mt-3">
-            <div class="col-12">
-              <h5><i class="fa fa-image"></i> Images</h5>
-              <div>${imagesHtml}</div>
-            </div>
-          </div>
-          <div class="row mt-3">
-            ${checkinRows ? `<div class="col-md-6"><h5><i class="fa fa-clock-o"></i> Check-in/out</h5><table class="table table-sm">${checkinRows}</table></div>` : ''}
-            <div class="col-md-6">
-              <h5><i class="fa fa-info-circle"></i> Additional Info</h5>
-              <table class="table table-sm">
-                ${additionalInfoRows}
-              </table>
-            </div>
-          </div>
-          ${room.special_notes ? `<div class="row mt-3"><div class="col-12"><h5><i class="fa fa-sticky-note"></i> Special Notes</h5><p class="alert alert-info">${room.special_notes}</p></div></div>` : ''}
         </div>
       `;
       

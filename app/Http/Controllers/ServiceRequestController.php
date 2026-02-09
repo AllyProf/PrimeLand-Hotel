@@ -58,318 +58,359 @@ class ServiceRequestController extends Controller
      */
     public function requestService(Request $request)
     {
-        $request->validate([
-            'booking_id' => 'required_without:is_walk_in|exists:bookings,id',
-            'is_walk_in' => 'nullable|boolean',
-            'walk_in_name' => 'nullable|string|max:255',
-            'service_id' => 'required',
-            'product_id' => 'nullable|integer',
-            'product_variant_id' => 'nullable|integer',
-            'selling_method' => 'nullable|string|in:pic,serving',
-            'quantity' => 'nullable|integer|min:1',
-            'adult_quantity' => 'nullable|integer|min:0',
-            'child_quantity' => 'nullable|integer|min:0',
-            'guest_request' => 'nullable|string|max:500',
-            'service_specific_data' => 'nullable|array',
-            'item_name' => 'nullable|string', // For custom named items
-            'day_service_id' => 'nullable|exists:day_services,id',
-            'payment_timing' => 'nullable|string|in:immediate,later',
-        ]);
-
-        // Get authenticated user (guest or staff)
-        $user = Auth::guard('guest')->user() ?? Auth::guard('staff')->user() ?? Auth::user();
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Please log in.',
-            ], 401);
-        }
-
-        // Verify booking belongs to logged-in customer (unless it's a walk-in by staff)
-        $booking = null;
-        if (!$request->is_walk_in) {
-            $booking = Booking::where('id', $request->booking_id)
-                ->where('guest_email', $user->email)
-                ->firstOrFail();
-        }
-
-        // Get service
-        $isGenericBar = in_array($request->service_id, [1, 47]);
-        $isGenericFood = in_array($request->service_id, [2, 48]);
-        
-        $service = null;
-        if (is_numeric($request->service_id)) {
-            $service = Service::find($request->service_id);
-            
-            // Safety fallback: If ID doesn't exist but it's meant to be Bar/Food, find by name
-            if (!$service && $isGenericBar) {
-                $service = Service::where('name', 'Generic Bar Order')->first();
+        try {
+            try {
+                $request->validate([
+                    'booking_id' => 'required_without:is_walk_in|exists:bookings,id',
+                    'is_walk_in' => 'nullable|boolean',
+                    'walk_in_name' => 'nullable|string|max:255',
+                    'service_id' => 'required',
+                    'product_id' => 'nullable|integer',
+                    'product_variant_id' => 'nullable|integer',
+                    'selling_method' => 'nullable|string|in:pic,serving',
+                    'quantity' => 'nullable|integer|min:1',
+                    'adult_quantity' => 'nullable|integer|min:0',
+                    'child_quantity' => 'nullable|integer|min:0',
+                    'guest_request' => 'nullable|string|max:500',
+                    'service_specific_data' => 'nullable|array',
+                    'item_name' => 'nullable|string', // For custom named items
+                    'day_service_id' => 'nullable|exists:day_services,id',
+                    'payment_timing' => 'nullable|string|in:immediate,later',
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $e->errors()
+                ], 422);
             }
-            if (!$service && $isGenericFood) {
-                $service = Service::where('name', 'Generic Food Order')->first();
+
+            // Get authenticated user (guest or staff)
+            $user = Auth::guard('guest')->user() ?? Auth::guard('staff')->user() ?? Auth::user();
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Please log in.',
+                ], 401);
             }
-        }
 
-        // Get quantities
-        $adultQuantity = $request->adult_quantity ?? 0;
-        $childQuantity = $request->child_quantity ?? 0;
-        $quantity = $request->quantity ?? 1;
-
-        // Calculate total price and determine name
-        $unitPrice = 0;
-        $totalPrice = 0;
-        $itemName = $request->item_name;
-        $additionalData = $request->input('service_specific_data', []);
-
-        if ($isGenericBar && $request->product_id) {
-            // Logic for Bar Products
-            $product = \App\Models\Product::find($request->product_id);
-            $variant = \App\Models\ProductVariant::find($request->product_variant_id);
-            $sellingMethod = $request->selling_method ?? 'pic';
-            
-            if ($product && $variant) {
-                $unitName = $sellingMethod === 'serving' ? ($variant->selling_unit_name ?? 'Glass') : 'Bottle';
-                $itemName = $product->name . " ($unitName)";
-                if ($variant->measurement) {
-                    $itemName .= " (" . $variant->measurement . ")";
-                }
-
-                $additionalData['product_id'] = $product->id;
-                $additionalData['product_variant_id'] = $variant->id;
-                $additionalData['selling_method'] = $sellingMethod;
-                
-                // Get price from variant primarily
-                if ($sellingMethod === 'serving') {
-                    $unitPrice = (float)$variant->selling_price_per_serving;
-                } else {
-                    $unitPrice = (float)$variant->selling_price_per_pic;
-                }
-                
-                // Fallback to StockReceipt if variant prices are not set
-                if ($unitPrice <= 0) {
-                    $latestReceipt = \App\Models\StockReceipt::where('product_variant_id', $variant->id)
-                        ->orderBy('received_date', 'desc')
-                        ->first();
-                    $unitPrice = $latestReceipt ? (float)$latestReceipt->selling_price_per_bottle : 0;
-                }
-                
-                $totalPrice = $unitPrice * $quantity;
-
-                // --- Real-time Stock Validation ---
-                $allTransfers = \App\Models\StockTransfer::where('status', 'completed')
-                    ->where('product_variant_id', $variant->id)
-                    ->get();
-                
-                // Get all sales for this specific variant
-                $allSales = \App\Models\ServiceRequest::where('status', 'completed')
-                    ->get()
-                    ->filter(function($s) use ($variant) {
-                        return isset($s->service_specific_data['product_variant_id']) && 
-                               (int)$s->service_specific_data['product_variant_id'] === $variant->id;
-                    });
-
-                $currentStockPics = 0;
-                foreach ($allTransfers as $t) {
-                    $itemsPerPkg = $t->productVariant->items_per_package ?? 1;
-                    $pics = ($t->quantity_unit === 'packages') ? ($t->quantity_transferred * $itemsPerPkg) : $t->quantity_transferred;
-                    $currentStockPics += $pics;
-                }
-
-                foreach ($allSales as $s) {
-                    $meta = $s->service_specific_data;
-                    $meth = $meta['selling_method'] ?? 'pic';
-                    if ($meth === 'pic') {
-                        $currentStockPics -= $s->quantity;
-                    } else {
-                        $servingsPerPic = $variant->servings_per_pic > 0 ? $variant->servings_per_pic : 1;
-                        $currentStockPics -= ($s->quantity / $servingsPerPic);
-                    }
-                }
-
-                // Calculate consumption of current request
-                $requestedCons = ($sellingMethod === 'pic') ? $quantity : ($quantity / ($variant->servings_per_pic > 0 ? $variant->servings_per_pic : 1));
-                
-                if ($requestedCons > ($currentStockPics + 0.001)) {
-                    $availableWhole = floor($currentStockPics);
-                    return response()->json([
-                        'success' => false, 
-                        'message' => "Insufficient stock. Only " . ($availableWhole > 0 ? $availableWhole : '0') . " bottles/units available."
-                    ], 400);
-                }
-                // --- End Stock Validation ---
-            } else {
-                return response()->json(['success' => false, 'message' => 'Product variant not found.'], 404);
-            }
-        } elseif ($isGenericFood) {
-            // Cleaned up Food ordering logic via Recipes
-            $extraData = $request->input('service_specific_data', []);
-            $foodId = $extraData['food_id'] ?? null;
-            
-            if ($foodId) {
-                $recipe = \App\Models\Recipe::find($foodId);
-                if ($recipe) {
-                    $itemName = $recipe->name;
-                    $unitPrice = (float)$recipe->selling_price ?? 0;
-                    $totalPrice = $unitPrice * $quantity;
-                    $additionalData['food_id'] = $recipe->id;
-                }
-            }
-        } else if ($service) {
-            // Standard Service Logic
-            $itemName = $service->name;
-            if ($service->is_free_for_internal) {
-                $totalPrice = 0;
-            } else {
-                $serviceAgeGroup = $service->age_group ?? 'both';
-                
-                if ($serviceAgeGroup === 'both' && $service->child_price_tsh && $service->child_price_tsh > 0) {
-                    // Service supports both adult and child pricing
-                    $adultTotal = ($service->price_tsh ?? 0) * $adultQuantity;
-                    $childTotal = ($service->child_price_tsh ?? 0) * $childQuantity;
-                    $totalPrice = $adultTotal + $childTotal;
+            // Verify booking belongs to logged-in customer (unless it's a walk-in by staff)
+            $booking = null;
+            if (!$request->is_walk_in) {
+                $booking = Booking::where('id', $request->booking_id)
+                    ->where('guest_email', $user->email)
+                    ->first();
                     
-                    // If no adult/child quantities provided, use single quantity
-                    if ($adultQuantity === 0 && $childQuantity === 0) {
-                        $totalPrice = ($service->price_tsh ?? 0) * $quantity;
-                    }
-                } else if ($serviceAgeGroup === 'child') {
-                    $unitPriceRaw = $service->child_price_tsh ?? $service->price_tsh ?? 0;
-                    $totalPrice = $unitPriceRaw * $quantity;
-                } else {
-                    $unitPriceRaw = $service->price_tsh ?? 0;
-                    $totalPrice = $unitPriceRaw * $quantity;
+                if (!$booking) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Booking not found or does not belong to you.',
+                    ], 404);
                 }
             }
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Service or item not found.',
-            ], 404);
-        }
-        
-        $booking = $booking ?? null; // Ensure $booking is defined for notifications even if null
-        
-        // Calculate unit price for storage (average or single)
-        $unitPrice = $quantity > 0 ? ($totalPrice / $quantity) : 0;
 
-        // Validate service-specific fields if required (only if $service exists)
-        $serviceSpecificData = [];
-        if ($request->has('service_specific_data') && is_array($request->service_specific_data)) {
-            $serviceSpecificData = $request->service_specific_data;
+            // Get service
+            $service = null;
             
-            // Validate required fields based on service configuration
-            if ($service && $service->required_fields && is_array($service->required_fields)) {
-                foreach ($service->required_fields as $field) {
-                    if (isset($field['required']) && $field['required']) {
-                        $fieldName = $field['name'];
-                        if (!isset($serviceSpecificData[$fieldName]) || empty($serviceSpecificData[$fieldName])) {
-                            return response()->json([
-                                'success' => false,
-                                'message' => "Field '{$field['label']}' is required for this service.",
-                            ], 422);
+            // Check if this is a generic bar or food order by looking up the service
+            if (is_numeric($request->service_id)) {
+                $service = Service::find($request->service_id);
+            }
+            
+            // If service not found by ID, try to find by name for generic orders
+            if (!$service) {
+                // Try to find Generic Bar Order
+                $barService = Service::where('name', 'Generic Bar Order')->first();
+                if ($barService && $request->product_id) {
+                    $service = $barService;
+                }
+                
+                // Try to find Generic Food Order
+                if (!$service) {
+                    $foodService = Service::where('name', 'Generic Food Order')->first();
+                    if ($foodService && isset($request->service_specific_data['food_id'])) {
+                        $service = $foodService;
+                    }
+                }
+            }
+            
+            // Determine if this is a generic bar or food order
+            $isGenericBar = $service && $service->name === 'Generic Bar Order';
+            $isGenericFood = $service && $service->name === 'Generic Food Order';
+
+            // Get quantities
+            $adultQuantity = $request->adult_quantity ?? 0;
+            $childQuantity = $request->child_quantity ?? 0;
+            $quantity = $request->quantity ?? 1;
+
+            // Calculate total price and determine name
+            $unitPrice = 0;
+            $totalPrice = 0;
+            $itemName = $request->item_name;
+            $additionalData = $request->input('service_specific_data', []);
+
+            if ($isGenericBar && $request->product_id) {
+                // Logic for Bar Products
+                $product = \App\Models\Product::find($request->product_id);
+                $variant = \App\Models\ProductVariant::find($request->product_variant_id);
+                $sellingMethod = $request->selling_method ?? 'pic';
+                
+                if ($product && $variant) {
+                    $unitName = $sellingMethod === 'serving' ? ($variant->selling_unit_name ?? 'Glass') : 'Bottle';
+                    $itemName = $product->name . " ($unitName)";
+                    if ($variant->measurement) {
+                        $itemName .= " (" . $variant->measurement . ")";
+                    }
+
+                    $additionalData['product_id'] = $product->id;
+                    $additionalData['product_variant_id'] = $variant->id;
+                    $additionalData['selling_method'] = $sellingMethod;
+                    
+                    // Get price from variant primarily
+                    if ($sellingMethod === 'serving') {
+                        $unitPrice = (float)$variant->selling_price_per_serving;
+                    } else {
+                        $unitPrice = (float)$variant->selling_price_per_pic;
+                    }
+                    
+                    // Fallback to StockReceipt if variant prices are not set
+                    if ($unitPrice <= 0) {
+                        $latestReceipt = \App\Models\StockReceipt::where('product_variant_id', $variant->id)
+                            ->orderBy('received_date', 'desc')
+                            ->first();
+                        $unitPrice = $latestReceipt ? (float)$latestReceipt->selling_price_per_bottle : 0;
+                    }
+                    
+                    $totalPrice = $unitPrice * $quantity;
+
+                    // --- Real-time Stock Validation ---
+                    $allTransfers = \App\Models\StockTransfer::where('status', 'completed')
+                        ->where('product_variant_id', $variant->id)
+                        ->get();
+                    
+                    // Get all sales for this specific variant
+                    $allSales = \App\Models\ServiceRequest::where('status', 'completed')
+                        ->get()
+                        ->filter(function($s) use ($variant) {
+                            return isset($s->service_specific_data['product_variant_id']) && 
+                                   (int)$s->service_specific_data['product_variant_id'] === $variant->id;
+                        });
+
+                    $currentStockPics = 0;
+                    foreach ($allTransfers as $t) {
+                        $itemsPerPkg = $t->productVariant->items_per_package ?? 1;
+                        $pics = ($t->quantity_unit === 'packages') ? ($t->quantity_transferred * $itemsPerPkg) : $t->quantity_transferred;
+                        $currentStockPics += $pics;
+                    }
+
+                    foreach ($allSales as $s) {
+                        $meta = $s->service_specific_data;
+                        $meth = $meta['selling_method'] ?? 'pic';
+                        if ($meth === 'pic') {
+                            $currentStockPics -= $s->quantity;
+                        } else {
+                            $servingsPerPic = $variant->servings_per_pic > 0 ? $variant->servings_per_pic : 1;
+                            $currentStockPics -= ($s->quantity / $servingsPerPic);
+                        }
+                    }
+
+                    // Calculate consumption of current request
+                    $requestedCons = ($sellingMethod === 'pic') ? $quantity : ($quantity / ($variant->servings_per_pic > 0 ? $variant->servings_per_pic : 1));
+                    
+                    if ($requestedCons > ($currentStockPics + 0.001)) {
+                        $availableWhole = floor($currentStockPics);
+                        return response()->json([
+                            'success' => false, 
+                            'message' => "Insufficient stock. Only " . ($availableWhole > 0 ? $availableWhole : '0') . " bottles/units available."
+                        ], 400);
+                    }
+                    // --- End Stock Validation ---
+                } else {
+                    return response()->json(['success' => false, 'message' => 'Product variant not found.'], 404);
+                }
+            } elseif ($isGenericFood) {
+                // Cleaned up Food ordering logic via Recipes
+                $extraData = $request->input('service_specific_data', []);
+                $foodId = $extraData['food_id'] ?? null;
+                
+                if ($foodId) {
+                    $recipe = \App\Models\Recipe::find($foodId);
+                    if ($recipe) {
+                        $itemName = $recipe->name;
+                        $unitPrice = (float)$recipe->selling_price ?? 0;
+                        $totalPrice = $unitPrice * $quantity;
+                        $additionalData['food_id'] = $recipe->id;
+                    }
+                }
+            } else if ($service) {
+                // Standard Service Logic
+                $itemName = $service->name;
+                if ($service->is_free_for_internal) {
+                    $totalPrice = 0;
+                } else {
+                    $serviceAgeGroup = $service->age_group ?? 'both';
+                    
+                    if ($serviceAgeGroup === 'both' && $service->child_price_tsh && $service->child_price_tsh > 0) {
+                        // Service supports both adult and child pricing
+                        $adultTotal = ($service->price_tsh ?? 0) * $adultQuantity;
+                        $childTotal = ($service->child_price_tsh ?? 0) * $childQuantity;
+                        $totalPrice = $adultTotal + $childTotal;
+                        
+                        // If no adult/child quantities provided, use single quantity
+                        if ($adultQuantity === 0 && $childQuantity === 0) {
+                            $totalPrice = ($service->price_tsh ?? 0) * $quantity;
+                        }
+                    } else if ($serviceAgeGroup === 'child') {
+                        $unitPriceRaw = $service->child_price_tsh ?? $service->price_tsh ?? 0;
+                        $totalPrice = $unitPriceRaw * $quantity;
+                    } else {
+                        $unitPriceRaw = $service->price_tsh ?? 0;
+                        $totalPrice = $unitPriceRaw * $quantity;
+                    }
+                }
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Service or item not found.',
+                ], 404);
+            }
+            
+            $booking = $booking ?? null; // Ensure $booking is defined for notifications even if null
+            
+            // Calculate unit price for storage (average or single)
+            $unitPrice = $quantity > 0 ? ($totalPrice / $quantity) : 0;
+
+            // Validate service-specific fields if required (only if $service exists)
+            $serviceSpecificData = [];
+            if ($request->has('service_specific_data') && is_array($request->service_specific_data)) {
+                $serviceSpecificData = $request->service_specific_data;
+                
+                // Validate required fields based on service configuration
+                if ($service && $service->required_fields && is_array($service->required_fields)) {
+                    foreach ($service->required_fields as $field) {
+                        if (isset($field['required']) && $field['required']) {
+                            $fieldName = $field['name'];
+                            if (!isset($serviceSpecificData[$fieldName]) || empty($serviceSpecificData[$fieldName])) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => "Field '{$field['label']}' is required for this service.",
+                                ], 422);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Create service request - walk-ins can be immediate or later
-        $isWalkIn = $request->input('is_walk_in', false);
-        $paymentTiming = $request->input('payment_timing', 'immediate'); // immediate or later
-        $dayServiceId = $request->input('day_service_id');
+            // Create service request - walk-ins can be immediate or later
+            $isWalkIn = $request->input('is_walk_in', false);
+            $paymentTiming = $request->input('payment_timing', 'immediate'); // immediate or later
+            $dayServiceId = $request->input('day_service_id');
 
-        // Determine status and payment status
-        $status = 'pending';
-        $paymentStatus = 'pending';
+            // Determine status and payment status
+            $status = 'pending';
+            $paymentStatus = 'pending';
 
-        if ($isWalkIn) {
-            if ($dayServiceId) {
-                // If it's a walk-in linked to a day service (ceremony), it's considered completed immediately
-                $status = 'completed';
-                $paymentStatus = ($paymentTiming === 'immediate') ? 'paid' : 'pending';
-            } else {
-                // Standard walk-in
-                $status = ($paymentTiming === 'later' ? 'approved' : 'completed');
-                $paymentStatus = ($paymentTiming === 'later' ? 'pending' : 'paid');
-            }
-        }
-        
-        $serviceRequest = ServiceRequest::create([
-            'booking_id' => $isWalkIn ? null : $booking->id,
-            'service_id' => $service ? $service->id : null,
-            'guest_request' => $request->guest_request,
-            'service_specific_data' => array_merge($serviceSpecificData, $additionalData, [
-                'adult_quantity' => $adultQuantity,
-                'child_quantity' => $childQuantity,
-                'item_name' => $itemName // Store the actual name for orders
-            ]),
-            'quantity' => $quantity,
-            'unit_price_tsh' => $unitPrice,
-            'total_price_tsh' => $totalPrice,
-            'status' => $status,
-            'payment_status' => $paymentStatus,
-            'is_walk_in' => $isWalkIn,
-            'walk_in_name' => $request->walk_in_name,
-            'day_service_id' => $dayServiceId,
-            'requested_at' => now(),
-            'approved_at' => $isWalkIn ? now() : null,
-            'approved_by' => $isWalkIn ? Auth::guard('staff')->id() : null,
-            'completed_at' => ($isWalkIn && ($paymentTiming === 'immediate' || $dayServiceId)) ? now() : null,
-        ]);
-
-        // Create notification for service request
-        if (!$isWalkIn) {
-            try {
-                $notificationService = new NotificationService();
-                $notificationService->createServiceRequestNotification($serviceRequest->load(['booking.room', 'service']));
-                
-                // Also notify customer that their request was submitted
-                $notificationService->createServiceRequestConfirmationNotification($serviceRequest->load(['booking.room', 'service']), $user);
-            } catch (\Exception $e) {
-                \Log::error('Failed to create service request notification: ' . $e->getMessage());
-            }
-        }
-
-        // Send email notification (send immediately)
-        if (!$isWalkIn && isset($booking->guest_email)) {
-            try {
-                // Check if guest has notifications enabled
-                $guest = \App\Models\Guest::where('email', $booking->guest_email)->first();
-                if (!$guest || $guest->isNotificationEnabled('service_request')) {
-                    \Illuminate\Support\Facades\Mail::to($booking->guest_email)
-                        ->send(new \App\Mail\ServiceRequestSubmittedMail($serviceRequest->fresh()->load(['booking.room', 'service'])));
+            if ($isWalkIn) {
+                if ($dayServiceId) {
+                    // If it's a walk-in linked to a day service (ceremony), it's considered completed immediately
+                    $status = 'completed';
+                    $paymentStatus = ($paymentTiming === 'immediate') ? 'paid' : 'pending';
+                } else {
+                    // Standard walk-in
+                    $status = ($paymentTiming === 'later' ? 'approved' : 'completed');
+                    $paymentStatus = ($paymentTiming === 'later' ? 'pending' : 'paid');
                 }
-            } catch (\Exception $e) {
-                \Log::error('Failed to send service request submitted email: ' . $e->getMessage());
             }
-        }
-
-        // Send email notification to managers and super admins
-        try {
-            $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
-                ->where('is_active', true)
-                ->get();
             
-            foreach ($managersAndAdmins as $staff) {
-                // Check if user has notifications enabled
-                if ($staff->isNotificationEnabled('service_request')) {
-                    try {
-                        \Illuminate\Support\Facades\Mail::to($staff->email)
-                            ->send(new \App\Mail\StaffNewServiceRequestMail($serviceRequest->fresh()->load(['booking.room', 'service'])));
-                    } catch (\Exception $e) {
-                        \Log::error('Failed to send service request email to staff: ' . $staff->email . ' - ' . $e->getMessage());
+            $serviceRequest = ServiceRequest::create([
+                'booking_id' => $isWalkIn ? null : $booking->id,
+                'service_id' => $service ? $service->id : null,
+                'guest_request' => $request->guest_request,
+                'service_specific_data' => array_merge($serviceSpecificData, $additionalData, [
+                    'adult_quantity' => $adultQuantity,
+                    'child_quantity' => $childQuantity,
+                    'item_name' => $itemName // Store the actual name for orders
+                ]),
+                'quantity' => $quantity,
+                'unit_price_tsh' => $unitPrice,
+                'total_price_tsh' => $totalPrice,
+                'status' => $status,
+                'payment_status' => $paymentStatus,
+                'is_walk_in' => $isWalkIn,
+                'walk_in_name' => $request->walk_in_name,
+                'day_service_id' => $dayServiceId,
+                'requested_at' => now(),
+                'approved_at' => $isWalkIn ? now() : null,
+                'approved_by' => $isWalkIn ? Auth::guard('staff')->id() : null,
+                'completed_at' => ($isWalkIn && ($paymentTiming === 'immediate' || $dayServiceId)) ? now() : null,
+            ]);
+
+            // Create notification for service request
+            if (!$isWalkIn) {
+                try {
+                    $notificationService = new NotificationService();
+                    $notificationService->createServiceRequestNotification($serviceRequest->load(['booking.room', 'service']));
+                    
+                    // Also notify customer that their request was submitted
+                    $notificationService->createServiceRequestConfirmationNotification($serviceRequest->load(['booking.room', 'service']), $user);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to create service request notification: ' . $e->getMessage());
+                }
+            }
+
+            // Send email notification (send immediately)
+            if (!$isWalkIn && isset($booking->guest_email)) {
+                try {
+                    // Check if guest has notifications enabled
+                    $guest = \App\Models\Guest::where('email', $booking->guest_email)->first();
+                    if (!$guest || $guest->isNotificationEnabled('service_request')) {
+                        \Illuminate\Support\Facades\Mail::to($booking->guest_email)
+                            ->send(new \App\Mail\ServiceRequestSubmittedMail($serviceRequest->fresh()->load(['booking.room', 'service'])));
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send service request submitted email: ' . $e->getMessage());
+                }
+            }
+
+            // Send email notification to managers and super admins
+            try {
+                $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
+                    ->where('is_active', true)
+                    ->get();
+                
+                foreach ($managersAndAdmins as $staff) {
+                    // Check if user has notifications enabled
+                    if ($staff->isNotificationEnabled('service_request')) {
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($staff->email)
+                                ->send(new \App\Mail\StaffNewServiceRequestMail($serviceRequest->fresh()->load(['booking.room', 'service'])));
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to send service request email to staff: ' . $staff->email . ' - ' . $e->getMessage());
+                        }
                     }
                 }
+            } catch (\Exception $e) {
+                \Log::error('Failed to send service request emails to managers/admins: ' . $e->getMessage());
             }
-        } catch (\Exception $e) {
-            \Log::error('Failed to send service request emails to managers/admins: ' . $e->getMessage());
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Service request submitted! Call to confirm: 0677155156 - Reception, 0677155157 - Manager.',
-            'service_request' => $serviceRequest->load('service')
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Service request submitted! Call to confirm: 0677155156 - Reception, 0677155157 - Manager.',
+                'service_request' => $serviceRequest->load('service')
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Service request error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while processing your request. Please try again or contact reception.',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
     }
 
     /**

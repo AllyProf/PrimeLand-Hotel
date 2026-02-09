@@ -603,6 +603,7 @@ $(document).ready(function() {
         paymentProviderSelect.innerHTML += `
           <option value="nmb">NMB</option>
           <option value="crdb">CRDB</option>
+          <option value="kcb">KCB Bank</option>
           <option value="exim">Exim Bank</option>
           <option value="equity">Equity Bank</option>
           <option value="stanbic">Stanbic Bank</option>

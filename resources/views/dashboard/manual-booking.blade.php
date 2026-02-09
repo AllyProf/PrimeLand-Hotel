@@ -3,14 +3,14 @@
 @section('content')
 <div class="app-title">
   <div>
-    <h1><i class="fa fa-calendar-plus-o"></i> Create Manual Booking</h1>
-    <p>Register booking from external platforms (e.g., Booking.com)</p>
+    <h1><i class="fa fa-calendar-plus-o"></i> Create Individual Booking</h1>
+    <p>Register booking from external platforms or walk-in guests</p>
   </div>
   <ul class="app-breadcrumb breadcrumb">
     <li class="breadcrumb-item"><i class="fa fa-home fa-lg"></i></li>
     <li class="breadcrumb-item"><a href="{{ $role === 'reception' ? route('reception.dashboard') : route('admin.dashboard') }}">Dashboard</a></li>
     <li class="breadcrumb-item"><a href="{{ $role === 'reception' ? route('reception.bookings') : route('admin.bookings.index') }}">Bookings</a></li>
-    <li class="breadcrumb-item"><a href="#">Manual Booking</a></li>
+    <li class="breadcrumb-item"><a href="#">Individual Booking</a></li>
   </ul>
 </div>
 
@@ -46,6 +46,33 @@
         <!-- Step 1: Guest Information -->
         <div class="wizard-step" data-step="1">
           <h4 class="mb-4"><i class="fa fa-user"></i> Guest Information</h4>
+          
+          <!-- Returning Guest Search -->
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <div class="guest-search-box shadow-sm mb-2" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0; transition: all 0.3s ease;">
+                <div class="search-header d-flex align-items-center mb-3">
+                   <div class="search-icon-circle mr-3" style="width: 45px; height: 45px; background: #e0f2f1; color: #009688; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                      <i class="fa fa-user-circle-o"></i>
+                   </div>
+                   <div>
+                      <h6 class="mb-0 font-weight-bold text-dark" style="text-transform: uppercase; letter-spacing: 0.5px;">RETURNING GUEST?</h6>
+                      <small class="text-muted">Search by name, email or phone to auto-fill details from existing records</small>
+                   </div>
+                </div>
+                <div class="form-group position-relative mb-0">
+                  <div class="input-group search-input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text bg-white border-right-0" style="border-radius: 8px 0 0 8px; color: #009688;"><i class="fa fa-search" id="guestSearchIcon"></i></span>
+                    </div>
+                    <input type="text" id="guestSearchInput" class="form-control border-left-0" style="height: 48px; font-size: 16px; border-radius: 0 8px 8px 0;" placeholder="Start typing guest name, email or phone number..." autocomplete="off">
+                  </div>
+                  <div id="guestSearchResults" class="list-group position-absolute w-100 mt-2 shadow-lg" style="display: none; z-index: 1100; max-height: 300px; overflow-y: auto; border-radius: 10px; border: 1px solid #eee;">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <div class="row">
           <div class="col-md-6">
@@ -159,7 +186,7 @@
           <div class="col-md-3">
             <div class="form-group">
               <label for="check_in_time">Check-in Time <span class="text-danger">*</span></label>
-              <input class="form-control" type="time" id="check_in_time" name="check_in_time" value="10:00" required>
+              <input class="form-control" type="time" id="check_in_time" name="check_in_time" value="14:00" required>
             </div>
           </div>
           <div class="col-md-3">
@@ -1474,7 +1501,7 @@ function changeWizardStep(direction) {
 
 document.addEventListener('DOMContentLoaded', function() {
   // Complete country list with flags and codes
-  const countries = [
+  window.countries = [
     { name: 'Afghanistan', flag: '🇦🇫', code: '+93' },
     { name: 'Albania', flag: '🇦🇱', code: '+355' },
     { name: 'Algeria', flag: '🇩🇿', code: '+213' },
@@ -1731,7 +1758,7 @@ document.addEventListener('DOMContentLoaded', function() {
       nationalitySelect.appendChild(placeholder);
     }
     
-    countries.forEach(country => {
+    window.countries.forEach(country => {
       // Skip Tanzania if excludeTanzania is true
       if (excludeTanzania && country.name === 'Tanzania') {
         return;
@@ -1746,7 +1773,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Always add Tanzania option (even if hidden) so form can submit it for Tanzanian guests
-    const tanzaniaCountry = countries.find(c => c.name === 'Tanzania');
+    const tanzaniaCountry = window.countries.find(c => c.name === 'Tanzania');
     if (tanzaniaCountry) {
       const tanzaniaOption = document.createElement('option');
       tanzaniaOption.value = 'Tanzania';
@@ -1984,6 +2011,7 @@ document.addEventListener('DOMContentLoaded', function() {
       { value: 'nmb', label: 'NMB Bank' },
       { value: 'crdb', label: 'CRDB Bank' },
       { value: 'equity', label: 'Equity Bank' },
+      { value: 'kcb', label: 'KCB Bank' },
       { value: 'stanbic', label: 'Stanbic Bank' },
       { value: 'exim', label: 'Exim Bank' },
       { value: 'barclays', label: 'Barclays Bank' },
@@ -3084,7 +3112,256 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxes.forEach(cb => {
       updateDepartmentCard(cb);
     });
+
+    // Guest Search Functionality
+    const guestSearchInput = document.getElementById('guestSearchInput');
+    const guestSearchResults = document.getElementById('guestSearchResults');
+
+    if (guestSearchInput) {
+      let debounceTimer;
+      guestSearchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value;
+        const icon = document.getElementById('guestSearchIcon');
+        
+        if (query.length < 2) {
+          guestSearchResults.style.display = 'none';
+          if (icon) icon.className = 'fa fa-search';
+          return;
+        }
+
+        if (icon) icon.className = 'fa fa-spinner fa-spin';
+
+        debounceTimer = setTimeout(() => {
+          fetch(`{{ route('admin.bookings.search.guests') }}?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+              if (icon) icon.className = 'fa fa-search';
+              guestSearchResults.innerHTML = '';
+              if (data.length > 0) {
+                data.forEach(guest => {
+                  const item = document.createElement('a');
+                  item.href = 'javascript:void(0)';
+                  item.className = 'list-group-item list-group-item-action py-3 border-left-0 border-right-0';
+                  item.style.transition = 'all 0.2s ease';
+                  item.style.borderBottom = '1px solid #f0f0f0';
+                  
+                  item.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                      <div style="flex: 1;">
+                        <h6 class="mb-1" style="color: #00796b; font-weight: 700; font-size: 15px;">${guest.name}</h6>
+                        <p class="mb-1 small text-muted">
+                          <i class="fa fa-envelope-o mr-1"></i>${guest.email} 
+                          <span class="mx-2" style="opacity: 0.3;">|</span> 
+                          <i class="fa fa-phone mr-1"></i>${guest.phone || 'No phone'}
+                        </p>
+                        <div class="d-flex align-items-center mt-1">
+                           ${(guest.nationality || guest.country) ? `<small class="badge badge-light border text-secondary mr-2" style="font-size: 10px; background: #fff;"><i class="fa fa-globe mr-1"></i>${guest.nationality || guest.country}</small>` : ''}
+                           <small class="text-muted" style="font-size: 10px;"><i class="fa fa-history mr-1"></i>Last: ${guest.last_booking_date}</small>
+                        </div>
+                      </div>
+                      <div class="text-right ml-3 d-flex flex-column align-items-end">
+                        <button type="button" class="btn btn-sm btn-outline-primary mb-1 view-history-btn" style="font-size: 10px; padding: 2px 8px; border-radius: 4px;" onclick="event.stopPropagation(); showLastBookingModal('${encodeURIComponent(JSON.stringify(guest.last_booking_details))}', '${guest.name}')">
+                           <i class="fa fa-eye"></i> Details
+                        </button>
+                        <span class="badge badge-pill" style="background: #e0f2f1; color: #00796b; font-size: 10px; padding: 6px 12px; font-weight: 700; border: 1px solid #b2dfdb;">SELECT</span>
+                      </div>
+                    </div>
+                  `;
+                  item.onclick = () => fillGuestData(guest);
+                  
+                  // Hover effect via JS
+                  item.onmouseover = function() { 
+                    this.style.backgroundColor = '#f4fbfb'; 
+                    this.style.boxShadow = 'inset 4px 0 0 #009688';
+                  };
+                  item.onmouseout = function() { 
+                    this.style.backgroundColor = ''; 
+                    this.style.boxShadow = '';
+                  };
+                  
+                  guestSearchResults.appendChild(item);
+                });
+                guestSearchResults.style.display = 'block';
+              } else {
+                guestSearchResults.innerHTML = `
+                  <div class="list-group-item text-muted text-center py-5">
+                    <i class="fa fa-user-times fa-3x mb-3" style="opacity: 0.2;"></i>
+                    <p class="mb-0 font-weight-bold">No matching guests found</p>
+                    <small>Try searching with a different name or email</small>
+                  </div>`;
+                guestSearchResults.style.display = 'block';
+              }
+            })
+            .catch(err => {
+               if (icon) icon.className = 'fa fa-search';
+               console.error('Search error:', err);
+            });
+        }, 250);
+      });
+
+      // Close results when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!guestSearchInput.contains(e.target) && !guestSearchResults.contains(e.target)) {
+          guestSearchResults.style.display = 'none';
+        }
+      });
+    }
+
+    function fillGuestData(guest) {
+      console.log('Auto-filling guest data for:', guest.name);
+      
+      // Basic info
+      document.getElementById('full_name').value = guest.name || '';
+      document.getElementById('guest_email').value = guest.email || '';
+      
+      // Determine guest type and nationality logic
+      const rawNat = (guest.nationality || guest.country || '').trim();
+      const natLower = rawNat.toLowerCase();
+      const isTanzanian = natLower === 'tanzania' || natLower === 'tanzanian' || natLower === 'tz';
+      
+      const typeSelect = document.getElementById('guest_type');
+      if (typeSelect) {
+        typeSelect.value = isTanzanian ? 'tanzanian' : 'international';
+        // Dispatch event to trigger existing UI logic (like phone prefix update)
+        typeSelect.dispatchEvent(new Event('change'));
+      }
+
+      // Handle phone parsing - remove country code if present since form has it separately
+      let phone = guest.phone || '';
+      if (phone) {
+          // Remove common prefixes
+          phone = phone.replace(/^\+/, '');
+          
+          // Try to stripping matched country code based on detected nationality
+          let matchedCountry = null;
+          if (isTanzanian) {
+             matchedCountry = window.countries.find(c => c.name === 'Tanzania');
+          } else if (rawNat) {
+             matchedCountry = window.countries.find(c => c.name.toLowerCase() === natLower || c.name.toLowerCase().includes(natLower));
+          }
+          
+          if (matchedCountry) {
+              const codeClean = matchedCountry.code.replace('+', '');
+              if (phone.startsWith(codeClean)) {
+                  phone = phone.substring(codeClean.length);
+              }
+          }
+      }
+      document.getElementById('guest_phone').value = phone;
+      
+      // Auto-fill nationality for International guests
+      if (!isTanzanian && rawNat) {
+        // Find canonical name in our countries array
+        const canonical = window.countries.find(c => c.name.toLowerCase() === natLower || c.name.toLowerCase().includes(natLower));
+        const finalValue = canonical ? canonical.name : rawNat;
+
+        setTimeout(() => {
+          const natSelect = $('#nationality');
+          if (natSelect.length) {
+            // Force option existence
+            if (!natSelect.find("option[value='" + finalValue + "']").length) {
+              natSelect.append(new Option(finalValue, finalValue, true, true));
+            }
+            natSelect.val(finalValue).trigger('change');
+            
+            // Also update flag prefix manually to be sure
+            if (canonical) {
+              const flagPrefix = document.getElementById('nationality_flag_prefix');
+              if (flagPrefix) {
+                flagPrefix.textContent = canonical.flag;
+                flagPrefix.style.display = 'block';
+              }
+            }
+          }
+        }, 100);
+      }
+      
+      // UI Success Alert
+      if (typeof swal === 'function') {
+        swal({
+          title: "Guest Recognized!",
+          text: `Welcome back, ${guest.name}! Profile details have been auto-filled.`,
+          type: "success",
+          timer: 2500,
+          showConfirmButton: false
+        });
+      }
+      
+      // Close results and reset search input
+      const guestSearchResults = document.getElementById('guestSearchResults');
+      const guestSearchInput = document.getElementById('guestSearchInput');
+      if (guestSearchResults) guestSearchResults.style.display = 'none';
+      if (guestSearchInput) guestSearchInput.value = '';
+    }
+
+    // Modal display for last booking
+    window.showLastBookingModal = function(detailsEncoded, name) {
+      const detailsStr = decodeURIComponent(detailsEncoded);
+      let details = null;
+      try { details = JSON.parse(detailsStr); } catch(e) {}
+      
+      const content = document.getElementById('lastBookingDetailsContent');
+      if (!details || details === "null") {
+        content.innerHTML = `
+          <div class="text-center py-4">
+            <i class="fa fa-calendar-times-o fa-3x text-muted mb-3"></i>
+            <p class="font-weight-bold">No Booking History</p>
+            <small class="text-muted">${name} is a new guest with no previous records recorded in the system.</small>
+          </div>`;
+      } else {
+        content.innerHTML = `
+          <div class="guest-info-summary mb-4 text-center">
+            <h5 class="font-weight-bold text-dark mb-1">${name}</h5>
+            <span class="badge badge-success px-3 py-2" style="border-radius: 20px;">Returning Member</span>
+          </div>
+          <div class="detail-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="detail-item p-3 border" style="border-radius: 10px; background: #fdfdfd;">
+              <small class="text-muted d-block text-uppercase" style="font-size: 10px; letter-spacing: 1px;">Room Number</small>
+              <span class="font-weight-bold" style="font-size: 18px; color: #00796b;">${details.room || 'N/A'}</span>
+            </div>
+            <div class="detail-item p-3 border" style="border-radius: 10px; background: #fdfdfd;">
+              <small class="text-muted d-block text-uppercase" style="font-size: 10px; letter-spacing: 1px;">Stay Dates</small>
+              <span class="font-weight-bold" style="font-size: 13px;">${details.dates || 'N/A'}</span>
+            </div>
+            <div class="detail-item p-3 border" style="border-radius: 10px; background: #fdfdfd;">
+              <small class="text-muted d-block text-uppercase" style="font-size: 10px; letter-spacing: 1px;">Room Type</small>
+              <span class="font-weight-bold">${details.type || 'N/A'}</span>
+            </div>
+            <div class="detail-item p-3 border" style="border-radius: 10px; background: #fdfdfd;">
+              <small class="text-muted d-block text-uppercase" style="font-size: 10px; letter-spacing: 1px;">Total Price Paid</small>
+              <span class="font-weight-bold text-success">$${details.total_price || '0.00'}</span>
+            </div>
+          </div>
+          <div class="mt-4 p-3 bg-light border-left border-primary" style="border-radius: 4px; border-left-width: 4px !important;">
+            <i class="fa fa-info-circle text-primary mr-2"></i>
+            <small class="text-dark">Last reservation status was <strong>${details.status}</strong>. Use these details to provide personalized service.</small>
+          </div>
+        `;
+      }
+      $('#lastBookingModal').modal('show');
+    };
   });
 </script>
 @endsection
+
+<!-- Last Booking Details Modal -->
+<div class="modal fade" id="lastBookingModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 9999;">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content" style="border-radius: 15px; border: none; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title font-weight-bold"><i class="fa fa-history mr-2"></i> Last Booking Overview</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-4" id="lastBookingDetailsContent">
+        <!-- Content will be injected here -->
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary px-4" style="border-radius: 8px;" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 

@@ -683,18 +683,32 @@ class KitchenController extends Controller
         $foodCategories = ['food', 'restaurant'];
         
         $pendingOrders = \App\Models\ServiceRequest::with(['booking.room', 'service'])
-            ->whereHas('service', function($query) use ($foodCategories) {
-                $query->whereIn('category', $foodCategories);
+            ->where(function($q) use ($foodCategories) {
+                // Filter by category OR explicit ID (Generic Food Order)
+                $q->whereHas('service', function($query) use ($foodCategories) {
+                    $query->whereIn('category', $foodCategories);
+                })->orWhere('service_id', 4); // Generic Food Order Check
             })
             ->where(function($query) {
-                // Resident orders pending approval/service
-                $query->where('status', 'pending')
-                    // OR Walk-in orders that are being served but not yet paid
-                    ->orWhere(function($q) {
-                        $q->where('is_walk_in', true)
-                          ->whereIn('status', ['pending', 'approved'])
-                          ->where('payment_status', 'pending');
-                    });
+                // 1. Resident orders pending (standard flow)
+                $query->where(function($q) {
+                    $q->where('is_walk_in', false)
+                      ->where('status', 'pending');
+                })
+                // 2. Walk-in orders:
+                //    - Pending/Approved (Not yet paid or served)
+                //    - Completed (Paid immediately) - visible for today
+                ->orWhere(function($q) {
+                    $q->where('is_walk_in', true)
+                      ->where(function($sub) {
+                          $sub->whereIn('status', ['pending', 'approved'])
+                              ->orWhere(function($s) {
+                                  // Show completed (paid) walk-in orders for today so kitchen can see them
+                                  $s->where('status', 'completed')
+                                    ->where('created_at', '>=', now()->startOfDay());
+                              });
+                      });
+                });
             })
             ->orderBy('requested_at', 'asc')
             ->get();
@@ -1323,9 +1337,9 @@ class KitchenController extends Controller
 
         // 3. Get Foods Cooked (Produced) - Detailed Log (Direct Sales Only)
         $rawProduction = ServiceRequest::where(function($query) {
-                $query->where('service_id', 48) // Generic Food
+                $query->whereIn('service_id', [4, 48]) // Generic Food (4) and Restaurant Food (48)
                       ->orWhereHas('service', function($q) {
-                          $q->where('category', 'food');
+                          $q->whereIn('category', ['food', 'restaurant']);
                       });
             })
             ->whereBetween('completed_at', [$startDate, $endDate])
@@ -1361,9 +1375,9 @@ class KitchenController extends Controller
             ->whereNotNull('day_service_id')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where(function($query) {
-                 $query->where('service_id', 48)
+                 $query->whereIn('service_id', [4, 48])
                        ->orWhereHas('service', function($q) {
-                           $q->where('category', 'food'); // Add other kitchen categories if needed
+                           $q->whereIn('category', ['food', 'restaurant']);
                        });
             })
             ->orderBy('created_at', 'desc')

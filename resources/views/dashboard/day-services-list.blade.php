@@ -1163,6 +1163,7 @@ document.getElementById('payment_method').addEventListener('change', function() 
       <option value="">Select provider...</option>
       <option value="NMB">NMB</option>
       <option value="CRDB">CRDB</option>
+      <option value="KCB">KCB Bank</option>
       <option value="NBC">NBC</option>
       <option value="EXIM">EXIM</option>
     `;
@@ -1373,6 +1374,7 @@ function toggleAddItemsPaymentProvider() {
       paymentProviderSelect.innerHTML += `
         <option value="nmb">NMB</option>
         <option value="crdb">CRDB</option>
+        <option value="kcb">KCB Bank</option>
         <option value="exim">Exim Bank</option>
         <option value="equity">Equity Bank</option>
         <option value="stanbic">Stanbic Bank</option>
@@ -1781,6 +1783,7 @@ function toggleEditItemsPaymentProvider() {
       paymentProviderSelect.innerHTML += `
         <option value="nmb">NMB</option>
         <option value="crdb">CRDB</option>
+        <option value="kcb">KCB Bank</option>
         <option value="exim">Exim Bank</option>
         <option value="equity">Equity Bank</option>
         <option value="stanbic">Stanbic Bank</option>
@@ -2049,6 +2052,7 @@ function submitManagerCeremonyPayment() {
             <option value="mixx_by_yass">Mixx by Yass</option>
             <option value="nmb">NMB Bank</option>
             <option value="crdb">CRDB Bank</option>
+            <option value="kcb">KCB Bank</option>
           </select>
         </div>
         <div class="form-group" id="managerCeremonyRefFieldContainer" style="display: none;">

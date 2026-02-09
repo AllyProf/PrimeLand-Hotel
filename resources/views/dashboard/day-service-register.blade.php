@@ -514,6 +514,7 @@ $(document).ready(function() {
         <option value="">Select provider...</option>
         <option value="NMB">NMB</option>
         <option value="CRDB">CRDB</option>
+        <option value="KCB">KCB BANK</option>
         <option value="NBC">NBC</option>
         <option value="EXIM">EXIM</option>
       `;

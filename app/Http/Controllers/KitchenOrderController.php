@@ -17,20 +17,34 @@ class KitchenOrderController extends Controller
     {
         $pendingOrders = ServiceRequest::with(['booking.room', 'service'])
             ->where(function($query) {
-                // Service ID 48 is "Restaurant Food Order"
-                $query->where('service_id', 48)
+                // Include Generic Food Order (4), Restaurant Food Order (48), and categories
+                $query->whereIn('service_id', [4, 48])
                       ->orWhereHas('service', function($q) {
-                          $q->where('category', 'food');
+                          $q->whereIn('category', ['food', 'restaurant']);
                       });
             })
-            ->whereIn('status', ['pending', 'approved', 'preparing'])
+            ->where(function($q) {
+                // Standard states for kitchen
+                $q->whereIn('status', ['pending', 'approved', 'preparing'])
+                  // OR completed (paid) walk-in orders from today
+                  ->orWhere(function($sub) {
+                      $sub->where('is_walk_in', true)
+                          ->where('status', 'completed')
+                          ->whereDate('created_at', '>=', now()->startOfDay());
+                  });
+            })
             ->orderBy('requested_at', 'asc')
             ->get();
 
         // Statistics
         $stats = [
             'pending_count' => $pendingOrders->count(),
-            'completed_today' => ServiceRequest::where('service_id', 48)
+            'completed_today' => ServiceRequest::where(function($query) {
+                                    $query->whereIn('service_id', [4, 48])
+                                          ->orWhereHas('service', function($q) {
+                                              $q->whereIn('category', ['food', 'restaurant']);
+                                          });
+                                })
                                 ->where('status', 'completed')
                                 ->whereDate('completed_at', now())
                                 ->count(),
@@ -70,14 +84,27 @@ class KitchenOrderController extends Controller
         try {
             \Log::info('Kitchen completing order', ['order_id' => $serviceRequest->id, 'user_id' => $user->id ?? 'unknown']);
             // 1. Mark as completed
-            $serviceRequest->update([
+            $updateData = [
                 'status' => 'completed',
                 'completed_at' => now(),
                 'approved_by' => $user->id ?? $serviceRequest->approved_by,
                 'approved_at' => $serviceRequest->approved_at ?? now(),
                 'preparation_started_at' => $serviceRequest->preparation_started_at ?? now(),
                 'reception_notes' => ($serviceRequest->reception_notes ? $serviceRequest->reception_notes . ' | ' : '') . "Completed by Kitchen (" . ($user->name ?? 'Staff') . ")"
-            ]);
+            ];
+
+            // Handle Payment if provided (e.g. for Walk-ins paying at Kitchen)
+            if ($request->filled('payment_method')) {
+                $isRoomCharge = $request->payment_method === 'room_charge';
+                $updateData['payment_status'] = $isRoomCharge ? 'room_charge' : 'paid';
+                $updateData['payment_method'] = $request->payment_method;
+                $updateData['payment_reference'] = $request->payment_reference;
+                
+                $methodName = strtoupper(str_replace('_', ' ', $request->payment_method));
+                $updateData['reception_notes'] .= " | Paid via $methodName";
+            }
+
+            $serviceRequest->update($updateData);
 
             // Note: Ingredient deduction is handled manually through the shopping list/inventory system 
             // in this simplified version. we just mark the order as completed.

@@ -227,8 +227,8 @@
               <div class="widget-small success coloured-icon">
                 <i class="icon fa fa-check-circle fa-2x"></i>
                 <div class="info">
-                  <h4>Confirmed</h4>
-                  <p><b>{{ $stats['confirmed_bookings'] ?? 0 }}</b></p>
+                  <h4 style="color: #000;">Confirmed</h4>
+                  <p style="color: #000;"><b>{{ $stats['confirmed_bookings'] ?? 0 }}</b></p>
                 </div>
               </div>
             </div>

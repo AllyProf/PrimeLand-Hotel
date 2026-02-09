@@ -61,6 +61,33 @@
         <!-- Step 1: Company Information -->
         <div class="wizard-step" data-step="1">
           <h4 class="mb-4"><i class="fa fa-building"></i> Company Information</h4>
+
+          <!-- Returning Company Search -->
+          <div class="row mb-4">
+            <div class="col-md-12">
+              <div class="guest-search-box shadow-sm mb-2" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0; transition: all 0.3s ease;">
+                <div class="search-header d-flex align-items-center mb-3">
+                   <div class="search-icon-circle mr-3" style="width: 45px; height: 45px; background: #e0f2f1; color: #009688; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                      <i class="fa fa-building-o"></i>
+                   </div>
+                   <div>
+                      <h6 class="mb-0 font-weight-bold text-dark" style="text-transform: uppercase; letter-spacing: 0.5px;">RETURNING COMPANY?</h6>
+                      <small class="text-muted">Search by company name, email or phone to auto-fill details</small>
+                   </div>
+                </div>
+                <div class="form-group position-relative mb-0">
+                  <div class="input-group search-input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text bg-white border-right-0" style="border-radius: 8px 0 0 8px; color: #009688;"><i class="fa fa-search" id="companySearchIcon"></i></span>
+                    </div>
+                    <input type="text" id="companySearchInput" class="form-control border-left-0" style="height: 48px; font-size: 16px; border-radius: 0 8px 8px 0;" placeholder="Start typing company name, email or phone to auto-fill..." autocomplete="off">
+                  </div>
+                  <div id="companySearchResults" class="list-group position-absolute w-100 mt-2 shadow-lg" style="display: none; z-index: 1100; max-height: 300px; overflow-y: auto; border-radius: 10px; border: 1px solid #eee;">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           
           <div class="row">
             <div class="col-md-6">
@@ -168,14 +195,22 @@
                                id="room_type_{{ strtolower($type) }}_qty" 
                                name="room_type_{{ strtolower($type) }}_qty" 
                                min="0" max="20" value="0" 
-                               data-room-type="{{ $type }}">
-                        <small class="form-text text-muted">Quantity needed</small>
+                               data-room-type="{{ $type }}"
+                               data-capacity="1">
+                        <small class="form-text text-muted">Each room fits 1 assigned guest</small>
                       </div>
                     </div>
                     @endforeach
                   </div>
                   <div class="alert alert-info mt-3" id="room_types_summary" style="display: none;">
-                    <strong>Total Rooms Selected:</strong> <span id="total_rooms_count">0</span>
+                    <div><strong>Total Rooms Selected:</strong> <span id="total_rooms_count">0</span></div>
+                    <div><strong>Total Capacity:</strong> <span id="total_capacity_count">0</span> guests</div>
+                    <div class="mt-2">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="sync_guest_count" checked>
+                            <label class="custom-control-label" for="sync_guest_count">Auto-update number of guests based on capacity</label>
+                        </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1334,34 +1369,47 @@ window.changeWizardStep = function(step) {
   }
 }
 
-// Calculate total rooms selected
+// Calculate total rooms and capacity selected
 function calculateTotalRooms() {
   const qtyInputs = document.querySelectorAll('.room-type-qty');
-  let total = 0;
+  let totalRooms = 0;
+  let totalCapacity = 0;
   const roomTypesNeeded = {};
   
   qtyInputs.forEach(input => {
     const qty = parseInt(input.value) || 0;
+    const capacity = parseInt(input.getAttribute('data-capacity')) || 1;
     const roomType = input.getAttribute('data-room-type');
+    
     if (qty > 0) {
-      total += qty;
+      totalRooms += qty;
+      totalCapacity += qty; // Standardized to 1 guest per room for assignment
       roomTypesNeeded[roomType] = qty;
     }
   });
   
   const summaryEl = document.getElementById('room_types_summary');
   const totalRoomsCountEl = document.getElementById('total_rooms_count');
+  const totalCapacityCountEl = document.getElementById('total_capacity_count');
+  const guestCountInput = document.getElementById('number_of_guests');
+  const syncCheckbox = document.getElementById('sync_guest_count');
   
-  if (summaryEl && totalRoomsCountEl) {
-    if (total > 0) {
+  if (summaryEl && totalRoomsCountEl && totalCapacityCountEl) {
+    if (totalRooms > 0) {
       summaryEl.style.display = 'block';
-      totalRoomsCountEl.textContent = total;
+      totalRoomsCountEl.textContent = totalRooms;
+      totalCapacityCountEl.textContent = totalCapacity;
+      
+      // Auto-update guest count if checkbox is checked
+      if (syncCheckbox && syncCheckbox.checked && guestCountInput) {
+        guestCountInput.value = totalCapacity;
+      }
     } else {
       summaryEl.style.display = 'none';
     }
   }
   
-  return { total, roomTypesNeeded };
+  return { total: totalRooms, capacity: totalCapacity, roomTypesNeeded };
 }
 
 // Search available rooms
@@ -1727,18 +1775,28 @@ function createRoomCard(room) {
   cardHtml += '<small class="d-block text-muted" style="font-size: 10px;">≈ ' + roomPriceTZS.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' TZS</small>';
   cardHtml += '</div>';
   
-  // Show guest info if assigned
-  if (hasGuest) {
-    const guestsInRoom = bookingData.guests.filter(g => g.room_id == room.id);
-    cardHtml += '<div class="room-guest-list">';
-    guestsInRoom.forEach((g, idx) => {
-      cardHtml += '<div class="room-guest-item">';
-      cardHtml += '<span><i class="fa fa-user-circle"></i> ' + g.full_name + '</span>';
-      cardHtml += '<i class="fa fa-times-circle remove-guest-btn" onclick="removeGuestFromRoom(event, \'' + room.id + '\', ' + idx + ')" title="Remove guest"></i>';
-      cardHtml += '</div>';
-    });
+  // Show guest slots and info
+  // We now only allow 1 guest per room regardless of room type (1 room = 1 booking)
+  const roomCapacityForAssignment = 1; 
+  const guestsInRoom = bookingData.guests.filter(g => g.room_id == room.id);
+  
+  cardHtml += '<div class="room-guest-list">';
+  
+  // Show assigned guest (limit to 1)
+  if (guestsInRoom.length > 0) {
+    const g = guestsInRoom[0];
+    cardHtml += '<div class="room-guest-item assigned" style="border-left: 3px solid #28a745;">';
+    cardHtml += '<span><i class="fa fa-user-circle text-success"></i> ' + g.full_name + '</span>';
+    cardHtml += '<i class="fa fa-times-circle remove-guest-btn" onclick="removeGuestFromRoom(event, \'' + room.id + '\', 0)" title="Remove guest"></i>';
+    cardHtml += '</div>';
+  } else {
+    // Show single empty slot
+    cardHtml += '<div class="room-guest-item empty" style="border-left: 3px solid #dee2e6; color: #999; font-style: italic; cursor: pointer;">';
+    cardHtml += '<span><i class="fa fa-user-plus"></i> Assign guest</span>';
     cardHtml += '</div>';
   }
+  
+  cardHtml += '</div>';
   
   cardHtml += '</div>';
   cardHtml += '</div>';
@@ -1760,8 +1818,8 @@ function createRoomCard(room) {
       return;
     }
     
-    // Check if room has reached capacity
-    const roomCapacity = parseInt(room.capacity) || 1;
+    // Check if room has reached capacity (Now strictly 1 per room)
+    const roomCapacityForAssignment = 1;
     const currentGuests = bookingData.guests.filter(g => g.room_id == room.id).length;
     
     // Also check total guests limit
@@ -1778,11 +1836,11 @@ function createRoomCard(room) {
       return;
     }
     
-    if (currentGuests >= roomCapacity) {
+    if (currentGuests >= roomCapacityForAssignment) {
       Swal.fire({
         icon: 'warning',
-        title: 'Room Capacity Reached',
-        text: 'This room can only accommodate ' + roomCapacity + ' guest(s).',
+        title: 'Room Occupied',
+        text: 'This room is already assigned to a guest.',
         confirmButtonColor: '#e77a3a'
       });
       return;
@@ -1879,34 +1937,64 @@ function updateGuestAssignmentProgress() {
     return; // Don't update if not on room selection step
   }
   
-  const totalGuests = bookingData.booking.number_of_guests || 0;
-  const assignedGuests = bookingData.guests.length;
+  const totalGuestsNeeded = bookingData.booking.number_of_guests || 0;
+  const assignedGuestsCount = bookingData.guests.length;
+  
+  // Calculate total capacity of selected rooms
+  let totalCapacitySelected = 0;
+  if (bookingData.rooms && bookingData.rooms.length > 0) {
+    // Only count rooms that are actually selected/displayed (based on roomStatus logic)
+    // Actually, it's easier to just sum capacities of all rooms in bookingData.rooms 
+    // but only if they were "needed" for the booking.
+    // For simplicity, let's just use the count from calculateTotalRooms if available
+    const { capacity } = calculateTotalRooms();
+    totalCapacitySelected = capacity;
+  }
   
   const totalGuestsCountEl = document.getElementById('total_guests_count');
   const guestAssignmentProgressEl = document.getElementById('guest_assignment_progress');
   const proceedBtn = document.getElementById('proceed_to_preview_btn');
   
   if (totalGuestsCountEl) {
-    totalGuestsCountEl.textContent = totalGuests;
+    totalGuestsCountEl.textContent = totalGuestsNeeded;
   }
   
   if (guestAssignmentProgressEl) {
-    guestAssignmentProgressEl.textContent = `${assignedGuests} of ${totalGuests} guests assigned`;
+    let progressText = `${assignedGuestsCount} of ${totalGuestsNeeded} guests assigned`;
+    if (totalCapacitySelected > 0) {
+      progressText += ` (Rooms fits up to ${totalCapacitySelected} guests)`;
+    }
+    guestAssignmentProgressEl.textContent = progressText;
+    
+    // Update container class based on status
+    const container = document.getElementById('guest_progress_container');
+    if (container) {
+        if (assignedGuestsCount >= totalGuestsNeeded) {
+            container.classList.remove('alert-warning', 'alert-info');
+            container.classList.add('alert-success');
+        } else if (assignedGuestsCount > 0) {
+            container.classList.remove('alert-warning', 'alert-success');
+            container.classList.add('alert-info');
+        } else {
+            container.classList.remove('alert-info', 'alert-success');
+            container.classList.add('alert-warning');
+        }
+    }
   }
   
   // Show proceed button only if at least one guest is assigned
   if (proceedBtn) {
-    if (assignedGuests > 0) {
+    if (assignedGuestsCount > 0) {
       proceedBtn.style.display = 'block';
       
       // Update button text based on assignment status
-      if (assignedGuests >= totalGuests) {
+      if (assignedGuestsCount >= totalGuestsNeeded) {
         proceedBtn.innerHTML = 'Proceed to Payment <i class="fa fa-arrow-right"></i>';
         proceedBtn.classList.remove('btn-warning', 'btn-secondary');
         proceedBtn.classList.add('btn-primary');
         proceedBtn.disabled = false;
       } else {
-        proceedBtn.innerHTML = 'Proceed to Preview (' + assignedGuests + '/' + totalGuests + ' assigned) <i class="fa fa-arrow-right"></i>';
+        proceedBtn.innerHTML = 'Proceed to Preview (' + assignedGuestsCount + '/' + totalGuestsNeeded + ' assigned) <i class="fa fa-arrow-right"></i>';
         proceedBtn.classList.remove('btn-primary', 'btn-secondary');
         proceedBtn.classList.add('btn-warning');
         proceedBtn.disabled = false;
@@ -2057,10 +2145,11 @@ document.getElementById('corporateBookingForm').addEventListener('submit', funct
   e.preventDefault();
   
   if (bookingData.guests.length < bookingData.booking.number_of_guests) {
+    const { capacity } = calculateTotalRooms();
     Swal.fire({
       icon: 'question',
       title: 'Incomplete Assignment',
-      text: 'You have only assigned ' + bookingData.guests.length + ' of ' + bookingData.booking.number_of_guests + ' guests. Do you want to proceed with the current assignments?',
+      text: 'You have only assigned ' + bookingData.guests.length + ' of ' + bookingData.booking.number_of_guests + ' guest names. (Your selected rooms can fit up to ' + capacity + ' guests). Do you want to proceed with current assignments?',
       showCancelButton: true,
       confirmButtonColor: '#e77a3a',
       confirmButtonText: 'Yes, proceed',
@@ -2635,6 +2724,90 @@ document.addEventListener('DOMContentLoaded', function() {
         paymentProviderSelect.required = false;
       }
     });
+  }
+
+  // Company Search Functionality
+  const companySearchInput = document.getElementById('companySearchInput');
+  const companySearchResults = document.getElementById('companySearchResults');
+
+  if (companySearchInput) {
+    let debounceTimer;
+    companySearchInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      const query = this.value;
+      
+      if (query.length < 2) {
+        companySearchResults.style.display = 'none';
+        return;
+      }
+
+      debounceTimer = setTimeout(() => {
+        fetch(`{{ route('admin.bookings.search.companies') }}?q=${encodeURIComponent(query)}`)
+          .then(response => response.json())
+          .then(data => {
+            companySearchResults.innerHTML = '';
+            if (data.length > 0) {
+              data.forEach(company => {
+                const item = document.createElement('a');
+                item.href = 'javascript:void(0)';
+                item.className = 'list-group-item list-group-item-action';
+                item.innerHTML = `
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${company.name}</h6>
+                    <small class="text-info"><i class="fa fa-building"></i> Company</small>
+                  </div>
+                  <p class="mb-1 small text-muted"><i class="fa fa-envelope"></i> ${company.email} | <i class="fa fa-phone"></i> ${company.phone || 'N/A'}</p>
+                `;
+                item.onclick = () => fillCompanyData(company);
+                companySearchResults.appendChild(item);
+              });
+              companySearchResults.style.display = 'block';
+            } else {
+              companySearchResults.innerHTML = '<div class="list-group-item text-muted">No companies found</div>';
+              companySearchResults.style.display = 'block';
+            }
+          });
+      }, 300);
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!companySearchInput.contains(e.target) && !companySearchResults.contains(e.target)) {
+        companySearchResults.style.display = 'none';
+      }
+    });
+  }
+
+  window.fillCompanyData = function(company) {
+    document.getElementById('company_name').value = company.name;
+    document.getElementById('company_email').value = company.email;
+    document.getElementById('company_phone').value = company.phone || '';
+    
+    // Also fill guider info if it's the same person or if we have it
+    if (company.contact_person) {
+       document.getElementById('guider_name').value = company.contact_person;
+    }
+    if (company.guider_email) {
+       document.getElementById('guider_email').value = company.guider_email;
+    }
+    if (company.guider_phone) {
+       document.getElementById('guider_phone').value = company.guider_phone;
+    }
+
+    companySearchResults.style.display = 'none';
+    companySearchInput.value = '';
+    
+    // Show success message
+    // Show success message
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: "Company Recognized!",
+        text: `Welcome back, ${company.name}! Their details have been auto-filled.`,
+        icon: "success",
+        timer: 3000,
+        showConfirmButton: false
+      });
+    }
   }
 });
 </script>

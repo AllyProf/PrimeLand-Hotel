@@ -1152,7 +1152,7 @@
             <i class="fa fa-envelope"></i>
             <div class="status-card-content">
               <span class="status-card-label">Email Support</span>
-              <span class="status-card-value" style="font-size: 11px;">info@primelandhotel...</span>
+              <span class="status-card-value" style="font-size: 11px;">info@primelandhotel.com</span>
             </div>
           </div>
           <div class="status-card info">
@@ -1168,14 +1168,14 @@
             <i class="fa fa-clock-o"></i>
             <div class="status-card-content">
               <span class="status-card-label">Check-in Time</span>
-              <span class="status-card-value">4:00 PM onwards</span>
+              <span class="status-card-value">2:00 PM onwards</span>
             </div>
           </div>
           <div class="status-card info">
             <i class="fa fa-sign-out"></i>
             <div class="status-card-content">
               <span class="status-card-label">Check-out Time</span>
-              <span class="status-card-value">By 4:00 PM</span>
+              <span class="status-card-value">By 10:00 AM</span>
             </div>
           </div>
         </div>

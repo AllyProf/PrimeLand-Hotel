@@ -32,11 +32,13 @@ class BarKeeperController extends Controller
             ->limit(10)
             ->get();
             
-        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks'];
+        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'bar'];
         
         $pendingOrders = \App\Models\ServiceRequest::with(['booking.room', 'service'])
-            ->whereHas('service', function($query) use ($barCategories) {
-                $query->whereIn('category', $barCategories);
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($query) use ($barCategories) {
+                    $query->whereIn('category', $barCategories);
+                })->orWhere('service_id', 3); // Generic Bar Order (ID 3)
             })
             ->where(function($query) {
                 // Resident orders pending approval/service
@@ -46,6 +48,12 @@ class BarKeeperController extends Controller
                         $q->where('is_walk_in', true)
                           ->whereIn('status', ['pending', 'approved'])
                           ->where('payment_status', 'pending');
+                    })
+                    // OR Completed (paid) walk-in orders from today so bar keeper sees them
+                    ->orWhere(function($q) {
+                        $q->where('is_walk_in', true)
+                          ->where('status', 'completed')
+                          ->whereDate('created_at', '>=', now()->startOfDay());
                     });
             })
             ->orderBy('requested_at', 'desc')
@@ -289,7 +297,7 @@ class BarKeeperController extends Controller
         $allVariantIds = array_unique(array_merge($variantIds, $soldVariantIds));
         $variants = \App\Models\ProductVariant::with('product')->whereIn('id', $allVariantIds)->get();
         // Filter to only show bar categories in stock movements
-        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages'];
+        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages', 'bar', 'food', 'restaurant'];
 
         $reportData = [];
         foreach ($variants as $variant) {
@@ -445,7 +453,11 @@ class BarKeeperController extends Controller
         // Using only $barCategories defined above
         
         $salesData = \App\Models\ServiceRequest::with('service')
-            ->whereIn('service_id', \App\Models\Service::whereIn('category', $barCategories)->pluck('id'))
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($query) use ($barCategories) {
+                    $query->whereIn('category', $barCategories);
+                })->orWhereIn('service_id', [3, 4]); // Generic Bar (3) and Food (4)
+            })
             ->where('status', 'completed')
             ->whereNull('day_service_id')
             ->whereBetween('completed_at', [$startDate, $endDate])
@@ -473,8 +485,10 @@ class BarKeeperController extends Controller
         $ceremonyUsage = \App\Models\ServiceRequest::with(['service', 'dayService'])
             ->whereNotNull('day_service_id')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->whereHas('service', function($q) use ($barCategories) {
-                $q->whereIn('category', $barCategories);
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($query) use ($barCategories) {
+                    $query->whereIn('category', $barCategories);
+                })->orWhereIn('service_id', [3, 4]);
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -583,11 +597,13 @@ class BarKeeperController extends Controller
         $user = Auth::guard('staff')->user();
         
         // Base query for completed bar/restaurant services
-        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'food', 'restaurant'];
+        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'bar', 'food', 'restaurant'];
         
         $query = \App\Models\ServiceRequest::with(['service', 'booking'])
-            ->whereHas('service', function($q) use ($barCategories) {
-                $q->whereIn('category', $barCategories);
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($query) use ($barCategories) {
+                    $query->whereIn('category', $barCategories);
+                })->orWhereIn('service_id', [3, 4]); // Generic Bar (3) and Generic Food (4)
             })
             ->where('status', 'completed')
             ->latest('completed_at');
@@ -655,11 +671,13 @@ class BarKeeperController extends Controller
         $allTransfers = $transfersQuery->get();
         
         // B. Sales (OUT) - Bar Categories Only
-        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'beers', 'liquor', 'food', 'restaurant'];
+        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'beers', 'liquor', 'food', 'restaurant', 'bar'];
         
         $allSales = \App\Models\ServiceRequest::with(['service'])
-            ->whereHas('service', function($q) use ($barCategories) {
-                $q->whereIn('category', $barCategories);
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($query) use ($barCategories) {
+                    $query->whereIn('category', $barCategories);
+                })->orWhereIn('service_id', [3, 4]);
             })
             ->where('status', 'completed')
             ->get();

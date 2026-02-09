@@ -123,9 +123,9 @@
           <div class="widget-small dark coloured-icon">
             <i class="icon fa fa-check-circle fa-2x"></i>
             <div class="info">
-              <h4>Confirmed</h4>
-              <p><b>{{ $stats['confirmed'] ?? 0 }}</b></p>
-              <small>Companies</small>
+              <h4 style="color: #000;">Confirmed</h4>
+              <p style="color: #000;"><b>{{ $stats['confirmed'] ?? 0 }}</b></p>
+              <small style="color: #000;">Companies</small>
             </div>
           </div>
         </div>
@@ -166,8 +166,8 @@
           <div class="widget-small {{ ($stats['confirmed'] ?? 0) > 0 ? 'success' : 'dark' }} coloured-icon">
             <i class="icon fa fa-check-circle fa-2x"></i>
             <div class="info">
-              <h4>Confirmed</h4>
-              <p><b>{{ $stats['confirmed'] ?? 0 }}</b></p>
+              <h4 style="color: #000;">Confirmed</h4>
+              <p style="color: #000;"><b>{{ $stats['confirmed'] ?? 0 }}</b></p>
             </div>
           </div>
         </div>
@@ -810,17 +810,21 @@
                   <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
                     <i class="fa fa-eye"></i> View More
                   </button>
+                  @if(!$isReception)
                   <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
                     <i class="fa fa-trash"></i>
                   </button>
+                  @endif
                   @elseif($booking->status == 'pending' && $booking->payment_status == 'pending')
                   {{-- For expired pending bookings: View More, Delete (no reminders) --}}
                   <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
                     <i class="fa fa-eye"></i> View More
                   </button>
+                  @if(!$isReception)
                   <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
                     <i class="fa fa-trash"></i>
                   </button>
+                  @endif
                   @else
                   {{-- For other bookings: View More, Check In (if applicable), Admin Notes, Delete (if applicable) --}}
                   <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
@@ -848,9 +852,11 @@
                     <i class="fa fa-sticky-note"></i>
                   </button>
                   @if(in_array($booking->status, ['pending', 'cancelled']) || ($booking->status == 'confirmed' && $booking->check_in_status == 'pending'))
-                  <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
-                    <i class="fa fa-trash"></i>
-                  </button>
+                    @if(!$isReception)
+                    <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                    @endif
                   @endif
                   @endif
                 </div>
@@ -1242,16 +1248,20 @@
             <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
               <i class="fa fa-eye"></i> View
             </button>
+            @if(!$isReception)
             <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
               <i class="fa fa-trash"></i> Delete
             </button>
+            @endif
             @elseif($booking->status == 'pending' && $booking->payment_status == 'pending')
             <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
               <i class="fa fa-eye"></i> View
             </button>
+            @if(!$isReception)
             <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
               <i class="fa fa-trash"></i> Delete
             </button>
+            @endif
             @else
             <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
               <i class="fa fa-eye"></i> View
@@ -1268,9 +1278,11 @@
               <i class="fa fa-sticky-note"></i> Notes
             </button>
             @if(in_array($booking->status, ['pending', 'cancelled']) || ($booking->status == 'confirmed' && $booking->check_in_status == 'pending'))
-            <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
-              <i class="fa fa-trash"></i> Delete
-            </button>
+              @if(!$isReception)
+              <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
+                <i class="fa fa-trash"></i> Delete
+              </button>
+              @endif
             @endif
             @endif
           </div>
@@ -1298,9 +1310,9 @@
 <div class="modal fade" id="bookingDetailsModal" tabindex="-1" role="dialog">
   <div class="modal-dialog modal-lg" role="document">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Booking Details</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+      <div class="modal-header" style="background: #e77a3a; color: white;">
+        <h5 class="modal-title"><i class="fa fa-info-circle"></i> Booking Details & Financials</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
@@ -1565,12 +1577,41 @@
   padding: 10px;
 }
 
-.booking-details-view h5 {
+.preview-container {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.preview-section {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.preview-section:last-child {
+  margin-bottom: 0;
+}
+
+.preview-section h5 {
   color: #e77a3a;
   margin-bottom: 15px;
   font-weight: 600;
   border-bottom: 2px solid #e77a3a;
   padding-bottom: 8px;
+}
+
+.preview-section table {
+  margin-bottom: 0;
+}
+
+.preview-section th {
+  background-color: #fcfcfc;
+  width: 35%;
+  color: #666;
+  font-weight: 600;
 }
 
 .booking-details-view .table-sm td {
@@ -1978,9 +2019,8 @@ function viewBooking(bookingId) {
             return 'N/A';
           }
           
-          const diffTime = checkOutDate - checkInDate;
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          return diffDays + ' nights';
+          return diffDays + (diffDays === 1 ? ' night' : ' nights');
         } catch (e) {
           return 'N/A';
         }
@@ -2062,218 +2102,235 @@ function viewBooking(bookingId) {
       
       const detailsHtml = `
         <div class="booking-details-view">
-          
-          <!-- Top Status Bar -->
-          <div class="d-flex justify-content-between align-items-center mb-4 bg-light p-3 rounded">
-            <div>
-               <h4 class="mb-0 text-primary">${booking.guest_name}</h4>
-               <span class="text-muted small"><i class="fa fa-hashtag"></i> ${booking.booking_reference}</span>
+          <div class="preview-container">
+            
+            <!-- Top Status Bar -->
+            <div class="preview-section mb-4 d-flex justify-content-between align-items-center">
+              <div>
+                 <h4 class="mb-0 text-primary">${booking.guest_name}</h4>
+                 <span class="text-muted small"><i class="fa fa-hashtag"></i> ${booking.booking_reference}</span>
+              </div>
+              <div class="text-right">
+                 <span class="badge badge-${booking.status === 'confirmed' ? 'success' : booking.status === 'pending' ? 'warning' : 'danger'} p-2" style="font-size: 0.9rem;">
+                    ${booking.status ? booking.status.toUpperCase() : 'N/A'}
+                 </span>
+                 <div class="mt-1 small text-muted">
+                    ${booking.check_in_status === 'checked_in' ? '<i class="fa fa-check-circle text-success"></i> Checked In' : 
+                      booking.check_in_status === 'checked_out' ? '<i class="fa fa-check-circle text-secondary"></i> Checked Out' : 
+                      '<i class="fa fa-clock-o"></i> Status: ' + (booking.check_in_status || 'Pending')}
+                 </div>
+              </div>
             </div>
-            <div class="text-right">
-               <span class="badge badge-${booking.status === 'confirmed' ? 'success' : booking.status === 'pending' ? 'warning' : 'danger'} p-2" style="font-size: 0.9rem;">
-                  ${booking.status ? booking.status.toUpperCase() : 'N/A'}
-               </span>
-               <div class="mt-1 small text-muted">
-                  ${booking.check_in_status === 'checked_in' ? '<i class="fa fa-check-circle text-success"></i> Checked In' : 
-                    booking.check_in_status === 'checked_out' ? '<i class="fa fa-check-circle text-secondary"></i> Checked Out' : 
-                    '<i class="fa fa-clock-o"></i> Status: ' + (booking.check_in_status || 'Pending')}
-               </div>
-            </div>
-          </div>
 
-          <div class="row">
-            <!-- Left Column -->
-            <div class="col-md-6">
-              
-              <!-- Guest Card -->
-              <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-bottom-0 pb-0">
-                  <h6 class="text-uppercase text-muted mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">Guest Details</h6>
-                </div>
-                <div class="card-body pt-2">
-                   <div class="d-flex align-items-center mb-3">
-                      <div class="mr-3 text-center" style="width: 40px;">
-                        <i class="fa fa-user-circle fa-2x text-muted"></i>
-                      </div>
-                      <div>
+            <div class="row">
+              <!-- Left Column -->
+              <div class="col-md-6">
+                
+                <!-- Guest Details -->
+                <div class="preview-section h-100">
+                  <h5><i class="fa fa-user-circle"></i> Guest Details</h5>
+                  <table class="table table-bordered table-sm">
+                    <tr>
+                      <th>Name:</th>
+                      <td>
                         <div class="font-weight-bold">${booking.first_name || ''} ${booking.last_name || ''}</div>
                         <div class="text-muted small">${booking.booking_for === 'me' ? '(Main Guest)' : '(Booking for someone else)'}</div>
-                      </div>
-                   </div>
-                   
-                   <div class="row mb-2">
-                     <div class="col-1 text-center"><i class="fa fa-envelope-o text-muted"></i></div>
-                     <div class="col-11">${booking.guest_email}</div>
-                   </div>
-                   <div class="row mb-2">
-                     <div class="col-1 text-center"><i class="fa fa-phone text-muted"></i></div>
-                     <div class="col-11">${booking.guest_phone || 'N/A'}</div>
-                   </div>
-                   <div class="row mb-2">
-                     <div class="col-1 text-center"><i class="fa fa-globe text-muted"></i></div>
-                     <div class="col-11">${booking.country || 'N/A'}</div>
-                   </div>
-                   <div class="row">
-                     <div class="col-1 text-center"><i class="fa fa-users text-muted"></i></div>
-                     <div class="col-11">${booking.number_of_guests || 1} Person(s)</div>
-                   </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Email:</th>
+                      <td>${booking.guest_email}</td>
+                    </tr>
+                    <tr>
+                      <th>Phone:</th>
+                      <td>${booking.guest_phone || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <th>Country:</th>
+                      <td>${booking.country || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <th>Guests:</th>
+                      <td>${booking.number_of_guests || 1} Person(s)</td>
+                    </tr>
+                  </table>
                 </div>
               </div>
 
-              <!-- Dates Card -->
-              <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-bottom-0 pb-0">
-                  <h6 class="text-uppercase text-muted mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">Stay Dates</h6>
-                </div>
-                <div class="card-body pt-2">
-                   <div class="d-flex justify-content-between align-items-center bg-light rounded p-3 mb-2">
-                      <div class="text-center">
-                         <div class="text-muted small text-uppercase">Check In</div>
-                         <div class="font-weight-bold text-primary">${formatDate(booking.check_in)}</div>
-                         ${booking.arrival_time ? '<div class="small text-muted">' + booking.arrival_time + '</div>' : ''}
-                      </div>
-                      <div class="text-muted"><i class="fa fa-arrow-right"></i></div>
-                      <div class="text-center">
-                         <div class="text-muted small text-uppercase">Check Out</div>
-                         <div class="font-weight-bold text-primary">${formatDate(booking.check_out)}</div>
-                      </div>
-                   </div>
-                   
-                   <div class="text-center mb-3">
-                      <span class="badge badge-pill badge-info px-3 py-1">${calculateNights(booking.check_in, booking.check_out)} Stay</span>
-                   </div>
+              <!-- Right Column -->
+              <div class="col-md-6">
+                <!-- Stay Dates -->
+                <div class="preview-section h-100">
+                  <h5><i class="fa fa-calendar"></i> Stay Dates</h5>
+                  <div class="d-flex justify-content-between align-items-center bg-light rounded p-3 mb-3">
+                    <div class="text-center">
+                       <div class="text-muted small text-uppercase">Check In</div>
+                       <div class="font-weight-bold text-primary">${formatDate(booking.check_in)}</div>
+                       ${booking.arrival_time ? '<div class="small text-muted">' + booking.arrival_time + '</div>' : ''}
+                    </div>
+                    <div class="text-muted"><i class="fa fa-arrow-right"></i></div>
+                    <div class="text-center">
+                       <div class="text-muted small text-uppercase">Check Out</div>
+                       <div class="font-weight-bold text-primary">${formatDate(booking.check_out)}</div>
+                       ${booking.departure_time ? '<div class="small text-muted">' + booking.departure_time + '</div>' : ''}
+                    </div>
+                  </div>
+                  
+                  <div class="text-center mb-0">
+                    <span class="badge badge-pill badge-info px-4 py-2" style="font-size: 0.9rem;">${calculateNights(booking.check_in, booking.check_out)} Stay</span>
+                  </div>
 
-                   ${isExtended && extendedNights > 0 ? `<div class="alert alert-info py-1 small"><i class="fa fa-plus-circle"></i> Extended by ${extendedNights} nights</div>` : ''}
-                   ${isDecreased && decreasedNights > 0 ? `<div class="alert alert-warning py-1 small"><i class="fa fa-minus-circle"></i> Decreased by ${decreasedNights} nights</div>` : ''}
-                   ${(isExtended || isDecreased) && booking.original_check_out ? `<div class="text-muted small text-center">Original Checkout: ${formatDate(booking.original_check_out)}</div>` : ''}
+                  ${isExtended && extendedNights > 0 ? `<div class="alert alert-info py-2 mt-3 mb-0 small"><i class="fa fa-plus-circle"></i> Extended by ${extendedNights} nights</div>` : ''}
+                  ${isDecreased && decreasedNights > 0 ? `<div class="alert alert-warning py-2 mt-3 mb-0 small"><i class="fa fa-minus-circle"></i> Decreased by ${decreasedNights} nights</div>` : ''}
+                  ${(isExtended || isDecreased) && booking.original_check_out ? `<div class="text-muted small text-center mt-2">Original Checkout: ${formatDate(booking.original_check_out)}</div>` : ''}
 
-                   ${booking.check_in_status === 'checked_in' ? `
-                   <div class="mt-3 text-center">
-                     <button onclick="openModifyDatesModal(${booking.id}, '${booking.check_in}', '${booking.check_out}')" class="btn btn-outline-primary btn-sm btn-block">
-                       <i class="fa fa-calendar-check-o"></i> Modify Dates
-                     </button>
-                   </div>
-                   ` : ''}
+                  ${booking.check_in_status === 'checked_in' ? `
+                  <div class="mt-3 text-center">
+                    <button onclick="openModifyDatesModal(${booking.id}, '${booking.check_in}', '${booking.check_out}')" class="btn btn-outline-primary btn-sm btn-block">
+                      <i class="fa fa-calendar-check-o"></i> Modify Dates
+                    </button>
+                  </div>
+                  ` : ''}
                 </div>
               </div>
-
             </div>
 
-            <!-- Right Column -->
-            <div class="col-md-6">
-
-              <!-- Room Card -->
-              <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-bottom-0 pb-0">
-                  <h6 class="text-uppercase text-muted mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">Room Assigned</h6>
-                </div>
-                <div class="card-body pt-2">
-                   <div class="d-flex align-items-center mb-3">
-                      <div class="mr-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                        <i class="fa fa-bed"></i>
-                      </div>
-                      <div>
-                         <div class="h5 mb-0">${room.room_number || 'Unassigned'}</div>
-                         <div class="text-muted small">${room.room_type || 'Standard'}</div>
-                      </div>
-                   </div>
-                   <hr class="my-2">
-                   <div class="row small text-muted">
-                      <div class="col-6">Floor: ${room.floor_location || 'N/A'}</div>
-                      <div class="col-6 text-right">Capacity: ${room.capacity || 'N/A'}</div>
-                   </div>
-                </div>
-              </div>
-
-              <!-- Payment Card -->
-              <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-white border-bottom-0 pb-0">
-                  <h6 class="text-uppercase text-muted mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">Financial Info</h6>
-                </div>
-                <div class="card-body pt-2">
-                   ${(() => {
-                     const serviceCharges = parseFloat(booking.service_charges_usd || 0);
-                     const roomPrice = parseFloat(booking.total_price || 0);
-                     const totalBill = parseFloat(booking.total_bill_usd || roomPrice);
-                     const amountPaid = parseFloat(booking.amount_paid || 0);
-                     const remaining = totalBill - amountPaid;
-                     
-                     let html = '';
-                     
-                     // Room Price
-                     html += `<div class="d-flex justify-content-between mb-1">
-                       <span class="text-muted">Room Price:</span>
-                       <span>$${roomPrice.toFixed(2)}</span>
-                     </div>`;
-                     
-                     // Service Charges (if any)
-                     if (serviceCharges > 0) {
-                       html += `<div class="d-flex justify-content-between mb-1">
-                         <span class="text-muted">Service Charges:</span>
-                         <span>$${serviceCharges.toFixed(2)}</span>
-                       </div>`;
-                     }
-                     
-                     // Total Bill
-                     html += `<div class="d-flex justify-content-between mb-2 border-top pt-2">
-                       <span class="text-muted font-weight-bold">Total Bill:</span>
-                       <span class="font-weight-bold h5 mb-0">$${totalBill.toFixed(2)}</span>
-                     </div>`;
-                     
-                     return html;
-                   })()}
-                   
-                   ${isExtended && extensionCost > 0 ? `<div class="d-flex justify-content-between small text-info mb-1"><span>Extension Cost:</span><span>+$${extensionCost.toFixed(2)}</span></div>` : ''}
-                   ${isDecreased && decreaseRefund > 0 ? `<div class="d-flex justify-content-between small text-warning mb-1"><span>Refund:</span><span>-$${decreaseRefund.toFixed(2)}</span></div>` : ''}
-
-                   <div class="d-flex justify-content-between mb-2">
-                      <span class="text-muted">Paid:</span>
-                      <span class="text-success font-weight-bold">-$${parseFloat(booking.amount_paid || 0).toFixed(2)}</span>
-                   </div>
-                   
-                   ${(() => {
-                     const serviceCharges = parseFloat(booking.service_charges_usd || 0);
-                     const roomPrice = parseFloat(booking.total_price || 0);
-                     const totalBill = parseFloat(booking.total_bill_usd || roomPrice);
-                     const amountPaid = parseFloat(booking.amount_paid || 0);
-                     const remaining = totalBill - amountPaid;
-                     
-                     if (Math.abs(remaining) > 0.01) {
-                       const color = remaining > 0 ? 'text-danger' : 'text-success';
-                       return `<div class="d-flex justify-content-between mb-2 border-top pt-2">
-                         <span class="font-weight-bold">Remaining:</span>
-                         <span class="font-weight-bold ${color}">$${remaining.toFixed(2)}</span>
-                       </div>`;
-                     }
-                     return '';
-                   })()}
-                   
-                   <hr class="my-2">
-                   <div class="d-flex justify-content-between align-items-center">
-                      <span>Status:</span>
-                      <span class="badge badge-${booking.payment_status === 'paid' ? 'success' : booking.payment_status === 'partial' ? 'info' : 'warning'}">
-                        ${booking.payment_status ? booking.payment_status.toUpperCase() : 'N/A'}
-                        ${booking.payment_status === 'partial' ? '(' + parseFloat(booking.payment_percentage).toFixed(0) + '%)' : ''}
-                      </span>
-                   </div>
-                   
-                   ${booking.payment_transaction_id ? `<div class="mt-2 bg-light p-2 rounded small font-monospace text-center text-muted">ID: ${booking.payment_transaction_id}</div>` : ''}
+            <div class="row mt-4">
+              <!-- Room details -->
+              <div class="col-md-6">
+                <div class="preview-section h-100">
+                  <h5><i class="fa fa-bed"></i> Room Assigned</h5>
+                  <table class="table table-bordered table-sm">
+                    <tr>
+                      <th>Room Number:</th>
+                      <td class="h5 mb-0 text-primary">${room.room_number || 'Unassigned'}</td>
+                    </tr>
+                    <tr>
+                      <th>Room Type:</th>
+                      <td>${room.room_type || 'Standard'}</td>
+                    </tr>
+                    <tr>
+                      <th>Floor:</th>
+                      <td>${room.floor_location || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <th>Capacity:</th>
+                      <td>${room.capacity || 'N/A'} ${parseInt(room.capacity) === 1 ? 'Guest' : 'Guests'}</td>
+                    </tr>
+                  </table>
                 </div>
               </div>
 
-              <!-- Notes Card -->
-              <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom-0 pb-0">
-                  <h6 class="text-uppercase text-muted mb-0" style="font-size: 0.75rem; letter-spacing: 1px;">Notes & Requests</h6>
-                </div>
-                <div class="card-body pt-2">
-                   ${booking.special_requests ? `<div class="alert alert-info small mb-2"><i class="fa fa-comment-o"></i> <strong>Request:</strong> ${booking.special_requests}</div>` : '<div class="text-muted small mb-2">No special requests.</div>'}
-                   ${booking.admin_notes ? `<div class="alert alert-warning small mb-2"><i class="fa fa-sticky-note-o"></i> <strong>Admin:</strong> ${booking.admin_notes}</div>` : ''}
-                   ${booking.cancellation_reason ? `<div class="alert alert-danger small"><i class="fa fa-ban"></i> <strong>Cancelled:</strong> ${booking.cancellation_reason}</div>` : ''}
+              <!-- Financial Info -->
+              <div class="col-md-6">
+                <div class="preview-section h-100">
+                  <h5><i class="fa fa-dollar"></i> Financial Info</h5>
+                  <table class="table table-bordered table-sm">
+                    ${(() => {
+                      const serviceCharges = parseFloat(booking.service_charges_usd || 0);
+                      const totalRoomCharge = parseFloat(booking.total_price || 0);
+                      const totalCharges = parseFloat(booking.total_bill_usd || totalRoomCharge);
+                      const nights = calculateNightsNumber(booking.check_in, booking.check_out) || 1;
+                      const pricePerNight = totalRoomCharge / nights;
+                      
+                      let html = '';
+                      
+                      // Price per Night
+                      html += `<tr>
+                        <th>Price/Night:</th>
+                        <td>$${pricePerNight.toFixed(2)}</td>
+                      </tr>`;
+
+                      // Total Room Charge
+                      html += `<tr>
+                        <th>Room Charge:</th>
+                        <td>$${totalRoomCharge.toFixed(2)}</td>
+                      </tr>`;
+                      
+                      // Service Charges (if any)
+                      if (serviceCharges > 0) {
+                        html += `<tr>
+                          <th>Service Charges:</th>
+                          <td>$${serviceCharges.toFixed(2)}</td>
+                        </tr>`;
+                      }
+                      
+                      // Total Charges
+                      html += `<tr class="table-active">
+                        <th class="font-weight-bold">Total Bill:</th>
+                        <td class="font-weight-bold h5 mb-0 text-primary">$${totalCharges.toFixed(2)}</td>
+                      </tr>`;
+                      
+                      return html;
+                    })()}
+                    
+                    ${isExtended && extensionCost > 0 ? `<tr><th class="text-info">Extension:</th><td class="text-info">+$${extensionCost.toFixed(2)}</td></tr>` : ''}
+                    ${isDecreased && decreaseRefund > 0 ? `<tr><th class="text-warning">Refund:</th><td class="text-warning">-$${decreaseRefund.toFixed(2)}</td></tr>` : ''}
+
+                    <tr>
+                      <th>Paid by Company:</th>
+                      <td class="text-success font-weight-bold">$${parseFloat(booking.amount_paid || 0).toFixed(2)}</td>
+                    </tr>
+                    ${(() => {
+                      const totalRoomCharge = parseFloat(booking.total_price || 0);
+                      const totalCharges = parseFloat(booking.total_bill_usd || totalRoomCharge);
+                      const amountPaid = parseFloat(booking.amount_paid || 0);
+                      const balance = totalCharges - amountPaid;
+                      
+                      // If there's a positive balance (guest owes money)
+                      if (balance > 0.01) {
+                        return `<tr class="table-active">
+                          <th class="font-weight-bold">Balance Due:</th>
+                          <td class="font-weight-bold text-danger h5 mb-0">$${balance.toFixed(2)}</td>
+                        </tr>`;
+                      } 
+                      // If fully paid or overpaid
+                      else if (amountPaid >= totalCharges && totalCharges > 0) {
+                        let html = `<tr class="table-active">
+                          <th class="font-weight-bold">Balance:</th>
+                          <td><span class="badge badge-success px-3 py-1" style="font-size: 0.85rem;"><i class="fa fa-check-circle"></i> ALL PAID</span></td>
+                        </tr>`;
+                        
+                        // If overpaid, show the overpayment amount as additional info
+                        if (balance < -0.01) {
+                          html += `<tr>
+                            <th class="text-muted">Overpayment:</th>
+                            <td class="text-info">$${Math.abs(balance).toFixed(2)} <small class="text-muted">(Credit)</small></td>
+                          </tr>`;
+                        }
+                        
+                        return html;
+                      }
+                      return '';
+                    })()}
+                    <tr>
+                      <th>Payment Status:</th>
+                      <td>
+                        <span class="badge badge-${booking.payment_status === 'paid' ? 'success' : booking.payment_status === 'partial' ? 'info' : 'warning'}">
+                          ${booking.payment_status ? booking.payment_status.toUpperCase() : 'N/A'}
+                          ${booking.payment_status === 'partial' ? '(' + parseFloat(booking.payment_percentage).toFixed(0) + '%)' : ''}
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                  ${booking.payment_transaction_id ? `<div class="mt-2 text-center"><small class="bg-light p-1 px-2 rounded font-monospace text-muted">ID: ${booking.payment_transaction_id}</small></div>` : ''}
                 </div>
               </div>
-
             </div>
+
+            <!-- Notes & Requests -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <div class="preview-section">
+                  <h5><i class="fa fa-sticky-note"></i> Notes & Requests</h5>
+                  ${booking.special_requests ? `<div class="alert alert-info mb-2"><i class="fa fa-comment-o"></i> <strong>Guest Request:</strong> ${booking.special_requests}</div>` : '<p class="text-muted small mb-2">No special requests from guest.</p>'}
+                  <hr>
+                  ${booking.admin_notes ? `<div class="alert alert-warning mb-2"><i class="fa fa-sticky-note-o"></i> <strong>Admin Notes:</strong> ${booking.admin_notes}</div>` : '<p class="text-muted small mb-0">No internal admin notes.</p>'}
+                  ${booking.cancellation_reason ? `<div class="alert alert-danger mt-2"><i class="fa fa-ban"></i> <strong>Cancellation Reason:</strong> ${booking.cancellation_reason}</div>` : ''}
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       `;
@@ -2609,6 +2666,9 @@ function viewCompanyBookingGroup(companyId, firstBookingId) {
       html += '<div class="col-md-4">';
       html += '<div class="card h-100 border-0 shadow-sm bg-light">';
       html += '<div class="card-body">';
+      // Fix negative zero issue
+      if (Math.abs(totalRemaining) < 0.005) totalRemaining = 0;
+
       html += '<h6 class="text-uppercase text-muted mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">Company Balance</h6>';
       html += '<div class="d-flex justify-content-between align-items-end mb-2">';
       html += '<span>Total Charges:</span>';
@@ -2616,14 +2676,14 @@ function viewCompanyBookingGroup(companyId, firstBookingId) {
       html += '</div>';
       html += '<div class="d-flex justify-content-between align-items-end mb-2">';
       html += '<span>Total Paid:</span>';
-      html += '<span class="text-success font-weight-bold">-$' + totalCompanyPaid.toFixed(2) + '</span>';
+      html += '<span class="text-success font-weight-bold">$' + totalCompanyPaid.toFixed(2) + '</span>';
       html += '</div>';
       html += '<hr class="my-2">';
       html += '<div class="d-flex justify-content-between align-items-end">';
       html += '<span class="font-weight-bold">Remaining:</span>';
       html += '<span class="h5 mb-0 ' + (totalRemaining > 0.01 ? 'text-danger' : 'text-success') + '">$' + totalRemaining.toFixed(2) + '</span>';
       html += '</div>';
-       html += '<small class="text-muted text-right d-block mt-1">~ ' + (totalRemaining * exchangeRate).toLocaleString('en-US') + ' TZS</small>';
+       html += '<small class="text-muted text-right d-block mt-1">~ ' + (totalRemaining * exchangeRate).toLocaleString('en-US', {maximumFractionDigits: 0}) + ' TZS</small>';
       html += '</div></div></div>';
       
       html += '</div>'; // End Row
@@ -2696,76 +2756,80 @@ function viewCompanyBookingGroup(companyId, firstBookingId) {
         html += '<div class="tab-pane fade ' + isActive + '" id="' + panelId + '" role="tabpanel" aria-labelledby="' + tabId + '">';
         html += '<div class="p-4">';
         
-        // Guest Header
-        html += '<div class="d-flex justify-content-between align-items-start mb-4">';
-        html += '<div><h4 class="mb-1">' + (booking.guest_name || 'N/A') + '</h4>';
-        html += '<span class="text-muted"><i class="fa fa-hashtag mr-1"></i>' + booking.booking_reference + '</span></div>';
+        // Guest Header with Status Badges
+        html += '<div class="preview-section mb-4 d-flex justify-content-between align-items-center">';
+        html += '<div><h4 class="mb-0 text-primary">' + (booking.guest_name || 'N/A') + '</h4>';
+        html += '<span class="text-muted small"><i class="fa fa-hashtag"></i> ' + booking.booking_reference + '</span></div>';
         html += '<div class="text-right">' + statusBadge + ' <span class="ml-1">' + paymentBadge + '</span> <span class="ml-1">' + checkInBadge + '</span></div>';
         html += '</div>';
 
+        html += '<div class="preview-container">';
         html += '<div class="row">';
         
-        // Col 1: Details
+        // Col 1: Booking Information
         html += '<div class="col-md-6">';
-        html += '<h6 class="border-bottom pb-2 mb-3 text-muted">Booking Information</h6>';
-        html += '<table class="table table-borderless table-sm">';
-        html += '<tr><td class="text-muted" width="120">Room:</td><td class="font-weight-bold">' + (room.room_number || 'N/A') + ' <span class="badge badge-light ml-2">' + (room.room_type || 'N/A') + '</span></td></tr>';
-        html += '<tr><td class="text-muted">Dates:</td><td>' + checkIn + ' <i class="fa fa-arrow-right mx-1 text-muted small"></i> ' + checkOut + '</td></tr>';
-        html += '<tr><td class="text-muted">Nights:</td><td>' + (booking.nights || calculateNightsNumber(booking.check_in, booking.check_out)) + '</td></tr>';
-        html += '<tr><td class="text-muted">Guest Email:</td><td>' + (booking.guest_email || 'N/A') + '</td></tr>';
-         html += '<tr><td class="text-muted">Guest Phone:</td><td>' + (booking.guest_phone || 'N/A') + '</td></tr>';
+        html += '<div class="preview-section h-100">';
+        html += '<h5><i class="fa fa-calendar"></i> Booking Information</h5>';
+        html += '<table class="table table-bordered table-sm">';
+        html += '<tr><th>Room Number:</th><td class="h5 mb-0 text-primary">' + (room.room_number || 'N/A') + '</td></tr>';
+        html += '<tr><th>Room Type:</th><td><span class="badge badge-light">' + (room.room_type || 'N/A') + '</span></td></tr>';
+        html += '<tr><th>Check-in:</th><td>' + checkIn + '</td></tr>';
+        html += '<tr><th>Check-out:</th><td>' + checkOut + '</td></tr>';
+        html += '<tr><th>Nights:</th><td>' + (booking.nights || calculateNightsNumber(booking.check_in, booking.check_out)) + '</td></tr>';
+        html += '<tr><th>Guest Email:</th><td>' + (booking.guest_email || 'N/A') + '</td></tr>';
+        html += '<tr><th>Guest Phone:</th><td>' + (booking.guest_phone || 'N/A') + '</td></tr>';
         html += '</table>';
-        html += '</div>'; // End col
+        html += '</div></div>';
 
-        // Col 2: Financials for this specific room
+        // Col 2: Room Financials
         html += '<div class="col-md-6">';
-        html += '<h6 class="border-bottom pb-2 mb-3 text-muted">Room Financials</h6>';
+        html += '<div class="preview-section h-100">';
+        html += '<h5><i class="fa fa-dollar"></i> Room Financials</h5>';
         
-        // Room Charge Box
         const serviceCharges = parseFloat(booking.service_charges_usd || 0);
         const isSelfPay = booking.payment_responsibility === 'self';
         const totalBookingBill = roomTotal + (isSelfPay ? 0 : serviceCharges);
         const guestRemaining = totalBookingBill - paidAmount;
 
-        html += '<div class="bg-light p-3 rounded mb-3">';
-        html += '<div class="d-flex justify-content-between mb-1">';
-        html += '<span>Price per Night:</span><span>$' + parseFloat(room.price_per_night || 0).toFixed(2) + '</span>';
-        html += '</div>';
-        html += '<div class="d-flex justify-content-between mb-1">';
-        html += '<span>Total Room Charge:</span><span>$' + roomTotal.toFixed(2) + '</span>';
-        html += '</div>';
+        html += '<table class="table table-bordered table-sm">';
+        html += '<tr><th>Price/Night:</th><td>$' + parseFloat(room.price_per_night || 0).toFixed(2) + '</td></tr>';
+        html += '<tr><th>Room Charge:</th><td>$' + roomTotal.toFixed(2) + '</td></tr>';
         
         if (serviceCharges > 0) {
-            html += '<div class="d-flex justify-content-between mb-1 ' + (isSelfPay ? 'text-muted' : '') + '">';
-            html += '<span>Service Charges:</span><span>$' + serviceCharges.toFixed(2) + '</span>';
-            html += '</div>';
-            if (isSelfPay) {
-                html += '<small class="text-right d-block text-muted mb-2">(Paid by guest)</small>';
-            }
+          html += '<tr class="' + (isSelfPay ? 'text-muted' : '') + '"><th>Service Charges:</th><td>$' + serviceCharges.toFixed(2);
+          if (isSelfPay) {
+            html += ' <small class="text-muted">(Guest pays)</small>';
+          }
+          html += '</td></tr>';
         }
 
-        html += '<div class="d-flex justify-content-between mb-1 font-weight-bold border-top pt-2">';
-        html += '<span>Total Charges:</span><span>$' + totalBookingBill.toFixed(2) + '</span>';
-        html += '</div>';
-
-        html += '<div class="d-flex justify-content-between small text-success">';
-        html += '<span>Paid by Company:</span><span>-$' + paidAmount.toFixed(2) + '</span>';
-        html += '</div>';
-
-        html += '<div class="border-top mt-2 pt-2 d-flex justify-content-between">';
-        html += '<span class="font-weight-bold">Balance:</span><span class="font-weight-bold ' + (guestRemaining > 0.01 ? 'text-danger' : 'text-success') + '">$' + guestRemaining.toFixed(2) + '</span>';
-        html += '</div>';
-        html += '</div>';
+        html += '<tr class="table-active"><th class="font-weight-bold">Total Bill:</th><td class="font-weight-bold h5 mb-0 text-primary">$' + totalBookingBill.toFixed(2) + '</td></tr>';
+        html += '<tr><th>Paid by Company:</th><td class="text-success font-weight-bold">$' + paidAmount.toFixed(2) + '</td></tr>';
+        
+        // Balance logic (same as individual booking modal)
+        if (guestRemaining > 0.01) {
+          html += '<tr class="table-active"><th class="font-weight-bold">Balance Due:</th><td class="font-weight-bold text-danger h5 mb-0">$' + guestRemaining.toFixed(2) + '</td></tr>';
+        } else if (paidAmount >= totalBookingBill && totalBookingBill > 0) {
+          html += '<tr class="table-active"><th class="font-weight-bold">Balance:</th><td><span class="badge badge-success px-3 py-1" style="font-size: 0.85rem;"><i class="fa fa-check-circle"></i> ALL PAID</span></td></tr>';
+          
+          if (guestRemaining < -0.01) {
+            html += '<tr><th class="text-muted">Overpayment:</th><td class="text-info">$' + Math.abs(guestRemaining).toFixed(2) + ' <small class="text-muted">(Credit)</small></td></tr>';
+          }
+        }
+        
+        html += '<tr><th>Payment Status:</th><td>' + paymentBadge + '</td></tr>';
+        html += '</table>';
 
         // Self-pay warning if applicable
         if (booking.payment_responsibility === 'self') {
-           html += '<div class="alert alert-warning py-2 mb-0" style="font-size: 0.9rem;">';
-           html += '<i class="fa fa-exclamation-triangle mr-2"></i> This guest pays for their own services.';
-           html += '</div>';
+          html += '<div class="alert alert-warning py-2 mb-0 mt-2" style="font-size: 0.9rem;">';
+          html += '<i class="fa fa-exclamation-triangle mr-2"></i> This guest pays for their own services.';
+          html += '</div>';
         }
 
-        html += '</div>'; // End col
+        html += '</div></div>';
         html += '</div>'; // End row
+        html += '</div>'; // End preview-container
         
         html += '</div></div>'; // End tab pane
       });
