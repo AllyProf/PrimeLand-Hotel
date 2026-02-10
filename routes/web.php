@@ -925,3 +925,22 @@ Route::prefix('chef-master')->group(function () {
         Route::get('/day-services/{dayService}/docket', [\App\Http\Controllers\DayServiceController::class, 'docket'])->name('chef-master.day-services.docket');
     });
 });
+
+/**
+ * WAITER ROUTES
+ */
+Route::prefix('waiter')->group(function () {
+    // Waiter Login 
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('waiter.login');
+
+    Route::middleware(['auth:staff', 'role:waiter'])->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\WaiterController::class, 'dashboard'])->name('waiter.dashboard');
+        Route::get('/active-bookings', [\App\Http\Controllers\WaiterController::class, 'getActiveBookings'])->name('waiter.active-bookings');
+        Route::post('/order/store', [\App\Http\Controllers\WaiterController::class, 'storeOrder'])->name('waiter.order.store');
+        Route::get('/orders', [\App\Http\Controllers\WaiterController::class, 'orders'])->name('waiter.orders');
+        
+        // Profile & Logout
+        Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('waiter.profile');
+        Route::post('/logout', [AuthController::class, 'logout'])->name('waiter.logout');
+    });
+});

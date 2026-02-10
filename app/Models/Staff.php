@@ -158,6 +158,15 @@ class Staff extends Authenticatable
     }
 
     /**
+     * Check if staff is waiter
+     */
+    public function isWaiter(): bool
+    {
+        $normalizedRole = strtolower(trim($this->role ?? ''));
+        return $normalizedRole === 'waiter';
+    }
+
+    /**
      * Get department name based on role
      * Maps roles to departments: housekeeper -> Housekeeping, reception -> Reception, 
      * bar_keeper -> Bar, head_chef -> Food

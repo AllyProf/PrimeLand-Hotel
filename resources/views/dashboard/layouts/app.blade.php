@@ -365,6 +365,8 @@
               $currentRole = 'head_chef';
             } elseif ($normalizedRole === 'housekeeper' || strtolower($rawRole) === 'housekeeper') {
               $currentRole = 'housekeeper';
+            } elseif ($normalizedRole === 'waiter' || strtolower($rawRole) === 'waiter') {
+              $currentRole = 'waiter';
             } else {
               $currentRole = 'manager'; // default fallback
             }
@@ -386,6 +388,8 @@
           $logoRoute = route('housekeeper.dashboard');
         } elseif ($currentRole === 'bar_keeper') {
           $logoRoute = route('bar-keeper.dashboard');
+        } elseif ($currentRole === 'waiter') {
+          $logoRoute = route('waiter.dashboard');
         } elseif (in_array($currentRole, ['customer', 'guest'])) {
           $logoRoute = route('customer.dashboard');
         } else {
@@ -510,6 +514,9 @@
               } elseif ($headerRole === 'head_chef') {
                 $profileRoute = route('chef-master.profile');
                 $logoutRoute = route('chef-master.logout');
+              } elseif ($headerRole === 'waiter') {
+                $profileRoute = route('waiter.profile');
+                $logoutRoute = route('waiter.logout');
               } else {
                 $profileRoute = route('customer.profile');
                 $logoutRoute = route('customer.logout');
@@ -589,6 +596,8 @@
                     $displayRole = 'head_chef';
                   } elseif ($normalizedRole === 'housekeeper' || strtolower($rawRole) === 'housekeeper') {
                     $displayRole = 'housekeeper';
+                  } elseif ($normalizedRole === 'waiter' || strtolower($rawRole) === 'waiter') {
+                    $displayRole = 'waiter';
                   }
                 } elseif ($currentAuthUser instanceof \App\Models\Guest) {
                   $displayRole = 'customer';
@@ -638,6 +647,8 @@
                 $sessionRole = 'head_chef';
               } elseif ($normalizedRole === 'housekeeper' || $rawRole === 'housekeeper') {
                 $sessionRole = 'housekeeper';
+              } elseif ($normalizedRole === 'waiter' || $rawRole === 'waiter') {
+                $sessionRole = 'waiter';
               }
             } elseif ($currentAuthUser instanceof \App\Models\Guest) {
               $sessionRole = 'customer';
@@ -669,6 +680,9 @@
           } elseif ($sidebarUserRole === 'housekeeper') {
             $sidebarRole = 'housekeeper';
             $sidebarFile = 'dashboard.partials.sidebar-housekeeper';
+          } elseif ($sidebarUserRole === 'waiter') {
+            $sidebarRole = 'waiter';
+            $sidebarFile = 'dashboard.partials.sidebar-waiter';
           } elseif ($sidebarUserRole === 'customer') {
             $sidebarRole = 'customer';
             $sidebarFile = 'dashboard.partials.sidebar-customer';

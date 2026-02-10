@@ -45,6 +45,8 @@ class CheckRole
                 $userRole = 'head_chef';
             } elseif ($normalizedRole === 'housekeeper' || $rawRoleLower === 'housekeeper') {
                 $userRole = 'housekeeper';
+            } elseif ($normalizedRole === 'waiter' || $rawRoleLower === 'waiter') {
+                $userRole = 'waiter';
             }
         } elseif ($user instanceof \App\Models\Guest) {
             $userRole = 'customer'; // Guests are mapped to 'customer' role
