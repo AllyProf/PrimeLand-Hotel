@@ -689,28 +689,16 @@ class KitchenController extends Controller
                     $query->whereIn('category', $foodCategories);
                 })->orWhere('service_id', 4); // Generic Food Order Check
             })
-            ->where(function($query) {
-                // 1. Resident orders pending (standard flow)
-                $query->where(function($q) {
-                    $q->where('is_walk_in', false)
-                      ->where('status', 'pending');
-                })
-                // 2. Walk-in orders:
-                //    - Pending/Approved (Not yet paid or served)
-                //    - Completed (Paid immediately) - visible for today
-                ->orWhere(function($q) {
-                    $q->where('is_walk_in', true)
-                      ->where(function($sub) {
-                          $sub->whereIn('status', ['pending', 'approved'])
-                              ->orWhere(function($s) {
-                                  // Show completed (paid) walk-in orders for today so kitchen can see them
-                                  $s->where('status', 'completed')
-                                    ->where('created_at', '>=', now()->startOfDay());
-                              });
-                      });
+            ->where(function($q) {
+                // 1. All active orders (pending, approved, or preparing)
+                $q->whereIn('status', ['pending', 'approved', 'preparing'])
+                // 2. OR Served orders that are WAITING FOR PAYMENT
+                ->orWhere(function($sub) {
+                    $sub->where('status', 'completed')
+                        ->whereIn('payment_status', ['pending', 'unpaid']);
                 });
             })
-            ->orderBy('requested_at', 'asc')
+            ->orderBy('requested_at', 'desc')
             ->get();
         
         $totalPendingOrders = $pendingOrders->count();
@@ -1352,21 +1340,29 @@ class KitchenController extends Controller
         $productionData = $rawProduction->map(function($order) {
             // Determine Destination
             $dest = 'N/A';
+            $guestLabel = 'Room Guest';
             if ($order->is_walk_in) {
-                $dest = 'Walk-in (' . ($order->walk_in_name ?? 'Guest') . ')';
+                $walkInName = $order->walk_in_name ?? 'Guest';
+                $dest = str_contains(strtolower($walkInName), 'walk-in') ? $walkInName : 'Walk-in (' . $walkInName . ')';
+                $guestLabel = 'Walk-in';
             } elseif ($order->booking) {
-                $dest = 'Room ' . ($order->booking->room->room_number ?? 'N/A');
+                $dest = ($order->booking->room->room_number ?? 'N/A') . ' - ' . ($order->booking->guest_name ?? 'N/A');
+                $guestLabel = 'Room ' . ($order->booking->room->room_number ?? 'N/A');
             }
 
             return (object)[
                 'item_name' => $order->service_specific_data['item_name'] ?? $order->service->name ?? 'Unknown Dish',
                 'destinations' => $dest,
+                'guest_label' => $guestLabel,
                 'category' => ucfirst($order->service->category ?? 'Food'),
                 'total_qty' => $order->quantity,
                 'unit_price' => $order->unit_price_tsh,
                 'total_revenue' => $order->total_price_tsh,
                 'time' => $order->completed_at ? $order->completed_at->format('H:i') : '-',
-                'served_by' => $order->approvedBy->name ?? 'Kitchen Staff'
+                'served_by' => $order->approvedBy->name ?? 'Kitchen Staff',
+                'payment_status' => $order->payment_status,
+                'payment_method' => $order->payment_method,
+                'payment_reference' => $order->payment_reference,
             ];
         });
 

@@ -41,19 +41,14 @@ class BarKeeperController extends Controller
                 })->orWhere('service_id', 3); // Generic Bar Order (ID 3)
             })
             ->where(function($query) {
-                // Resident orders pending approval/service
+                // All pending orders (from waiters, guests, etc.)
                 $query->where('status', 'pending')
-                    // OR Walk-in orders that are being served but not yet paid
+                    // OR approved orders waiting to be served
+                    ->orWhere('status', 'approved')
+                    // OR completed orders that haven't been paid yet (walk-ins)
                     ->orWhere(function($q) {
-                        $q->where('is_walk_in', true)
-                          ->whereIn('status', ['pending', 'approved'])
+                        $q->where('status', 'completed')
                           ->where('payment_status', 'pending');
-                    })
-                    // OR Completed (paid) walk-in orders from today so bar keeper sees them
-                    ->orWhere(function($q) {
-                        $q->where('is_walk_in', true)
-                          ->where('status', 'completed')
-                          ->whereDate('created_at', '>=', now()->startOfDay());
                     });
             })
             ->orderBy('requested_at', 'desc')
@@ -163,9 +158,9 @@ class BarKeeperController extends Controller
                     $drinks[] = (object)[
                         'product_id' => $product->id,
                         'variant_id' => $variant->id,
-                        'name' => $product->name . ($variant->measurement ? ' (' . $variant->measurement . ')' : ''),
+                        'name' => ($variant->variant_name ?: $product->name) . ($variant->measurement ? ' (' . $variant->measurement . ')' : ''),
                         'category' => $product->category,
-                        'image' => $product->image,
+                        'image' => $variant->image ?: $product->image,
                         'options' => $options,
                         'current_stock' => $currentStock,
                         'is_product' => true
@@ -297,7 +292,7 @@ class BarKeeperController extends Controller
         $allVariantIds = array_unique(array_merge($variantIds, $soldVariantIds));
         $variants = \App\Models\ProductVariant::with('product')->whereIn('id', $allVariantIds)->get();
         // Filter to only show bar categories in stock movements
-        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages', 'bar', 'food', 'restaurant'];
+        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages', 'bar'];
 
         $reportData = [];
         foreach ($variants as $variant) {
@@ -430,7 +425,7 @@ class BarKeeperController extends Controller
                 $profitPotential = $stockValue - ($closingStock * $buyingPricePerPic);
 
                 $reportData[] = (object)[
-                    'name' => $variant->product->name . ' (' . $variant->measurement . ')',
+                    'name' => ($variant->variant_name ?: $variant->product->name) . ' (' . $variant->measurement . ')',
                     'category' => $variant->product->category,
                     'unit' => $variant->unit ?? 'pcs',
                     'expiry_date' => $expireText,
@@ -440,8 +435,10 @@ class BarKeeperController extends Controller
                     'sold' => $soldInPeriod,
                     'expected_revenue' => $soldInPeriod * $picPrice, // Base bottle revenue
                     'actual_revenue' => $actualRevenue,
+                    'max_potential_revenue' => ($openingStock + $receivedInPeriod) * $bestUnitPrice,
                     'stock_value' => $stockValue,
                     'profit_potential' => $profitPotential,
+                    'image' => $variant->image ?: $variant->product->image,
                     'in_use' => 0, 
                     'closing_stock' => $closingStock,
                 ];
@@ -449,37 +446,46 @@ class BarKeeperController extends Controller
         }
 
         // 2. Production (Bar Sales) during this period
-        // Exclude 'food' and 'restaurant' categories to show only drinks as requested
-        // Using only $barCategories defined above
-        
-        $salesData = \App\Models\ServiceRequest::with('service')
+        $rawSales = \App\Models\ServiceRequest::with(['service', 'booking.room', 'approvedBy'])
             ->where(function($q) use ($barCategories) {
                 $q->whereHas('service', function($query) use ($barCategories) {
                     $query->whereIn('category', $barCategories);
-                })->orWhereIn('service_id', [3, 4]); // Generic Bar (3) and Food (4)
+                })->orWhereIn('service_id', [3]); // Generic Bar (3)
             })
             ->where('status', 'completed')
             ->whereNull('day_service_id')
             ->whereBetween('completed_at', [$startDate, $endDate])
-            ->get()
-            ->groupBy(function($order) {
-                return $order->service_specific_data['item_name'] ?? $order->service->name ?? 'Unknown Drink';
-                })->map(function($group, $name) {
-                $totalQty = $group->sum('quantity');
-                $revenue = $group->sum('total_price_tsh');
-                $firstOrder = $group->first();
-                $category = ($firstOrder && $firstOrder->service) 
-                    ? ucfirst(str_replace('_', ' ', $firstOrder->service->category)) 
-                    : 'Beverage';
-                    
-                return (object)[
-                    'item_name' => $name,
-                    'category' => $category,
-                    'total_qty' => $totalQty,
-                    'total_revenue' => $revenue,
-                    'unit_price' => $totalQty > 0 ? $revenue / $totalQty : 0
-                ];
-            })->values();
+            ->orderBy('completed_at', 'desc')
+            ->get();
+
+        $salesData = $rawSales->map(function($order) {
+            // Determine Destination
+            $dest = 'N/A';
+            $guestLabel = 'Room Guest';
+            if ($order->is_walk_in) {
+                $walkInName = $order->walk_in_name ?? 'Guest';
+                $dest = str_contains(strtolower($walkInName), 'walk-in') ? $walkInName : 'Walk-in (' . $walkInName . ')';
+                $guestLabel = 'Walk-in';
+            } elseif ($order->booking) {
+                $dest = ($order->booking->room->room_number ?? 'N/A') . ' - ' . ($order->booking->guest_name ?? 'N/A');
+                $guestLabel = 'Room ' . ($order->booking->room->room_number ?? 'N/A');
+            }
+
+            return (object)[
+                'item_name' => $order->service_specific_data['item_name'] ?? $order->service->name ?? 'Unknown Drink',
+                'destinations' => $dest,
+                'guest_label' => $guestLabel,
+                'category' => ucfirst($order->service->category ?? 'Beverage'),
+                'total_qty' => $order->quantity,
+                'unit_price' => $order->unit_price_tsh,
+                'total_revenue' => $order->total_price_tsh,
+                'time' => $order->completed_at ? $order->completed_at->format('H:i') : '-',
+                'served_by' => $order->approvedBy->name ?? 'Bar Staff',
+                'payment_status' => $order->payment_status,
+                'payment_method' => $order->payment_method,
+                'payment_reference' => $order->payment_reference,
+            ];
+        });
 
         // 3. Ceremony Usage Breakdown
         $ceremonyUsage = \App\Models\ServiceRequest::with(['service', 'dayService'])
@@ -488,7 +494,7 @@ class BarKeeperController extends Controller
             ->where(function($q) use ($barCategories) {
                 $q->whereHas('service', function($query) use ($barCategories) {
                     $query->whereIn('category', $barCategories);
-                })->orWhereIn('service_id', [3, 4]);
+                })->orWhereIn('service_id', [3]);
             })
             ->orderBy('created_at', 'desc')
             ->get();
@@ -590,20 +596,51 @@ class BarKeeperController extends Controller
     }
 
     /**
+     * Mark a Guest Order as SERVED (Taken) but Payment is Pending
+     */
+    public function serveOrder(Request $request, \App\Models\ServiceRequest $serviceRequest)
+    {
+        $user = Auth::guard('staff')->user();
+        
+        try {
+            $serviceRequest->update([
+                'status' => 'completed', // Moved from Pending to Completed (Taken out of queue)
+                'completed_at' => now(),
+                'approved_by' => $user->id,
+                'approved_at' => now(), 
+                'payment_status' => 'pending', // Explicitly Pending Payment
+                'reception_notes' => $serviceRequest->reception_notes . " | Served by {$user->name} (Pending Payment)",
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Order marked as SERVED (Awaiting Payment)!',
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error serving bar order: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * View Completed Order History & Statistics
      */
     public function completedOrders(Request $request)
     {
         $user = Auth::guard('staff')->user();
         
-        // Base query for completed bar/restaurant services
-        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'bar', 'food', 'restaurant'];
+        // Base query for completed bar services
+        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'bar', 'beverage', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages'];
         
         $query = \App\Models\ServiceRequest::with(['service', 'booking'])
             ->where(function($q) use ($barCategories) {
                 $q->whereHas('service', function($query) use ($barCategories) {
                     $query->whereIn('category', $barCategories);
-                })->orWhereIn('service_id', [3, 4]); // Generic Bar (3) and Generic Food (4)
+                })->orWhereIn('service_id', [3]); // Generic Bar (3) only
             })
             ->where('status', 'completed')
             ->latest('completed_at');
@@ -699,8 +736,9 @@ class BarKeeperController extends Controller
             $stockMap[$key] = [
                 'product_id' => $variant->product_id,
                 'variant_id' => $variant->id,
-                'product_name' => $variant->product->name ?? 'Unknown',
-                'product_image' => $variant->product->image,
+                'product_name' => $variant->variant_name ?: $variant->product->name,
+                'brand_name' => $variant->product->name,
+                'product_image' => $variant->image ?: $variant->product->image,
                 'product_category' => $variant->product->category ?? 'other',
                 'category_name' => $variant->product->category_name ?? 'Other',
                 'variant_name' => $variant->measurement ?? '',
@@ -1134,8 +1172,72 @@ class BarKeeperController extends Controller
         }
         
         $totalAmount = $items->sum('total_price_tsh');
-        $guestName = $serviceRequest->walk_in_name ?? 'General Walk-in';
+        $walkInName = $serviceRequest->walk_in_name ?? 'General Walk-in';
+        $guestName = str_contains(strtolower($walkInName), 'walk-in') ? $walkInName : $walkInName; // Keep as is for guest name display
+        // Actually, just keep it clean
+        $guestName = $walkInName;
         
         return view('dashboard.print-walk-in-docket', compact('items', 'totalAmount', 'guestName', 'serviceRequest'));
+    }
+
+    /**
+     * Print Docket for All Items in a Guest Group
+     */
+    public function printGroupDocket(Request $request)
+    {
+        // Get group key from request
+        $isWalkIn = $request->input('is_walk_in', false);
+        $identifier = $request->input('identifier'); // walk_in_name or booking_id
+        
+        // Fetch all orders for this group
+        $orders = ServiceRequest::with(['service', 'booking.room', 'dayService']);
+        
+        if ($isWalkIn) {
+            $orders = $orders->where('is_walk_in', true)
+                ->where('walk_in_name', $identifier);
+        } else {
+            $orders = $orders->where('booking_id', $identifier);
+        }
+        
+        $orders = $orders->orderBy('requested_at', 'desc')->get();
+        
+        if ($orders->isEmpty()) {
+            abort(404, 'No orders found');
+        }
+
+        // If walk-in, further filter by date to avoid picking up same name from different days
+        if ($isWalkIn) {
+            $firstDate = $orders->first()->requested_at->toDateString();
+            $orders = $orders->filter(function($o) use ($firstDate) {
+                return $o->requested_at->toDateString() === $firstDate;
+            });
+        }
+        
+        $first = $orders->first();
+        
+        // Determine Destination
+        $destination = 'Internal';
+        if ($first->is_walk_in) {
+            $walkInName = $first->walk_in_name ?? 'Guest';
+            $destination = str_contains(strtolower($walkInName), 'walk-in') ? $walkInName : 'WALK-IN (' . $walkInName . ')';
+        } elseif ($first->booking) {
+            $destination = 'ROOM ' . ($first->booking->room->room_number ?? 'N/A');
+        }
+        
+        // Determine Guest Name
+        $guestName = $first->is_walk_in ? ($first->walk_in_name ?? 'General Guest') : ($first->booking->guest_name ?? 'Hotel Guest');
+        
+        // Determine Requested By (Waiter or Bar)
+        $requestedBy = 'Bar Keeper';
+        if ($first->reception_notes && str_contains($first->reception_notes, 'Waiter: ')) {
+            $parts = explode('Waiter: ', $first->reception_notes);
+            $byParts = explode(' - Msg:', $parts[1] ?? '');
+            $requestedBy = $byParts[0] ?? 'Waiter';
+        }
+        
+        // Calculate total
+        $totalAmount = $orders->sum('total_price_tsh');
+        
+        return view('dashboard.print-waiter-group-docket', compact('orders', 'destination', 'guestName', 'requestedBy', 'totalAmount', 'first'));
     }
 }

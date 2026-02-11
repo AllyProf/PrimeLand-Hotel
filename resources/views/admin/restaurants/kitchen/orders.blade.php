@@ -46,6 +46,7 @@
                     <thead>
                         <tr>
                             <th>Requested At</th>
+                            <th>By</th>
                             <th>Room / Guest</th>
                             <th>Item Name</th>
                             <th>Qty</th>
@@ -57,12 +58,25 @@
                     <tbody>
                         @forelse($pendingOrders as $order)
                         @php 
-                            $foodId = $order->service_specific_data['food_id'] ?? null;
-                            $recipe = $foodId ? \App\Models\Recipe::find($foodId) : null;
-                            $itemName = $recipe ? $recipe->name : ($order->service->name ?? 'Unknown Item');
+                            $itemName = $order->service_specific_data['item_name'] ?? ($order->service->name ?? 'Unknown Item');
                         @endphp
                         <tr>
                             <td>{{ $order->requested_at->format('H:i') }} <br> <small class="text-muted">{{ $order->requested_at->diffForHumans() }}</small></td>
+                            <td>
+                                @php
+                                  $by = 'N/A';
+                                  if ($order->reception_notes && str_contains($order->reception_notes, 'Waiter: ')) {
+                                      $parts = explode('Waiter: ', $order->reception_notes);
+                                      $byRaw = $parts[1] ?? 'Waiter';
+                                      $byParts = explode(' - Msg:', $byRaw);
+                                      $byNamePart = $byParts[0] ?? 'Waiter';
+                                      // Further split by ' | ' to remove completion notes
+                                      $byNameOnly = explode(' | ', $byNamePart);
+                                      $by = trim($byNameOnly[0]);
+                                  }
+                                @endphp
+                                <span class="badge badge-info">{{ $by }}</span>
+                            </td>
                             <td>
                                 @if($order->is_walk_in)
                                     <span class="badge badge-secondary mb-1">WALK-IN</span><br>
@@ -77,12 +91,18 @@
                             </td>
                             <td>
                                 <span class="text-primary font-weight-bold">{{ $itemName }}</span>
-                                @if($recipe)
-                                    {{-- Recipe details could go here --}}
-                                @endif
                             </td>
                             <td><span class="badge badge-info shadow-sm px-3 py-2" style="font-size: 1rem;">{{ $order->quantity }}</span></td>
-                            <td><i class="text-danger italic">{{ $order->guest_request ?? 'No special requests' }}</i></td>
+                            <td>
+                                @php
+                                  $note = $order->guest_request;
+                                  if (!$note && $order->reception_notes && str_contains($order->reception_notes, '- Msg: ')) {
+                                      $parts = explode('- Msg: ', $order->reception_notes);
+                                      $note = $parts[1] ?? null;
+                                  }
+                                @endphp
+                                <i class="text-danger italic">{{ $note ?? 'No special requests' }}</i>
+                            </td>
                             <td>
                                 @if($order->status === 'preparing')
                                     <span class="badge badge-primary">
@@ -90,6 +110,8 @@
                                     </span>
                                 @elseif($order->status === 'approved')
                                     <span class="badge badge-success">Approved</span>
+                                @elseif($order->status === 'completed' && ($order->payment_status === 'pending' || $order->payment_status === 'unpaid'))
+                                    <span class="badge badge-danger shadow-sm"><i class="fa fa-money"></i> Waiting for Payment</span>
                                 @else
                                     <span class="badge badge-warning">{{ ucfirst($order->status) }}</span>
                                 @endif
@@ -185,34 +207,32 @@
 
             if (!isWalkIn) {
                 inputOptions['room_charge'] = 'Room Charge';
+                
+                // For internal guests, we also allow marking as served immediately
+                Swal.fire({
+                    title: 'Confirm Service',
+                    text: "Order for " + name + ". Guest is a resident. Mark as served (charge to room)?",
+                    icon: 'question',
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonColor: '#28a745',
+                    denyButtonColor: '#007bff',
+                    confirmButtonText: 'Yes, Served (Room Charge)',
+                    denyButtonText: 'Pay Now (Other Methods)'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        processCompletion(id, 'room_charge');
+                    } else if (result.isDenied) {
+                        // Show the payment method picker if they want to pay now instead of room charge
+                        showPaymentPicker(id, name, amount, inputOptions);
+                    }
+                });
+                return;
             }
 
-            Swal.fire({
-                title: 'Payment Required',
-                text: "Order for " + name + " is UNPAID. Amount: " + new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(amount),
-                icon: 'warning',
-                input: 'select',
-                inputOptions: inputOptions,
-                inputPlaceholder: 'Select payment method',
-                showCancelButton: true,
-                confirmButtonColor: '#28a745',
-                confirmButtonText: 'Pay & Mark Served',
-                inputValidator: (value) => {
-                    return new Promise((resolve) => {
-                        if (value) {
-                            resolve()
-                        } else {
-                            resolve('You must select a payment method!')
-                        }
-                    })
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    processCompletion(id, result.value);
-                }
-            });
+            showPaymentPicker(id, name, amount, inputOptions);
         } else {
-            // Already paid
+            // Already paid or settled
             Swal.fire({
                 title: 'Confirm Service',
                 text: "Are you sure you have prepared and served " + name + "?",
@@ -226,6 +246,32 @@
                 }
             });
         }
+    }
+    function showPaymentPicker(id, name, amount, inputOptions) {
+        Swal.fire({
+            title: 'Payment Required',
+            text: "Order for " + name + " is UNPAID. Amount: " + new Intl.NumberFormat('en-TZ', { style: 'currency', currency: 'TZS' }).format(amount),
+            icon: 'warning',
+            input: 'select',
+            inputOptions: inputOptions,
+            inputPlaceholder: 'Select payment method',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            confirmButtonText: 'Pay & Mark Served',
+            inputValidator: (value) => {
+                return new Promise((resolve) => {
+                    if (value) {
+                        resolve()
+                    } else {
+                        resolve('You must select a payment method!')
+                    }
+                })
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                processCompletion(id, result.value);
+            }
+        });
     }
 
     function processCompletion(id, paymentMethod) {

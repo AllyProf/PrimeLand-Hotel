@@ -15,6 +15,12 @@
             </a>
         </li>
         <li>
+            <a class="app-menu__item {{ Route::currentRouteName() == 'waiter.sales-summary' ? 'active' : '' }}" href="{{ route('waiter.sales-summary') }}">
+                <i class="app-menu__icon fa fa-line-chart"></i>
+                <span class="app-menu__label">Sales Summary</span>
+            </a>
+        </li>
+        <li>
             <a class="app-menu__item {{ Route::currentRouteName() == 'waiter.orders' ? 'active' : '' }}" href="{{ route('waiter.orders') }}">
                 <i class="app-menu__icon fa fa-history"></i>
                 <span class="app-menu__label">Order History</span>

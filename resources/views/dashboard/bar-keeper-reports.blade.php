@@ -464,6 +464,7 @@
         <table class="receipt-details-table">
             <thead>
                 <tr>
+                    <th style="width: 40px;">Img</th>
                     <th style="text-align: left;">Drink Item / Variant</th>
                     <th>Expire</th>
                     <th>Opening</th>
@@ -471,6 +472,7 @@
                     <th>Sold</th>
                     <th>Rev. (Bottle)</th>
                     <th>Rev. (Actual)</th>
+                    <th>Potential (All)</th>
                     <th>Stock Value</th>
                     <th>Profit Potential</th>
                     <th style="text-align: right;">Balance</th>
@@ -496,12 +498,21 @@
 
                 @foreach($groupedReport as $category => $items)
                 <tr class="category-row">
-                    <td colspan="9"><strong>{{ $category }}</strong></td>
+                    <td colspan="11"><strong>{{ $category }}</strong></td>
                     <td style="text-align: right;"><small>{{ $items->count() }} items</small></td>
                 </tr>
                 @foreach($items as $item)
                 <tr>
-                    <td style="padding-left: 20px;">
+                    <td style="text-align: center; padding: 2px;">
+                        @if($item->image)
+                            <img src="{{ Storage::url($item->image) }}" class="rounded shadow-sm" style="width: 30px; height: 30px; object-fit: cover; border: 1px solid #ddd;">
+                        @else
+                            <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; border: 1px solid #eee;">
+                                <i class="fa fa-glass text-muted" style="font-size: 10px;"></i>
+                            </div>
+                        @endif
+                    </td>
+                    <td style="padding-left: 10px;">
                         {{ $item->name }}
                         @if($item->closing_stock <= 0)
                             <span class="status-badge" style="color: #dc3545;">[OUT]</span>
@@ -527,6 +538,7 @@
                     </td>
                     <td style="text-align: center;">{{ number_format($item->expected_revenue) }}</td>
                     <td style="text-align: center; font-weight: bold; color: #28a745;">{{ number_format($item->actual_revenue) }}</td>
+                    <td style="text-align: center; color: #e07632;">{{ number_format($item->max_potential_revenue) }}</td>
                     <td style="text-align: center; color: #666;">{{ number_format($item->stock_value) }}</td>
                     <td style="text-align: center; font-weight: bold; color: #17a2b8;">{{ number_format($item->profit_potential) }}</td>
                     <td style="text-align: right; background-color: #f8f9fa;"><strong>{{ number_format($item->closing_stock, 1) }}</strong></td>
@@ -543,29 +555,64 @@
         <table class="receipt-details-table">
             <thead>
                 <tr>
-                    <th style="text-align: left;">Drink Name</th>
-                    <th>Qty Sold</th>
-                    <th>Unit Price</th>
-                    <th style="text-align: right;">Total Revenue</th>
+                    <th style="text-align: left; width: 120px;">Time / Status</th>
+                    <th style="text-align: left;">Guest / Destination</th>
+                    <th style="text-align: left;">Items Ordered</th>
+                    <th style="text-align: center; width: 60px;">Qty</th>
+                    <th style="text-align: right; width: 100px;">Revenue</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($salesData as $sale)
-                <tr>
-                    <td><strong>{{ $sale->item_name }}</strong></td>
-                    <td style="text-align: center;"><strong>{{ $sale->total_qty }}</strong></td>
-                    <td style="text-align: center;">{{ number_format($sale->unit_price) }}</td>
-                    <td style="text-align: right;"><strong>{{ number_format($sale->total_revenue) }}</strong></td>
-                </tr>
+                @php
+                    $groupedSales = collect($salesData)->groupBy('destinations');
+                @endphp
+
+                @forelse($groupedSales as $destName => $orders)
+                    @php
+                        $firstOrder = $orders->first();
+                        $groupTotal = $orders->sum('total_revenue');
+                    @endphp
+                    <tr>
+                        <td rowspan="{{ $orders->count() + 1 }}" style="vertical-align: top;">
+                            <span class="font-weight-bold">{{ $firstOrder->time }}</span><br>
+                            @if($firstOrder->payment_status === 'paid')
+                                <span class="status-badge" style="color: #28a745; border: 1px solid #28a745;">PAID</span>
+                                <br><small>{{ strtoupper(str_replace('_', ' ', $firstOrder->payment_method ?? 'CASH')) }}</small>
+                                @if($firstOrder->payment_reference)
+                                    <br><small class="text-muted">{{ $firstOrder->payment_reference }}</small>
+                                @endif
+                            @elseif($firstOrder->payment_status === 'room_charge')
+                                <span class="status-badge" style="color: #17a2b8; border: 1px solid #17a2b8;">ROOM CHARGE</span>
+                            @else
+                                <span class="status-badge" style="color: #dc3545; border: 1px solid #dc3545;">PENDING</span>
+                            @endif
+                        </td>
+                        <td rowspan="{{ $orders->count() + 1 }}" style="vertical-align: top;">
+                            <strong>{{ $firstOrder->guest_label }}</strong><br>
+                            <small class="text-muted">{{ $destName }}</small>
+                        </td>
+                    </tr>
+                    @foreach($orders as $item)
+                    <tr>
+                        <td>{{ $item->item_name }}</td>
+                        <td style="text-align: center;">{{ $item->total_qty }}</td>
+                        <td style="text-align: right;">{{ number_format($item->total_revenue) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr style="background-color: #fcfcfc; border-bottom: 2px solid #eee;">
+                        <td colspan="4" style="text-align: right; font-weight: bold; padding: 5px 12px;">SUBTOTAL:</td>
+                        <td style="text-align: right; font-weight: bold; padding: 5px 12px; color: #e07632;">{{ number_format($groupTotal) }}</td>
+                    </tr>
                 @empty
-                <tr>
-                    <td colspan="4" class="text-center" style="padding: 30px;">No sales records found for this period.</td>
-                </tr>
+                    <tr>
+                        <td colspan="5" class="text-center" style="padding: 30px;">No sales records found for this period.</td>
+                    </tr>
                 @endforelse
+
                 @if(collect($salesData)->count() > 0)
-                <tr class="total-row">
-                    <td colspan="3" style="text-align: right;">TOTAL DIRECT SALES:</td>
-                    <td style="text-align: right; color: #e07632; font-size: 15px;">{{ number_format($totalRev) }} TZS</td>
+                <tr class="total-row" style="background-color: #f8f9fa;">
+                    <td colspan="4" style="text-align: right; font-size: 14px;"><strong>TOTAL DIRECT SALES:</strong></td>
+                    <td style="text-align: right; color: #e07632; font-size: 16px;"><strong>{{ number_format($totalRev) }} TZS</strong></td>
                 </tr>
                 @endif
             </tbody>
@@ -650,25 +697,43 @@
     </div>
     @endif
 
+    @php
+        $totalMaxPotential = collect($reportData)->sum('max_potential_revenue');
+        $totalActual = isset($ceremonyUsage) ? ($totalRev + $ceremonyUsage->sum('total_price_tsh')) : $totalRev;
+    @endphp
+
     <!-- 4. Global Financial Summary -->
     <div class="receipt-info-section" style="margin-top: 40px; background-color: #f8f9fa; border: 1px solid #ddd; padding: 20px;">
         <h3 style="border-bottom: none; margin-bottom: 20px; text-align: center; color: #333;">DAILY FINANCIAL SUMMARY</h3>
         
-        <div style="display: flex; justify-content: space-around; align-items: center;">
+        <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px;">
             <div style="text-align: center;">
-                <span style="font-size: 12px; color: #666; text-transform: uppercase;">Direct Sales</span><br>
-                <strong style="font-size: 18px; color: #007bff;">{{ number_format($totalRev) }} TZS</strong>
+                <span style="font-size: 11px; color: #666; text-transform: uppercase;">Direct Sales</span><br>
+                <strong style="font-size: 16px; color: #007bff;">{{ number_format($totalRev) }} TZS</strong>
             </div>
             <div style="font-size: 20px; color: #999;">+</div>
             <div style="text-align: center;">
-                <span style="font-size: 12px; color: #666; text-transform: uppercase;">Events Consumption</span><br>
-                <strong style="font-size: 18px; color: #17a2b8;">{{ isset($ceremonyUsage) ? number_format($ceremonyUsage->sum('total_price_tsh')) : '0' }} TZS</strong>
+                <span style="font-size: 11px; color: #666; text-transform: uppercase;">Events Usage</span><br>
+                <strong style="font-size: 16px; color: #17a2b8;">{{ isset($ceremonyUsage) ? number_format($ceremonyUsage->sum('total_price_tsh')) : '0' }} TZS</strong>
             </div>
             <div style="font-size: 20px; color: #999;">=</div>
-            <div style="text-align: center; border: 2px solid #28a745; padding: 10px 20px; background: #fff; border-radius: 5px;">
-                <span style="font-size: 12px; color: #28a745; text-transform: uppercase; font-weight: bold;">TOTAL BAR REVENUE</span><br>
-                <strong style="font-size: 24px; color: #28a745;">{{ isset($ceremonyUsage) ? number_format($totalRev + $ceremonyUsage->sum('total_price_tsh')) : number_format($totalRev) }} TZS</strong>
+            <div style="text-align: center; border: 2px solid #28a745; padding: 10px 15px; background: #fff; border-radius: 5px; min-width: 180px;">
+                <span style="font-size: 11px; color: #28a745; text-transform: uppercase; font-weight: bold;">TOTAL REVENUE</span><br>
+                <strong style="font-size: 20px; color: #28a745;">{{ number_format($totalActual) }} TZS</strong>
             </div>
+            <div style="font-size: 20px; color: #999;">/</div>
+            <div style="text-align: center; border: 2px solid #e07632; padding: 10px 15px; background: #fff; border-radius: 5px; min-width: 180px;">
+                <span style="font-size: 11px; color: #e07632; text-transform: uppercase; font-weight: bold;">POTENTIAL (FULL STOCK)</span><br>
+                <strong style="font-size: 20px; color: #e07632;">{{ number_format($totalMaxPotential) }} TZS</strong>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <small class="text-muted">
+                Revenue Achievement: 
+                <strong>{{ $totalMaxPotential > 0 ? number_format(($totalActual / $totalMaxPotential) * 100, 1) : 0 }}%</strong> 
+                of total stock value
+            </small>
         </div>
     </div>
     

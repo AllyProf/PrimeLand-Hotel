@@ -130,7 +130,13 @@
         <!-- Header -->
         <div class="header">
             <h1 style="font-size: 24px;">PRIMELAND HOTEL</h1>
-            <p style="font-weight: bold; letter-spacing: 2px; color: #e07632;">GUEST BILL RECEIPT</p>
+            <p style="font-weight: bold; letter-spacing: 2px; color: #e07632;">
+                @if(in_array(($order->payment_status ?? 'pending'), ['paid', 'room_charge']))
+                    GUEST BILL RECEIPT
+                @else
+                    KITCHEN ORDER DOCKET
+                @endif
+            </p>
             <p>{{ now()->format('M d, Y - h:i A') }}</p>
         </div>
 
@@ -148,6 +154,10 @@
                 <span>Bill #:</span>
                 <strong>{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</strong>
             </div>
+            <div class="info-row">
+                <span>Requested By:</span>
+                <strong>{{ $requestedBy }}</strong>
+            </div>
         </div>
 
         <!-- Billing Items -->
@@ -161,9 +171,9 @@
                 <span>{{ number_format($order->unit_price_tsh) }}</span>
             </div>
             
-            @if($order->guest_request)
+            @if($note)
             <div class="notes">
-                <strong>Notes:</strong> {{ $order->guest_request }}
+                <strong>Notes:</strong> {{ $note }}
             </div>
             @endif
         </div>
@@ -171,11 +181,11 @@
         <!-- Total Section -->
         <div class="payment-info">
             <div>
-                @if($order->is_walk_in)
-                    ORDER STATUS: {{ strtoupper($order->payment_status ?? 'PENDING') }}
-                @else
-                    ORDER STATUS: CHARGED TO ROOM
-                @endif
+                @php
+                    $status = strtoupper($order->payment_status ?? 'PENDING');
+                    if($status === 'ROOM_CHARGE') $status = 'CHARGED TO ROOM';
+                @endphp
+                ORDER STATUS: {{ $status }}
             </div>
             <div class="total-pay">
                 TOTAL BILL: {{ number_format($order->total_price_tsh) }} TZS

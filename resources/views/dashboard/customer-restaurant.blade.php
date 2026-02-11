@@ -377,7 +377,7 @@
                 <div class="col-6 col-md-6 col-lg-4 col-xl-3 mb-3 px-1 drink-item-card" data-category="{{ $drink->category }}" data-name="{{ strtolower($drink->name) }}">
                     <div class="card menu-card shadow-sm">
                         <div class="card-image-holder">
-                            <span class="category-label">{{ ucfirst(str_replace('_', ' ', $drink->category)) }}</span>
+                            {{-- <span class="category-label">{{ ucfirst(str_replace('_', ' ', $drink->category)) }}</span> --}}
                             @if(!($drink->in_stock ?? true))
                                 <div class="out-of-stock-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; z-index: 2;">
                                     <span class="badge badge-danger" style="font-size: 14px; padding: 8px 15px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">Out of Stock</span>

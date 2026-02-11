@@ -72,7 +72,9 @@
     <div class="tile">
       <div class="tile-title-w-btn">
         <h3 class="title">Live Food Orders</h3>
+        @if(!$isChef)
         <button class="btn btn-primary" onclick="openWalkInModal()"><i class="fa fa-plus"></i> New Walk-in Order</button>
+        @endif
       </div>
       
       @if($pendingOrders->count() > 0)
@@ -82,6 +84,7 @@
           <thead>
             <tr>
               <th>Requested At</th>
+              <th>By</th>
               <th>Room / Guest</th>
               <th>Item Name</th>
               <th>Qty</th>
@@ -91,67 +94,127 @@
             </tr>
           </thead>
           <tbody>
-            @foreach($pendingOrders as $order)
-            <tr>
-              <td>
-                <strong>{{ $order->requested_at->format('H:i') }}</strong><br>
-                <small class="text-muted">{{ $order->requested_at->diffForHumans() }}</small>
-              </td>
-              <td>
-                @if($order->is_walk_in)
-                    <span class="badge badge-secondary mb-1">WALK-IN</span><br>
-                    <strong>{{ $order->walk_in_name ?? 'General Walk-in' }}</strong>
-                @else
-                    <strong>{{ $order->booking->room->room_number ?? 'N/A' }}</strong><br>
-                    <small>{{ $order->booking->guest_name }}</small>
-                @endif
-              </td>
-              <td>
-                <strong>{{ $order->service_specific_data['item_name'] ?? $order->service->name }}</strong>
-                @php
-                    $foodId = $order->service_specific_data['food_id'] ?? null;
-                    $recipe = $foodId ? \App\Models\Recipe::find($foodId) : null;
-                @endphp
-                @if($recipe)
-                    {{-- Recipe details could go here if needed in future --}}
-                @endif
-              </td>
-              <td><strong>{{ $order->quantity }}</strong></td>
-              <td>{{ $order->guest_request ?: 'No special requests' }}</td>
-              <td>
-                @if($order->status === 'pending')
-                    <span class="badge badge-warning">Pending</span>
-                @elseif($order->status === 'approved')
-                    <span class="badge badge-info">Approved</span>
-                @elseif($order->status === 'preparing')
-                    <span class="badge badge-primary">Preparing</span>
-                @else
-                    <span class="badge badge-secondary">{{ ucfirst($order->status) }}</span>
-                @endif
-                @if($order->payment_status === 'pending' && $order->is_walk_in)
-                    <br><span class="badge badge-warning mt-1" style="font-size: 9px;"><i class="fa fa-money"></i> UNPAID</span>
-                @endif
-              </td>
-              <td>
-                <div class="btn-group-vertical btn-group-sm w-100">
-                  @if($order->status === 'pending')
-                      <a href="{{ route('admin.restaurants.kitchen.orders') }}" class="btn btn-sm btn-primary mb-1">
-                        <i class="fa fa-arrow-right"></i> Go to Kitchen
-                      </a>
-                  @endif
-                  
-                  <button class="btn btn-sm btn-info mb-1" onclick="printDocket({{ $order->id }})" title="Print Docket">
-                    <i class="fa fa-print"></i> Print Docket
-                  </button>
+            @php
+              $groupedOrders = $pendingOrders->groupBy(function($item) {
+                  return $item->is_walk_in ? 'w_' . ($item->walk_in_name ?? 'General') : 'b_' . ($item->booking_id ?? 'unknown');
+              });
+            @endphp
 
-                  @if($order->is_walk_in && $order->payment_status === 'pending')
-                      <button class="btn btn-sm btn-success" onclick="openPaymentModal({{ $order->id }}, {{ $order->total_price_tsh ?? 0 }})" title="Record Payment">
-                        <i class="fa fa-money"></i> Record Payment
-                      </button>
+            @foreach($groupedOrders as $groupKey => $orders)
+              @php
+                $first = $orders->first();
+                $guestTotal = $orders->where('payment_status', 'pending')->sum('total_price_tsh');
+                // Use the most recent request time for the group
+                $latestRequest = $orders->sortByDesc('requested_at')->first()->requested_at;
+                
+                // Get unique waiters
+                $waiters = [];
+                foreach($orders as $o) {
+                    if ($o->reception_notes && str_contains($o->reception_notes, 'Waiter: ')) {
+                        $parts = explode('Waiter: ', $o->reception_notes);
+                        $byRaw = $parts[1] ?? 'Waiter';
+                        $byNameOnly = explode(' | ', explode(' - Msg:', $byRaw)[0] ?? 'Waiter')[0];
+                        $waiters[] = trim($byNameOnly);
+                    }
+                }
+                $waiters = array_unique($waiters);
+              @endphp
+              
+              <tr style="border-top: 3px solid #e77a31;">
+                <td style="vertical-align: top;">
+                  <strong>{{ $latestRequest->format('H:i') }}</strong><br>
+                  <small class="text-muted">{{ $latestRequest->diffForHumans() }}</small>
+                </td>
+                <td style="vertical-align: top;">
+                  @foreach($waiters as $w)
+                    <span class="badge badge-info mb-1">{{ $w }}</span><br>
+                  @endforeach
+                </td>
+                <td style="vertical-align: top;">
+                  @if($first->is_walk_in)
+                      <span class="badge badge-secondary mb-1">WALK-IN</span><br>
+                      <strong>{{ $first->walk_in_name ?? 'General Walk-in' }}</strong>
+                  @else
+                      <strong>{{ $first->booking->room->room_number ?? 'N/A' }}</strong><br>
+                      <small>{{ $first->booking->guest_name }}</small>
                   @endif
-                </div>
-              </td>
-            </tr>
+                </td>
+                <td colspan="5" class="p-0">
+                  <table class="table table-sm mb-0 no-border" style="background: transparent;">
+                    @foreach($orders as $order)
+                    <tr style="background: transparent;">
+                      <td style="width: 30%; border-top: none;">
+                        <strong>{{ $order->service_specific_data['item_name'] ?? $order->service->name }}</strong>
+                      </td>
+                      <td style="width: 10%; border-top: none;"><strong>{{ $order->quantity }}</strong></td>
+                      <td style="width: 25%; border-top: none;">
+                        @php
+                          $note = $order->guest_request;
+                          if (!$note && $order->reception_notes && str_contains($order->reception_notes, '- Msg: ')) {
+                              $parts = explode('- Msg: ', $order->reception_notes);
+                              $note = $parts[1] ?? null;
+                          }
+                        @endphp
+                        <small class="text-muted">{{ $note ?: '---' }}</small>
+                      </td>
+                      <td style="width: 15%; border-top: none;">
+                        @if($order->status === 'pending')
+                            <span class="badge badge-warning">Pending</span>
+                        @elseif($order->status === 'approved')
+                            <span class="badge badge-info">Approved</span>
+                        @elseif($order->status === 'preparing')
+                            <span class="badge badge-primary">Preparing</span>
+                        @elseif($order->status === 'completed' && ($order->payment_status === 'pending' || $order->payment_status === 'unpaid'))
+                            <span class="badge badge-danger shadow-sm" style="font-size: 8px;"><i class="fa fa-money"></i> Unpaid</span>
+                        @else
+                            <span class="badge badge-secondary">{{ ucfirst($order->status) }}</span>
+                        @endif
+                      </td>
+                      <td style="width: 20%; border-top: none; text-align: right;">
+                        <div class="btn-group">
+                          @if($order->status === 'pending')
+                            <button class="btn btn-xs btn-primary p-1 px-2 mr-1" onclick="startPreparingDashboard({{ $order->id }}, '{{ $order->service_specific_data['item_name'] ?? $order->service->name }}')" title="Start Preparing">
+                              <i class="fa fa-fire"></i>
+                            </button>
+                          @endif
+                          @if($order->status !== 'completed')
+                          <button class="btn btn-xs btn-success p-1 px-2" onclick="markAsServedOnly({{ $order->id }}, '{{ $order->service_specific_data['item_name'] ?? $order->service->name }}')" title="Mark Served">
+                            <i class="fa fa-check"></i>
+                          </button>
+                          @endif
+                        </div>
+                      </td>
+                    </tr>
+                    @endforeach
+                  </table>
+                </td>
+                <td style="vertical-align: top;">
+                  <div class="btn-group-vertical btn-group-sm w-100">
+                    @php
+                      $printUrl = route('admin.restaurants.kitchen.orders.print-group', [
+                          'is_walk_in' => $first->is_walk_in ? 1 : 0,
+                          'identifier' => $first->is_walk_in ? $first->walk_in_name : $first->booking_id
+                      ]);
+                    @endphp
+                    
+                    <button class="btn btn-sm btn-info mb-1" onclick="window.open('{{ $printUrl }}', 'Print', 'width=800,height=600')" title="Print All Items">
+                      <i class="fa fa-print"></i> Print Bill
+                    </button>
+                    
+                    @if($first->is_walk_in && $first->payment_status === 'pending' && !$isChef)
+                        <button class="btn btn-sm btn-warning mb-1" onclick="openWalkInModal(null, '{{ addslashes($first->walk_in_name) }}')" title="Add More Items">
+                          <i class="fa fa-plus"></i> Add Items
+                        </button>
+                    @endif
+
+                    @if($first->payment_status === 'pending')
+                        <button class="btn btn-sm btn-outline-success mb-1" onclick="openPaymentModal({{ $first->id }}, {{ $guestTotal }}, '{{ addslashes($first->walk_in_name ?? $first->booking->room->room_number ?? '') }}', {{ $first->is_walk_in ? 1 : 0 }})" title="Record Total Payment">
+                          <i class="fa fa-money"></i> PAY: {{ number_format($guestTotal) }}
+                        </button>
+                    @endif
+                  </div>
+                </td>
+              </tr>
             @endforeach
           </tbody>
         </table>
@@ -207,9 +270,11 @@
                                         ->sum('total_price_tsh');
                                 @endphp
                                 <div class="btn-group">
+                                    @if(!$isChef)
                                     <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openWalkInModal(null, '{{ $ceremony->guest_name }}', {{ $ceremony->id }})">
                                         <i class="fa fa-plus-circle mr-1"></i> Add Usage
                                     </button>
+                                    @endif
                                     <a href="{{ route('chef-master.day-services.docket', $ceremony->id) }}" target="_blank" class="btn btn-secondary btn-sm rounded-pill px-3 ml-2" title="Print Docket">
                                         <i class="fa fa-print mr-1"></i> Print Docket
                                     </a>
@@ -438,12 +503,14 @@
                     <label for="paymentMethod">Payment Method</label>
                     <select class="form-control" id="paymentMethod" onchange="toggleRefField()">
                         <option value="cash">Cash</option>
+                        <option value="room_charge">Room Charge</option>
                         <option value="mpesa">M-Pesa</option>
                         <option value="halopesa">Halopesa</option>
                         <option value="airtel_money">Airtel Money</option>
                         <option value="mixx_by_yass">Mixx by Yass</option>
                         <option value="nmb">NMB Bank</option>
                         <option value="crdb">CRDB Bank</option>
+                        <option value="kcb">KCB Bank</option>
                     </select>
                 </div>
                 <div class="form-group" id="refFieldContainer" style="display: none;">
@@ -478,12 +545,14 @@
                     <label for="ceremonyPaymentMethod">Payment Method</label>
                     <select class="form-control" id="ceremonyPaymentMethod" onchange="toggleCeremonyRefField()">
                         <option value="cash">Cash</option>
+                        <option value="room_charge">Room Charge</option>
                         <option value="mpesa">M-Pesa</option>
                         <option value="halopesa">Halopesa</option>
                         <option value="airtel_money">Airtel Money</option>
                         <option value="mixx_by_yass">Mixx by Yass</option>
                         <option value="nmb">NMB Bank</option>
                         <option value="crdb">CRDB Bank</option>
+                        <option value="kcb">KCB Bank</option>
                     </select>
                 </div>
                 <div class="form-group" id="ceremonyRefFieldContainer" style="display: none;">
@@ -754,9 +823,102 @@ function completeOrder(orderId, paymentMethod = 'room_charge', reference = '') {
     });
 }
 
-function openPaymentModal(orderId, amount) {
+function markAsServedOnly(orderId, itemName) {
+    swal({
+        title: "Confirm Service",
+        text: "Confirm that " + itemName + " has been served? (Payment status will not be changed)",
+        type: "success",
+        showCancelButton: true,
+        confirmButtonColor: "#28a745",
+        confirmButtonText: "Yes, Served",
+        closeOnConfirm: false
+    }, function(isConfirm) {
+        if (isConfirm) {
+            const url = `/restaurant/food/orders/${orderId}/complete`;
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({}) // Empty body to skip payment update
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    swal("Success", "Order marked as served!", "success");
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    swal("Error!", data.message, "error");
+                }
+            })
+            .catch(e => {
+                console.error(e);
+                swal("Error", "Failed to communicate with server", "error");
+            });
+        }
+    });
+}
+
+function startPreparingDashboard(orderId, itemName) {
+    swal({
+        title: "Start Preparation?",
+        text: "Begin preparing " + itemName + "?",
+        type: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#3498db",
+        confirmButtonText: "Yes, Start!",
+        closeOnConfirm: false
+    }, function(isConfirm) {
+        if (isConfirm) {
+            const url = `/restaurant/food/orders/${orderId}/preparing`;
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    swal("Started!", "Preparation timer begun.", "success");
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    swal("Error!", data.message, "error");
+                }
+            })
+            .catch(e => {
+                console.error(e);
+                swal("Error", "Failed to communicate with server", "error");
+            });
+        }
+    });
+}
+
+function openPaymentModal(orderId, amount, guestName = '', isWalkIn = 0) {
     document.getElementById('paymentOrderId').value = orderId;
-    document.getElementById('paymentAmountDisplay').innerText = Number(amount).toLocaleString() + ' TZS';
+    
+    let displayAmount = Number(amount).toLocaleString() + ' TZS';
+    if (guestName) {
+        displayAmount += ' (Guest Total)';
+        console.log("Group payment for: " + guestName);
+    }
+    
+    document.getElementById('paymentAmountDisplay').innerText = displayAmount;
+    
+    const methodSelect = document.getElementById('paymentMethod');
+    const roomChargeOption = methodSelect.querySelector('option[value="room_charge"]');
+    
+    if (isWalkIn) {
+        if (roomChargeOption) roomChargeOption.style.display = 'none';
+        if (methodSelect.value === 'room_charge') methodSelect.value = 'cash';
+    } else {
+        if (roomChargeOption) roomChargeOption.style.display = 'block';
+    }
+
     document.getElementById('paymentMethod').value = 'cash';
     document.getElementById('paymentReference').value = '';
     toggleRefField();
@@ -784,13 +946,61 @@ function submitPayment() {
     }
     
     $('#paymentModal').modal('hide');
-    completeOrder(orderId, method, reference);
+    
+    // For the dashboard, we use a unified settlement function
+    settlePOSPayment(orderId, method, reference);
+}
+
+function settlePOSPayment(orderId, method, reference = '') {
+    swal({
+        title: "Confirm Payment?",
+        text: `Record ${method.toUpperCase()} payment of ${document.getElementById('paymentAmountDisplay').innerText}?`,
+        type: "success",
+        showCancelButton: true,
+        confirmButtonColor: "#28a745",
+        confirmButtonText: "Yes, Paid!",
+        closeOnConfirm: false
+    }, function(isConfirm) {
+        if (isConfirm) {
+            const url = `/customer/pos/settle-payment/${orderId}`;
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    payment_method: method,
+                    payment_reference: reference
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    swal("Success!", data.message, "success");
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    swal("Error!", data.message, "error");
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                swal("Error!", "Failed to record payment.", "error");
+            });
+        }
+    });
 }
 
 function openCeremonyPaymentModal(dayServiceId, guestName, unpaidAmount) {
     document.getElementById('ceremonyDayServiceId').value = dayServiceId;
     document.getElementById('ceremonyGuestName').innerText = guestName;
     document.getElementById('ceremonyUnpaidAmount').innerText = unpaidAmount.toLocaleString() + ' TZS';
+    
+    const methodSelect = document.getElementById('ceremonyPaymentMethod');
+    const roomChargeOption = methodSelect.querySelector('option[value="room_charge"]');
+    if (roomChargeOption) roomChargeOption.style.display = 'none'; // Ceremonies are walk-ins
+    
     document.getElementById('ceremonyPaymentMethod').value = 'cash';
     document.getElementById('ceremonyPaymentReference').value = '';
     toggleCeremonyRefField();
@@ -800,7 +1010,7 @@ function openCeremonyPaymentModal(dayServiceId, guestName, unpaidAmount) {
 function toggleCeremonyRefField() {
     const method = document.getElementById('ceremonyPaymentMethod').value;
     const container = document.getElementById('ceremonyRefFieldContainer');
-    if (method === 'cash') {
+    if (method === 'cash' || method === 'room_charge') {
         container.style.display = 'none';
     } else {
         container.style.display = 'block';
@@ -812,7 +1022,7 @@ function submitCeremonyPayment() {
     const method = document.getElementById('ceremonyPaymentMethod').value;
     const reference = document.getElementById('ceremonyPaymentReference').value.trim();
     
-    if (method !== 'cash' && !reference) {
+    if (method !== 'cash' && method !== 'room_charge' && !reference) {
         swal("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
         return;
     }

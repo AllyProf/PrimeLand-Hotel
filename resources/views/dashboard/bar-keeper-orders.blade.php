@@ -81,22 +81,41 @@
                                         @endif
                                     </td>
                                     <td>
-                                        {{ $order->service_specific_data['item_name'] ?? ($order->service->name ?? 'Service') }}
+                                        <div class="font-weight-bold">{{ $order->service_specific_data['item_name'] ?? ($order->service->name ?? 'Service') }}</div>
+                                        
+                                        {{-- Originator Info --}}
+                                        @if($order->reception_notes)
+                                            <div class="mt-1 small border-left pl-2" style="border-width: 2px !important; border-color: #009688 !important;">
+                                                @if(str_contains($order->reception_notes, 'POS Order by Waiter:'))
+                                                    @php
+                                                        $info = str_replace('POS Order by Waiter: ', '', $order->reception_notes);
+                                                        $parts = explode(' - Msg: ', $info);
+                                                        $waiter = $parts[0] ?? 'Waiter';
+                                                        $msg = $parts[1] ?? null;
+                                                    @endphp
+                                                    <span class="text-dark"><i class="fa fa-user-circle-o"></i> {{ $waiter }}</span>
+                                                    @if($msg)
+                                                        <br><span class="text-muted"><i>"{{ $msg }}"</i></span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-muted">{{ $order->reception_notes }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                        
                                         @if(!empty($order->guest_request))
-                                            <br><small class="text-info"><i>"{{ $order->guest_request }}"</i></small>
+                                            <div class="mt-1"><small class="text-info"><i>Request: "{{ $order->guest_request }}"</i></small></div>
                                         @endif
                                     </td>
                                     <td>{{ $order->quantity }}</td>
                                     <td>
                                         @php
-                                            $method = $order->payment_method ?? 'cash';
-                                            $badgeClass = 'badge-info';
-                                            if($method === 'cash') $badgeClass = 'badge-success';
-                                            if($method === 'room_charge') $badgeClass = 'badge-primary';
+                                            $pStatus = strtoupper($order->payment_status ?? 'PENDING');
+                                            $pMethod = strtoupper(str_replace('_', ' ', $order->payment_method ?? '-'));
+                                            $statusClass = $pStatus === 'PAID' ? 'badge-success' : 'badge-danger';
                                         @endphp
-                                        <span class="badge {{ $badgeClass }}">
-                                            {{ ucfirst(str_replace('_', ' ', $method)) }}
-                                        </span>
+                                        <span class="badge {{ $statusClass }} mb-1" style="{{ $pStatus !== 'PAID' ? 'background-color: #dc3545;' : '' }}">{{ $pStatus }}</span>
+                                        <div class="small text-muted font-weight-bold">{{ $pMethod }}</div>
                                     </td>
                                     <td>
                                         @if($order->payment_reference)

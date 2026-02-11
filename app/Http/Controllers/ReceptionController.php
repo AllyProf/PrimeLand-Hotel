@@ -812,8 +812,15 @@ class ReceptionController extends Controller
                 // Note: extensionCostTsh is already included in booking->total_price
                 $totalBillTsh = ($booking->total_price * $bookingExchangeRate) + $totalServiceChargesTsh;
                 
-                // Amount paid
+                // Amount paid (Booking deposit + any settled service payments)
                 $amountPaidTsh = ($booking->amount_paid ?? 0) * $bookingExchangeRate;
+                
+                // Add payments for completed/paid services to show correct outstanding balance
+                foreach ($serviceRequests as $sr) {
+                    if ($sr->payment_status === 'paid') {
+                        $amountPaidTsh += $sr->total_price_tsh;
+                    }
+                }
                 
                 // Outstanding balance
                 $outstandingBalanceTsh = max(0, $totalBillTsh - $amountPaidTsh);

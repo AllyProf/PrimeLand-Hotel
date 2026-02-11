@@ -107,6 +107,10 @@
                 <option value="super_admin" {{ request('role') == 'super_admin' ? 'selected' : '' }}>Super Admin</option>
                 <option value="manager" {{ request('role') == 'manager' ? 'selected' : '' }}>Manager</option>
                 <option value="reception" {{ request('role') == 'reception' ? 'selected' : '' }}>Reception</option>
+                <option value="waiter" {{ request('role') == 'waiter' ? 'selected' : '' }}>Waiter</option>
+                <option value="housekeeper" {{ request('role') == 'housekeeper' ? 'selected' : '' }}>Housekeeper</option>
+                <option value="bar_keeper" {{ request('role') == 'bar_keeper' ? 'selected' : '' }}>Bar Keeper</option>
+                <option value="head_chef" {{ request('role') == 'head_chef' ? 'selected' : '' }}>Head Chef</option>
               </select>
             </div>
           </div>
@@ -218,6 +222,14 @@
                       <span class="badge badge-warning"><i class="fa fa-user-tie"></i> Manager</span>
                     @elseif($user->role == 'reception' || $userRoleNormalized === 'reception' || strtolower($user->role ?? '') === 'reception')
                       <span class="badge badge-info"><i class="fa fa-user-md"></i> Reception</span>
+                    @elseif($user->role == 'waiter' || $userRoleNormalized === 'waiter')
+                      <span class="badge badge-primary" style="background-color: #6f42c1;"><i class="fa fa-concierge-bell"></i> Waiter</span>
+                    @elseif($user->role == 'bar_keeper' || $userRoleNormalized === 'barkeeper')
+                      <span class="badge badge-dark"><i class="fa fa-glass"></i> Bar Keeper</span>
+                    @elseif($user->role == 'head_chef' || $userRoleNormalized === 'headchef')
+                      <span class="badge badge-secondary" style="background-color: #e83e8c;"><i class="fa fa-cutlery"></i> Head Chef</span>
+                    @elseif($user->role == 'housekeeper' || $userRoleNormalized === 'housekeeper')
+                      <span class="badge badge-info" style="background-color: #20c997;"><i class="fa fa-bed"></i> Housekeeper</span>
                     @else
                       <span class="badge badge-secondary"><i class="fa fa-user"></i> {{ $user->role ?? 'Employee' }}</span>
                     @endif

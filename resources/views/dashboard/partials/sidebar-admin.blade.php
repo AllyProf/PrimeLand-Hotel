@@ -94,6 +94,7 @@
         <ul class="treeview-menu">
             <li><a class="treeview-item" href="{{ route('admin.recipes.index') }}"><i class="icon fa fa-book"></i> Menu Recipes</a></li>
             <li><a class="treeview-item" href="{{ route('chef-master.inventory') }}"><i class="icon fa fa-cubes"></i> Kitchen Inventory</a></li>
+            <li><a class="treeview-item" href="{{ route('admin.restaurants.kitchen.orders') }}"><i class="icon fa fa-bell"></i> Live Orders</a></li>
             <li class="treeview-divider"></li>
             <li><a class="treeview-item" href="{{ route('admin.restaurants.shopping-list.index') }}"><i class="icon fa fa-shopping-basket"></i> Shopping Lists</a></li>
             <li class="treeview-divider"></li>

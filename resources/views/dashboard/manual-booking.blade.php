@@ -1478,7 +1478,7 @@ function changeWizardStep(direction) {
           if (typeof calculatePaymentFromAmount === 'function') {
             calculatePaymentFromAmount();
           }
-          updateReviewSection();
+          updateReviewSummary();
         }, 200);
       }
       

@@ -527,36 +527,64 @@
         <table class="receipt-details-table">
             <thead>
                 <tr>
-                    <th style="text-align: left;">Time</th>
-                    <th style="text-align: left;">Cooked Dish / Food Item</th>
-                    <th>Destination</th>
-                    <th>Qty Sold</th>
-                    <th>Unit Price</th>
-                    <th style="text-align: right;">Total Revenue</th>
-                    <th style="text-align: right;">Served By</th>
+                    <th style="text-align: left; width: 120px;">Time / Status</th>
+                    <th style="text-align: left;">Guest / Destination</th>
+                    <th style="text-align: left;">Items Ordered</th>
+                    <th style="text-align: center; width: 60px;">Qty</th>
+                    <th style="text-align: right; width: 100px;">Revenue</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($productionData as $prod)
-                <tr>
-                    <td>{{ $prod->time }}</td>
-                    <td><strong>{{ $prod->item_name }}</strong></td>
-                    <td style="text-align: center;"><small>{{ $prod->destinations }}</small></td>
-                    <td style="text-align: center;"><strong>{{ $prod->total_qty }}</strong></td>
-                    <td style="text-align: center;">{{ number_format($prod->unit_price) }}</td>
-                    <td style="text-align: right;"><strong>{{ number_format($prod->total_revenue) }}</strong></td>
-                    <td style="text-align: right;"><small>{{ $prod->served_by }}</small></td>
-                </tr>
+                @php
+                    $groupedProduction = collect($productionData)->groupBy('destinations');
+                @endphp
+
+                @forelse($groupedProduction as $destName => $orders)
+                    @php
+                        $firstOrder = $orders->first();
+                        $groupTotal = $orders->sum('total_revenue');
+                    @endphp
+                    <tr>
+                        <td rowspan="{{ $orders->count() + 1 }}" style="vertical-align: top;">
+                            <span class="font-weight-bold">{{ $firstOrder->time }}</span><br>
+                            @if($firstOrder->payment_status === 'paid')
+                                <span class="status-badge" style="color: #28a745; border: 1px solid #28a745;">PAID</span>
+                                <br><small>{{ strtoupper(str_replace('_', ' ', $firstOrder->payment_method ?? 'CASH')) }}</small>
+                                @if($firstOrder->payment_reference)
+                                    <br><small class="text-muted">{{ $firstOrder->payment_reference }}</small>
+                                @endif
+                            @elseif($firstOrder->payment_status === 'room_charge')
+                                <span class="status-badge" style="color: #17a2b8; border: 1px solid #17a2b8;">ROOM CHARGE</span>
+                            @else
+                                <span class="status-badge" style="color: #dc3545; border: 1px solid #dc3545;">PENDING</span>
+                            @endif
+                        </td>
+                        <td rowspan="{{ $orders->count() + 1 }}" style="vertical-align: top;">
+                            <strong>{{ $firstOrder->guest_label }}</strong><br>
+                            <small class="text-muted">{{ $destName }}</small>
+                        </td>
+                    </tr>
+                    @foreach($orders as $item)
+                    <tr>
+                        <td>{{ $item->item_name }}</td>
+                        <td style="text-align: center;">{{ $item->total_qty }}</td>
+                        <td style="text-align: right;">{{ number_format($item->total_revenue) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr style="background-color: #fcfcfc; border-bottom: 2px solid #eee;">
+                        <td colspan="4" style="text-align: right; font-weight: bold; padding: 5px 12px;">SUBTOTAL:</td>
+                        <td style="text-align: right; font-weight: bold; padding: 5px 12px; color: #e07632;">{{ number_format($groupTotal) }}</td>
+                    </tr>
                 @empty
-                <tr>
-                    <td colspan="7" class="text-center" style="padding: 30px;">No production records found for this period.</td>
-                </tr>
+                    <tr>
+                        <td colspan="5" class="text-center" style="padding: 30px;">No production records found for this period.</td>
+                    </tr>
                 @endforelse
+
                 @if($productionData->count() > 0)
-                <tr class="total-row">
-                    <td colspan="5" style="text-align: right;">TOTAL DIRECT SALES:</td>
-                    <td style="text-align: right; color: #e07632; font-size: 15px;">{{ number_format($totalRev) }} TZS</td>
-                    <td></td>
+                <tr class="total-row" style="background-color: #f8f9fa;">
+                    <td colspan="4" style="text-align: right; font-size: 14px;"><strong>TOTAL DIRECT SALES:</strong></td>
+                    <td style="text-align: right; color: #e07632; font-size: 16px;"><strong>{{ number_format($totalRev) }} TZS</strong></td>
                 </tr>
                 @endif
             </tbody>

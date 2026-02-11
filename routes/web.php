@@ -280,17 +280,18 @@ Route::prefix('manager')->group(function () {
 
 // Kitchen & Food Management (Accessible by Manager & Head Chef)
 // This group is at the top level (no /manager prefix)
-    Route::prefix('restaurant/food')->middleware(['check.auth', 'role:manager,head_chef'])->group(function () {
+    Route::prefix('restaurant/food')->middleware(['check.auth', 'role:manager,head_chef,super_admin'])->group(function () {
     Route::get('/orders', [\App\Http\Controllers\KitchenOrderController::class, 'index'])->name('admin.restaurants.kitchen.orders');
     Route::get('/orders/history', [\App\Http\Controllers\KitchenOrderController::class, 'history'])->name('admin.restaurants.kitchen.orders.history');
     Route::post('/orders/{serviceRequest}/preparing', [\App\Http\Controllers\KitchenOrderController::class, 'startPreparation'])->name('admin.restaurants.kitchen.orders.preparing');
     Route::post('/orders/{serviceRequest}/complete', [\App\Http\Controllers\KitchenOrderController::class, 'complete'])->name('admin.restaurants.kitchen.orders.complete');
     Route::get('/orders/{serviceRequest}/print-docket', [\App\Http\Controllers\KitchenOrderController::class, 'printDocket'])->name('admin.restaurants.kitchen.orders.print-docket');
+    Route::get('/orders/print-group', [\App\Http\Controllers\KitchenOrderController::class, 'printGroupDocket'])->name('admin.restaurants.kitchen.orders.print-group');
 });
 
 // Re-open Manager Dashboard Routes
 Route::prefix('manager')->group(function () {
-    Route::middleware(['check.auth', 'role:manager,head_chef'])->group(function () {
+    Route::middleware(['check.auth', 'role:manager,head_chef,super_admin'])->group(function () {
         
         // Restaurant Reports
         Route::get('/restaurant-reports', [App\Http\Controllers\AdminController::class, 'restaurantReports'])->name('admin.restaurants.reports');
@@ -767,7 +768,9 @@ Route::prefix('bar-keeper')->group(function () {
         // Guest Orders
         Route::get('/orders', [\App\Http\Controllers\BarKeeperController::class, 'completedOrders'])->name('bar-keeper.orders.index');
         Route::post('/orders/{serviceRequest}/complete', [\App\Http\Controllers\BarKeeperController::class, 'completeOrder'])->name('bar-keeper.orders.complete');
+        Route::post('/orders/{serviceRequest}/serve', [\App\Http\Controllers\BarKeeperController::class, 'serveOrder'])->name('bar-keeper.orders.serve');
         Route::get('/orders/{serviceRequest}/print-docket', [\App\Http\Controllers\BarKeeperController::class, 'printDocket'])->name('bar-keeper.orders.print-docket');
+        Route::get('/orders/print-group', [\App\Http\Controllers\BarKeeperController::class, 'printGroupDocket'])->name('bar-keeper.orders.print-group');
         
         // Reports
         Route::get('/reports', [\App\Http\Controllers\BarKeeperController::class, 'reports'])->name('bar-keeper.reports');
@@ -837,16 +840,18 @@ Route::prefix('customer')->group(function () {
     });
 
     // Public/Shared Service Request Routes (accessible by guests and staff)
-    Route::middleware(['check.auth', 'role:customer,bar_keeper,manager,receptionist,head_chef'])->group(function () {
+    Route::middleware(['check.auth', 'role:customer,waiter,bar_keeper,manager,receptionist,head_chef'])->group(function () {
         Route::get('/services/available', [\App\Http\Controllers\ServiceRequestController::class, 'getAvailableServices'])->name('customer.services.available');
         Route::post('/services/request', [\App\Http\Controllers\ServiceRequestController::class, 'requestService'])->name('customer.services.request');
         Route::post('/ceremonies/settle-usage', [\App\Http\Controllers\ServiceRequestController::class, 'settleCeremonyUsage'])->name('ceremonies.settle-usage');
+        Route::post('/pos/settle-payment/{serviceRequest}', [\App\Http\Controllers\ServiceRequestController::class, 'settlePayment'])->name('pos.settle-payment');
+        Route::get('/bookings/{booking}/checkout-bill', [\App\Http\Controllers\ServiceRequestController::class, 'generateCheckoutBill'])->name('customer.bookings.checkout-bill');
     });
 
     Route::middleware(['check.auth', 'role:customer'])->group(function () {
         Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('customer.bookings.show');
         Route::get('/bookings/{booking}/services', [\App\Http\Controllers\ServiceRequestController::class, 'getBookingServices'])->name('customer.bookings.services');
-        Route::get('/bookings/{booking}/checkout-bill', [\App\Http\Controllers\ServiceRequestController::class, 'generateCheckoutBill'])->name('customer.bookings.checkout-bill');
+        // Route::get('/bookings/{booking}/checkout-bill', ...); // Moved up to shared group
         Route::get('/bookings/{booking}/checkout-payment', [\App\Http\Controllers\BookingController::class, 'customerCheckoutPayment'])->name('customer.bookings.checkout-payment');
         Route::get('/bookings/{booking}/identity-card', [\App\Http\Controllers\BookingController::class, 'downloadIdentityCard'])->name('customer.bookings.identity-card');
         
@@ -887,7 +892,7 @@ Route::prefix('chef-master')->group(function () {
     })->name('chef-master.login');
     
     // Protected routes (require authentication)
-    Route::middleware(['check.auth', 'role:head_chef,manager'])->group(function () {
+    Route::middleware(['check.auth', 'role:head_chef,manager,super_admin'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\KitchenController::class, 'dashboard'])->name('chef-master.dashboard');
         
         Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('chef-master.profile');
@@ -935,9 +940,13 @@ Route::prefix('waiter')->group(function () {
 
     Route::middleware(['auth:staff', 'role:waiter'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\WaiterController::class, 'dashboard'])->name('waiter.dashboard');
+        Route::get('/sales-summary', [\App\Http\Controllers\WaiterController::class, 'salesSummary'])->name('waiter.sales-summary');
         Route::get('/active-bookings', [\App\Http\Controllers\WaiterController::class, 'getActiveBookings'])->name('waiter.active-bookings');
         Route::post('/order/store', [\App\Http\Controllers\WaiterController::class, 'storeOrder'])->name('waiter.order.store');
         Route::get('/orders', [\App\Http\Controllers\WaiterController::class, 'orders'])->name('waiter.orders');
+        Route::get('/orders/{serviceRequest}/print-docket', [\App\Http\Controllers\WaiterController::class, 'printDocket'])->name('waiter.orders.print-docket');
+        Route::get('/orders/print-group', [\App\Http\Controllers\WaiterController::class, 'printGroupDocket'])->name('waiter.orders.print-group');
+        Route::post('/orders/{serviceRequest}/cancel', [\App\Http\Controllers\WaiterController::class, 'cancelOrder'])->name('waiter.orders.cancel');
         
         // Profile & Logout
         Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('waiter.profile');

@@ -21,6 +21,7 @@
                     <thead>
                         <tr>
                             <th>Completed At</th>
+                            <th>Requested By</th>
                             <th>Room / Guest</th>
                             <th>Item Name</th>
                             <th>Qty</th>
@@ -36,6 +37,17 @@
                         @endphp
                         <tr>
                             <td>{{ $order->completed_at->format('M d, Y H:i') }}</td>
+                            <td>
+                                @php
+                                  $by = 'N/A';
+                                  if ($order->reception_notes && str_contains($order->reception_notes, 'Waiter: ')) {
+                                      $parts = explode('Waiter: ', $order->reception_notes);
+                                      $byParts = explode(' - Msg:', $parts[1] ?? '');
+                                      $by = $byParts[0] ?? 'Waiter';
+                                  }
+                                @endphp
+                                <span class="badge badge-info">{{ $by }}</span>
+                            </td>
                             <td>
                                 @if($order->is_walk_in)
                                     <span class="badge badge-secondary mb-1">WALK-IN</span><br>

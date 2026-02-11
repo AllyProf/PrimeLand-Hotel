@@ -2019,6 +2019,7 @@ function viewBooking(bookingId) {
             return 'N/A';
           }
           
+          const diffTime = checkOutDate - checkInDate;
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           return diffDays + (diffDays === 1 ? ' night' : ' nights');
         } catch (e) {
@@ -2184,13 +2185,7 @@ function viewBooking(bookingId) {
                   ${isDecreased && decreasedNights > 0 ? `<div class="alert alert-warning py-2 mt-3 mb-0 small"><i class="fa fa-minus-circle"></i> Decreased by ${decreasedNights} nights</div>` : ''}
                   ${(isExtended || isDecreased) && booking.original_check_out ? `<div class="text-muted small text-center mt-2">Original Checkout: ${formatDate(booking.original_check_out)}</div>` : ''}
 
-                  ${booking.check_in_status === 'checked_in' ? `
-                  <div class="mt-3 text-center">
-                    <button onclick="openModifyDatesModal(${booking.id}, '${booking.check_in}', '${booking.check_out}')" class="btn btn-outline-primary btn-sm btn-block">
-                      <i class="fa fa-calendar-check-o"></i> Modify Dates
-                    </button>
-                  </div>
-                  ` : ''}
+
                 </div>
               </div>
             </div>
@@ -2268,14 +2263,13 @@ function viewBooking(bookingId) {
                     ${isDecreased && decreaseRefund > 0 ? `<tr><th class="text-warning">Refund:</th><td class="text-warning">-$${decreaseRefund.toFixed(2)}</td></tr>` : ''}
 
                     <tr>
-                      <th>Paid by Company:</th>
-                      <td class="text-success font-weight-bold">$${parseFloat(booking.amount_paid || 0).toFixed(2)}</td>
+                      <th>${booking.is_corporate_booking ? 'Paid by Company:' : 'Total Amount Paid:'}</th>
+                      <td class="text-success font-weight-bold">$${parseFloat(booking.total_paid_usd || booking.amount_paid || 0).toFixed(2)}</td>
                     </tr>
                     ${(() => {
-                      const totalRoomCharge = parseFloat(booking.total_price || 0);
-                      const totalCharges = parseFloat(booking.total_bill_usd || totalRoomCharge);
-                      const amountPaid = parseFloat(booking.amount_paid || 0);
-                      const balance = totalCharges - amountPaid;
+                      const totalCharges = parseFloat(booking.total_bill_usd || booking.total_price || 0);
+                      const totalPaid = parseFloat(booking.total_paid_usd || booking.amount_paid || 0);
+                      const balance = totalCharges - totalPaid;
                       
                       // If there's a positive balance (guest owes money)
                       if (balance > 0.01) {
@@ -2285,7 +2279,7 @@ function viewBooking(bookingId) {
                         </tr>`;
                       } 
                       // If fully paid or overpaid
-                      else if (amountPaid >= totalCharges && totalCharges > 0) {
+                      else if (totalPaid >= (totalCharges - 0.05) && totalCharges > 0) {
                         let html = `<tr class="table-active">
                           <th class="font-weight-bold">Balance:</th>
                           <td><span class="badge badge-success px-3 py-1" style="font-size: 0.85rem;"><i class="fa fa-check-circle"></i> ALL PAID</span></td>
@@ -2298,7 +2292,6 @@ function viewBooking(bookingId) {
                             <td class="text-info">$${Math.abs(balance).toFixed(2)} <small class="text-muted">(Credit)</small></td>
                           </tr>`;
                         }
-                        
                         return html;
                       }
                       return '';

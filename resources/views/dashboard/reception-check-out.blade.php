@@ -380,9 +380,14 @@
                                   <small class="text-muted">No services</small>
                                 @endforelse
                               </td>
-                              <td>
-                                <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                                <small>{{ number_format($booking->total_price * $exchangeRate, 2) }} TZS</small>
+                               <td>
+                                @php
+                                  $bookingCurrentRate = $booking->locked_exchange_rate ?? $exchangeRate;
+                                  $totalGuestBillTsh = $booking->total_bill_tsh ?? ($booking->total_price * $bookingCurrentRate);
+                                  $totalGuestBillUsd = $booking->total_bill_usd ?? ($totalGuestBillTsh / $bookingCurrentRate);
+                                @endphp
+                                <strong>${{ number_format($totalGuestBillUsd, 2) }}</strong><br>
+                                <small>{{ number_format($totalGuestBillTsh, 2) }} TZS</small>
                               </td>
                               <td>
                                 @php
@@ -954,8 +959,13 @@
               <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
                 <span style="font-weight: 600; color: #495057; font-size: 14px; flex: 0 0 40%;">Total Price:</span>
                 <span style="text-align: right; flex: 1;">
-                  <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                  <small>{{ number_format($booking->total_price * $exchangeRate, 2) }} TZS</small>
+                  @php
+                    $bookingCurrentRate = $booking->locked_exchange_rate ?? $exchangeRate;
+                    $totalBillTsh = $booking->total_bill_tsh ?? ($booking->total_price * $bookingCurrentRate);
+                    $totalBillUsd = $booking->total_bill_usd ?? ($totalBillTsh / $bookingCurrentRate);
+                  @endphp
+                  <strong>${{ number_format($totalBillUsd, 2) }}</strong><br>
+                  <small>{{ number_format($totalBillTsh, 2) }} TZS</small>
                   @if(isset($booking->outstanding_balance_tsh) && $booking->outstanding_balance_tsh >= 50)
                     <br><small class="text-danger">
                       <strong>Outstanding: ${{ number_format($booking->outstanding_balance_usd ?? 0, 2) }}</strong><br>

@@ -44,6 +44,46 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
   </ul>
 </div>
 
+<!-- Statistics Section -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="widget-small primary coloured-icon text-white" style="background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);">
+      <i class="icon fa fa-tags fa-3x"></i>
+      <div class="info">
+        <h4 class="text-white">Product Brands</h4>
+        <p class="text-white"><b>{{ $summaryStats['brands'] }}</b></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="widget-small info coloured-icon text-white" style="background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);">
+      <i class="icon fa fa-barcode fa-3x"></i>
+      <div class="info">
+        <h4 class="text-white">Total SKUs</h4>
+        <p class="text-white"><b>{{ $summaryStats['variants'] }}</b></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="widget-small warning coloured-icon text-white" style="background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);">
+      <i class="icon fa fa-folder fa-3x"></i>
+      <div class="info">
+        <h4 class="text-white">Categories</h4>
+        <p class="text-white"><b>{{ $summaryStats['categories'] }}</b></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="widget-small success coloured-icon text-white" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+      <i class="icon fa fa-check-circle fa-3x"></i>
+      <div class="info">
+        <h4 class="text-white">Active Items</h4>
+        <p class="text-white"><b>{{ $summaryStats['active'] }}</b></p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="col-md-12">
     <div class="tile shadow-sm">
@@ -329,10 +369,12 @@ function viewProduct(id) {
     const p = data.product;
     const variants = p.variants || [];
     
+    const mainImage = p.image ? '/storage/' + p.image : (variants.length > 0 && variants[0].image ? '/storage/' + variants[0].image : '{{ asset("dashboard_assets/img/placeholder-product.png") }}');
+    
     let html = `
       <div class="row align-items-center">
         <div class="col-md-4 text-center mb-4 mb-md-0">
-          <img src="${p.image ? '/storage/' + p.image : '{{ asset("dashboard_assets/img/placeholder-product.png") }}'}" 
+          <img src="${mainImage}" 
                class="img-fluid rounded shadow-sm border" style="max-height: 250px;">
         </div>
         <div class="col-md-8">

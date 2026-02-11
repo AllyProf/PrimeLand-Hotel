@@ -44,6 +44,22 @@
 </li>
 
 {{-- ============================================ --}}
+{{-- KITCHEN & RESTAURANT --}}
+{{-- ============================================ --}}
+<li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Kitchen & Restaurant</li>
+<li class="treeview {{ (str_contains($activePage, 'restaurant/food') || str_contains($activePage, 'recipes')) ? 'is-expanded' : '' }}">
+  <a class="app-menu__item {{ (str_contains($activePage, 'restaurant/food') || str_contains($activePage, 'recipes')) ? 'active' : '' }}" href="#" data-toggle="treeview">
+    <i class="app-menu__icon fa fa-cutlery"></i>
+    <span class="app-menu__label">Food Operations</span>
+    <i class="treeview-indicator fa fa-angle-right"></i>
+  </a>
+  <ul class="treeview-menu">
+    <li><a class="treeview-item {{ str_contains($activePage, 'recipes') ? 'active' : '' }}" href="{{ route('admin.recipes.index') }}"><i class="icon fa fa-book"></i> Menu Recipes</a></li>
+    <li><a class="treeview-item {{ str_contains($activePage, 'restaurant/food/orders') ? 'active' : '' }}" href="{{ route('admin.restaurants.kitchen.orders') }}"><i class="icon fa fa-bell"></i> Live Orders</a></li>
+  </ul>
+</li>
+
+{{-- ============================================ --}}
 {{-- SYSTEM MONITORING --}}
 {{-- ============================================ --}}
 <li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">System Monitoring</li>

@@ -759,6 +759,90 @@ class ServiceRequestController extends Controller
     }
 
     /**
+     * Settle payment for a POS order (Used by Bar Keeper/Chef)
+     */
+    public function settlePayment(Request $request, ServiceRequest $serviceRequest)
+    {
+        $request->validate([
+            'payment_method' => 'required|string',
+            'payment_reference' => 'nullable|string',
+        ]);
+
+        $isRoomCharge = $request->payment_method === 'room_charge';
+        
+        // Prevent room charge for walk-ins
+        if ($isRoomCharge && $serviceRequest->is_walk_in) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Walk-in orders cannot be charged to a room. Please select a valid payment method.'
+            ], 422);
+        }
+        
+        // Items to settle (start with this one)
+        $itemsToSettle = [$serviceRequest];
+        $totalCollected = $serviceRequest->total_price_tsh;
+
+        // If walk-in, find all other pending items for this name
+        if ($serviceRequest->is_walk_in && $serviceRequest->walk_in_name) {
+            $others = ServiceRequest::where('is_walk_in', true)
+                ->where('walk_in_name', $serviceRequest->walk_in_name)
+                ->where('payment_status', 'pending')
+                ->where('id', '!=', $serviceRequest->id)
+                ->get();
+            
+            foreach ($others as $other) {
+                $itemsToSettle[] = $other;
+                $totalCollected += $other->total_price_tsh;
+            }
+        } elseif ($serviceRequest->booking_id) {
+            // Also settle all other pending items for this room booking
+            $others = ServiceRequest::where('booking_id', $serviceRequest->booking_id)
+                ->where('payment_status', 'pending')
+                ->where('id', '!=', $serviceRequest->id)
+                ->get();
+            
+            foreach ($others as $other) {
+                $itemsToSettle[] = $other;
+                $totalCollected += $other->total_price_tsh;
+            }
+        }
+
+        // Apply settlement to all identified items
+        foreach ($itemsToSettle as $item) {
+            $item->update([
+                'payment_status' => $isRoomCharge ? 'room_charge' : 'paid',
+                'payment_method' => $request->payment_method,
+                'payment_reference' => $request->payment_reference,
+                'status' => 'completed',
+                'completed_at' => now(),
+            ]);
+        }
+
+        // Log activity for the group
+        try {
+            $user = Auth::guard('staff')->user();
+            if ($user) {
+                $itemNames = collect($itemsToSettle)->map(fn($i) => $i->service->name ?? ($i->service_specific_data['item_name'] ?? 'Item'))->implode(', ');
+                \App\Models\ActivityLog::create([
+                    'user_id' => $user->id,
+                    'user_type' => get_class($user),
+                    'action' => 'payment_received',
+                    'description' => "Received payment of " . number_format($totalCollected) . " TSH for: " . $itemNames . " (Guest: " . ($serviceRequest->walk_in_name ?? 'Walk-in') . ")",
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+        } catch (\Exception $e) {}
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment recorded and all pending items for this guest settled!',
+            'count' => count($itemsToSettle),
+            'total' => $totalCollected
+        ]);
+    }
+
+    /**
      * Get service requests for a booking
      */
     public function getBookingServices(Booking $booking)
@@ -982,9 +1066,19 @@ class ServiceRequestController extends Controller
             // Calculate total bill (room + extension + services)
             $totalBillTsh = $roomPriceTsh + $extensionCostTsh + $totalServiceChargesTsh;
             
-            // Calculate amount paid
+            // Calculate amount paid (Booking deposit/payment + any settled service payments)
             $amountPaidUsd = $booking->amount_paid ?? 0;
             $amountPaidTsh = $amountPaidUsd * $exchangeRate;
+            
+            // Add payments for completed/paid services
+            foreach ($serviceRequests as $sr) {
+                if ($sr->payment_status === 'paid') {
+                    $amountPaidTsh += $sr->total_price_tsh;
+                }
+            }
+            
+            // Update USD for display consistency
+            $amountPaidUsd = $amountPaidTsh / $exchangeRate;
             
             // Calculate outstanding balance
             $outstandingBalanceTsh = max(0, $totalBillTsh - $amountPaidTsh);
@@ -1169,9 +1263,10 @@ class ServiceRequestController extends Controller
             ], 404);
         }
 
+        $isRoomCharge = $paymentMethod === 'room_charge';
         foreach ($pendingRequests as $req) {
             $req->update([
-                'payment_status' => 'paid',
+                'payment_status' => $isRoomCharge ? 'room_charge' : 'paid',
                 'status' => 'completed',
                 'payment_method' => $paymentMethod,
                 'payment_reference' => $paymentReference,

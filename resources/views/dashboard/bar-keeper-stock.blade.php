@@ -16,42 +16,42 @@
 <!-- Stats Row -->
 <div class="row mb-4">
   <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small primary coloured-icon"><i class="icon fa fa-wine-bottle fa-2x"></i>
+    <div class="widget-small primary coloured-icon"><i class="icon fa fa-wine-bottle fa-3x"></i>
       <div class="info">
-        <h6 class="text-uppercase small mb-1">Products</h6>
-        <p class="mb-0"><b>{{ $myStock->count() }}</b></p>
+        <h4>Products</h4>
+        <p><b>{{ $myStock->count() }}</b></p>
       </div>
     </div>
   </div>
   <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small info coloured-icon"><i class="icon fa fa-boxes fa-2x"></i>
+    <div class="widget-small info coloured-icon"><i class="icon fa fa-cubes fa-3x"></i>
       <div class="info">
-        <h6 class="text-uppercase small mb-1">Stock (PICs)</h6>
-        <p class="mb-0"><b>{{ number_format($myStock->sum('current_stock_pics'), 1) }}</b></p>
+        <h4>In Stock</h4>
+        <p><b>{{ number_format($myStock->sum('current_stock_pics'), 1) }}</b></p>
       </div>
     </div>
   </div>
   <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small warning coloured-icon" style="background-color: #e77a31;"><i class="icon fa fa-hand-holding-usd fa-2x"></i>
+    <div class="widget-small warning coloured-icon" style="background-color: #e77a31;"><i class="icon fa fa-money fa-3x"></i>
       <div class="info">
-        <h6 class="text-uppercase small mb-1">Revenue Earned</h6>
-        <p class="mb-0"><b>{{ number_format($myStock->sum('revenue_generated'), 0) }}</b></p>
+        <h4>Revenue</h4>
+        <p><b>{{ number_format($myStock->sum('revenue_generated'), 0) }}</b></p>
       </div>
     </div>
   </div>
   <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small primary coloured-icon" style="background-color: #764ba2;"><i class="icon fa fa-money-bill-wave fa-2x"></i>
+    <div class="widget-small primary coloured-icon" style="background-color: #764ba2;"><i class="icon fa fa-money-bill-wave fa-3x"></i>
       <div class="info">
-        <h6 class="text-uppercase small mb-1">Stock Value</h6>
-        <p class="mb-0"><b>{{ number_format($myStock->sum('revenue_serving'), 0) }}</b></p>
+        <h4>Value</h4>
+        <p><b>{{ number_format($myStock->sum('revenue_serving'), 0) }}</b></p>
       </div>
     </div>
   </div>
   <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small success coloured-icon"><i class="icon fa fa-chart-line fa-2x"></i>
+    <div class="widget-small success coloured-icon"><i class="icon fa fa-chart-line fa-3x"></i>
       <div class="info">
-        <h6 class="text-uppercase small mb-1">Profit Potential</h6>
-        <p class="mb-0"><b>{{ number_format($myStock->sum('current_profit'), 0) }}</b></p>
+        <h4>Potential</h4>
+        <p><b>{{ number_format($myStock->sum('current_profit'), 0) }}</b></p>
       </div>
     </div>
   </div>
@@ -327,8 +327,9 @@ $(document).ready(function() {
             var $card = $(this);
             var name = $card.data('name') || '';
             var variant = $card.data('variant') || '';
+            var brand = $card.data('brand') || '';
             
-            var matchesSearch = searchTerm === '' || name.includes(searchTerm) || variant.includes(searchTerm);
+            var matchesSearch = searchTerm === '' || name.includes(searchTerm) || variant.includes(searchTerm) || brand.includes(searchTerm);
             
             if (matchesSearch) {
                 $card.show();

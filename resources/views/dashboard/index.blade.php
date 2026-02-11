@@ -155,6 +155,19 @@
             </div>
         </a>
     </div>
+    <div class="col-md-6 col-lg-3 mt-3 mt-lg-0">
+        <a href="{{ route('admin.recipes.index') }}" style="text-decoration: none;">
+            <div class="tile shadow-sm border-0 d-flex align-items-center bg-dark text-white p-3" style="border-radius: 12px; background-color: #343a40 !important;">
+                <div class="mr-3 bg-white text-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="fa fa-book fa-2x"></i>
+                </div>
+                <div>
+                    <h5 class="mb-0">Recipes</h5>
+                    <p class="mb-0 small opacity-75">Manage menu items</p>
+                </div>
+            </div>
+        </a>
+    </div>
 </div>
 
 

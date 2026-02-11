@@ -307,7 +307,7 @@ class SuperAdminController extends Controller
                       ->orWhereRaw('LOWER(TRIM(role)) = ?', ['reception'])
                       ->orWhereRaw('LOWER(role) LIKE ?', ['%reception%']);
                 });
-            } elseif ($role === 'manager') {
+            } elseif ($role === 'manager' || $role === 'waiter' || $role === 'housekeeper' || $role === 'bar_keeper' || $role === 'head_chef') {
                 $staffQuery->where('role', $role);
             }
         }
@@ -349,6 +349,8 @@ class SuperAdminController extends Controller
             'super_admin' => Staff::where('role', 'super_admin')->orWhere('role', 'like', '%Super Admin%')->count(),
             'manager' => Staff::where('role', 'manager')->count(),
             'reception' => Staff::where('role', 'reception')->count(),
+            'waiter' => Staff::where('role', 'waiter')->count(),
+            'housekeeper' => Staff::where('role', 'housekeeper')->count(),
             'guest' => Guest::count(),
             'total_employees' => isset($totalEmployees) ? $totalEmployees : Staff::count(),
             'total_guests' => isset($totalGuests) ? $totalGuests : Guest::count(),
@@ -370,7 +372,7 @@ class SuperAdminController extends Controller
      */
     public function createUser()
     {
-        $roles = Role::where('is_system', false)->orWhereIn('name', ['manager', 'reception', 'guest'])->get();
+        $roles = Role::where('is_system', false)->orWhereIn('name', ['manager', 'reception', 'guest', 'waiter'])->get();
         
         return view('dashboard.super-admin.user-form', [
             'role' => 'super_admin',
@@ -390,7 +392,7 @@ class SuperAdminController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email',
-            'role' => 'required|string|in:super_admin,manager,reception,guest,bar_keeper,head_chef,housekeeper',
+            'role' => 'required|string|in:super_admin,manager,reception,guest,bar_keeper,head_chef,housekeeper,waiter',
             'is_active' => 'boolean',
         ];
         
@@ -404,12 +406,7 @@ class SuperAdminController extends Controller
         $validated = $request->validate($rules);
         
         // Determine which table to check for unique email
-        $emailExists = false;
-        if (in_array($validated['role'], ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef'])) {
-            $emailExists = Staff::where('email', $validated['email'])->exists() || Guest::where('email', $validated['email'])->exists();
-        } else {
-            $emailExists = Guest::where('email', $validated['email'])->exists() || Staff::where('email', $validated['email'])->exists();
-        }
+        $emailExists = Staff::where('email', $validated['email'])->exists() || Guest::where('email', $validated['email'])->exists();
         
         if ($emailExists) {
             return back()->withErrors(['email' => 'The email has already been taken.'])->withInput();
@@ -426,7 +423,7 @@ class SuperAdminController extends Controller
             : $defaultPassword;
         
         // Create Staff or Guest based on role
-        if (in_array($validated['role'], ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef', 'housekeeper'])) {
+        if (in_array($validated['role'], ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef', 'housekeeper', 'waiter'])) {
             $user = Staff::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -482,7 +479,7 @@ class SuperAdminController extends Controller
         SystemLog::log('info', "User created: {$user->name} ({$user->email})", 'user_management', [
             'user_id' => $user->id, 
             'role' => $role,
-            'email_sent' => in_array($role, ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef']),
+            'email_sent' => in_array($role, ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef', 'housekeeper', 'waiter']),
         ]);
         
         return redirect()->route('super_admin.users')->with('success', 'User created successfully. Welcome email sent with credentials.');
@@ -563,7 +560,7 @@ class SuperAdminController extends Controller
         // Email uniqueness check
         if ($userType === 'staff') {
             $rules['email'] = 'required|email|unique:staffs,email,' . $user->id . '|unique:guests,email';
-            $rules['role'] = 'required|string|in:super_admin,manager,reception,bar_keeper,head_chef';
+            $rules['role'] = 'required|string|in:super_admin,manager,reception,bar_keeper,head_chef,housekeeper,waiter';
         } else {
             $rules['email'] = 'required|email|unique:guests,email,' . $user->id . '|unique:staffs,email';
         }

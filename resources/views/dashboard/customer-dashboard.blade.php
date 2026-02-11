@@ -956,6 +956,11 @@
                 } else {
                   $paidUSD = $booking->amount_paid ?? 0;
                 }
+                
+                // Add services that are already paid directly (not room charged)
+                $paidServicesTZS = $serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
+                $paidServicesUSD = $paidServicesTZS / $bookingExchangeRate;
+                $paidUSD += $paidServicesUSD;
               }
             }
             

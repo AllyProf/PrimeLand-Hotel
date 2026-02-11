@@ -24,16 +24,15 @@ class KitchenOrderController extends Controller
                       });
             })
             ->where(function($q) {
-                // Standard states for kitchen
+                // 1. All active orders (pending, approved, or preparing)
                 $q->whereIn('status', ['pending', 'approved', 'preparing'])
-                  // OR completed (paid) walk-in orders from today
-                  ->orWhere(function($sub) {
-                      $sub->where('is_walk_in', true)
-                          ->where('status', 'completed')
-                          ->whereDate('created_at', '>=', now()->startOfDay());
-                  });
+                // 2. OR Served orders that are WAITING FOR PAYMENT
+                ->orWhere(function($sub) {
+                    $sub->where('status', 'completed')
+                        ->whereIn('payment_status', ['pending', 'unpaid']);
+                });
             })
-            ->orderBy('requested_at', 'asc')
+            ->orderBy('requested_at', 'desc')
             ->get();
 
         // Statistics
@@ -124,10 +123,10 @@ class KitchenOrderController extends Controller
     {
         $completedOrders = ServiceRequest::with(['booking.room', 'service', 'approvedBy'])
             ->where(function($query) {
-                // Service ID 48 is "Restaurant Food Order"
-                $query->where('service_id', 48)
+                // Service ID 48 is "Restaurant Food Order", 4 is "Generic Food Order"
+                $query->whereIn('service_id', [4, 48])
                       ->orWhereHas('service', function($q) {
-                          $q->where('category', 'food');
+                          $q->whereIn('category', ['food', 'restaurant']);
                       });
             })
             ->where('status', 'completed')
@@ -147,7 +146,8 @@ class KitchenOrderController extends Controller
         // Determine Destination
         $destination = 'Internal';
         if ($order->is_walk_in) {
-            $destination = 'WALK-IN (' . ($order->walk_in_name ?? 'Guest') . ')';
+            $walkInName = $order->walk_in_name ?? 'Guest';
+            $destination = str_contains(strtolower($walkInName), 'walk-in') ? $walkInName : 'WALK-IN (' . $walkInName . ')';
         } elseif ($order->booking) {
             $destination = 'ROOM ' . ($order->booking->room->room_number ?? 'N/A');
         } elseif ($order->dayService) {
@@ -157,11 +157,77 @@ class KitchenOrderController extends Controller
         // Determine Guest Name
         $guestName = $order->is_walk_in ? ($order->walk_in_name ?? 'General Guest') : ($order->booking->guest_name ?? 'Hotel Guest');
 
-        // Determine Item Name
-        $foodId = $order->service_specific_data['food_id'] ?? null;
-        $recipe = $foodId ? Recipe::find($foodId) : null;
-        $itemName = $recipe ? $recipe->name : ($order->service->name ?? 'Special Item');
+        // Determine Requested By
+        $requestedBy = 'N/A';
+        if ($order->reception_notes && str_contains($order->reception_notes, 'Waiter: ')) {
+            $parts = explode('Waiter: ', $order->reception_notes);
+            $byParts = explode(' - Msg:', $parts[1] ?? '');
+            $requestedBy = $byParts[0] ?? 'Waiter';
+        }
 
-        return view('dashboard.print-kitchen-order-docket', compact('order', 'destination', 'guestName', 'itemName'));
+        // Determine Note
+        $note = $order->guest_request;
+        if (!$note && $order->reception_notes && str_contains($order->reception_notes, '- Msg: ')) {
+            $parts = explode('- Msg: ', $order->reception_notes);
+            $note = $parts[1] ?? null;
+        }
+
+        // Determine Item Name
+        $itemName = $order->service_specific_data['item_name'] ?? ($order->service->name ?? 'Special Item');
+
+        return view('dashboard.print-kitchen-order-docket', compact('order', 'destination', 'guestName', 'itemName', 'requestedBy', 'note'));
+    }
+
+    /**
+     * Print Docket for All Items in a Guest Group
+     */
+    public function printGroupDocket(Request $request)
+    {
+        // Get group key from request
+        $isWalkIn = $request->input('is_walk_in', false);
+        $identifier = $request->input('identifier'); // walk_in_name or booking_id
+        
+        // Fetch all orders for this group
+        $orders = ServiceRequest::with(['service', 'booking.room', 'dayService']);
+        
+        if ($isWalkIn) {
+            $orders = $orders->where('is_walk_in', true)
+                ->where('walk_in_name', $identifier);
+        } else {
+            $orders = $orders->where('booking_id', $identifier);
+        }
+        
+        $orders = $orders->orderBy('requested_at', 'desc')->get();
+        
+        if ($orders->isEmpty()) {
+            abort(404, 'No orders found');
+        }
+        
+        $first = $orders->first();
+        
+        // Determine Destination
+        $destination = 'Internal';
+        if ($first->is_walk_in) {
+            $walkInName = $first->walk_in_name ?? 'Guest';
+            $destination = str_contains(strtolower($walkInName), 'walk-in') ? $walkInName : 'WALK-IN (' . $walkInName . ')';
+        } elseif ($first->booking) {
+            $destination = 'ROOM ' . ($first->booking->room->room_number ?? 'N/A');
+        }
+        
+        // Determine Guest Name
+        $guestName = $first->is_walk_in ? ($first->walk_in_name ?? 'General Guest') : ($first->booking->guest_name ?? 'Hotel Guest');
+        
+        // Determine Requested By
+        $requestedBy = 'N/A';
+        if ($first->reception_notes && str_contains($first->reception_notes, 'Waiter: ')) {
+            $parts = explode('Waiter: ', $first->reception_notes);
+            $byParts = explode(' - Msg:', $parts[1] ?? '');
+            $requestedBy = $byParts[0] ?? 'Waiter';
+        }
+        
+        // Calculate total
+        $totalAmount = $orders->sum('total_price_tsh');
+        
+        return view('dashboard.print-waiter-group-docket', compact('orders', 'destination', 'guestName', 'requestedBy', 'totalAmount', 'first'));
     }
 }

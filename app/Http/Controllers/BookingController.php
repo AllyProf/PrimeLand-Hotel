@@ -764,15 +764,19 @@ class BookingController extends Controller
                 $bookingData['original_check_out'] = \Carbon\Carbon::parse($booking->original_check_out)->format('Y-m-d');
             }
             
-            // Calculate service charges
+            // Calculate service charges and paid services
             $serviceRequests = $booking->serviceRequests()->whereIn('status', ['approved', 'completed'])->get();
             $totalServiceChargesTsh = $serviceRequests->sum('total_price_tsh');
+            $paidServiceChargesTsh = $serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
+            
             $exchangeRate = $booking->locked_exchange_rate ?? 2500;
             $totalServiceChargesUsd = $totalServiceChargesTsh / $exchangeRate;
+            $paidServiceChargesUsd = $paidServiceChargesTsh / $exchangeRate;
             
-            // Add service charges to booking data
+            // Add service charges and total paid to booking data
             $bookingData['service_charges_tsh'] = $totalServiceChargesTsh;
             $bookingData['service_charges_usd'] = $totalServiceChargesUsd;
+            $bookingData['total_paid_usd'] = (float)($booking->amount_paid ?? 0) + $paidServiceChargesUsd;
             $bookingData['total_bill_usd'] = (float)$booking->total_price + $totalServiceChargesUsd;
             
             // Return booking even if room doesn't exist (for manual bookings that might not have room assigned yet)
@@ -942,6 +946,11 @@ class BookingController extends Controller
             // Update the booking first to ensure checked_in_at is saved
             $booking->update($updateData);
             $booking->load('room');
+
+            // Update room status to occupied when guest checks in
+            if ($booking->room) {
+                $booking->room->update(['status' => 'occupied']);
+            }
             
             // Send check-in confirmation email (send immediately, not queued)
             try {
@@ -1002,7 +1011,15 @@ class BookingController extends Controller
             $totalBillTsh = ($booking->total_price * $exchangeRate) + $totalServiceChargesTsh;
             
             // Amount paid
+            // Amount paid (Booking deposit + any settled service payments)
             $amountPaidTsh = ($booking->amount_paid ?? 0) * $exchangeRate;
+            
+            // Add payments for completed/paid services to show correct outstanding balance
+            foreach ($serviceRequests as $sr) {
+                if ($sr->payment_status === 'paid') {
+                    $amountPaidTsh += $sr->total_price_tsh;
+                }
+            }
             
             // Outstanding balance
             $outstandingBalanceTsh = max(0, $totalBillTsh - $amountPaidTsh);
@@ -1265,7 +1282,12 @@ class BookingController extends Controller
             $bookingExchangeRate = $booking->locked_exchange_rate ?? $exchangeRate;
             $totalBill = ($booking->total_price * $bookingExchangeRate) + ($booking->total_service_charges_tsh ?? 0);
             $amountPaid = ($booking->amount_paid ?? 0) * $bookingExchangeRate;
-            $outstanding = $totalBill - $amountPaid;
+            
+            // Deduct services that are marked as paid
+            $paidServices = $booking->serviceRequests ? 
+                $booking->serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh') : 0;
+                
+            $outstanding = $totalBill - $amountPaid - $paidServices;
             if ($outstanding > 0) {
                 $totalOutstanding += $outstanding;
             }
@@ -1686,6 +1708,11 @@ class BookingController extends Controller
             'status' => 'confirmed', // Ensure status is confirmed
         ]);
 
+        // Update room status to occupied
+        if ($booking->room) {
+            $booking->room->update(['status' => 'occupied']);
+        }
+
         // Send check-in confirmation email (send immediately)
         try {
             $wifiPassword = \App\Models\HotelSetting::getWifiPassword();
@@ -1921,7 +1948,7 @@ class BookingController extends Controller
             $roomStatuses[$room->id] = [
                 'room_number' => $room->room_number,
                 'room_type' => $room->room_type,
-                'status' => $room->status,
+                'status' => ($activeBooking || $room->status === 'occupied') ? 'occupied' : $room->status,
                 'is_occupied' => $isOccupied,
                 'needs_cleaning' => $needsCleaning,
                 'in_maintenance' => $inMaintenance,
@@ -3467,31 +3494,43 @@ class BookingController extends Controller
             $images = $room->images ?? [];
             $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
 
-            // Room is available now if status is available
-            $isAvailableNow = $room->status === 'available';
+            // Check for actual active occupancy (guest currently checked in)
+            $activeGuestBooking = $room->bookings()
+                ->where('check_in_status', 'checked_in')
+                ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
+                ->first();
+
+            // Room is available now ONLY if its DB status is 'available' AND no one is actually checked in
+            $isAvailableNow = ($room->status === 'available' && !$activeGuestBooking);
             
             // For soon available, find current checkout date
             $checkoutDate = null;
             $isSoonAvailable = !$isAvailableNow;
             
             if ($isSoonAvailable) {
-                // Find the booking that is currently occupying the room or just checked out
-                $currentBooking = $room->bookings()
-                    ->whereIn('status', ['confirmed'])
-                    ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                    ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
-                    ->orderBy('check_out', 'desc')
-                    ->first();
+                if ($activeGuestBooking) {
+                    $checkoutDate = Carbon::parse($activeGuestBooking->check_out)->format('Y-m-d');
+                } else {
+                    // Fallback to checking for recently checked out or soon to check out bookings
+                    $lastOrNextBooking = $room->bookings()
+                        ->whereIn('status', ['confirmed'])
+                        ->where('check_out', '<=', $checkIn->format('Y-m-d'))
+                        ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
+                        ->orderBy('check_out', 'desc')
+                        ->first();
 
-                if ($currentBooking) {
-                    $checkoutDate = Carbon::parse($currentBooking->check_out)->format('Y-m-d');
-                } else if ($room->status === 'to_be_cleaned') {
-                    $checkoutDate = 'Today';
+                    if ($lastOrNextBooking) {
+                        $checkoutDate = Carbon::parse($lastOrNextBooking->check_out)->format('Y-m-d');
+                    } else if ($room->status === 'to_be_cleaned') {
+                        $checkoutDate = 'Today';
+                    }
                 }
             }
 
+            // Logic for selectable:
+            // If check-in is today, and room is NOT available now (due to cleaning OR current occupancy), disallow selection.
             $canSelect = true;
-            if ($checkIn->isToday() && $room->status !== 'available') {
+            if ($checkIn->isToday() && !$isAvailableNow) {
                 $canSelect = false;
             }
 
@@ -3508,7 +3547,7 @@ class BookingController extends Controller
                 'is_available_now' => $isAvailableNow,
                 'is_soon_available' => $isSoonAvailable,
                 'checkout_date' => $checkoutDate,
-                'status' => $room->status,
+                'status' => $activeGuestBooking ? 'occupied' : $room->status, // Use active status if checked in
                 'can_select' => $canSelect,
             ];
         };
@@ -3582,33 +3621,43 @@ class BookingController extends Controller
             $images = $room->images ?? [];
             $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
 
-            // Room is available now if status is available
-            $isAvailableNow = $room->status === 'available';
+            // Check for actual active occupancy (guest currently checked in)
+            $activeGuestBooking = $room->bookings()
+                ->where('check_in_status', 'checked_in')
+                ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
+                ->first();
+
+            // Room is available now ONLY if its DB status is 'available' AND no one is actually checked in
+            $isAvailableNow = ($room->status === 'available' && !$activeGuestBooking);
             
             // For soon available, find current checkout date
             $checkoutDate = null;
             $isSoonAvailable = !$isAvailableNow;
             
             if ($isSoonAvailable) {
-                // Find the booking that is currently occupying the room or just checked out
-                $currentBooking = $room->bookings()
-                    ->whereIn('status', ['confirmed'])
-                    ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                    ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
-                    ->orderBy('check_out', 'desc')
-                    ->first();
+                if ($activeGuestBooking) {
+                    $checkoutDate = Carbon::parse($activeGuestBooking->check_out)->format('Y-m-d');
+                } else {
+                    // Fallback to checking for recently checked out or soon to check out bookings
+                    $lastOrNextBooking = $room->bookings()
+                        ->whereIn('status', ['confirmed'])
+                        ->where('check_out', '<=', $checkIn->format('Y-m-d'))
+                        ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
+                        ->orderBy('check_out', 'desc')
+                        ->first();
 
-                if ($currentBooking) {
-                    $checkoutDate = Carbon::parse($currentBooking->check_out)->format('Y-m-d');
-                } else if ($room->status === 'to_be_cleaned') {
-                    $checkoutDate = 'Today';
+                    if ($lastOrNextBooking) {
+                        $checkoutDate = Carbon::parse($lastOrNextBooking->check_out)->format('Y-m-d');
+                    } else if ($room->status === 'to_be_cleaned') {
+                        $checkoutDate = 'Today';
+                    }
                 }
             }
 
             // Logic for selectable:
-            // If check-in is today, and room status is NOT available (i.e. occupied or needs cleaning), disallow selection.
+            // If check-in is today, and room is NOT available now (due to cleaning OR current occupancy), disallow selection.
             $canSelect = true;
-            if ($checkIn->isToday() && $room->status !== 'available') {
+            if ($checkIn->isToday() && !$isAvailableNow) {
                 $canSelect = false;
             }
 
@@ -3625,7 +3674,7 @@ class BookingController extends Controller
                 'is_available_now' => $isAvailableNow,
                 'is_soon_available' => $isSoonAvailable,
                 'checkout_date' => $checkoutDate,
-                'status' => $room->status,
+                'status' => $activeGuestBooking ? 'occupied' : $room->status, // Use active status if checked in
                 'can_select' => $canSelect,
             ];
         };
@@ -4206,12 +4255,17 @@ class BookingController extends Controller
 
                 if (!empty($options)) {
                     $currentStock = $stockLevels[$variant->id] ?? 0;
+                    // Use variant name if available, otherwise product name
+                    $displayName = $variant->variant_name ?: $product->name;
+                    $displayName .= ($variant->measurement ? ' (' . $variant->measurement . ')' : '');
+                    
                     $drinks[] = (object)[
                         'id' => $product->id,
                         'variant_id' => $variant->id,
-                        'name' => $product->name . ($variant->measurement ? ' (' . $variant->measurement . ')' : ''),
+                        'name' => $displayName,
+                        'is_product' => true, // Flag to distinguish
                         'category' => $product->category,
-                        'image' => $product->image,
+                        'image' => $variant->image ?: $product->image, // Also prioritize variant image
                         'options' => $options,
                         'in_stock' => $currentStock > 0,
                         'current_stock' => $currentStock,
@@ -4229,6 +4283,7 @@ class BookingController extends Controller
         foreach ($serviceDrinks as $service) {
             $alreadyAdded = false;
             foreach ($drinks as $drink) {
+                // Determine if this service matches an existing product in the list (fuzzy match)
                 if (isset($drink->is_product) && (str_contains(strtolower($service->name), strtolower($drink->name)) || str_contains(strtolower($drink->name), strtolower($service->name)))) {
                     $alreadyAdded = true;
                     break;
@@ -4247,6 +4302,7 @@ class BookingController extends Controller
                     'id' => $service->id,
                     'variant_id' => null, // Services don't have variants
                     'name' => $service->name,
+                    'is_product' => false,
                     'item_type' => 'Unit',
                     'category' => $service->category,
                     'price_tsh' => (float)$service->price_tsh,

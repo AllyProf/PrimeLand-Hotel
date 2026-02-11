@@ -69,6 +69,9 @@
               <option value="housekeeper" {{ old('role', $user->role ?? '') == 'housekeeper' ? 'selected' : '' }}>
                 Housekeeper
               </option>
+              <option value="waiter" {{ old('role', $user->role ?? '') == 'waiter' ? 'selected' : '' }}>
+                Waiter
+              </option>
               <option value="guest" {{ old('role', $user->role ?? '') == 'guest' ? 'selected' : '' }}>
                 Guest
               </option>
@@ -176,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to update password field requirements based on role
     function updatePasswordRequirements() {
         const selectedRole = roleSelect.value;
-        const isStaff = ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef', 'housekeeper'].includes(selectedRole);
+        const isStaff = ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef', 'housekeeper', 'waiter'].includes(selectedRole);
         const isCreating = @json(!$user);
         
         if (isStaff && isCreating) {

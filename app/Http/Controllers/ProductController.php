@@ -59,9 +59,26 @@ class ProductController extends Controller
             ELSE 8 END")
             ->orderBy('name');
             
+        // Clone for stats before pagination
+        $statsQuery = clone $query;
+        $totalBrands = $statsQuery->count();
+        $totalVariants = \App\Models\ProductVariant::whereHas('product', function($q) use ($role, $request) {
+            if ($role === 'bar_keeper') $q->where('type', 'drink');
+            if ($request->has('category')) $q->where('category', $request->category);
+        })->count();
+        $totalCategories = $statsQuery->distinct()->count('category');
+        $activeItems = $statsQuery->where('is_active', true)->count();
+        
         $products = $query->paginate(200);
         
-        return view('dashboard.products-list', compact('products', 'role'));
+        $summaryStats = [
+            'brands' => $totalBrands,
+            'variants' => $totalVariants,
+            'categories' => $totalCategories,
+            'active' => $activeItems
+        ];
+        
+        return view('dashboard.products-list', compact('products', 'role', 'summaryStats'));
     }
 
     /**

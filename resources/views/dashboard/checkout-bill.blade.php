@@ -529,7 +529,7 @@
                   </td>
                 </tr>
                 @endif
-                @if(isset($outstandingBalanceTsh) && $outstandingBalanceTsh > 0)
+                @if(isset($outstandingBalanceTsh) && $outstandingBalanceTsh > 50)
                 <tr style="border-top: 2px solid #e07632; font-size: 18px;">
                   <td><strong>Outstanding Balance:</strong></td>
                   <td class="text-right">
@@ -537,7 +537,7 @@
                     <small class="text-muted">≈ ${{ number_format($outstandingBalanceTsh / $exchangeRate, 2) }}</small>
                   </td>
                 </tr>
-                @elseif(isset($outstandingBalanceTsh) && $outstandingBalanceTsh == 0)
+                @elseif(isset($outstandingBalanceTsh) && $outstandingBalanceTsh <= 50)
                 <tr style="border-top: 2px solid #e07632; font-size: 18px;">
                   <td><strong>Status:</strong></td>
                   <td class="text-right">
@@ -583,14 +583,10 @@
                   @endif
                 @else
                   @php
-                    // Calculate total outstanding including room, extensions, and services
-                    $roomPaidTsh = ($booking->amount_paid ?? 0) * $exchangeRate;
-                    $roomChargeTsh = ($originalRoomCostTsh ?? 0);
-                    $extensionChargeTsh = ($extensionCostTsh ?? 0);
-                    $serviceChargeTsh = ($totalServiceChargesTsh ?? 0);
-                    
-                    $totalExpectedTsh = $roomChargeTsh + $extensionChargeTsh + $serviceChargeTsh;
-                    $totalOutstandingTsh = max(0, $totalExpectedTsh - $roomPaidTsh);
+                    // Use pre-calculated values from controller
+                    $totalExpectedTsh = $totalBillTsh ?? 0;
+                    $totalPaidTsh = $amountPaidTsh ?? 0;
+                    $totalOutstandingTsh = $outstandingBalanceTsh ?? 0;
                     $totalOutstandingUsd = $totalOutstandingTsh / $exchangeRate;
                   @endphp
                   
@@ -599,9 +595,9 @@
                     @if($booking->paid_at)
                       <small class="text-muted">({{ $booking->paid_at->format('M d, Y') }})</small>
                     @endif
-                  @elseif($roomPaidTsh > 50)
+                  @elseif($totalPaidTsh > 50)
                     <span class="badge badge-warning">Partially Paid</span>
-                    <br><small class="text-muted">{{ number_format($roomPaidTsh / $exchangeRate, 2) }} USD paid of {{ number_format($totalExpectedTsh / $exchangeRate, 2) }} USD total</small>
+                    <br><small class="text-muted">{{ number_format($totalPaidTsh / $exchangeRate, 2) }} USD paid of {{ number_format($totalExpectedTsh / $exchangeRate, 2) }} USD total</small>
                     <br><small class="text-danger"><strong>Outstanding: {{ number_format($totalOutstandingTsh, 2) }} TZS (≈ ${{ number_format($totalOutstandingUsd, 2) }})</strong></small>
                   @else
                     <span class="badge badge-warning">Pending Payment</span>
