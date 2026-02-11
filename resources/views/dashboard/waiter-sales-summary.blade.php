@@ -79,22 +79,32 @@
 
     @media (max-width: 768px) {
         .stat-value { font-size: 1.4rem; }
+        .summary-card { padding: 15px; }
+        .header-stack { flex-direction: column; align-items: flex-start !important; gap: 15px; }
+        .mobile-w-100 { width: 100%; }
+        .mobile-btn-group { display: flex; width: 100%; gap: 10px; }
+        .mobile-btn-group .form-control { flex: 1; }
+        .card-header-title { font-size: 1.5rem; }
+    }
+
+    @media (min-width: 769px) {
+        .card-header-title { font-size: 2rem; }
     }
 </style>
 
-<div class="container-fluid py-4">
+<div class="container-fluid py-3 py-md-4">
     <!-- Header Area -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 header-stack">
         <div>
-            <h2 class="font-weight-bold mb-0">Sales Summary</h2>
-            <p class="text-muted">Tracking your performance and sales impact</p>
+            <h2 class="font-weight-bold mb-0 card-header-title">Sales Summary</h2>
+            <p class="text-muted mb-0">Tracking your performance and sales impact</p>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <form action="{{ route('waiter.sales-summary') }}" method="GET" class="d-flex gap-2">
+        <div class="d-flex align-items-center gap-2 mobile-w-100 mobile-btn-group">
+            <form action="{{ route('waiter.sales-summary') }}" method="GET" class="d-flex gap-2 flex-grow-1">
                 <input type="date" name="date" value="{{ $date }}" class="form-control btn-date-picker" onchange="this.form.submit()">
             </form>
-            <a href="{{ route('waiter.dashboard') }}" class="btn btn-outline-secondary ml-2" style="border-radius: 10px;">
-                <i class="fa fa-arrow-left"></i> Dashboard
+            <a href="{{ route('waiter.dashboard') }}" class="btn btn-outline-secondary" style="border-radius: 10px; white-space: nowrap;">
+                <i class="fa fa-arrow-left"></i> <span class="d-none d-sm-inline">Dashboard</span>
             </a>
         </div>
     </div>
@@ -159,8 +169,7 @@
                                 <tr class="text-muted" style="font-size: 0.8rem; text-transform: uppercase;">
                                     <th>Rank</th>
                                     <th>Item Name</th>
-                                    <th class="text-center">Qty Sold</th>
-                                    <th class="text-right">Total Revenue</th>
+                                    <th class="text-right">Qty & Revenue</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -168,14 +177,13 @@
                                 @foreach($itemsBreakdown as $name => $data)
                                 <tr>
                                     <td><div class="item-rank">{{ $rank++ }}</div></td>
-                                    <td><span class="font-weight-bold" style="font-size: 1.05rem;">{{ $name }}</span></td>
-                                    <td class="text-center">
-                                        <span class="badge badge-light px-3 py-2" style="font-size: 1rem; border-radius: 8px;">
-                                            {{ $data['qty'] }}
-                                        </span>
+                                    <td>
+                                        <div class="font-weight-bold" style="font-size: 1.05rem;">{{ $name }}</div>
+                                        <div class="d-md-none text-muted small">Sold: {{ $data['qty'] }}</div>
                                     </td>
                                     <td class="text-right">
                                         <h6 class="font-weight-bold mb-0">{{ number_format($data['revenue']) }} <small>TZS</small></h6>
+                                        <div class="d-none d-md-block text-muted small">Qty: {{ $data['qty'] }}</div>
                                     </td>
                                 </tr>
                                 @endforeach
