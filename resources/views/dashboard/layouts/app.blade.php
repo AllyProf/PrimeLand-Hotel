@@ -62,6 +62,7 @@
         color: #e77a3a;
         letter-spacing: 2px;
         text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        font-family: "Century Gothic", AppleGothic, sans-serif;
       }
       
       .spinner-wrapper {
@@ -113,6 +114,7 @@
         color: #666;
         margin-top: 20px;
         font-weight: 500;
+        font-family: "Century Gothic", AppleGothic, sans-serif;
       }
       
       .loading-progress {
@@ -135,131 +137,6 @@
         0% { width: 0%; }
         50% { width: 70%; }
         100% { width: 100%; }
-      }
-      
-      /* Toast Notification Styles */
-      #toast-container {
-        position: fixed;
-        top: 70px;
-        right: 20px;
-        z-index: 9999;
-        max-width: 400px;
-      }
-      
-      .toast-notification {
-        background: white;
-        border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        margin-bottom: 0;
-        padding: 15px;
-        display: flex;
-        align-items: flex-start;
-        animation: slideInRight 0.3s ease;
-        border-left: 4px solid;
-        min-width: 300px;
-      }
-      
-      /* Ensure only one notification is visible */
-      #toast-container .toast-notification:not(:first-child) {
-        display: none;
-      }
-      
-      .toast-notification.toast-primary { border-left-color: #007bff; }
-      .toast-notification.toast-success { border-left-color: #28a745; }
-      .toast-notification.toast-danger { border-left-color: #dc3545; }
-      .toast-notification.toast-warning { border-left-color: #ffc107; }
-      .toast-notification.toast-info { border-left-color: #17a2b8; }
-      
-      .toast-notification .toast-icon {
-        font-size: 20px;
-        margin-right: 12px;
-        flex-shrink: 0;
-        margin-top: 2px;
-      }
-      
-      .toast-notification.toast-primary .toast-icon { color: #007bff; }
-      .toast-notification.toast-success .toast-icon { color: #28a745; }
-      .toast-notification.toast-danger .toast-icon { color: #dc3545; }
-      .toast-notification.toast-warning .toast-icon { color: #ffc107; }
-      .toast-notification.toast-info .toast-icon { color: #17a2b8; }
-      
-      .toast-content {
-        flex: 1;
-      }
-      
-      .toast-title {
-        font-weight: 600;
-        margin-bottom: 4px;
-        font-size: 14px;
-      }
-      
-      .toast-message {
-        font-size: 13px;
-        color: #666;
-        margin-bottom: 8px;
-      }
-      
-      .toast-actions {
-        margin-top: 8px;
-      }
-      
-      .toast-actions a {
-        font-size: 12px;
-        padding: 4px 12px;
-        margin-right: 8px;
-        text-decoration: none;
-        border-radius: 3px;
-        display: inline-block;
-        background-color: #007bff;
-        color: white;
-        transition: background-color 0.2s;
-      }
-      
-      .toast-actions a:hover {
-        background-color: #0056b3;
-        color: white;
-      }
-      
-      .toast-close {
-        background: none;
-        border: none;
-        font-size: 18px;
-        color: #999;
-        cursor: pointer;
-        padding: 0;
-        margin-left: 10px;
-        line-height: 1;
-        flex-shrink: 0;
-      }
-      
-      .toast-close:hover {
-        color: #333;
-      }
-      
-      @keyframes slideInRight {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
-      
-      @keyframes slideOutRight {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-      }
-      
-      .toast-notification.removing {
-        animation: slideOutRight 0.3s ease;
       }
       
       /* Mobile Header Logo - White Color and Centered */
@@ -554,7 +431,7 @@
         } else {
           // Use UI Avatars as fallback with user's name
           $userNameForAvatar = $userName ?? ($currentAuthUser->name ?? 'User');
-          $userPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($userNameForAvatar) . '&size=128&background=007bff&color=fff';
+          $userPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($userNameForAvatar) . '&size=128&background=e77a3a&color=fff';
         }
       @endphp
       <div class="app-sidebar__user">
@@ -724,8 +601,6 @@
         @endif
       </ul>
     </aside>
-    <!-- Toast Notification Container -->
-    <div id="toast-container"></div>
     
     <main class="app-content">
       @yield('content')
@@ -742,11 +617,12 @@
     /* Global SweetAlert2 Custom Styling - Brand Colors */
     .swal2-popup {
         border-radius: 10px !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-family: "Century Gothic", AppleGothic, sans-serif !important;
     }
     .swal2-title {
         font-weight: 600 !important;
         color: #333 !important;
+        font-family: "Century Gothic", AppleGothic, sans-serif !important;
     }
     .swal2-confirm {
         background-color: #e77a3a !important;
@@ -799,43 +675,61 @@
         }
     };
     
-    // Helper function for success alerts
-    function showSuccessAlert(title, text, callback) {
-        Swal.fire(Object.assign({}, SwalConfig, {
-            icon: 'success',
-            title: title,
-            text: text,
-            showConfirmButton: true
-        })).then(function(result) {
-            if (callback) callback(result);
+    // Professional Toast Configuration
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 5000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
+    
+    /**
+     * Show a modern toast notification using SweetAlert2
+     */
+    function showToast(type, message, title, duration = 5000) {
+        // Map types to Swal icons
+        const iconMap = {
+            'success': 'success',
+            'danger': 'error',
+            'error': 'error',
+            'warning': 'warning',
+            'info': 'info',
+            'primary': 'info'
+        };
+        
+        Toast.fire({
+            icon: iconMap[type] || 'info',
+            title: title || '',
+            text: message,
+            timer: duration
         });
     }
+
+    // Wrap older Swal helpers to also show toasts for simple confirmations
+    function showSuccessAlert(title, text, callback) {
+        showToast('success', text, title);
+        if (callback) setTimeout(callback, 500); 
+    }
     
-    // Helper function for error alerts
     function showErrorAlert(title, text, callback) {
         Swal.fire(Object.assign({}, SwalConfig, {
             icon: 'error',
             title: title,
             text: text,
             showConfirmButton: true
-        })).then(function(result) {
-            if (callback) callback(result);
-        });
+        })).then(result => { if (callback) callback(result); });
     }
     
-    // Helper function for warning alerts
     function showWarningAlert(title, text, callback) {
-        Swal.fire(Object.assign({}, SwalConfig, {
-            icon: 'warning',
-            title: title,
-            text: text,
-            showConfirmButton: true
-        })).then(function(result) {
-            if (callback) callback(result);
-        });
+        showToast('warning', text, title);
+        if (callback) setTimeout(callback, 500);
     }
     
-    // Helper function for confirmation dialogs
     function showConfirmDialog(title, text, confirmText, cancelText, callback) {
         Swal.fire(Object.assign({}, SwalConfig, {
             icon: 'question',
@@ -844,9 +738,24 @@
             showCancelButton: true,
             confirmButtonText: confirmText || 'Yes, proceed!',
             cancelButtonText: cancelText || 'Cancel'
-        })).then(function(result) {
-            if (callback) callback(result);
-        });
+        })).then(result => { if (callback) callback(result); });
+    }
+    
+    // Explicit Toast Helpers
+    function showSuccessToast(message, title = 'Success!') {
+        showToast('success', message, title);
+    }
+    
+    function showInfoToast(message, title = 'Info') {
+        showToast('info', message, title);
+    }
+    
+    function showWarningToast(message, title = 'Warning') {
+        showToast('warning', message, title);
+    }
+    
+    function showErrorToast(message, title = 'Error') {
+        showToast('error', message, title);
     }
     </script>
     <!-- The javascript plugin to display page loading on top-->
@@ -854,17 +763,9 @@
     
     <!-- SweetAlert2 - Auto Display Session Messages -->
     <script>
-      // Auto-display session messages with SweetAlert2
+      // Auto-display session messages with modern Toasts
       @if(session('success'))
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: '{{ session('success') }}',
-          confirmButtonColor: '#e77a3a',
-          confirmButtonText: 'OK',
-          timer: 3000,
-          timerProgressBar: true
-        });
+        setTimeout(() => showToast('success', '{{ session('success') }}', 'Success!'), 500);
       @endif
 
       @if(session('error'))
@@ -878,25 +779,11 @@
       @endif
 
       @if(session('warning'))
-        Swal.fire({
-          icon: 'warning',
-          title: 'Warning!',
-          text: '{{ session('warning') }}',
-          confirmButtonColor: '#e77a3a',
-          confirmButtonText: 'OK'
-        });
+        setTimeout(() => showToast('warning', '{{ session('warning') }}', 'Warning!'), 500);
       @endif
 
       @if(session('info'))
-        Swal.fire({
-          icon: 'info',
-          title: 'Information',
-          text: '{{ session('info') }}',
-          confirmButtonColor: '#e77a3a',
-          confirmButtonText: 'OK',
-          timer: 3000,
-          timerProgressBar: true
-        });
+        setTimeout(() => showToast('info', '{{ session('info') }}', 'Information'), 500);
       @endif
 
       @if(isset($errors) && $errors->any())
@@ -909,20 +796,18 @@
         });
       @endif
 
-      // Global function to show success message
+      // Global function to show success message (Traditional Pop-up)
       function showSuccessMessage(message, title = 'Success!') {
         Swal.fire({
           icon: 'success',
           title: title,
           text: message,
           confirmButtonColor: '#e77a3a',
-          confirmButtonText: 'OK',
-          timer: 3000,
-          timerProgressBar: true
+          confirmButtonText: 'OK'
         });
       }
 
-      // Global function to show error message
+      // Global function to show error message (Traditional Pop-up)
       function showErrorMessage(message, title = 'Error!') {
         Swal.fire({
           icon: 'error',
@@ -1149,16 +1034,6 @@
       }
       
       function showNextNotification() {
-        // Clear any existing timer
-        if (currentNotificationTimer) {
-          clearTimeout(currentNotificationTimer);
-          currentNotificationTimer = null;
-        }
-        
-        // Remove current notification if exists
-        const container = document.getElementById('toast-container');
-        container.innerHTML = '';
-        
         // Check if there are more notifications
         if (notificationQueue.length === 0) {
           isShowingNotification = false;
@@ -1166,71 +1041,30 @@
         }
         
         isShowingNotification = true;
-        const notification = notificationQueue.shift(); // Get and remove first notification
+        const notification = notificationQueue.shift();
         
         // Don't show if already shown
         if (shownToastIds.has(notification.id)) {
-          showNextNotification(); // Skip to next
+          showNextNotification();
           return;
         }
         
         shownToastIds.add(notification.id);
-        saveShownToastIds(); // Save to localStorage
+        saveShownToastIds();
+
+        const toastType = notification.color || 'info';
+        const message = notification.message; // Removed actionHtml for a "just toast" simple feel
         
-        const toast = document.createElement('div');
-        toast.className = `toast-notification toast-${notification.color || 'info'}`;
-        toast.id = `toast-${notification.id}`;
+        showToast(toastType, message, notification.title || 'Notification', 5000);
         
-        const iconMap = {
-          'primary': 'fa-info-circle',
-          'success': 'fa-check-circle',
-          'danger': 'fa-exclamation-circle',
-          'warning': 'fa-exclamation-triangle',
-          'info': 'fa-info-circle'
-        };
-        
-        const icon = iconMap[notification.color] || 'fa-info-circle';
-        const actionButton = notification.link ? `<a href="${notification.link}" class="btn btn-sm btn-primary">View</a>` : '';
-        
-        toast.innerHTML = `
-          <i class="fa ${icon} toast-icon"></i>
-          <div class="toast-content">
-            <div class="toast-title">${notification.title || 'Notification'}</div>
-            <div class="toast-message">${notification.message}</div>
-            ${actionButton ? `<div class="toast-actions">${actionButton}</div>` : ''}
-          </div>
-          <button class="toast-close" onclick="dismissCurrentNotification()" title="Dismiss">&times;</button>
-        `;
-        
-        container.appendChild(toast);
-        
-        // Mark as read when clicked (already marked above, but keep for link clicks)
-        if (notification.link) {
-          toast.querySelector('.toast-actions a').addEventListener('click', function() {
-            markNotificationAsRead(notification.id);
-          });
-        }
-        
-        // Auto-advance to next notification after 5 seconds
-        currentNotificationTimer = setTimeout(function() {
-          dismissCurrentNotification();
-        }, 5000);
+        // Auto-advance after duration
+        setTimeout(() => {
+            showNextNotification();
+        }, 5500);
       }
       
       function dismissCurrentNotification() {
-        const container = document.getElementById('toast-container');
-        const toast = container.querySelector('.toast-notification');
-        
-        if (toast) {
-          toast.classList.add('removing');
-          setTimeout(function() {
-            toast.remove();
-            // Show next notification
-            showNextNotification();
-          }, 300);
-        } else {
-          showNextNotification();
-        }
+          // New showToast handles dismissal
       }
       
       function dismissToast(notificationId) {

@@ -1,7 +1,7 @@
 <div class="app-sidebar__overlay" data-toggle="sidebar"></div>
 <aside class="app-sidebar">
     <div class="app-sidebar__user">
-        <img class="app-sidebar__user-avatar" src="{{ Auth::guard('staff')->user()->profile_photo ? asset('storage/' . Auth::guard('staff')->user()->profile_photo) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::guard('staff')->user()->name) . '&background=009688&color=fff' }}" alt="User Image" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%;">
+        <img class="app-sidebar__user-avatar" src="{{ Auth::guard('staff')->user()->profile_photo ? asset('storage/' . Auth::guard('staff')->user()->profile_photo) : 'https://ui-avatars.com/api/?name=' . urlencode(Auth::guard('staff')->user()->name) . '&background=e77a3a&color=fff' }}" alt="User Image" style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%;">
         <div>
             <p class="app-sidebar__user-name">{{ Auth::guard('staff')->user()->name }}</p>
             <p class="app-sidebar__user-designation">{{ ucfirst(Auth::guard('staff')->user()->role ?? 'Staff') }}</p>

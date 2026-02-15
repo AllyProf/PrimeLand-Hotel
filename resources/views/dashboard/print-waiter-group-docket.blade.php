@@ -164,18 +164,13 @@
         <div class="section">
             <div class="section-title">Items Ordered</div>
             @php
-                // Group items by Name AND Payment Status to separate Paid vs Pending
                 $groupedItems = $orders->groupBy(function($item) {
-                     $name = $item->service_specific_data['item_name'] ?? $item->service->name;
-                     $isPaid = in_array($item->payment_status, ['paid', 'room_charge']);
-                     return $name . '|' . ($isPaid ? 'PAID' : 'PENDING');
+                     return $item->service_specific_data['item_name'] ?? $item->service->name;
                 });
             @endphp
 
-            @foreach($groupedItems as $groupKey => $items)
+            @foreach($groupedItems as $itemName => $items)
                 @php
-                    list($itemName, $status) = explode('|', $groupKey);
-                    
                     $qty = $items->sum('quantity');
                     $total = $items->sum('total_price_tsh');
                     $unitPrice = $qty > 0 ? $total / $qty : 0;
@@ -205,14 +200,7 @@
                 @endphp
                 <div class="item-row">
                     <div class="item-header">
-                        <span>
-                            {{ $itemName }}
-                            @if($status === 'PAID')
-                                <span style="font-size: 10px; color: green; border: 1px solid green; padding: 1px 3px; border-radius: 2px; margin-left: 5px;">PAID</span>
-                            @else
-                                <span style="font-size: 10px; color: #e07632; border: 1px solid #e07632; padding: 1px 3px; border-radius: 2px; margin-left: 5px;">PENDING</span>
-                            @endif
-                        </span>
+                        <span>{{ $itemName }}</span>
                         <span>{{ number_format($total) }} TZS</span>
                     </div>
                     <div class="info-row">

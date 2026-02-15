@@ -196,9 +196,9 @@
 @if(isset($pendingToReceive) && $pendingToReceive->count() > 0)
 <div class="row mb-4">
   <div class="col-md-12">
-    <div class="tile shadow-sm" style="border-left: 5px solid #009688;">
+    <div class="tile shadow-sm" style="border-left: 5px solid #e77a3a;">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="tile-title mb-0" style="color: #009688;"><i class="fa fa-truck"></i> Items Ready to Receive</h3>
+        <h3 class="tile-title mb-0" style="color: #e77a3a;"><i class="fa fa-truck"></i> Items Ready to Receive</h3>
         <button class="btn btn-primary btn-sm" id="receiveAllBtn">
           <i class="fa fa-check-square"></i> Receive All Selected
         </button>

@@ -41,7 +41,7 @@ Table of Content:
 /*font Variables*/
 /*Color Variables*/
 /*=================== fonts ====================*/
-@import url("https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700");
+
 
 .col-md-offset-right-1,
 .col-lg-offset-right-1 {
@@ -88,7 +88,7 @@ a:focus {
 body {
   line-height: 24px;
   font-size: 14px;
-  font-family: "Poppins", sans-serif;
+  font-family: "Century Gothic", AppleGothic, sans-serif;
   font-weight: 300;
   color: #777777;
 }
@@ -103,7 +103,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Poppins", sans-serif;
+  font-family: "Century Gothic", AppleGothic, sans-serif;
   font-weight: 600;
 }
 
@@ -223,7 +223,7 @@ button:focus {
   line-height: 40px;
   font-size: 14px;
   color: #222222;
-  font-family: "Poppins", sans-serif;
+  font-family: "Century Gothic", AppleGothic, sans-serif;
   font-weight: 500;
 }
 
@@ -379,7 +379,7 @@ button:focus {
 }
 
 .navbar .menu_nav .nav-item .nav-link {
-  font: 500 12px/80px "Poppins", sans-serif;
+  font: 500 12px/80px "Century Gothic", AppleGothic, sans-serif;
   color: #222222;
   text-transform: uppercase;
   padding: 0px;
@@ -809,7 +809,7 @@ button:focus {
   line-height: 66px;
   font-weight: bold;
   color: #fff;
-  font-family: "Poppins", sans-serif;
+  font-family: "Century Gothic", AppleGothic, sans-serif;
 }
 
 .blog_banner .banner_content p {
@@ -1298,7 +1298,7 @@ button:focus {
 }
 
 .blog_info .post_tag a {
-  font: 300 14px/21px "Poppins", sans-serif;
+  font: 300 14px/21px "Century Gothic", AppleGothic, sans-serif;
   color: #222222;
 }
 
@@ -1307,7 +1307,7 @@ button:focus {
 }
 
 .blog_info .blog_meta li a {
-  font: 300 14px/20px "Poppins", sans-serif;
+  font: 300 14px/20px "Century Gothic", AppleGothic, sans-serif;
   color: #777777;
   vertical-align: middle;
   padding-bottom: 12px;
@@ -2073,7 +2073,7 @@ button:focus {
   line-height: 26px;
   color: #999;
   border: 1px solid #eeeeee;
-  font-family: "Poppins", sans-serif;
+  font-family: "Century Gothic", AppleGothic, sans-serif;
   border-radius: 0px;
   padding-left: 20px;
 }
@@ -2146,7 +2146,7 @@ button:focus {
   text-align: center;
   color: #f3c300;
   padding-bottom: 10px;
-  font-family: "Poppins", sans-serif;
+  font-family: "Century Gothic", AppleGothic, sans-serif;
 }
 
 .modal-message .modal-dialog .modal-content .modal-header p {

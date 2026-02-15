@@ -692,7 +692,7 @@ class KitchenController extends Controller
             ->where(function($q) {
                 // 1. All active orders (pending, approved, or preparing)
                 $q->whereIn('status', ['pending', 'approved', 'preparing'])
-                // 2. OR Served orders that are WAITING FOR PAYMENT
+                // 2. OR Served orders that are WAITING FOR PAYMENT (exclude room_charge as they're already paid)
                 ->orWhere(function($sub) {
                     $sub->where('status', 'completed')
                         ->whereIn('payment_status', ['pending', 'unpaid']);
@@ -712,6 +712,34 @@ class KitchenController extends Controller
             })
             ->whereDate('service_date', now()->toDateString())
             ->get();
+
+        // Filter out ceremonies where kitchen/food payments are fully settled
+        // Filter out ceremonies where kitchen/food payments are fully settled
+        $activeCeremonies = $activeCeremonies->filter(function($ceremony) {
+            $foodCategories = ['food', 'restaurant', 'kitchen'];
+            
+            // Get requests related to kitchen/food
+            $kitchenRequests = $ceremony->serviceRequests->filter(function($req) use ($foodCategories) {
+                return $req->service && in_array($req->service->category, $foodCategories);
+            });
+            
+            // If kitchen requests exist, use their payment status
+            if ($kitchenRequests->isNotEmpty()) {
+                // Keep visible if ANY kitchen request is pending/unpaid
+                return $kitchenRequests->contains(function ($req) {
+                    return !in_array($req->payment_status, ['paid', 'room_charge']);
+                });
+            }
+            
+            // If NO kitchen requests exist, check the main ceremony payment status
+            // If the main ceremony is paid, we hide it (assuming no food will be added or it is concluded)
+            if (in_array($ceremony->payment_status, ['paid', 'room_charge'])) {
+                return false;
+            }
+            
+            // Otherwise show it (new/unpaid ceremony waiting for orders)
+            return true;
+        });
         
         // Get available recipes for walk-in orders
         $recipes = \App\Models\Recipe::orderBy('name')

@@ -52,7 +52,7 @@
             <div class="col-md-12">
               <div class="guest-search-box shadow-sm mb-2" style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e0e0e0; transition: all 0.3s ease;">
                 <div class="search-header d-flex align-items-center mb-3">
-                   <div class="search-icon-circle mr-3" style="width: 45px; height: 45px; background: #e0f2f1; color: #009688; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                   <div class="search-icon-circle mr-3" style="width: 45px; height: 45px; background: rgba(231, 122, 58, 0.1); color: #e77a3a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
                       <i class="fa fa-user-circle-o"></i>
                    </div>
                    <div>
@@ -63,7 +63,7 @@
                 <div class="form-group position-relative mb-0">
                   <div class="input-group search-input-group">
                     <div class="input-group-prepend">
-                      <span class="input-group-text bg-white border-right-0" style="border-radius: 8px 0 0 8px; color: #009688;"><i class="fa fa-search" id="guestSearchIcon"></i></span>
+                      <span class="input-group-text bg-white border-right-0" style="border-radius: 8px 0 0 8px; color: #e77a3a;"><i class="fa fa-search" id="guestSearchIcon"></i></span>
                     </div>
                     <input type="text" id="guestSearchInput" class="form-control border-left-0" style="height: 48px; font-size: 16px; border-radius: 0 8px 8px 0;" placeholder="Start typing guest name, email or phone number..." autocomplete="off">
                   </div>
@@ -3173,7 +3173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   // Hover effect via JS
                   item.onmouseover = function() { 
                     this.style.backgroundColor = '#f4fbfb'; 
-                    this.style.boxShadow = 'inset 4px 0 0 #009688';
+                    this.style.boxShadow = 'inset 4px 0 0 #e77a3a';
                   };
                   item.onmouseout = function() { 
                     this.style.backgroundColor = ''; 

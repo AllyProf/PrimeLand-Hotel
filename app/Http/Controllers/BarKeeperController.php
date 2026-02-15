@@ -45,12 +45,13 @@ class BarKeeperController extends Controller
                 $query->where('status', 'pending')
                     // OR approved orders waiting to be served
                     ->orWhere('status', 'approved')
-                    // OR completed orders that haven't been paid yet (walk-ins)
+                    // OR completed orders that haven't been paid yet (exclude room_charge as they're already paid)
                     ->orWhere(function($q) {
                         $q->where('status', 'completed')
-                          ->where('payment_status', 'pending');
+                          ->whereIn('payment_status', ['pending', 'unpaid']);
                     });
             })
+            ->with('approvedBy')
             ->orderBy('requested_at', 'desc')
             ->get();
         
@@ -603,18 +604,38 @@ class BarKeeperController extends Controller
         $user = Auth::guard('staff')->user();
         
         try {
-            $serviceRequest->update([
+            // Check if this is a company-paid booking
+            $isCompanyPaid = !$serviceRequest->is_walk_in && 
+                             $serviceRequest->booking && 
+                             $serviceRequest->booking->payment_responsibility === 'company';
+            
+            $updateData = [
                 'status' => 'completed', // Moved from Pending to Completed (Taken out of queue)
                 'completed_at' => now(),
                 'approved_by' => $user->id,
-                'approved_at' => now(), 
-                'payment_status' => 'pending', // Explicitly Pending Payment
-                'reception_notes' => $serviceRequest->reception_notes . " | Served by {$user->name} (Pending Payment)",
-            ]);
+                'approved_at' => now(),
+            ];
+            
+            if ($isCompanyPaid) {
+                // Auto-charge to room for company-paid bookings
+                $updateData['payment_status'] = 'room_charge';
+                $updateData['payment_method'] = 'room_charge';
+                $updateData['reception_notes'] = $serviceRequest->reception_notes . " | Served by {$user->name} (Auto-charged to Company)";
+            } else {
+                // Regular flow - mark as pending payment
+                $updateData['payment_status'] = 'pending';
+                $updateData['reception_notes'] = $serviceRequest->reception_notes . " | Served by {$user->name} (Pending Payment)";
+            }
+            
+            $serviceRequest->update($updateData);
+            
+            $message = $isCompanyPaid 
+                ? 'Order marked as SERVED and auto-charged to Company!' 
+                : 'Order marked as SERVED (Awaiting Payment)!';
             
             return response()->json([
                 'success' => true,
-                'message' => 'Order marked as SERVED (Awaiting Payment)!',
+                'message' => $message,
             ]);
             
         } catch (\Exception $e) {
@@ -1190,11 +1211,12 @@ class BarKeeperController extends Controller
         $identifier = $request->input('identifier'); // walk_in_name or booking_id
         
         // Fetch all orders for this group
-        $orders = ServiceRequest::with(['service', 'booking.room', 'dayService']);
+        $orders = ServiceRequest::with(['service', 'booking.room', 'dayService', 'approvedBy']);
         
         if ($isWalkIn) {
             $orders = $orders->where('is_walk_in', true)
-                ->where('walk_in_name', $identifier);
+                ->where('walk_in_name', $identifier)
+                ->whereDate('requested_at', \Carbon\Carbon::today());
         } else {
             $orders = $orders->where('booking_id', $identifier);
         }
@@ -1203,14 +1225,6 @@ class BarKeeperController extends Controller
         
         if ($orders->isEmpty()) {
             abort(404, 'No orders found');
-        }
-
-        // If walk-in, further filter by date to avoid picking up same name from different days
-        if ($isWalkIn) {
-            $firstDate = $orders->first()->requested_at->toDateString();
-            $orders = $orders->filter(function($o) use ($firstDate) {
-                return $o->requested_at->toDateString() === $firstDate;
-            });
         }
         
         $first = $orders->first();
@@ -1227,12 +1241,26 @@ class BarKeeperController extends Controller
         // Determine Guest Name
         $guestName = $first->is_walk_in ? ($first->walk_in_name ?? 'General Guest') : ($first->booking->guest_name ?? 'Hotel Guest');
         
-        // Determine Requested By (Waiter or Bar)
-        $requestedBy = 'Bar Keeper';
-        if ($first->reception_notes && str_contains($first->reception_notes, 'Waiter: ')) {
-            $parts = explode('Waiter: ', $first->reception_notes);
-            $byParts = explode(' - Msg:', $parts[1] ?? '');
-            $requestedBy = $byParts[0] ?? 'Waiter';
+        // Determine Requested By
+        $requestedBy = 'N/A';
+        if ($first->reception_notes) {
+            if (str_contains($first->reception_notes, 'Waiter: ')) {
+                $parts = explode('Waiter: ', $first->reception_notes);
+                $byParts = explode(' - Msg:', $parts[1] ?? '');
+                $requestedBy = $byParts[0] ?? 'Waiter';
+            } elseif (str_contains($first->reception_notes, 'Recorded by: ')) {
+                $parts = explode('Recorded by: ', $first->reception_notes);
+                $requestedBy = trim($parts[1] ?? 'Staff');
+            } elseif (str_contains($first->reception_notes, 'Recorded by ')) {
+                $parts = explode('Recorded by ', $first->reception_notes);
+                $byParts = explode(':', $parts[1] ?? '');
+                $requestedBy = trim($byParts[1] ?? 'Staff');
+            }
+        }
+        
+        // Fallback to approvedBy name if logic above failed or returned generic 'Staff'
+        if (($requestedBy === 'N/A' || $requestedBy === 'Staff' || $requestedBy === 'Bar Keeper') && $first->approvedBy) {
+            $requestedBy = $first->approvedBy->name;
         }
         
         // Calculate total

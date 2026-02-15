@@ -132,7 +132,7 @@
 /* SweetAlert2 Custom Styling - Brand Colors */
 .swal2-popup {
     border-radius: 10px !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: "Century Gothic", AppleGothic, sans-serif;
 }
 
 .swal2-title {
@@ -183,7 +183,7 @@
 <style>
 /* Custom Calendar Styling */
 .fc {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: "Century Gothic", AppleGothic, sans-serif;
 }
 
 .fc-header-toolbar {

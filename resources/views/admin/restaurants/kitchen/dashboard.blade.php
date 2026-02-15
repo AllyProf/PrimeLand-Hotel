@@ -72,9 +72,7 @@
     <div class="tile">
       <div class="tile-title-w-btn">
         <h3 class="title">Live Food Orders</h3>
-        @if(!$isChef)
         <button class="btn btn-primary" onclick="openWalkInModal()"><i class="fa fa-plus"></i> New Walk-in Order</button>
-        @endif
       </div>
       
       @if($pendingOrders->count() > 0)
@@ -107,15 +105,29 @@
                 // Use the most recent request time for the group
                 $latestRequest = $orders->sortByDesc('requested_at')->first()->requested_at;
                 
+                // Check if this is a company-paid booking
+                $isCompanyPaid = !$first->is_walk_in && $first->booking && $first->booking->payment_responsibility === 'company';
+                
                 // Get unique waiters
                 $waiters = [];
                 foreach($orders as $o) {
-                    if ($o->reception_notes && str_contains($o->reception_notes, 'Waiter: ')) {
-                        $parts = explode('Waiter: ', $o->reception_notes);
-                        $byRaw = $parts[1] ?? 'Waiter';
-                        $byNameOnly = explode(' | ', explode(' - Msg:', $byRaw)[0] ?? 'Waiter')[0];
-                        $waiters[] = trim($byNameOnly);
+                    $requestedBy = 'Staff'; // Default
+                    if ($o->reception_notes) {
+                        if (str_contains($o->reception_notes, 'Waiter: ')) {
+                            $parts = explode('Waiter: ', $o->reception_notes);
+                            $byParts = explode(' - Msg:', $parts[1] ?? '');
+                            $requestedBy = $byParts[0] ?? 'Waiter';
+                        } elseif (str_contains($o->reception_notes, 'Recorded by: ')) {
+                            $parts = explode('Recorded by: ', $o->reception_notes);
+                            $requestedBy = trim($parts[1] ?? 'Staff');
+                        }
                     }
+                    
+                    // Fallback to approvedBy name if notes are empty but we have an ID
+                    if ($requestedBy === 'Staff' && $o->approvedBy) {
+                        $requestedBy = $o->approvedBy->name;
+                    }
+                    $waiters[] = trim($requestedBy);
                 }
                 $waiters = array_unique($waiters);
               @endphp
@@ -134,6 +146,20 @@
                   @if($first->is_walk_in)
                       <span class="badge badge-secondary mb-1">WALK-IN</span><br>
                       <strong>{{ $first->walk_in_name ?? 'General Walk-in' }}</strong>
+                      <div class="mt-2" style="font-size: 11px;">
+                         <span class="text-muted">Session Bill:</span><br>
+                         <span class="badge badge-outline-dark" style="border: 1px solid #ccc;">{{ number_format($orders->sum('total_price_tsh')) }} TZS</span>
+                         @php
+                            $paidInSession = $orders->whereIn('payment_status', ['paid', 'room_charge'])->sum('total_price_tsh');
+                            $pendingInSession = $orders->sum('total_price_tsh') - $paidInSession;
+                         @endphp
+                         @if($paidInSession > 0)
+                            <br><small class="text-success">Paid: {{ number_format($paidInSession) }}</small>
+                         @endif
+                         @if($pendingInSession > 0)
+                            <br><small class="text-danger">Pending: {{ number_format($pendingInSession) }}</small>
+                         @endif
+                      </div>
                   @else
                       <strong>{{ $first->booking->room->room_number ?? 'N/A' }}</strong><br>
                       <small>{{ $first->booking->guest_name }}</small>
@@ -173,13 +199,16 @@
                       <td style="width: 20%; border-top: none; text-align: right;">
                         <div class="btn-group">
                           @if($order->status === 'pending')
-                            <button class="btn btn-xs btn-primary p-1 px-2 mr-1" onclick="startPreparingDashboard({{ $order->id }}, '{{ $order->service_specific_data['item_name'] ?? $order->service->name }}')" title="Start Preparing">
+                            <button class="btn btn-xs btn-primary p-1 px-2 mr-1" onclick="startPreparingDashboard({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? $order->service->name) }}')" title="Start Preparing">
                               <i class="fa fa-fire"></i>
                             </button>
                           @endif
-                          @if($order->status !== 'completed')
-                          <button class="btn btn-xs btn-success p-1 px-2" onclick="markAsServedOnly({{ $order->id }}, '{{ $order->service_specific_data['item_name'] ?? $order->service->name }}')" title="Mark Served">
+                          @if($order->status !== 'completed' && $order->status !== 'cancelled')
+                          <button class="btn btn-xs btn-success p-1 px-2" onclick="markAsServedOnly({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? $order->service->name) }}')" title="Mark Served">
                             <i class="fa fa-check"></i>
+                          </button>
+                          <button class="btn btn-xs btn-outline-danger p-1 px-2 ml-1" onclick="cancelOrderItem({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? $order->service->name) }}')" title="Cancel Item">
+                            <i class="fa fa-times"></i>
                           </button>
                           @endif
                         </div>
@@ -201,16 +230,30 @@
                       <i class="fa fa-print"></i> Print Bill
                     </button>
                     
-                    @if($first->is_walk_in && $first->payment_status === 'pending' && !$isChef)
-                        <button class="btn btn-sm btn-warning mb-1" onclick="openWalkInModal(null, '{{ addslashes($first->walk_in_name) }}')" title="Add More Items">
+                    @if(($first->payment_status === 'pending' || $first->payment_status === 'unpaid'))
+                        <button class="btn btn-sm btn-warning mb-1" 
+                                onclick="openAddItemsToGrouping('{{ $first->is_walk_in ? 1 : 0 }}', '{{ $first->is_walk_in ? addslashes($first->walk_in_name) : $first->booking_id }}', '{{ $first->is_walk_in ? '' : addslashes($first->booking->guest_name ?? '') }}', '{{ $first->is_walk_in ? '' : ($first->booking->room->room_number ?? '') }}')" 
+                                title="Add More Items">
                           <i class="fa fa-plus"></i> Add Items
+                        </button>
+                        
+                        <button class="btn btn-sm btn-outline-danger mb-1" 
+                                onclick="cancelOrderGroup('{{ $first->is_walk_in ? 1 : 0 }}', '{{ $first->is_walk_in ? addslashes($first->walk_in_name) : $first->booking_id }}')" 
+                                title="Cancel Entire Order">
+                          <i class="fa fa-times-circle"></i> Cancel All
                         </button>
                     @endif
 
-                    @if($first->payment_status === 'pending')
+                    @if($first->payment_status === 'pending' && !$isCompanyPaid)
                         <button class="btn btn-sm btn-outline-success mb-1" onclick="openPaymentModal({{ $first->id }}, {{ $guestTotal }}, '{{ addslashes($first->walk_in_name ?? $first->booking->room->room_number ?? '') }}', {{ $first->is_walk_in ? 1 : 0 }})" title="Record Total Payment">
                           <i class="fa fa-money"></i> PAY: {{ number_format($guestTotal) }}
                         </button>
+                    @endif
+                    
+                    @if($isCompanyPaid && $guestTotal > 0)
+                        <span class="badge badge-info p-2 mb-1" style="font-size: 11px;">
+                          <i class="fa fa-building"></i> Company Paid
+                        </span>
                     @endif
                   </div>
                 </td>
@@ -270,11 +313,9 @@
                                         ->sum('total_price_tsh');
                                 @endphp
                                 <div class="btn-group">
-                                    @if(!$isChef)
                                     <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openWalkInModal(null, '{{ $ceremony->guest_name }}', {{ $ceremony->id }})">
                                         <i class="fa fa-plus-circle mr-1"></i> Add Usage
                                     </button>
-                                    @endif
                                     <a href="{{ route('chef-master.day-services.docket', $ceremony->id) }}" target="_blank" class="btn btn-secondary btn-sm rounded-pill px-3 ml-2" title="Print Docket">
                                         <i class="fa fa-print mr-1"></i> Print Docket
                                     </a>
@@ -422,7 +463,8 @@
                       <div class="card-body p-2 text-center">
                         <img src="{{ $food->image }}" class="img-fluid mb-2 rounded" style="height: 60px; object-fit: contain;">
                         <h6 class="card-title mb-1 text-dark" style="font-size: 0.85rem; height: 1.5rem; overflow: hidden;">{{ $food->name }}</h6>
-                        <div class="badge badge-light-info px-2 py-1">{{ number_format($food->price_tsh) }} TZS</div>
+                        <div class="badge badge-light-info px-2 py-1 mb-2">{{ number_format($food->price_tsh) }} TZS</div>
+                        <button class="btn btn-sm btn-primary btn-block"><i class="fa fa-plus"></i> ADD</button>
                       </div>
                     </div>
                   </div>
@@ -450,13 +492,22 @@
             </div>
             
             <div class="p-3 border-top bg-white mt-auto">
-              <div class="d-flex justify-content-between mb-3">
+              <div class="d-flex justify-content-between mb-2">
                 <span class="font-weight-bold text-muted">Total Amount:</span>
                 <span class="font-weight-bold text-primary h5 mb-0" id="posTotalAmount">0 TZS</span>
               </div>
-              <button class="btn btn-success btn-lg btn-block shadow-sm py-3" onclick="processWalkInCheckout()" id="btnConfirmSale" disabled>
-                <i class="fa fa-check-circle mr-1"></i> <strong>RECORD WALK-IN ORDER</strong>
-              </button>
+              <div class="row no-gutters">
+                  <div class="col-8 pr-1">
+                      <button class="btn btn-success btn-lg btn-block shadow-sm py-3" onclick="processWalkInCheckout()" id="btnConfirmSale" disabled>
+                        <i class="fa fa-check-circle mr-1"></i> <strong>ADD</strong>
+                      </button>
+                  </div>
+                  <div class="col-4 pl-1">
+                      <button class="btn btn-secondary btn-lg btn-block shadow-sm py-3" data-dismiss="modal">
+                        <strong>CANCEL</strong>
+                      </button>
+                  </div>
+              </div>
             </div>
           </div>
         </div>
@@ -571,14 +622,16 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('dashboard_assets/js/plugins/sweetalert.min.js') }}"></script>
 <script>
 // POS Logic
 let posCart = [];
+let currentBookingId = null;
 
-function openWalkInModal(residentRoom = null, residentName = null, dayServiceId = null) {
+function openWalkInModal(residentRoom, residentName, dayServiceId, bookingId) {
     $('#walkInModal').modal('show');
     posCart = [];
+    currentBookingId = bookingId || null;
+    document.getElementById('posModalTitle').innerHTML = '<i class="fa fa-shopping-cart mr-2"></i> New Walk-in Order';
     
     // Reset inputs
     document.getElementById('walkInGuestName').value = residentName || '';
@@ -587,23 +640,128 @@ function openWalkInModal(residentRoom = null, residentName = null, dayServiceId 
     }
     
     // Store dayServiceId in a global variable for checkout
-    window.currentDayServiceId = dayServiceId;
-    
-    // If it's for a ceremony, update title/label
-    if (dayServiceId) {
-        document.getElementById('posModalTitle').innerText = 'Record Usage: ' + residentName;
-        document.getElementById('btnConfirmSale').innerHTML = '<i class="fa fa-check-circle mr-1"></i> <strong>RECORD CEREMONY USAGE</strong>';
-    } else {
-        document.getElementById('posModalTitle').innerText = 'New Walk-in Order';
-        document.getElementById('btnConfirmSale').innerHTML = '<i class="fa fa-check-circle mr-1"></i> <strong>RECORD WALK-IN ORDER</strong>';
-    }
-    
+    window.currentDayServiceId = dayServiceId || null;
     renderPosCart();
 }
 
-function addToPosCart(name, price, pid, vid, type, foodId = null, image = null) {
-    const key = foodId ? foodId : `${pid}_${vid}`;
-    const existing = posCart.find(item => item.key === key);
+function openAddItemsToGrouping(isWalkIn, identifier, guestName, roomNumber) {
+    posCart = [];
+    renderPosCart();
+    
+    if (isWalkIn == '1') {
+        currentBookingId = null;
+        document.getElementById('walkInGuestName').value = identifier;
+        document.getElementById('posModalTitle').innerHTML = '<i class="fa fa-plus mr-2"></i> Add Items to: ' + identifier;
+    } else {
+        currentBookingId = identifier; 
+        document.getElementById('walkInGuestName').value = guestName || '';
+        document.getElementById('posModalTitle').innerHTML = '<i class="fa fa-plus mr-2"></i> Add Items for Room: ' + (roomNumber || identifier);
+    }
+    
+    $('#walkInModal').modal('show');
+}
+
+function cancelOrderItem(id, itemName) {
+    Swal.fire({
+        title: "Cancel Item?",
+        text: "Are you sure you want to cancel " + itemName + "?",
+        icon: "warning",
+        input: 'text',
+        inputPlaceholder: 'Reason for cancellation...',
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        confirmButtonText: "Yes, Cancel It",
+        preConfirm: function(reason) {
+            if (!reason) {
+                Swal.showValidationMessage('A reason is required to cancel this item');
+                return false;
+            }
+            return reason;
+        }
+    }).then(function(result) {
+        if (!result.isConfirmed) return;
+        var reason = result.value;
+
+        fetch('{{ url("/restaurant/food/orders") }}/' + id + '/cancel', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reason: reason })
+        }).then(function(response) {
+            return response.json();
+        }).then(function(res) {
+            if (res.success) {
+                showSuccessToast(res.message);
+                setTimeout(function() { location.reload(); }, 1500);
+            } else {
+                Swal.fire("Error", res.message, "error");
+            }
+        }).catch(function(e) {
+            Swal.fire("Error", "Connectivity issue", "error");
+        });
+    });
+}
+
+function cancelOrderGroup(isWalkIn, identifier) {
+    Swal.fire({
+        title: "Cancel Entire Order?",
+        text: "This will cancel ALL pending items for " + identifier + ".",
+        icon: "warning",
+        input: 'text',
+        inputPlaceholder: 'Reason for cancellation...',
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        confirmButtonText: "Yes, Cancel All",
+        preConfirm: function(reason) {
+            if (!reason) {
+                Swal.showValidationMessage('A reason is required to cancel this order group');
+                return false;
+            }
+            return reason;
+        }
+    }).then(function(result) {
+        if (!result.isConfirmed) return;
+        var reason = result.value;
+
+        fetch('{{ route("admin.restaurants.kitchen.orders.cancel-group") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                is_walk_in: isWalkIn,
+                identifier: identifier,
+                reason: reason
+            })
+        }).then(function(response) {
+            return response.json();
+        }).then(function(res) {
+            if (res.success) {
+                showSuccessToast(res.message);
+                setTimeout(function() { location.reload(); }, 1500);
+            } else {
+                Swal.fire("Error", res.message, "error");
+            }
+        }).catch(function(e) {
+            Swal.fire("Error", "Connectivity issue", "error");
+        });
+    });
+}
+
+function addToPosCart(name, price, pid, vid, type, foodId, image) {
+    var key = foodId ? foodId : (pid + "_" + vid);
+    var existing = null;
+    for (var i = 0; i < posCart.length; i++) {
+        if (posCart[i].key === key) {
+            existing = posCart[i];
+            break;
+        }
+    }
     
     if (existing) {
         existing.qty++;
@@ -624,16 +782,31 @@ function addToPosCart(name, price, pid, vid, type, foodId = null, image = null) 
 }
 
 function removeFromPosCart(key) {
-    posCart = posCart.filter(item => item.key !== key);
+    var newCart = [];
+    for (var i = 0; i < posCart.length; i++) {
+        if (posCart[i].key !== key) {
+            newCart.push(posCart[i]);
+        }
+    }
+    posCart = newCart;
     renderPosCart();
 }
 
 function updatePosQty(key, delta) {
-    const item = posCart.find(i => i.key === key);
+    var item = null;
+    for (var i = 0; i < posCart.length; i++) {
+        if (posCart[i].key === key) {
+            item = posCart[i];
+            break;
+        }
+    }
     if (item) {
         item.qty += delta;
-        if (item.qty <= 0) removeFromPosCart(key);
-        else renderPosCart();
+        if (item.qty <= 0) {
+            removeFromPosCart(key);
+        } else {
+            renderPosCart();
+        }
     }
 }
 
@@ -643,7 +816,7 @@ function renderPosCart() {
     const btn = document.getElementById('btnConfirmSale');
     
     if (posCart.length === 0) {
-        list.innerHTML = `<div class="text-center text-muted mt-5"><i class="fa fa-shopping-basket fa-3x mb-2"></i><p>Cart is empty</p></div>`;
+        list.innerHTML = '<div class="text-center text-muted mt-5"><i class="fa fa-shopping-basket fa-3x mb-2"></i><p>Cart is empty</p></div>';
         totalEl.innerText = '0 TZS';
         btn.disabled = true;
         return;
@@ -651,87 +824,92 @@ function renderPosCart() {
     
     let total = 0;
     let html = '';
-    posCart.forEach(item => {
+    for (let i = 0; i < posCart.length; i++) {
+        let item = posCart[i];
         const itemTotal = item.price * item.qty;
         total += itemTotal;
-        html += `
-            <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-2 rounded shadow-sm">
-                <div class="d-flex align-items-center" style="max-width: 65%;">
-                    ${item.image ? `<img src="${item.image}" class="mr-2 rounded" style="width: 40px; height: 40px; object-fit: cover;">` : ''}
-                    <div>
-                        <div class="font-weight-bold" style="font-size: 0.85rem; line-height: 1.2;">${item.name}</div>
-                        <small class="text-muted">${item.price.toLocaleString()} x ${item.qty}</small>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center">
-                    <div class="btn-group btn-group-sm mr-2">
-                        <button class="btn btn-outline-secondary px-2" onclick="updatePosQty('${item.key}', -1)">-</button>
-                        <button class="btn btn-outline-secondary px-2" onclick="updatePosQty('${item.key}', 1)">+</button>
-                    </div>
-                    <div class="text-right mr-2" style="min-width: 70px;">
-                        <span class="font-weight-bold d-block" style="font-size: 0.85rem;">${itemTotal.toLocaleString()}</span>
-                    </div>
-                    <button class="btn btn-sm btn-outline-danger border-0" onclick="removeFromPosCart('${item.key}')">
-                        <i class="fa fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    });
+        html += '<div class="d-flex justify-content-between align-items-center mb-3 bg-white p-2 rounded shadow-sm">';
+        html += '<div class="d-flex align-items-center" style="max-width: 65%;">';
+        if (item.image) {
+            html += '<img src="' + item.image + '" class="mr-2 rounded" style="width: 40px; height: 40px; object-fit: cover;">';
+        }
+        html += '<div>';
+        html += '<div class="font-weight-bold" style="font-size: 0.85rem; line-height: 1.2;">' + item.name + '</div>';
+        html += '<small class="text-muted">' + item.price.toLocaleString() + ' x ' + item.qty + '</small>';
+        html += '</div></div>';
+        html += '<div class="d-flex align-items-center">';
+        html += '<div class="btn-group btn-group-sm mr-2">';
+        html += '<button class="btn btn-outline-secondary px-2" onclick="updatePosQty(\'' + item.key + '\', -1)">-</button>';
+        html += '<button class="btn btn-outline-secondary px-2" onclick="updatePosQty(\'' + item.key + '\', 1)">+</button>';
+        html += '</div>';
+        html += '<div class="text-right mr-2" style="min-width: 70px;">';
+        html += '<span class="font-weight-bold d-block" style="font-size: 0.85rem;">' + itemTotal.toLocaleString() + '</span>';
+        html += '</div>';
+        html += '<button class="btn btn-sm btn-outline-danger border-0" onclick="removeFromPosCart(\'' + item.key + '\')">';
+        html += '<i class="fa fa-trash"></i></button></div></div>';
+    }
     
     list.innerHTML = html;
-    totalEl.innerText = `${total.toLocaleString()} TZS`;
+    totalEl.innerText = total.toLocaleString() + ' TZS';
     btn.disabled = false;
 }
 
 function filterItems() {
-    const query = document.getElementById('itemSearch').value.toLowerCase();
-    const cards = document.querySelectorAll('.pos-item-card');
-    cards.forEach(card => {
-        if (card.dataset.name.includes(query)) card.style.display = '';
-        else card.style.display = 'none';
-    });
+    var query = document.getElementById('itemSearch').value.toLowerCase();
+    var cards = document.querySelectorAll('.pos-item-card');
+    for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        if (card.getAttribute('data-name').indexOf(query) !== -1) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    }
 }
 
-async function processWalkInCheckout() {
-    const guestName = document.getElementById('walkInGuestName').value.trim() || 'General Walk-in';
-    const specialNotes = document.getElementById('walkInSpecialNotes').value.trim();
+function processWalkInCheckout() {
+    var guestNameInput = document.getElementById('walkInGuestName').value.trim();
+    var guestName = currentBookingId ? '' : (guestNameInput || 'General Walk-in');
+    var specialNotes = document.getElementById('walkInSpecialNotes').value.trim();
     
-    const confirm = await Swal.fire({
-        title: "Confirm Sale?",
-        text: `Record order for ${guestName}?`,
+    Swal.fire({
+        title: "Confirm Order?",
+        text: "Record items for " + (guestName || 'Resident Guest') + "?",
         icon: "question",
         showCancelButton: true,
-        confirmButtonText: "Yes, Record Sale"
-    });
+        confirmButtonText: "Yes, Record Order"
+    }).then(function(confirm) {
+        if (!confirm.isConfirmed) return;
 
-    if (!confirm.isConfirmed) return;
-
-    $('#walkInModal').modal('hide');
-    Swal.fire({
-        title: 'Processing...',
-        didOpen: () => { Swal.showLoading(); }
-    });
-    
-    let successCount = 0;
-    for (const item of posCart) {
-        const payload = {
-            service_id: 48, // Restaurant Food Order service ID
-            quantity: item.qty,
-            is_walk_in: 1,
-            walk_in_name: guestName,
-            day_service_id: window.currentDayServiceId || null,
-            payment_timing: 'later',
-            item_name: item.name,
-            service_specific_data: {
-                food_id: item.foodId,
+        $('#walkInModal').modal('hide');
+        Swal.fire({
+            title: 'Processing...',
+            didOpen: function() { Swal.showLoading(); }
+        });
+        
+        var successCount = 0;
+        var totalItems = posCart.length;
+        var lastError = 'Unknown error';
+        
+        var processPromises = posCart.map(function(item) {
+            var payload = {
+                service_id: 4, // ID 4 is Generic Food Order
+                quantity: item.qty,
+                is_walk_in: currentBookingId ? 0 : 1,
+                booking_id: currentBookingId,
+                walk_in_name: guestName,
+                day_service_id: window.currentDayServiceId || null,
+                payment_timing: 'later',
                 item_name: item.name,
-                special_notes: specialNotes
-            }
-        };
+                guest_request: specialNotes, // Map special notes to guest_request
+                service_specific_data: {
+                    food_id: item.foodId,
+                    item_name: item.name,
+                    special_notes: specialNotes
+                }
+            };
 
-        try {
-            const response = await fetch("{{ route('customer.services.request') }}", {
+            return fetch("{{ route('customer.services.request') }}", {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -739,55 +917,77 @@ async function processWalkInCheckout() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(payload)
+            }).then(function(response) { 
+                return response.json(); 
+            }).then(function(res) {
+                if (res.success) {
+                    successCount++;
+                } else {
+                    // Extract detailed validation errors if they exist
+                    if (res.errors) {
+                        var errorMsgs = [];
+                        for (var field in res.errors) {
+                            errorMsgs.push(res.errors[field].join(', '));
+                        }
+                        lastError = errorMsgs.join('; ');
+                    } else {
+                        lastError = res.message || 'Validation failed';
+                    }
+                    console.error('Order Item Failed:', res);
+                }
+            }).catch(function(e) {
+                console.error(e);
+                lastError = 'Network or Server Error';
             });
-            const res = await response.json();
-            if (res.success) successCount++;
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    if (successCount === posCart.length) {
-        await Swal.fire({
-            title: "Success!",
-            text: "Walk-in order recorded successfully!",
-            icon: "success",
-            timer: 2000,
-            showConfirmButton: false
         });
-        location.reload();
-    } else {
-        await Swal.fire("Completed with issues", `Only ${successCount} of ${posCart.length} items were recorded.`, "warning");
-        location.reload();
-    }
+
+        Promise.all(processPromises).then(function() {
+            if (successCount === totalItems) {
+                showSuccessToast("Walk-in order recorded successfully!");
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                Swal.fire({
+                    title: "Completed with issues",
+                    html: "Only " + successCount + " of " + totalItems + " items were recorded.<br><br><span class='text-danger'>Last Error: " + lastError + "</span>",
+                    icon: "warning"
+                }).then(function() {
+                    location.reload();
+                });
+            }
+        });
+    });
 }
 
-function completeOrder(orderId, paymentMethod = 'room_charge', reference = '') {
-    let title = paymentMethod === 'cash' ? "Record Cash Payment" : "Charge to Room";
-    let text = paymentMethod === 'cash' ? "Record this walk-in sale as PAID (Cash)?" : "Mark this order as served and charge to the ROOM bill?";
-    let icon = paymentMethod === 'cash' ? "success" : "info";
-    let btnColor = paymentMethod === 'cash' ? "#28a745" : "#007bff";
+function completeOrder(orderId, paymentMethod, reference) {
+    if (!paymentMethod) paymentMethod = 'room_charge';
+    if (!reference) reference = '';
+    
+    var title = paymentMethod === 'cash' ? "Record Cash Payment" : "Charge to Room";
+    var text = paymentMethod === 'cash' ? "Record this walk-in sale as PAID (Cash)?" : "Mark this order as served and charge to the ROOM bill?";
+    var icon = paymentMethod === 'cash' ? "success" : "info";
+    var btnColor = paymentMethod === 'cash' ? "#28a745" : "#007bff";
 
     if (paymentMethod !== 'cash' && paymentMethod !== 'room_charge') {
         title = "Record " + paymentMethod.replace('_', ' ').toUpperCase() + " Payment";
-        text = "Record this sale as PAID via " + paymentMethod.replace('_', ' ').concat(reference ? " (Ref: " + reference + ")" : "") + "?";
+        text = "Record this sale as PAID via " + paymentMethod.replace('_', ' ') + (reference ? " (Ref: " + reference + ")" : "") + "?";
         icon = "warning";
     }
     
-    swal({
+    Swal.fire({
         title: title,
         text: text,
-        type: icon,
+        icon: icon,
         showCancelButton: true,
         confirmButtonColor: btnColor,
         cancelButtonColor: "#6c757d",
         confirmButtonText: "Yes, Proceed",
-        cancelButtonText: "Cancel",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
+        cancelButtonText: "Cancel"
+    }).then(function(result) {
+        if (result.isConfirmed) {
             // Use the kitchen order complete route
-            const url = `/restaurant/food/orders/${orderId}/complete`;
+            var url = '/restaurant/food/orders/' + orderId + '/complete';
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -800,41 +1000,34 @@ function completeOrder(orderId, paymentMethod = 'room_charge', reference = '') {
                     payment_reference: reference
                 })
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
                 if (data.success) {
-                    swal({
-                        title: "Success!",
-                        text: data.message,
-                        type: "success",
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    setTimeout(() => location.reload(), 1500);
+                    showSuccessToast(data.message);
+                    setTimeout(function() { location.reload(); }, 1500);
                 } else {
-                    swal("Error!", data.message, "error");
+                    Swal.fire("Error!", data.message, "error");
                 }
             })
-            .catch(error => {
+            .catch(function(error) {
                 console.error('Error:', error);
-                swal("Error!", "An error occurred. Please try again.", "error");
+                Swal.fire("Error!", "An error occurred. Please try again.", "error");
             });
         }
     });
 }
 
 function markAsServedOnly(orderId, itemName) {
-    swal({
+    Swal.fire({
         title: "Confirm Service",
         text: "Confirm that " + itemName + " has been served? (Payment status will not be changed)",
-        type: "success",
+        icon: "success",
         showCancelButton: true,
         confirmButtonColor: "#28a745",
-        confirmButtonText: "Yes, Served",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
-            const url = `/restaurant/food/orders/${orderId}/complete`;
+        confirmButtonText: "Yes, Served"
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            var url = '/restaurant/food/orders/' + orderId + '/complete';
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -844,35 +1037,34 @@ function markAsServedOnly(orderId, itemName) {
                 },
                 body: JSON.stringify({}) // Empty body to skip payment update
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
                 if (data.success) {
-                    swal("Success", "Order marked as served!", "success");
-                    setTimeout(() => location.reload(), 1500);
+                    showSuccessToast("Order marked as served!");
+                    setTimeout(function() { location.reload(); }, 1500);
                 } else {
-                    swal("Error!", data.message, "error");
+                    Swal.fire("Error!", data.message, "error");
                 }
             })
-            .catch(e => {
+            .catch(function(e) {
                 console.error(e);
-                swal("Error", "Failed to communicate with server", "error");
+                Swal.fire("Error", "Failed to communicate with server", "error");
             });
         }
     });
 }
 
 function startPreparingDashboard(orderId, itemName) {
-    swal({
+    Swal.fire({
         title: "Start Preparation?",
         text: "Begin preparing " + itemName + "?",
-        type: "info",
+        icon: "info",
         showCancelButton: true,
         confirmButtonColor: "#3498db",
-        confirmButtonText: "Yes, Start!",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
-            const url = `/restaurant/food/orders/${orderId}/preparing`;
+        confirmButtonText: "Yes, Start!"
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            var url = '/restaurant/food/orders/' + orderId + '/preparing';
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -881,27 +1073,30 @@ function startPreparingDashboard(orderId, itemName) {
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
                 if (data.success) {
-                    swal("Started!", "Preparation timer begun.", "success");
-                    setTimeout(() => location.reload(), 1500);
+                    showSuccessToast("Preparation timer begun.");
+                    setTimeout(function() { location.reload(); }, 1500);
                 } else {
-                    swal("Error!", data.message, "error");
+                    Swal.fire("Error!", data.message, "error");
                 }
             })
-            .catch(e => {
+            .catch(function(e) {
                 console.error(e);
-                swal("Error", "Failed to communicate with server", "error");
+                Swal.fire("Error", "Failed to communicate with server", "error");
             });
         }
     });
 }
 
-function openPaymentModal(orderId, amount, guestName = '', isWalkIn = 0) {
+function openPaymentModal(orderId, amount, guestName, isWalkIn) {
+    if (!guestName) guestName = '';
+    if (!isWalkIn) isWalkIn = 0;
+    
     document.getElementById('paymentOrderId').value = orderId;
     
-    let displayAmount = Number(amount).toLocaleString() + ' TZS';
+    var displayAmount = Number(amount).toLocaleString() + ' TZS';
     if (guestName) {
         displayAmount += ' (Guest Total)';
         console.log("Group payment for: " + guestName);
@@ -909,8 +1104,8 @@ function openPaymentModal(orderId, amount, guestName = '', isWalkIn = 0) {
     
     document.getElementById('paymentAmountDisplay').innerText = displayAmount;
     
-    const methodSelect = document.getElementById('paymentMethod');
-    const roomChargeOption = methodSelect.querySelector('option[value="room_charge"]');
+    var methodSelect = document.getElementById('paymentMethod');
+    var roomChargeOption = methodSelect.querySelector('option[value="room_charge"]');
     
     if (isWalkIn) {
         if (roomChargeOption) roomChargeOption.style.display = 'none';
@@ -926,8 +1121,8 @@ function openPaymentModal(orderId, amount, guestName = '', isWalkIn = 0) {
 }
 
 function toggleRefField() {
-    const method = document.getElementById('paymentMethod').value;
-    const container = document.getElementById('refFieldContainer');
+    var method = document.getElementById('paymentMethod').value;
+    var container = document.getElementById('refFieldContainer');
     if (method === 'cash' || method === 'room_charge') {
         container.style.display = 'none';
     } else {
@@ -936,12 +1131,12 @@ function toggleRefField() {
 }
 
 function submitPayment() {
-    const orderId = document.getElementById('paymentOrderId').value;
-    const method = document.getElementById('paymentMethod').value;
-    const reference = document.getElementById('paymentReference').value.trim();
+    var orderId = document.getElementById('paymentOrderId').value;
+    var method = document.getElementById('paymentMethod').value;
+    var reference = document.getElementById('paymentReference').value.trim();
     
     if (method !== 'cash' && method !== 'room_charge' && !reference) {
-        swal("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
+        Swal.fire("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
         return;
     }
     
@@ -951,18 +1146,19 @@ function submitPayment() {
     settlePOSPayment(orderId, method, reference);
 }
 
-function settlePOSPayment(orderId, method, reference = '') {
-    swal({
+function settlePOSPayment(orderId, method, reference) {
+    if (!reference) reference = '';
+    
+    Swal.fire({
         title: "Confirm Payment?",
-        text: `Record ${method.toUpperCase()} payment of ${document.getElementById('paymentAmountDisplay').innerText}?`,
-        type: "success",
+        text: "Record " + method.toUpperCase() + " payment of " + document.getElementById('paymentAmountDisplay').innerText + "?",
+        icon: "success",
         showCancelButton: true,
         confirmButtonColor: "#28a745",
-        confirmButtonText: "Yes, Paid!",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
-            const url = `/customer/pos/settle-payment/${orderId}`;
+        confirmButtonText: "Yes, Paid!"
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            var url = '/customer/pos/settle-payment/' + orderId;
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -975,18 +1171,18 @@ function settlePOSPayment(orderId, method, reference = '') {
                     payment_reference: reference
                 })
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
                 if (data.success) {
-                    swal("Success!", data.message, "success");
-                    setTimeout(() => location.reload(), 1500);
+                    Swal.fire("Success!", data.message, "success");
+                    setTimeout(function() { location.reload(); }, 1500);
                 } else {
-                    swal("Error!", data.message, "error");
+                    Swal.fire("Error!", data.message, "error");
                 }
             })
-            .catch(error => {
+            .catch(function(error) {
                 console.error('Error:', error);
-                swal("Error!", "Failed to record payment.", "error");
+                Swal.fire("Error!", "Failed to record payment.", "error");
             });
         }
     });
@@ -1023,23 +1219,22 @@ function submitCeremonyPayment() {
     const reference = document.getElementById('ceremonyPaymentReference').value.trim();
     
     if (method !== 'cash' && method !== 'room_charge' && !reference) {
-        swal("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
+        Swal.fire("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
         return;
     }
 
-    swal({
+    Swal.fire({
         title: "Confirm Settlement",
         text: "Mark all unpaid consumption for this ceremony as paid?",
-        type: "info",
+        icon: "info",
         showCancelButton: true,
         confirmButtonColor: "#28a745",
         cancelButtonColor: "#6c757d",
         confirmButtonText: "Yes, Settle!",
-        cancelButtonText: "Cancel",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
-            const url = `/customer/ceremonies/settle-usage`;
+        cancelButtonText: "Cancel"
+    }).then(function(result) {
+        if (result.isConfirmed) {
+            var url = '/customer/ceremonies/settle-usage';
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -1053,30 +1248,24 @@ function submitCeremonyPayment() {
                     payment_reference: reference
                 })
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
                 if (data.success) {
-                    swal({
-                        title: "Success!",
-                        text: data.message + ` (${data.count} items settled)`,
-                        type: "success",
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    setTimeout(() => location.reload(), 1500);
+                    showSuccessToast(data.message + " (" + data.count + " items settled)");
+                    setTimeout(function() { location.reload(); }, 1500);
                 } else {
-                    swal("Error!", data.message, "error");
+                    Swal.fire("Error!", data.message, "error");
                 }
             })
-            .catch(error => {
+            .catch(function(error) {
                 console.error('Error:', error);
-                swal("Error!", "Failed to settle payment. Please try again.", "error");
+                Swal.fire("Error!", "Failed to settle payment. Please try again.", "error");
             });
         }
     });
 }
     function printDocket(orderId) {
-        const url = `/restaurant/food/orders/${orderId}/print-docket`;
+        var url = '/restaurant/food/orders/' + orderId + '/print-docket';
         window.open(url, 'KitchenDocketPrint', 'width=400,height=600');
     }
 </script>

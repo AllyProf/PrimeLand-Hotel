@@ -91,27 +91,78 @@
                 $first = $orderGroup->first();
                 $guestTotal = $orderGroup->where('payment_status', 'pending')->sum('total_price_tsh');
                 $latestRequest = $orderGroup->sortByDesc('requested_at')->first()->requested_at;
+                
+                // Check if this is a company-paid booking
+                $isCompanyPaid = !$first->is_walk_in && $first->booking && $first->booking->payment_responsibility === 'company';
               @endphp
-              <tr style="border-top: 3px solid #009688;">
+              <tr style="border-top: 3px solid #e77a3a;">
                <td style="vertical-align: top;">
                  <strong>{{ $latestRequest->format('H:i') }}</strong><br>
                  <small class="text-muted">({{ $latestRequest->diffForHumans() }})</small>
                </td>
                <td style="vertical-align: top;">
                  @php
-                   $by = 'N/A';
-                   if ($first->reception_notes && str_contains($first->reception_notes, 'Waiter: ')) {
-                       $parts = explode('Waiter: ', $first->reception_notes);
-                       $byParts = explode(' - Msg:', $parts[1] ?? '');
-                       $by = $byParts[0] ?? 'Waiter';
+                   // Get unique waiters/staff for this group
+                   $waiters = [];
+                   foreach($orderGroup as $o) {
+                       $requestedBy = 'Staff';
+                       if ($o->reception_notes) {
+                           if (str_contains($o->reception_notes, 'Waiter: ')) {
+                               $parts = explode('Waiter: ', $o->reception_notes);
+                               $byParts = explode(' - Msg:', $parts[1] ?? '');
+                               $requestedBy = $byParts[0] ?? 'Waiter';
+                           } elseif (str_contains($o->reception_notes, 'Recorded by: ')) {
+                               $parts = explode('Recorded by: ', $o->reception_notes);
+                               $requestedBy = trim($parts[1] ?? 'Staff');
+                           } elseif (str_contains($o->reception_notes, 'Recorded by ')) {
+                               $parts = explode('Recorded by ', $o->reception_notes);
+                               $byParts = explode(':', $parts[1] ?? '');
+                               $requestedBy = trim($byParts[1] ?? 'Staff');
+                           }
+                       }
+                       
+                       // Fallback to approvedBy
+                       if (($requestedBy === 'Staff' || $requestedBy === 'N/A') && $o->approvedBy) {
+                           $requestedBy = $o->approvedBy->name;
+                       }
+                       $waiters[] = trim($requestedBy);
                    }
+                   $waiters = array_unique($waiters);
                  @endphp
-                 <span class="badge badge-info">{{ $by }}</span>
+                 
+                 @foreach($waiters as $w)
+                   <span class="badge badge-info mb-1">{{ $w }}</span><br>
+                 @endforeach
                </td>
               <td style="vertical-align: top;">
                 @if($first->is_walk_in)
                     <span class="badge badge-secondary mb-1">WALK-IN</span><br>
                     <strong>{{ $first->walk_in_name ?? 'General Walk-in' }}</strong>
+                    <div class="mt-2" style="font-size: 11px;">
+                        @php
+                            $sessionTotal = $orderGroup->sum('total_price_tsh');
+                            $sessionPaid = $orderGroup->where('payment_status', 'paid')->sum('total_price_tsh');
+                            $sessionPending = $sessionTotal - $sessionPaid;
+                        @endphp
+                        <div class="text-muted">Session Bill:</div>
+                        <div style="font-weight: bold;">{{ number_format($sessionTotal) }} TZS</div>
+                        
+                        @if($sessionPaid > 0)
+                            <div class="text-success" style="font-size: 10px;">
+                                - Paid: {{ number_format($sessionPaid) }}
+                            </div>
+                        @endif
+                        
+                        @if($sessionPending > 0)
+                           <div class="text-danger border-top mt-1 pt-1" style="font-weight: bold;">
+                               Due: {{ number_format($sessionPending) }}
+                           </div>
+                        @else
+                           <div class="text-success border-top mt-1 pt-1">
+                               <i class="fa fa-check"></i> Fully Paid
+                           </div>
+                        @endif
+                    </div>
                 @else
                     <span class="badge badge-primary mb-1">Room {{ $first->booking->room->room_number ?? 'N/A' }}</span><br>
                     <strong>{{ $first->booking->guest_name }}</strong>
@@ -191,11 +242,23 @@
                     <i class="fa fa-print"></i> Print Bill
                   </button>
 
-                  @if($guestTotal > 0)
-                      <button class="btn btn-sm btn-success mb-1" onclick="openPaymentModal({{ $first->id }}, {{ $guestTotal }}, {{ $first->is_walk_in ? 1 : 0 }})" title="Record Payment">
-                        <i class="fa fa-money"></i> PAY: {{ number_format($guestTotal) }}
+                  @if($first->is_walk_in)
+                      <button class="btn btn-sm btn-outline-primary mb-1" onclick="openWalkInModal('{{ $first->walk_in_name }}', {{ $first->booking_id ?? 'null' }})" title="Add Item to Order">
+                        <i class="fa fa-plus"></i> Add Items
                       </button>
                   @endif
+
+                  @if($guestTotal > 0 && !$isCompanyPaid)
+                      <button class="btn btn-sm btn-success mb-1" onclick="openPaymentModal({{ $first->id }}, {{ $guestTotal }}, {{ $first->is_walk_in ? 1 : 0 }}, '{{ $first->is_walk_in ? ($first->walk_in_name ?? 'Walk-in') : ($first->booking->guest_name ?? 'Guest') }}')" title="Record Payment">
+                        <i class="fa fa-money"></i> PAY: {{ number_format($guestTotal) }}
+                      </button>
+                  @elseif($guestTotal > 0 && $isCompanyPaid)
+                       <span class="badge badge-success p-2 mb-1">Company Paid</span>
+                  @endif
+                  
+                  <button class="btn btn-sm btn-outline-danger" onclick="cancelOrderGroup('{{ $first->is_walk_in ? ($first->walk_in_name ?? 'General') : ($first->booking_id ?? 'unknown') }}', {{ $first->is_walk_in ? 1 : 0 }})" title="Cancel Entire Order">
+                    <i class="fa fa-times"></i> Cancel All
+                  </button>
                 </div>
               </td>
             </tr>
@@ -612,27 +675,7 @@ function completeOrder(orderId, paymentMethod = 'room_charge') {
 // POS Logic
 let posCart = [];
 
-function openWalkInModal(residentRoom = null, residentName = null, dayServiceId = null) {
-    $('#walkInModal').modal('show');
-    posCart = [];
-    
-    // Reset inputs
-    document.getElementById('walkInGuestName').value = residentName || '';
-    
-    // Store dayServiceId in a global variable for checkout
-    window.currentDayServiceId = dayServiceId;
-    
-    // If it's for a ceremony, update title/label
-    if (dayServiceId) {
-        document.getElementById('posModalTitle').innerText = 'Record Usage: ' + residentName;
-        document.getElementById('btnConfirmSale').innerHTML = '<i class="fa fa-check-circle mr-1"></i> <strong>RECORD CEREMONY USAGE</strong>';
-    } else {
-        document.getElementById('posModalTitle').innerText = 'New Walk-in Order';
-        document.getElementById('btnConfirmSale').innerHTML = '<i class="fa fa-check-circle mr-1"></i> <strong>RECORD WALK-IN ORDER</strong>';
-    }
-    
-    renderPosCart();
-}
+
 
 function addToPosCart(name, price, pid, vid, type, foodId = null, image = null, unit = 'pic', currentStock = null, servingsPerPic = 1) {
     const key = foodId ? foodId : `${pid}_${vid}_${unit}`;
@@ -1218,6 +1261,98 @@ function toggleCeremonyRefField() {
     } else {
         container.style.display = 'block';
     }
+}
+
+function openWalkInModal(arg1 = null, arg2 = null, arg3 = null) {
+    $('#walkInModal').modal('show');
+    posCart = [];
+    
+    let name = '';
+    let isLocked = false;
+    let dayServiceId = null;
+    let title = 'New Walk-in Order';
+    let btnHtml = '<i class="fa fa-check-circle mr-1"></i> <strong>RECORD WALK-IN ORDER</strong>';
+    
+    // Scenario A: Ceremony (null, name, id) - From Ceremony Table
+    if (arg3) {
+        dayServiceId = arg3;
+        name = arg2;
+        title = 'Record Usage: ' + name;
+        btnHtml = '<i class="fa fa-check-circle mr-1"></i> <strong>RECORD CEREMONY USAGE</strong>';
+        isLocked = true;
+    }
+    // Scenario B: Add to existing Walk-in (name, refId) - From Orders Table
+    else if (arg1 && typeof arg1 === 'string') {
+        name = arg1;
+        isLocked = true;
+        // arg2 might be booking_id but we don't strictly need it for walk-in addition if name matches
+    }
+    // Scenario C: New Walk-in (no args)
+    
+    const nameInput = document.getElementById('walkInGuestName');
+    nameInput.value = name || '';
+    nameInput.readOnly = isLocked;
+    
+    window.currentDayServiceId = dayServiceId;
+    
+    document.getElementById('posModalTitle').innerText = title;
+    document.getElementById('btnConfirmSale').innerHTML = btnHtml;
+    
+    renderPosCart();
+}
+
+function cancelOrderGroup(identifier, isWalkIn) {
+    Swal.fire({
+        title: 'Cancel Entire Order?',
+        text: "This will cancel all pending items for this order. Please provide a reason:",
+        input: 'text',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, Cancel All',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'You need to write a reason!'
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const reason = result.value;
+            
+            Swal.fire({
+                title: 'Processing...',
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // Use the kitchen endpoint which handles the logic generically for ServiceRequests
+            fetch('{{ route("admin.restaurants.kitchen.orders.cancel-group") }}', { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    identifier: identifier,
+                    is_walk_in: isWalkIn,
+                    reason: reason
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Cancelled!', data.message, 'success')
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                Swal.fire('Error', 'Server communication failed', 'error');
+            });
+        }
+    });
 }
 
 function submitCeremonyPayment() {

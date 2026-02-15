@@ -33,7 +33,7 @@
         }
         .info-section {
             margin-bottom: 15px;
-            border-bottom: 1px dashed #000;
+            border-bottom: 2px dashed #e77a3a;
             padding-bottom: 10px;
         }
         .info-row {
@@ -48,8 +48,9 @@
         }
         .items-table th {
             text-align: left;
-            border-bottom: 1px solid #000;
+            border-bottom: 2px solid #e77a3a;
             padding: 5px 0;
+            color: #e77a3a;
         }
         .items-table td {
             padding: 5px 0;
@@ -57,7 +58,7 @@
         }
         .totals {
             margin-top: 15px;
-            border-top: 1px solid #000;
+            border-top: 2px solid #e77a3a;
             padding-top: 10px;
         }
         .total-row {
@@ -71,7 +72,7 @@
             text-align: center;
         }
         .signature-line {
-            border-top: 1px solid #000;
+            border-top: 1px solid #e77a3a;
             margin-top: 40px;
             width: 100%;
         }
@@ -84,10 +85,10 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2>PRIMELAND HOTEL</h2>
+            <h2 style="color: #e77a3a;">PRIMELAND HOTEL</h2>
             <p>Sokoine Road - Moshi</p>
             <p>Tel: 0677-155-156</p>
-            <h3>SERVICE DOCKET / BILL</h3>
+            <h3 style="border-bottom: 1px solid #e77a3a; display: inline-block; padding-bottom: 2px;">SERVICE DOCKET / BILL</h3>
         </div>
 
         <div class="info-section">
@@ -212,11 +213,11 @@
             <p style="margin-bottom: 30px;">Guest Signature</p>
             <div class="signature-line" style="margin-top: 30px;"></div>
             
-            <p style="margin-bottom: 30px; margin-top: 20px;">Receptionist: {{ auth()->user()->name ?? 'Staff' }}</p>
-            <div class="signature-line" style="margin-top: 30px;"></div>
+            <p style="margin-bottom: 30px; margin-top: 20px;">Served By: {{ auth()->user()->name ?? 'Staff' }}</p>
+            <div class="signature-line" style="margin-top: 30px; border-color: #e77a3a;"></div>
             
             <p style="font-size: 10px; margin-top: 15px;">Thank you for visiting PrimeLand Hotel!</p>
-            <p style="font-size: 10px; margin-top: 5px; color: #940000;">Powered By EmCa Techonologies</p>
+            <p style="font-size: 10px; margin-top: 5px; color: #940000;">Powered By EmCa Technologies</p>
         </div>
     </div>
     <script>

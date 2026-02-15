@@ -8,7 +8,7 @@
     }
 @endphp
 
-<div class="variant-card mb-4 border rounded p-3" style="background: #fdfdfd; border-left: 5px solid #009688 !important;">
+<div class="variant-card mb-4 border rounded p-3" style="background: #fdfdfd; border-left: 5px solid #e77a3a !important;">
     <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
         <h5 class="text-primary font-weight-bold">Variant #{{ $index + 1 }}</h5>
         <span class="badge badge-info">Existing</span>

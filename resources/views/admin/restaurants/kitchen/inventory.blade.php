@@ -114,13 +114,13 @@
                     <a href="{{ route('chef-master.purchase-requests.create', ['kitchen_ids' => $item->id]) }}" 
                        class="btn btn-sm btn-light" 
                        title="Request Restock">
-                      <i class="fa fa-shopping-cart text-warning"></i> Restock
+                      <i class="fa fa-shopping-cart text-warning"></i>
                     </a>
                     <button class="btn btn-sm btn-light view-track-btn" 
                             data-item-id="{{ $item->id }}" 
                             data-item-name="{{ $item->name }}"
                             title="View Track">
-                      <i class="fa fa-history"></i> Track
+                      <i class="fa fa-history"></i>
                     </button>
                     @if(!$isReadOnly)
                     <button class="btn btn-sm btn-light settings-stock-btn" 
@@ -180,13 +180,13 @@
                       @endphp
                       
                       @if($isExpired)
-                        <span class="badge badge-danger">EXPIRED ({{ $item->expiry_date->format('d M, Y') }})</span>
+                        <span class="badge badge-danger" style="font-size: 0.65rem; white-space: normal;">EXPIRED ({{ $item->expiry_date->format('d M, Y') }})</span>
                       @elseif($isExpiringSoon)
-                        <span class="text-danger font-weight-bold animated pulse infinite">
+                        <span class="text-danger font-weight-bold animated pulse infinite" style="font-size: 0.75rem; display: block;">
                           <i class="fa fa-clock-o"></i> EXPIRING SOON ({{ $item->expiry_date->format('d M, Y') }})
                         </span>
                       @else
-                        <span class="text-warning font-weight-bold">{{ $item->expiry_date->format('d M, Y') }}</span>
+                        <span class="text-warning font-weight-bold" style="font-size: 0.8rem;">{{ $item->expiry_date->format('d M, Y') }}</span>
                       @endif
                     </div>
                     @endif

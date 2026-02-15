@@ -26,7 +26,7 @@ class KitchenOrderController extends Controller
             ->where(function($q) {
                 // 1. All active orders (pending, approved, or preparing)
                 $q->whereIn('status', ['pending', 'approved', 'preparing'])
-                // 2. OR Served orders that are WAITING FOR PAYMENT
+                // 2. OR Served orders that are WAITING FOR PAYMENT (exclude room_charge as they're already paid)
                 ->orWhere(function($sub) {
                     $sub->where('status', 'completed')
                         ->whereIn('payment_status', ['pending', 'unpaid']);
@@ -92,6 +92,11 @@ class KitchenOrderController extends Controller
                 'reception_notes' => ($serviceRequest->reception_notes ? $serviceRequest->reception_notes . ' | ' : '') . "Completed by Kitchen (" . ($user->name ?? 'Staff') . ")"
             ];
 
+            // Check if this is a company-paid booking
+            $isCompanyPaid = !$serviceRequest->is_walk_in && 
+                             $serviceRequest->booking && 
+                             $serviceRequest->booking->payment_responsibility === 'company';
+
             // Handle Payment if provided (e.g. for Walk-ins paying at Kitchen)
             if ($request->filled('payment_method')) {
                 $isRoomCharge = $request->payment_method === 'room_charge';
@@ -101,6 +106,11 @@ class KitchenOrderController extends Controller
                 
                 $methodName = strtoupper(str_replace('_', ' ', $request->payment_method));
                 $updateData['reception_notes'] .= " | Paid via $methodName";
+            } elseif ($isCompanyPaid) {
+                // Auto-charge to room for company-paid bookings
+                $updateData['payment_status'] = 'room_charge';
+                $updateData['payment_method'] = 'room_charge';
+                $updateData['reception_notes'] .= " | Auto-charged to Company";
             }
 
             $serviceRequest->update($updateData);
@@ -114,6 +124,68 @@ class KitchenOrderController extends Controller
             DB::rollBack();
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Cancel an Individual Order
+     */
+    public function cancelOrder(Request $request, ServiceRequest $serviceRequest)
+    {
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        // Only allow cancelling if not already completed or cancelled
+        if (in_array($serviceRequest->status, ['completed', 'cancelled'])) {
+            return response()->json(['success' => false, 'message' => 'Cannot cancel an order that is already ' . $serviceRequest->status . '.']);
+        }
+
+        $user = Auth::guard('staff')->user();
+        $reason = $request->reason ?? 'No reason provided';
+        
+        $serviceRequest->update([
+            'status' => 'cancelled',
+            'reception_notes' => ($serviceRequest->reception_notes ? $serviceRequest->reception_notes . " | " : "") . "CANCELLED by Kitchen (" . ($user->name ?? 'Staff') . "): " . $reason
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Order item cancelled successfully.']);
+    }
+
+    /**
+     * Cancel all items in a group (Room or Walk-in)
+     */
+    public function cancelGroup(Request $request)
+    {
+        $isWalkIn = $request->input('is_walk_in', 0);
+        $identifier = $request->input('identifier'); 
+        $reason = $request->input('reason', 'Group Cancelled by Kitchen');
+
+        if (!$identifier) {
+            return response()->json(['success' => false, 'message' => 'No identifier provided.']);
+        }
+
+        $query = ServiceRequest::whereIn('status', ['pending', 'approved', 'preparing']);
+
+        if ($isWalkIn) {
+            $query->where('is_walk_in', true)->where('walk_in_name', $identifier);
+        } else {
+            $query->where('booking_id', $identifier);
+        }
+
+        $orders = $query->get();
+        if ($orders->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No active orders found for this group.']);
+        }
+
+        $user = Auth::guard('staff')->user();
+        foreach ($orders as $order) {
+            $order->update([
+                'status' => 'cancelled',
+                'reception_notes' => ($order->reception_notes ? $order->reception_notes . " | " : "") . "GROUP CANCELLED by Kitchen (" . ($user->name ?? 'Staff') . "): " . $reason
+            ]);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Entire order group cancelled successfully.']);
     }
 
     /**
@@ -159,10 +231,17 @@ class KitchenOrderController extends Controller
 
         // Determine Requested By
         $requestedBy = 'N/A';
-        if ($order->reception_notes && str_contains($order->reception_notes, 'Waiter: ')) {
-            $parts = explode('Waiter: ', $order->reception_notes);
-            $byParts = explode(' - Msg:', $parts[1] ?? '');
-            $requestedBy = $byParts[0] ?? 'Waiter';
+        if ($order->reception_notes) {
+            if (str_contains($order->reception_notes, 'Waiter: ')) {
+                $parts = explode('Waiter: ', $order->reception_notes);
+                $byParts = explode(' - Msg:', $parts[1] ?? '');
+                $requestedBy = $byParts[0] ?? 'Waiter';
+            } elseif (str_contains($order->reception_notes, 'Recorded by ')) {
+                $parts = explode('Recorded by ', $order->reception_notes);
+                $byParts = explode(':', $parts[1] ?? '');
+                // The format is "Recorded by Role: Name"
+                $requestedBy = trim($byParts[1] ?? 'Staff');
+            }
         }
 
         // Determine Note
@@ -188,11 +267,12 @@ class KitchenOrderController extends Controller
         $identifier = $request->input('identifier'); // walk_in_name or booking_id
         
         // Fetch all orders for this group
-        $orders = ServiceRequest::with(['service', 'booking.room', 'dayService']);
+        $orders = ServiceRequest::with(['service', 'booking.room', 'dayService', 'approvedBy']);
         
         if ($isWalkIn) {
             $orders = $orders->where('is_walk_in', true)
-                ->where('walk_in_name', $identifier);
+                ->where('walk_in_name', $identifier)
+                ->whereDate('requested_at', \Carbon\Carbon::today());
         } else {
             $orders = $orders->where('booking_id', $identifier);
         }
@@ -219,10 +299,24 @@ class KitchenOrderController extends Controller
         
         // Determine Requested By
         $requestedBy = 'N/A';
-        if ($first->reception_notes && str_contains($first->reception_notes, 'Waiter: ')) {
-            $parts = explode('Waiter: ', $first->reception_notes);
-            $byParts = explode(' - Msg:', $parts[1] ?? '');
-            $requestedBy = $byParts[0] ?? 'Waiter';
+        if ($first->reception_notes) {
+            if (str_contains($first->reception_notes, 'Waiter: ')) {
+                $parts = explode('Waiter: ', $first->reception_notes);
+                $byParts = explode(' - Msg:', $parts[1] ?? '');
+                $requestedBy = $byParts[0] ?? 'Waiter';
+            } elseif (str_contains($first->reception_notes, 'Recorded by: ')) {
+                $parts = explode('Recorded by: ', $first->reception_notes);
+                $requestedBy = trim($parts[1] ?? 'Staff');
+            } elseif (str_contains($first->reception_notes, 'Recorded by ')) {
+                $parts = explode('Recorded by ', $first->reception_notes);
+                $byParts = explode(':', $parts[1] ?? '');
+                $requestedBy = trim($byParts[1] ?? 'Staff');
+            }
+        }
+        
+        // Fallback to approvedBy name if logic above failed or returned generic 'Staff'
+        if (($requestedBy === 'N/A' || $requestedBy === 'Staff') && $first->approvedBy) {
+            $requestedBy = $first->approvedBy->name;
         }
         
         // Calculate total

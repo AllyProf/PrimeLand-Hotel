@@ -21,6 +21,7 @@ A new service request has been submitted and requires your attention.
 **Guest Request:** {{ $serviceRequest->guest_request }}
 @endif
 
+@if(!$serviceRequest->is_walk_in && $serviceRequest->booking)
 ## Booking Information
 
 **Guest Name:** {{ $serviceRequest->booking->guest_name }}
@@ -34,6 +35,13 @@ A new service request has been submitted and requires your attention.
 **Check-in:** {{ \Carbon\Carbon::parse($serviceRequest->booking->check_in)->format('F d, Y') }}
 
 **Check-out:** {{ \Carbon\Carbon::parse($serviceRequest->booking->check_out)->format('F d, Y') }}
+@else
+## Guest Information (Walk-in)
+
+**Guest Name:** {{ $serviceRequest->walk_in_name ?? 'General Guest' }}
+
+**Type:** Walk-in Order
+@endif
 
 <x-mail::button :url="route('admin.service-requests')">
 View Service Requests

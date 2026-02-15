@@ -634,32 +634,56 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($ceremonyUsage as $usage)
-                <tr>
-                    <td>
-                        <strong>{{ $usage->dayService->service_reference ?? 'N/A' }}</strong><br>
-                        <small>{{ $usage->dayService->guest_name ?? 'Unknown' }}</small>
-                    </td>
-                    <td>
-                        {{ $usage->service_specific_data['item_name'] ?? $usage->service->name ?? 'Unknown Item' }}<br>
-                        <small class="text-muted">{{ $usage->created_at->format('H:i') }}</small>
-                    </td>
-                    <td style="text-align: center;"><strong>{{ $usage->quantity }}</strong></td>
-                    <td style="font-size: 10px;">
-                        @if($usage->payment_status === 'paid' || $usage->status === 'completed')
-                            <span class="status-badge" style="color: #28a745; border: 1px solid #28a745; padding: 1px 4px;">PAID</span>
-                            @if($usage->payment_method)
-                                <br><span class="text-dark">{{ ucfirst(str_replace('_', ' ', $usage->payment_method)) }}</span>
-                            @endif
-                            @if($usage->payment_provider)
-                                <span class="text-muted">({{ $usage->payment_provider }})</span>
-                            @endif
-                        @else
-                            <span class="status-badge" style="color: #dc3545; border: 1px solid #dc3545; padding: 1px 4px;">UNPAID</span>
+                @php
+                    $groupedCeremonies = $ceremonyUsage->groupBy('day_service_id');
+                @endphp
+                
+                @foreach($groupedCeremonies as $serviceId => $items)
+                    @php
+                        $firstItem = $items->first();
+                        $dayService = $firstItem->dayService;
+                        $itemCount = $items->count();
+                        $subtotal = $items->sum('total_price_tsh');
+                    @endphp
+                    
+                    @foreach($items as $index => $usage)
+                    <tr>
+                        @if($index === 0)
+                        <td rowspan="{{ $itemCount + 1 }}" style="vertical-align: top; background-color: #fcfcfc;">
+                            <strong>{{ $dayService->service_reference ?? 'N/A' }}</strong><br>
+                            <small style="color: #007bff; font-weight: bold;">{{ strtoupper($dayService->guest_name ?? 'Unknown') }}</small><br>
+                            <span style="font-size: 9px; background: #eee; padding: 2px 5px; border-radius: 3px; display: inline-block; margin-top: 5px;">{{ $itemCount }} Items</span>
+                        </td>
                         @endif
-                    </td>
-                    <td style="text-align: right;">{{ number_format($usage->total_price_tsh) }}</td>
-                </tr>
+                        
+                        <td style="border-left: 1px solid #eee;">
+                            {{ $usage->service_specific_data['item_name'] ?? $usage->service->name ?? 'Unknown Item' }}<br>
+                            <small class="text-muted">{{ $usage->created_at->format('H:i') }}</small>
+                        </td>
+                        <td style="text-align: center;"><strong>{{ $usage->quantity }}</strong></td>
+                        <td style="font-size: 10px;">
+                            @if($usage->payment_status === 'paid' || $usage->status === 'completed')
+                                <span class="status-badge" style="color: #28a745; border: 1px solid #28a745; padding: 1px 4px;">PAID</span>
+                                @if($usage->payment_method)
+                                    <br><span class="text-dark">{{ ucfirst(str_replace('_', ' ', $usage->payment_method)) }}</span>
+                                @endif
+                                @if($usage->payment_provider)
+                                    <span class="text-muted">({{ $usage->payment_provider }})</span>
+                                @endif
+                            @else
+                                <span class="status-badge" style="color: #dc3545; border: 1px solid #dc3545; padding: 1px 4px;">UNPAID</span>
+                            @endif
+                        </td>
+                        <td style="text-align: right;">{{ number_format($usage->total_price_tsh) }}</td>
+                    </tr>
+                    @endforeach
+                    
+                    <tr style="background-color: #f9f9f9; border-bottom: 2px solid #ddd;">
+                        <td colspan="3" style="text-align: right; border-left: 1px solid #eee; padding-right: 15px;">
+                            <small class="text-muted" style="text-transform: uppercase;">Subtotal:</small>
+                        </td>
+                        <td style="text-align: right; font-weight: bold; color: #17a2b8;">{{ number_format($subtotal) }}</td>
+                    </tr>
                 @endforeach
                 
                 @php

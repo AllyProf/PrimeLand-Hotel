@@ -61,7 +61,7 @@ class ServiceRequestController extends Controller
         try {
             try {
                 $request->validate([
-                    'booking_id' => 'required_without:is_walk_in|exists:bookings,id',
+                    'booking_id' => 'nullable|required_without:is_walk_in|exists:bookings,id',
                     'is_walk_in' => 'nullable|boolean',
                     'walk_in_name' => 'nullable|string|max:255',
                     'service_id' => 'required',
@@ -94,17 +94,23 @@ class ServiceRequestController extends Controller
                 ], 401);
             }
 
-            // Verify booking belongs to logged-in customer (unless it's a walk-in by staff)
+            // Verify booking belongs to logged-in customer (unless it's a walk-in or recorded by staff)
             $booking = null;
             if (!$request->is_walk_in) {
-                $booking = Booking::where('id', $request->booking_id)
-                    ->where('guest_email', $user->email)
-                    ->first();
+                $isStaff = Auth::guard('staff')->check();
+                $bookingQuery = Booking::where('id', $request->booking_id);
+                
+                // If not staff, only allow their own bookings
+                if (!$isStaff) {
+                    $bookingQuery->where('guest_email', $user->email);
+                }
+
+                $booking = $bookingQuery->first();
                     
                 if (!$booking) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Booking not found or does not belong to you.',
+                        'message' => $isStaff ? 'Booking not found.' : 'Booking not found or does not belong to you.',
                     ], 404);
                 }
             }
@@ -322,10 +328,17 @@ class ServiceRequestController extends Controller
                 }
             }
             
+            $receptionNotes = null;
+            if (Auth::guard('staff')->check()) {
+                $staffUser = Auth::guard('staff')->user();
+                $receptionNotes = "Recorded by: " . ($staffUser->name ?? 'Staff');
+            }
+
             $serviceRequest = ServiceRequest::create([
                 'booking_id' => $isWalkIn ? null : $booking->id,
                 'service_id' => $service ? $service->id : null,
                 'guest_request' => $request->guest_request,
+                'reception_notes' => $receptionNotes,
                 'service_specific_data' => array_merge($serviceSpecificData, $additionalData, [
                     'adult_quantity' => $adultQuantity,
                     'child_quantity' => $childQuantity,
@@ -594,6 +607,16 @@ class ServiceRequestController extends Controller
 
         // Prepare service requests data for JavaScript
         $serviceRequestsData = $serviceRequests->map(function($req) use ($currencyService) {
+            $requestedBy = 'Guest';
+            if ($req->reception_notes && str_contains($req->reception_notes, 'Recorded by: ')) {
+                $parts = explode('Recorded by: ', $req->reception_notes);
+                $requestedBy = trim($parts[1] ?? 'Staff');
+            }
+            // Fallback to approvedBy name if notes are empty but we have an ID
+            if ($requestedBy === 'Guest' && $req->approvedBy) {
+                $requestedBy = $req->approvedBy->name;
+            }
+
             return [
                 'id' => $req->id,
                 'booking_reference' => $req->booking->booking_reference ?? 'WALK-IN',
@@ -618,6 +641,7 @@ class ServiceRequestController extends Controller
                 'completed_at' => $req->completed_at ? $req->completed_at->format('F d, Y \a\t g:i A') : null,
                 'room_number' => $req->booking?->room?->room_number ?? 'N/A',
                 'room_type' => $req->booking?->room?->room_type ?? 'N/A',
+                'requested_by' => $requestedBy,
             ];
         })->values();
 

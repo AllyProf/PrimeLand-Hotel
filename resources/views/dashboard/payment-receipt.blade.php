@@ -161,7 +161,7 @@
             
             /* Ensure all fonts render properly */
             body, * {
-                font-family: 'Outfit', 'DejaVu Sans', Arial, sans-serif !important;
+                font-family: 'Century Gothic', AppleGothic, sans-serif !important;
             }
             
             /* Better rendering for PDF */
@@ -171,7 +171,7 @@
             }
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', 'DejaVu Sans', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Century Gothic', AppleGothic, sans-serif; }
         
         body {
             background-color: var(--bg-light);

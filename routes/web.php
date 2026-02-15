@@ -287,6 +287,8 @@ Route::prefix('manager')->group(function () {
     Route::post('/orders/{serviceRequest}/complete', [\App\Http\Controllers\KitchenOrderController::class, 'complete'])->name('admin.restaurants.kitchen.orders.complete');
     Route::get('/orders/{serviceRequest}/print-docket', [\App\Http\Controllers\KitchenOrderController::class, 'printDocket'])->name('admin.restaurants.kitchen.orders.print-docket');
     Route::get('/orders/print-group', [\App\Http\Controllers\KitchenOrderController::class, 'printGroupDocket'])->name('admin.restaurants.kitchen.orders.print-group');
+    Route::post('/orders/{serviceRequest}/cancel', [\App\Http\Controllers\KitchenOrderController::class, 'cancelOrder'])->name('admin.restaurants.kitchen.orders.cancel');
+    Route::post('/orders/cancel-group', [\App\Http\Controllers\KitchenOrderController::class, 'cancelGroup'])->name('admin.restaurants.kitchen.orders.cancel-group');
 });
 
 // Re-open Manager Dashboard Routes
@@ -840,7 +842,7 @@ Route::prefix('customer')->group(function () {
     });
 
     // Public/Shared Service Request Routes (accessible by guests and staff)
-    Route::middleware(['check.auth', 'role:customer,waiter,bar_keeper,manager,receptionist,head_chef'])->group(function () {
+    Route::middleware(['check.auth', 'role:customer,waiter,bar_keeper,manager,reception,head_chef'])->group(function () {
         Route::get('/services/available', [\App\Http\Controllers\ServiceRequestController::class, 'getAvailableServices'])->name('customer.services.available');
         Route::post('/services/request', [\App\Http\Controllers\ServiceRequestController::class, 'requestService'])->name('customer.services.request');
         Route::post('/ceremonies/settle-usage', [\App\Http\Controllers\ServiceRequestController::class, 'settleCeremonyUsage'])->name('ceremonies.settle-usage');

@@ -127,8 +127,8 @@
     </div>
     <div class="col-md-6 col-lg-3">
         <a href="{{ route('reception.bookings.manual.create') }}" style="text-decoration: none;">
-            <div class="tile shadow-sm border-0 d-flex align-items-center bg-success text-white p-3" style="border-radius: 12px;">
-                <div class="mr-3 bg-white text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+            <div class="tile shadow-sm border-0 d-flex align-items-center bg-primary text-white p-3" style="border-radius: 12px;">
+                <div class="mr-3 bg-white text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                     <i class="fa fa-plus fa-2x"></i>
                 </div>
                 <div>

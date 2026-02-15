@@ -977,6 +977,8 @@ class DayServiceController extends Controller
      */
     public function docket(DayService $dayService)
     {
+        $dayService->load(['serviceRequests.service']);
+        
         $user = Auth::guard('staff')->user();
         $role = strtolower($user->role ?? '');
         
@@ -984,7 +986,7 @@ class DayServiceController extends Controller
         $showPackage = true;
         
         if ($role === 'bar_keeper') {
-            $filterCategories = ['alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'soft_drinks', 'beers', 'wines', 'spirits', 'cocktails', 'drinks', 'liquor'];
+            $filterCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'soft_drinks', 'beers', 'wines', 'spirits', 'cocktails', 'liquor', 'hot_beverages', 'whiskey', 'bar'];
             $showPackage = false;
         } elseif ($role === 'head_chef') {
             $filterCategories = ['food', 'restaurant', 'kitchen'];

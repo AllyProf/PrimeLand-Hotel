@@ -85,7 +85,7 @@
                                         
                                         {{-- Originator Info --}}
                                         @if($order->reception_notes)
-                                            <div class="mt-1 small border-left pl-2" style="border-width: 2px !important; border-color: #009688 !important;">
+                                            <div class="mt-1 small border-left pl-2" style="border-width: 2px !important; border-color: #e77a3a !important;">
                                                 @if(str_contains($order->reception_notes, 'POS Order by Waiter:'))
                                                     @php
                                                         $info = str_replace('POS Order by Waiter: ', '', $order->reception_notes);
