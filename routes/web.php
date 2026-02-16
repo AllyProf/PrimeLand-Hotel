@@ -774,6 +774,16 @@ Route::prefix('bar-keeper')->group(function () {
         Route::get('/orders/{serviceRequest}/print-docket', [\App\Http\Controllers\BarKeeperController::class, 'printDocket'])->name('bar-keeper.orders.print-docket');
         Route::get('/orders/print-group', [\App\Http\Controllers\BarKeeperController::class, 'printGroupDocket'])->name('bar-keeper.orders.print-group');
         
+        // Day Services History & Management
+        Route::get('/day-services', [\App\Http\Controllers\DayServiceController::class, 'index'])->name('bar-keeper.day-services.index');
+        Route::get('/day-services/{dayService}', [\App\Http\Controllers\DayServiceController::class, 'show'])->name('bar-keeper.day-services.show');
+        Route::get('/day-services/{dayService}/receipt', [\App\Http\Controllers\DayServiceController::class, 'downloadReceipt'])->name('bar-keeper.day-services.receipt');
+        Route::get('/day-services/{dayService}/docket', [\App\Http\Controllers\DayServiceController::class, 'docket'])->name('bar-keeper.day-services.docket');
+        Route::post('/day-services/{dayService}/add-items', [\App\Http\Controllers\DayServiceController::class, 'addItems'])->name('bar-keeper.day-services.add-items');
+        Route::put('/day-services/{dayService}/update-items', [\App\Http\Controllers\DayServiceController::class, 'updateItems'])->name('bar-keeper.day-services.update-items');
+        Route::post('/day-services/{dayService}/payment', [\App\Http\Controllers\DayServiceController::class, 'processPayment'])->name('bar-keeper.day-services.payment');
+
+        
         // Reports
         Route::get('/reports', [\App\Http\Controllers\BarKeeperController::class, 'reports'])->name('bar-keeper.reports');
         
@@ -804,11 +814,6 @@ Route::prefix('bar-keeper')->group(function () {
         Route::put('/purchase-requests/templates/{id}', [\App\Http\Controllers\PurchaseRequestController::class, 'updateTemplate'])->name('bar-keeper.purchase-requests.templates.update');
         Route::delete('/purchase-requests/templates/{id}', [\App\Http\Controllers\PurchaseRequestController::class, 'deleteTemplate'])->name('bar-keeper.purchase-requests.templates.delete');
         
-        // Day Services Routes (Certemonies/Events)
-        Route::get('/day-services/{dayService}', [\App\Http\Controllers\DayServiceController::class, 'show'])->name('bar-keeper.day-services.show');
-        Route::get('/day-services/{dayService}/docket', [\App\Http\Controllers\DayServiceController::class, 'docket'])->name('bar-keeper.day-services.docket');
-        Route::post('/day-services/{dayService}/payment', [\App\Http\Controllers\DayServiceController::class, 'processPayment'])->name('bar-keeper.day-services.payment');
-        Route::get('/day-services/{dayService}/receipt', [\App\Http\Controllers\DayServiceController::class, 'downloadReceipt'])->name('bar-keeper.day-services.receipt');
     });
 });
 
@@ -928,8 +933,16 @@ Route::prefix('chef-master')->group(function () {
         // Daily Stock Sheet Report
         Route::get('/reports', [\App\Http\Controllers\KitchenController::class, 'reports'])->name('chef-master.reports');
         
-        // Day Services (Docket Print)
+        // Day Services Statistics, History & Management
+        Route::get('/day-services', [\App\Http\Controllers\DayServiceController::class, 'index'])->name('chef-master.day-services.index');
+        Route::get('/day-services/{dayService}', [\App\Http\Controllers\DayServiceController::class, 'show'])->name('chef-master.day-services.show');
         Route::get('/day-services/{dayService}/docket', [\App\Http\Controllers\DayServiceController::class, 'docket'])->name('chef-master.day-services.docket');
+        Route::get('/day-services/{dayService}/receipt', [\App\Http\Controllers\DayServiceController::class, 'downloadReceipt'])->name('chef-master.day-services.receipt');
+        Route::post('/day-services/{dayService}/add-items', [\App\Http\Controllers\DayServiceController::class, 'addItems'])->name('chef-master.day-services.add-items');
+        Route::put('/day-services/{dayService}/update-items', [\App\Http\Controllers\DayServiceController::class, 'updateItems'])->name('chef-master.day-services.update-items');
+        Route::post('/day-services/{dayService}/payment', [\App\Http\Controllers\DayServiceController::class, 'processPayment'])->name('chef-master.day-services.payment');
+
+
     });
 });
 

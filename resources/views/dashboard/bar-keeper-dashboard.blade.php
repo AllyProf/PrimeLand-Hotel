@@ -113,7 +113,7 @@
                                $requestedBy = $byParts[0] ?? 'Waiter';
                            } elseif (str_contains($o->reception_notes, 'Recorded by: ')) {
                                $parts = explode('Recorded by: ', $o->reception_notes);
-                               $requestedBy = trim($parts[1] ?? 'Staff');
+                               $requestedBy = trim(explode('|', $parts[1] ?? 'Staff')[0]);
                            } elseif (str_contains($o->reception_notes, 'Recorded by ')) {
                                $parts = explode('Recorded by ', $o->reception_notes);
                                $byParts = explode(':', $parts[1] ?? '');
@@ -195,16 +195,19 @@
                         // Use extracted message if no guest request
                         if (!$note) $note = $msgFromRec;
                         
-                        // Append "Served by" info if present
+                        // Handle "Served by" info nicely
                         if (str_contains($recNote, '| Served by')) {
-                             $servedInfo = substr($recNote, strpos($recNote, '| Served by') + 2);
-                             if (!str_contains($note, $servedInfo)) {
-                                 $note = $note ? ($note . ' | ' . $servedInfo) : $servedInfo;
+                             $servedInfo = trim(substr($recNote, strpos($recNote, '| Served by') + 2));
+                             // If note is empty, just use served info
+                             if (!$note) $note = $servedInfo;
+                             // If note doesn't already contain the served info, append it
+                             elseif (!str_contains($note, $servedInfo)) {
+                                 $note .= ' | ' . $servedInfo;
                              }
                         }
                       @endphp
                       <span class="text-muted" style="font-size: 11px;">
-                          {!! str_replace('(Pending Payment)', '<span class="text-danger font-weight-bold" style="color: #dc3545 !important;">(Pending Payment)</span>', e($note ?: '-')) !!}
+                          {!! str_replace('(Pending Payment)', '<span class="text-danger font-weight-bold" style="color: #dc3545 !important; background: #fff3f3; padding: 1px 4px; border-radius: 4px; border: 1px solid #fcc;">(Pending Payment)</span>', e($note ?: '-')) !!}
                       </span>
                       
                       @if($order->status === 'pending' || $order->status === 'approved')
@@ -388,7 +391,10 @@
         <div class="tile-title-w-btn">
             <h3 class="title"><i class="fa fa-birthday-cake mr-2 text-primary"></i> Active Ceremonies</h3>
             <div class="btn-group">
-                <span class="badge badge-info p-2">{{ $activeCeremonies->count() }} ACTIVE TODAY</span>
+                <a href="{{ route('bar-keeper.day-services.index', ['tab' => 'ceremony']) }}" class="btn btn-outline-primary btn-sm rounded-pill mr-2">
+                    <i class="fa fa-history mr-1"></i> View History
+                </a>
+                <span class="badge badge-info p-2 d-flex align-items-center" style="border-radius: 20px;">{{ $activeCeremonies->count() }} ACTIVE TODAY</span>
             </div>
         </div>
         <div class="table-responsive">

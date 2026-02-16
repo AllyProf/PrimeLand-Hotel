@@ -8,7 +8,11 @@
   </div>
   <ul class="app-breadcrumb breadcrumb">
     <li class="breadcrumb-item"><i class="fa fa-home fa-lg"></i></li>
-    <li class="breadcrumb-item"><a href="{{ $role === 'reception' ? route('reception.dashboard') : route('admin.dashboard') }}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{{ 
+        $role === 'reception' ? route('reception.dashboard') : 
+        ($role === 'bar_keeper' ? route('bar-keeper.dashboard') : 
+        ($role === 'head_chef' ? route('chef-master.dashboard') : route('admin.dashboard'))) 
+      }}">Dashboard</a></li>
     <li class="breadcrumb-item"><a href="#">Day Services</a></li>
   </ul>
 </div>
@@ -18,6 +22,7 @@
     <div class="tile">
       <div class="tile-title-w-btn mb-3">
         <h3 class="title">All Day Services</h3>
+        @if(in_array($role, ['reception', 'manager', 'super_admin']))
         <div class="btn-group">
           <div class="btn-group">
             <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -36,36 +41,39 @@
             <i class="fa fa-clock-o"></i> Pending Payments
           </a>
         </div>
+        @endif
       </div>
       
       <!-- Service Type Tabs -->
       <div class="mb-4">
         <ul class="nav nav-tabs nav-tabs-lg" id="serviceTypeTabs" role="tablist" style="border-bottom: 2px solid #e77a3a;">
+          @if(!in_array($role, ['bar_keeper', 'head_chef']))
           <li class="nav-item">
             <a class="nav-link {{ !request('tab') || request('tab') == 'all' ? 'active' : '' }}" 
-               href="{{ $role === 'reception' ? route('reception.day-services.index', array_merge(request()->except('tab'), ['tab' => 'all'])) : route('admin.day-services.index', array_merge(request()->except('tab'), ['tab' => 'all'])) }}"
+               href="{{ route($baseRoute . '.index', array_merge(request()->except('tab'), ['tab' => 'all'])) }}"
                style="color: #666; font-weight: 600; padding: 12px 24px; border: none; border-bottom: 3px solid transparent; {{ !request('tab') || request('tab') == 'all' ? 'border-bottom-color: #e77a3a; color: #e77a3a;' : '' }}">
               <i class="fa fa-list"></i> All Services
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {{ request('tab') == 'swimming' ? 'active' : '' }}" 
-               href="{{ $role === 'reception' ? route('reception.day-services.index', array_merge(request()->except('tab'), ['tab' => 'swimming'])) : route('admin.day-services.index', array_merge(request()->except('tab'), ['tab' => 'swimming'])) }}"
+               href="{{ route($baseRoute . '.index', array_merge(request()->except('tab'), ['tab' => 'swimming'])) }}"
                style="color: #666; font-weight: 600; padding: 12px 24px; border: none; border-bottom: 3px solid transparent; {{ request('tab') == 'swimming' ? 'border-bottom-color: #e77a3a; color: #e77a3a;' : '' }}">
               <i class="fa fa-tint"></i> Swimming
             </a>
           </li>
           <li class="nav-item">
             <a class="nav-link {{ request('tab') == 'swimming_with_bucket' || request('tab') == 'swimming-with-bucket' ? 'active' : '' }}" 
-               href="{{ $role === 'reception' ? route('reception.day-services.index', array_merge(request()->except('tab'), ['tab' => 'swimming_with_bucket'])) : route('admin.day-services.index', array_merge(request()->except('tab'), ['tab' => 'swimming_with_bucket'])) }}"
+               href="{{ route($baseRoute . '.index', array_merge(request()->except('tab'), ['tab' => 'swimming_with_bucket'])) }}"
                style="color: #666; font-weight: 600; padding: 12px 24px; border: none; border-bottom: 3px solid transparent; {{ (request('tab') == 'swimming_with_bucket' || request('tab') == 'swimming-with-bucket') ? 'border-bottom-color: #e77a3a; color: #e77a3a;' : '' }}">
               <i class="fa fa-tint"></i> Swimming with Floating Trey
             </a>
           </li>
+          @endif
           <li class="nav-item">
-            <a class="nav-link {{ request('tab') == 'ceremony' || request('tab') == 'ceremory' ? 'active' : '' }}" 
-               href="{{ $role === 'reception' ? route('reception.day-services.index', array_merge(request()->except('tab'), ['tab' => 'ceremony'])) : route('admin.day-services.index', array_merge(request()->except('tab'), ['tab' => 'ceremony'])) }}"
-               style="color: #666; font-weight: 600; padding: 12px 24px; border: none; border-bottom: 3px solid transparent; {{ (request('tab') == 'ceremony' || request('tab') == 'ceremory') ? 'border-bottom-color: #e77a3a; color: #e77a3a;' : '' }}">
+            <a class="nav-link {{ request('tab') == 'ceremony' || request('tab') == 'ceremory' || in_array($role, ['bar_keeper', 'head_chef']) ? 'active' : '' }}" 
+               href="{{ route($baseRoute . '.index', array_merge(request()->except('tab'), ['tab' => 'ceremony'])) }}"
+               style="color: #666; font-weight: 600; padding: 12px 24px; border: none; border-bottom: 3px solid transparent; {{ (request('tab') == 'ceremony' || request('tab') == 'ceremory' || in_array($role, ['bar_keeper', 'head_chef'])) ? 'border-bottom-color: #e77a3a; color: #e77a3a;' : '' }}">
               <i class="fa fa-birthday-cake"></i> Ceremony
             </a>
           </li>
@@ -289,13 +297,13 @@
                   <button class="btn btn-sm btn-primary" onclick="editServiceItems({{ $service->id }})" title="Edit Items & Prices">
                     <i class="fa fa-edit"></i>
                   </button>
-                  <a href="{{ $role === 'reception' ? route('reception.day-services.docket', $service) : route('admin.day-services.docket', $service) }}" 
+                  <a href="{{ route($baseRoute . '.docket', $service) }}" 
                      class="btn btn-sm btn-secondary" target="_blank" title="Print Bill/Docket">
                     <i class="fa fa-print"></i>
                   </a>
                   @endif
                   @if($service->payment_status === 'paid')
-                  <a href="{{ $role === 'reception' ? route('reception.day-services.receipt', $service) : route('admin.day-services.receipt', $service) }}" 
+                  <a href="{{ route($baseRoute . '.receipt', $service) }}" 
                      class="btn btn-sm btn-success" target="_blank" title="Download Receipt">
                     <i class="fa fa-download"></i>
                   </a>
@@ -807,11 +815,7 @@ function viewService(serviceId) {
     </div>
   `;
   
-  @php
-    $showRoute = ($role === 'reception') ? 'reception.day-services.show' : 'admin.day-services.show';
-  @endphp
-  
-  fetch('{{ route($showRoute, ":id") }}'.replace(':id', serviceId), {
+  fetch('{{ route($baseRoute . ".show", ":id") }}'.replace(':id', serviceId), {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
@@ -1198,11 +1202,7 @@ function submitPayment() {
     amount_paid: document.getElementById('payment_amount_paid').value,
   };
   
-  @php
-    $paymentRoute = ($role === 'reception') ? 'reception.day-services.payment' : 'admin.day-services.payment';
-  @endphp
-  
-  fetch('{{ route($paymentRoute, ":id") }}'.replace(':id', serviceId), {
+  fetch('{{ route($baseRoute . ".payment", ":id") }}'.replace(':id', serviceId), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -1489,11 +1489,7 @@ function submitAddItems() {
   const alertDiv = document.getElementById('addItemsAlert');
   alertDiv.innerHTML = '';
   
-  @php
-    $addItemsRoute = ($role === 'reception') ? 'reception.day-services.add-items' : 'admin.day-services.add-items';
-  @endphp
-  
-  fetch('{{ route($addItemsRoute, ":id") }}'.replace(':id', serviceId), {
+  fetch('{{ route($baseRoute . ".add-items", ":id") }}'.replace(':id', serviceId), {
     method: 'POST',
     body: formData,
     headers: {
@@ -1545,11 +1541,7 @@ function editServiceItems(serviceId) {
   editItemCounter = 0;
   
   // Load service details
-  @php
-    $showRoute = ($role === 'reception') ? 'reception.day-services.show' : 'admin.day-services.show';
-  @endphp
-  
-  fetch('{{ route($showRoute, ":id") }}'.replace(':id', serviceId), {
+  fetch('{{ route($baseRoute . ".show", ":id") }}'.replace(':id', serviceId), {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
@@ -1883,11 +1875,7 @@ function submitEditItems() {
   const alertDiv = document.getElementById('editItemsAlert');
   alertDiv.innerHTML = '';
   
-  @php
-    $updateItemsRoute = ($role === 'reception') ? 'reception.day-services.update-items' : 'admin.day-services.update-items';
-  @endphp
-  
-  fetch('{{ route($updateItemsRoute, ":id") }}'.replace(':id', serviceId), {
+  fetch('{{ route($baseRoute . ".update-items", ":id") }}'.replace(':id', serviceId), {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

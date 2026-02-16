@@ -374,8 +374,23 @@ class DayServiceController extends Controller
         $query = DayService::with(['registeredBy', 'serviceRequests.service'])->orderBy('service_date', 'desc')->orderBy('service_time', 'desc');
 
         // Tab-based filtering
+        $user = Auth::guard('staff')->user();
+        $role = strtolower($user->role ?? '');
+
+        // Enforce ceremony filter for specific roles
+        $isRestrictedRole = in_array($role, ['bar_keeper', 'head_chef']);
+        if ($isRestrictedRole && !$request->filled('tab')) {
+            $request->merge(['tab' => 'ceremony']);
+        }
+
         if ($request->filled('tab')) {
             $tab = $request->tab;
+            
+            // For restricted roles, always filter by ceremony regardless of tab requested
+            if ($isRestrictedRole) {
+                $tab = 'ceremony';
+            }
+
             if ($tab === 'swimming') {
                 $query->where('service_type', 'swimming');
             } elseif ($tab === 'swimming_with_bucket' || $tab === 'swimming-with-bucket') {
@@ -395,7 +410,16 @@ class DayServiceController extends Controller
                       ->orWhere('service_type', 'LIKE', '%package%');
                 });
             }
-            // 'all' tab shows everything, no additional filter needed
+        } elseif ($isRestrictedRole) {
+            // Fallback for restricted role if tab logic was skipped
+            $query->where(function($q) {
+                $q->where('service_type', 'ceremony')
+                  ->orWhere('service_type', 'ceremory')
+                  ->orWhere('service_type', 'LIKE', '%ceremony%')
+                  ->orWhere('service_type', 'LIKE', '%ceremory%')
+                  ->orWhere('service_type', 'LIKE', '%birthday%')
+                  ->orWhere('service_type', 'LIKE', '%package%');
+            });
         }
 
         // Filters
@@ -427,15 +451,18 @@ class DayServiceController extends Controller
 
         $dayServices = $query->paginate(20);
 
-        $user = Auth::guard('staff')->user();
-        $role = strtolower($user->role ?? '');
-
         // Calculate statistics for the current tab
         $statsQuery = DayService::with(['serviceRequests']);
         
         // Apply same tab filter for statistics
         if ($request->filled('tab')) {
             $tab = $request->tab;
+            
+            // For restricted roles, always filter by ceremony
+            if ($isRestrictedRole) {
+                $tab = 'ceremony';
+            }
+
             if ($tab === 'swimming') {
                 $statsQuery->where('service_type', 'swimming');
             } elseif ($tab === 'swimming_with_bucket' || $tab === 'swimming-with-bucket') {
@@ -453,6 +480,15 @@ class DayServiceController extends Controller
                       ->orWhere('service_type', 'LIKE', '%package%');
                 });
             }
+        } elseif ($isRestrictedRole) {
+            $statsQuery->where(function($q) {
+                $q->where('service_type', 'ceremony')
+                  ->orWhere('service_type', 'ceremory')
+                  ->orWhere('service_type', 'LIKE', '%ceremony%')
+                  ->orWhere('service_type', 'LIKE', '%ceremory%')
+                  ->orWhere('service_type', 'LIKE', '%birthday%')
+                  ->orWhere('service_type', 'LIKE', '%package%');
+            });
         }
 
         // Apply same filters for statistics
@@ -525,7 +561,13 @@ class DayServiceController extends Controller
             'pending_amount' => $pendingAmount,
         ];
 
-        return view('dashboard.day-services-list', compact('dayServices', 'role', 'statistics'));
+        // Determine base route for links
+        $baseRoute = 'admin.day-services';
+        if ($role === 'reception') $baseRoute = 'reception.day-services';
+        elseif ($role === 'bar_keeper') $baseRoute = 'bar-keeper.day-services';
+        elseif ($role === 'head_chef') $baseRoute = 'chef-master.day-services';
+
+        return view('dashboard.day-services-list', compact('dayServices', 'role', 'statistics', 'baseRoute'));
     }
 
     /**

@@ -80,6 +80,31 @@ class BarKeeperController extends Controller
             })
             ->whereDate('service_date', now()->toDateString())
             ->get();
+
+        // Filter out ceremonies where bar usage is fully settled
+        $activeCeremonies = $activeCeremonies->filter(function($ceremony) {
+            $barCategories = ['alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'soft_drinks', 'beers', 'wines', 'spirits', 'cocktails', 'drinks', 'liquor'];
+            
+            // Get requests related to bar
+            $barRequests = $ceremony->serviceRequests->filter(function($req) use ($barCategories) {
+                return $req->service && in_array($req->service->category, $barCategories);
+            });
+            
+            // If bar requests exist, use their payment status
+            if ($barRequests->isNotEmpty()) {
+                // Keep visible if ANY bar request is pending/unpaid
+                return $barRequests->contains(function ($req) {
+                    return !in_array($req->payment_status, ['paid', 'room_charge']);
+                });
+            }
+            
+            // If NO bar requests exist, check the main ceremony payment status
+            if (in_array($ceremony->payment_status, ['paid', 'room_charge'])) {
+                return false;
+            }
+            
+            return true;
+        });
         
         // --- Walk-in Sale Menu Items (POS) ---
         // Match logic from customer restaurant page for consistency
@@ -620,11 +645,17 @@ class BarKeeperController extends Controller
                 // Auto-charge to room for company-paid bookings
                 $updateData['payment_status'] = 'room_charge';
                 $updateData['payment_method'] = 'room_charge';
-                $updateData['reception_notes'] = $serviceRequest->reception_notes . " | Served by {$user->name} (Auto-charged to Company)";
+                $servedText = "Served by {$user->name} (Auto-charged to Company)";
             } else {
                 // Regular flow - mark as pending payment
                 $updateData['payment_status'] = 'pending';
-                $updateData['reception_notes'] = $serviceRequest->reception_notes . " | Served by {$user->name} (Pending Payment)";
+                $servedText = "Served by {$user->name} (Pending Payment)";
+            }
+
+            if (str_contains($serviceRequest->reception_notes ?? '', "Served by {$user->name}")) {
+                $updateData['reception_notes'] = $serviceRequest->reception_notes;
+            } else {
+                $updateData['reception_notes'] = ($serviceRequest->reception_notes ? ($serviceRequest->reception_notes . " | ") : "") . $servedText;
             }
             
             $serviceRequest->update($updateData);

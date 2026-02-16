@@ -280,7 +280,10 @@
         <div class="tile-title-w-btn">
             <h3 class="title"><i class="fa fa-birthday-cake mr-2 text-primary"></i> Active Ceremonies</h3>
             <div class="btn-group">
-                <span class="badge badge-info p-2">{{ $activeCeremonies->count() }} ACTIVE TODAY</span>
+                <a href="{{ route('chef-master.day-services.index', ['tab' => 'ceremony']) }}" class="btn btn-outline-primary btn-sm rounded-pill mr-2">
+                    <i class="fa fa-history mr-1"></i> View History
+                </a>
+                <span class="badge badge-info p-2 d-flex align-items-center" style="border-radius: 20px;">{{ $activeCeremonies->count() }} ACTIVE TODAY</span>
             </div>
         </div>
         <div class="table-responsive">
