@@ -282,9 +282,21 @@
                     <i class="fa fa-exclamation-triangle"></i> View Issues
                   </a>
                   @endif
-                  <a href="{{ route('housekeeper.rooms.status') }}" class="btn btn-sm btn-info btn-block mt-1">
+                  <button class="btn btn-sm btn-info btn-block mt-1 view-details-btn" 
+                          data-room-id="{{ $room->id }}"
+                          data-room-number="{{ $room->room_number }}"
+                          data-room-type="{{ $room->room_type }}"
+                          data-capacity="{{ $room->capacity }}"
+                          data-bed-type="{{ $room->bed_type ?? 'N/A' }}"
+                          data-floor="{{ $room->floor_location ?? 'N/A' }}"
+                          data-status="{{ $statusText }}"
+                          data-guest-name="{{ $guestName ?? 'N/A' }}"
+                          data-check-in="{{ $checkInTime ?? 'N/A' }}"
+                          data-check-out="{{ $checkOutTime ?? 'N/A' }}"
+                          data-last-cleaned="{{ $lastCleaned ?? 'Never' }}"
+                          data-has-issues="{{ $hasIssues ? 'Yes' : 'No' }}">
                     <i class="fa fa-info-circle"></i> View Details
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -535,6 +547,84 @@
     </div>
   </div>
 </div>
+
+<!-- Room Details Modal -->
+<div class="modal fade" id="roomDetailsModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fa fa-bed"></i> Room <span id="detail_room_number"></span> Details</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Room Specifications -->
+          <div class="col-md-6">
+            <h6 class="font-weight-bold mb-3"><i class="fa fa-info-circle text-primary"></i> Room Specifications</h6>
+            <table class="table table-sm table-bordered">
+              <tr>
+                <th width="40%">Room Type</th>
+                <td id="detail_room_type"></td>
+              </tr>
+              <tr>
+                <th>Capacity</th>
+                <td id="detail_capacity"></td>
+              </tr>
+              <tr>
+                <th>Bed Type</th>
+                <td id="detail_bed_type"></td>
+              </tr>
+              <tr>
+                <th>Floor Location</th>
+                <td id="detail_floor"></td>
+              </tr>
+              <tr>
+                <th>Current Status</th>
+                <td><span id="detail_status" class="badge"></span></td>
+              </tr>
+            </table>
+          </div>
+          
+          <!-- Current Booking Info -->
+          <div class="col-md-6">
+            <h6 class="font-weight-bold mb-3"><i class="fa fa-user text-success"></i> Current Booking</h6>
+            <table class="table table-sm table-bordered">
+              <tr>
+                <th width="40%">Guest Name</th>
+                <td id="detail_guest_name"></td>
+              </tr>
+              <tr>
+                <th>Check-in</th>
+                <td id="detail_check_in"></td>
+              </tr>
+              <tr>
+                <th>Check-out</th>
+                <td id="detail_check_out"></td>
+              </tr>
+            </table>
+            
+            <h6 class="font-weight-bold mb-3 mt-4"><i class="fa fa-check-circle text-info"></i> Cleaning Status</h6>
+            <table class="table table-sm table-bordered">
+              <tr>
+                <th width="40%">Last Cleaned</th>
+                <td id="detail_last_cleaned"></td>
+              </tr>
+              <tr>
+                <th>Active Issues</th>
+                <td id="detail_has_issues"></td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 @endsection
 
 @section('styles')
@@ -657,6 +747,52 @@ $(document).ready(function() {
                 swal("Error!", errorMsg, "error");
             }
         });
+    
+    // View room details functionality
+    $(document).on('click', '.view-details-btn', function() {
+        var roomNumber = $(this).data('room-number');
+        var roomType = $(this).data('room-type');
+        var capacity = $(this).data('capacity');
+        var bedType = $(this).data('bed-type');
+        var floor = $(this).data('floor');
+        var status = $(this).data('status');
+        var guestName = $(this).data('guest-name');
+        var checkIn = $(this).data('check-in');
+        var checkOut = $(this).data('check-out');
+        var lastCleaned = $(this).data('last-cleaned');
+        var hasIssues = $(this).data('has-issues');
+        
+        // Populate modal
+        $('#detail_room_number').text(roomNumber);
+        $('#detail_room_type').text(roomType);
+        $('#detail_capacity').text(capacity + ' Guests');
+        $('#detail_bed_type').text(bedType);
+        $('#detail_floor').text(floor);
+        
+        // Set status badge with appropriate color
+        var statusBadge = $('#detail_status');
+        statusBadge.text(status);
+        statusBadge.removeClass('badge-success badge-warning badge-info badge-danger badge-secondary');
+        if (status.includes('Available')) {
+            statusBadge.addClass('badge-success');
+        } else if (status.includes('Cleaning')) {
+            statusBadge.addClass('badge-warning');
+        } else if (status.includes('Occupied')) {
+            statusBadge.addClass('badge-info');
+        } else if (status.includes('Maintenance')) {
+            statusBadge.addClass('badge-danger');
+        } else {
+            statusBadge.addClass('badge-secondary');
+        }
+        
+        $('#detail_guest_name').text(guestName);
+        $('#detail_check_in').text(checkIn);
+        $('#detail_check_out').text(checkOut);
+        $('#detail_last_cleaned').text(lastCleaned);
+        $('#detail_has_issues').html(hasIssues === 'Yes' ? '<span class="badge badge-danger">Yes</span>' : '<span class="badge badge-success">No</span>');
+        
+        $('#roomDetailsModal').modal('show');
+    });
     });
 });
 </script>
