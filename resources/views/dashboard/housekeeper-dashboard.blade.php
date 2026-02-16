@@ -155,7 +155,8 @@
                 $isAboutToCheckOut = $hoursUntilCheckout >= 0 && $hoursUntilCheckout <= 24;
               }
               $guestName = $room->currentBooking->guest_name;
-            } elseif ($room->lastCheckout) {
+            } elseif ($room->lastCheckout && $roomStatus !== 'available') {
+              // Only show last checkout info if the room is NOT yet available (i.e., it needs cleaning)
               if ($room->lastCheckout->checked_out_at) {
                 $checkOutDateTime = \Carbon\Carbon::parse($room->lastCheckout->checked_out_at);
                 $checkOutTime = $checkOutDateTime->format('M d, Y H:i');
