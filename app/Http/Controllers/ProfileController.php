@@ -42,6 +42,8 @@ class ProfileController extends Controller
                 $role = 'bar_keeper';
             } elseif ($normalizedRole === 'headchef' || $rawRole === 'head_chef') {
                 $role = 'head_chef';
+            } elseif ($normalizedRole === 'waiter' || $rawRole === 'waiter') {
+                $role = 'waiter';
             } else {
                 $role = 'manager'; // Default fallback
             }

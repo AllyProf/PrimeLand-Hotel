@@ -73,70 +73,45 @@
           
           <!-- Photo Upload Form -->
           @php
-            // Determine the correct route based on the current route prefix or route name
+            // Determine the correct route prefix based on normalized role or route name
             $currentRoute = request()->route()->getName() ?? '';
-            $currentPath = request()->path();
+            $routePrefix = 'admin'; // Default
             
-            // Default routes
-            $photoRoute = 'admin.profile.update-photo';
-            $updateRoute = 'admin.profile.update';
-            $passwordRoute = 'admin.profile.update-password';
-            $notificationsRoute = 'admin.profile.update-notifications';
-            
-            // Check route name first (most reliable)
             if (str_contains($currentRoute, 'super_admin')) {
-                $photoRoute = 'super_admin.profile.update-photo';
-                $updateRoute = 'super_admin.profile.update';
-                $passwordRoute = 'super_admin.profile.update-password';
-                $notificationsRoute = 'super_admin.profile.update-notifications';
+                $routePrefix = 'super_admin';
             } elseif (str_contains($currentRoute, 'reception')) {
-                $photoRoute = 'reception.profile.update-photo';
-                $updateRoute = 'reception.profile.update';
-                $passwordRoute = 'reception.profile.update-password';
-                $notificationsRoute = 'reception.profile.update-notifications';
+                $routePrefix = 'reception';
             } elseif (str_contains($currentRoute, 'housekeeper')) {
-                $photoRoute = 'housekeeper.profile.update-photo';
-                $updateRoute = 'housekeeper.profile.update';
-                $passwordRoute = 'housekeeper.profile.update-password';
-                $notificationsRoute = 'housekeeper.profile.update-notifications';
+                $routePrefix = 'housekeeper';
+            } elseif (str_contains($currentRoute, 'bar-keeper')) {
+                $routePrefix = 'bar-keeper';
+            } elseif (str_contains($currentRoute, 'chef-master')) {
+                $routePrefix = 'chef-master';
+            } elseif (str_contains($currentRoute, 'waiter')) {
+                $routePrefix = 'waiter';
             } elseif (str_contains($currentRoute, 'customer')) {
-                $photoRoute = 'customer.profile.update-photo';
-                $updateRoute = 'customer.profile.update';
-                $passwordRoute = 'customer.profile.update-password';
-                $notificationsRoute = 'customer.profile.update-notifications';
+                $routePrefix = 'customer';
             } elseif (str_contains($currentRoute, 'admin')) {
-                $photoRoute = 'admin.profile.update-photo';
-                $updateRoute = 'admin.profile.update';
-                $passwordRoute = 'admin.profile.update-password';
-                $notificationsRoute = 'admin.profile.update-notifications';
+                $routePrefix = 'admin';
+            } else {
+                // Fallback to role mapping if route name doesn't match
+                $roleMapping = [
+                    'super_admin' => 'super_admin',
+                    'manager' => 'admin',
+                    'reception' => 'reception',
+                    'housekeeper' => 'housekeeper',
+                    'bar_keeper' => 'bar-keeper',
+                    'head_chef' => 'chef-master',
+                    'waiter' => 'waiter',
+                    'customer' => 'customer'
+                ];
+                $routePrefix = $roleMapping[$role] ?? 'admin';
             }
-            // Fallback to URL path check
-            elseif (str_contains($currentPath, 'super-admin')) {
-                $photoRoute = 'super_admin.profile.update-photo';
-                $updateRoute = 'super_admin.profile.update';
-                $passwordRoute = 'super_admin.profile.update-password';
-                $notificationsRoute = 'super_admin.profile.update-notifications';
-            } elseif (str_contains($currentPath, 'manager') || str_contains($currentPath, 'admin')) {
-                $photoRoute = 'admin.profile.update-photo';
-                $updateRoute = 'admin.profile.update';
-                $passwordRoute = 'admin.profile.update-password';
-                $notificationsRoute = 'admin.profile.update-notifications';
-            } elseif (str_contains($currentPath, 'reception')) {
-                $photoRoute = 'reception.profile.update-photo';
-                $updateRoute = 'reception.profile.update';
-                $passwordRoute = 'reception.profile.update-password';
-                $notificationsRoute = 'reception.profile.update-notifications';
-            } elseif (str_contains($currentPath, 'housekeeper')) {
-                $photoRoute = 'housekeeper.profile.update-photo';
-                $updateRoute = 'housekeeper.profile.update';
-                $passwordRoute = 'housekeeper.profile.update-password';
-                $notificationsRoute = 'housekeeper.profile.update-notifications';
-            } elseif (str_contains($currentPath, 'customer')) {
-                $photoRoute = 'customer.profile.update-photo';
-                $updateRoute = 'customer.profile.update';
-                $passwordRoute = 'customer.profile.update-password';
-                $notificationsRoute = 'customer.profile.update-notifications';
-            }
+
+            $photoRoute = "$routePrefix.profile.update-photo";
+            $updateRoute = "$routePrefix.profile.update";
+            $passwordRoute = "$routePrefix.profile.update-password";
+            $notificationsRoute = "$routePrefix.profile.update-notifications";
           @endphp
           
           <!-- Photo Upload Section -->

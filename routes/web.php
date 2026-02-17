@@ -754,6 +754,7 @@ Route::prefix('bar-keeper')->group(function () {
         Route::post('/profile/update', [\App\Http\Controllers\ProfileController::class, 'updateProfile'])->name('bar-keeper.profile.update');
         Route::post('/profile/update-photo', [\App\Http\Controllers\ProfileController::class, 'updatePhoto'])->name('bar-keeper.profile.update-photo');
         Route::post('/profile/update-password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('bar-keeper.profile.update-password');
+        Route::post('/profile/update-notifications', [\App\Http\Controllers\ProfileController::class, 'updateNotificationPreferences'])->name('bar-keeper.profile.update-notifications');
         
         Route::post('/logout', [AuthController::class, 'logout'])->name('bar-keeper.logout');
         
@@ -906,6 +907,7 @@ Route::prefix('chef-master')->group(function () {
         Route::post('/profile/update', [\App\Http\Controllers\ProfileController::class, 'updateProfile'])->name('chef-master.profile.update');
         Route::post('/profile/update-photo', [\App\Http\Controllers\ProfileController::class, 'updatePhoto'])->name('chef-master.profile.update-photo');
         Route::post('/profile/update-password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('chef-master.profile.update-password');
+        Route::post('/profile/update-notifications', [\App\Http\Controllers\ProfileController::class, 'updateNotificationPreferences'])->name('chef-master.profile.update-notifications');
         
         Route::post('/logout', [AuthController::class, 'logout'])->name('chef-master.logout');
         
@@ -965,6 +967,10 @@ Route::prefix('waiter')->group(function () {
         
         // Profile & Logout
         Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('waiter.profile');
+        Route::post('/profile/update', [\App\Http\Controllers\ProfileController::class, 'updateProfile'])->name('waiter.profile.update');
+        Route::post('/profile/update-photo', [\App\Http\Controllers\ProfileController::class, 'updatePhoto'])->name('waiter.profile.update-photo');
+        Route::post('/profile/update-password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('waiter.profile.update-password');
+        Route::post('/profile/update-notifications', [\App\Http\Controllers\ProfileController::class, 'updateNotificationPreferences'])->name('waiter.profile.update-notifications');
         Route::post('/logout', [AuthController::class, 'logout'])->name('waiter.logout');
     });
 });
