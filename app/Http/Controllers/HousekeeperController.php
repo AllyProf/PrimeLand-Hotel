@@ -247,48 +247,61 @@ class HousekeeperController extends Controller
         try {
             $oldStock = $item->current_stock;
             
-            // Handle room_id as potentially an array (from multi-select)
+            // Calculate total quantity and individual room amounts
             $roomIdsInput = $request->room_id;
             $roomIds = is_array($roomIdsInput) ? $roomIdsInput : ($roomIdsInput ? [$roomIdsInput] : []);
+            $roomQuantities = $request->room_quantities ?? []; // New: [room_id => quantity]
+            $countRooms = count($roomIds);
             
-            // Calculate total quantity to deduct/add
-            // If rooms are selected, we assume 'quantity' is applied to EACH room
-            $multiplier = count($roomIds) > 0 ? count($roomIds) : 1;
-            $totalChangeQuantity = $request->quantity * $multiplier;
+            $totalChangeQuantity = 0;
+            if (!empty($roomQuantities) && $countRooms > 0) {
+                // Use individual room quantities
+                foreach ($roomIds as $rid) {
+                    $totalChangeQuantity += (float)($roomQuantities[$rid] ?? 0);
+                }
+                // If the user manually edited the total 'quantity' and it's different from the sum, 
+                // and they aren't using the per-room UI, we might still use the request->quantity.
+                // But generally, the UI will sync these.
+            } else {
+                $totalChangeQuantity = $request->quantity;
+            }
             
-            // Update stock based on movement type (consumption, cleaning_use, transfer deduct stock)
+            $quantityPerRoom = $countRooms > 0 ? ($totalChangeQuantity / $countRooms) : $totalChangeQuantity;
+            
+            // Update stock based on movement type
             if ($request->movement_type === 'supply') {
                 $item->current_stock += $totalChangeQuantity;
             } elseif (in_array($request->movement_type, ['consumption', 'cleaning_use', 'transfer'])) {
                 $item->current_stock -= $totalChangeQuantity;
-                if ($item->current_stock < 0) {
-                    $item->current_stock = 0;
-                }
+                if ($item->current_stock < 0) $item->current_stock = 0;
             } elseif ($request->movement_type === 'adjustment') {
-                $item->current_stock = $request->quantity; // Direct override
+                $item->current_stock = $request->quantity;
             }
             
             $item->save();
             
             // Create stock movement log(s)
-            if (empty($roomIds)) {
+            if ($countRooms === 0) {
                 InventoryStockMovement::create([
                     'inventory_item_id' => $item->id,
                     'movement_type' => $request->movement_type,
-                    'quantity' => $request->quantity,
+                    'quantity' => $totalChangeQuantity,
                     'room_id' => null,
                     'performed_by' => $housekeeper->id,
                     'notes' => $request->notes,
                 ]);
             } else {
                 foreach ($roomIds as $rid) {
+                    // Use individual quantity if available, otherwise use averaged
+                    $qtyForThisRoom = isset($roomQuantities[$rid]) ? (float)$roomQuantities[$rid] : $quantityPerRoom;
+                    
                     InventoryStockMovement::create([
                         'inventory_item_id' => $item->id,
                         'movement_type' => $request->movement_type,
-                        'quantity' => $request->quantity,
+                        'quantity' => $qtyForThisRoom,
                         'room_id' => $rid,
                         'performed_by' => $housekeeper->id,
-                        'notes' => $request->notes . (count($roomIds) > 1 ? " (Part of multi-room update)" : ""),
+                        'notes' => $request->notes . ($countRooms > 1 ? (!empty($roomQuantities) ? " (Individual Room Distribution)" : " (Averaged among $countRooms rooms)") : ""),
                     ]);
                 }
             }

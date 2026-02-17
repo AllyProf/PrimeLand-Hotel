@@ -327,33 +327,76 @@
           <input type="hidden" id="movement_type" name="movement_type" value="consumption">
           
           <div class="form-group">
-            <label for="quantity">Quantity Used <span class="text-danger">*</span></label>
-            <input type="number" step="0.01" class="form-control" id="quantity" name="quantity" required min="0" placeholder="Quantity used total or per room">
+            <label for="quantity">Total Quantity Used <span class="text-danger">*</span></label>
+            <input type="number" step="0.01" class="form-control" id="quantity" name="quantity" required min="0" placeholder="Enter total amount used (will be divided among rooms)">
           </div>
           
           <div class="form-group" id="room_select_group">
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <label for="room_id" class="mb-0">Selected Rooms (Optional)</label>
                 <button type="button" class="btn btn-sm btn-outline-info" id="selectOccupiedRooms" style="padding: 2px 8px; font-size: 11px;">
-                    <i class="fa fa-users"></i> Select All Checked-In
+                    <i class="fa fa-users"></i> Select Active (Occupied/Reserved)
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllRoomsBtn" style="padding: 2px 8px; font-size: 11px;">
+                    <i class="fa fa-list"></i> Select All Rooms
                 </button>
             </div>
             <select class="form-control select2" id="room_id" name="room_id[]" multiple="multiple" style="width: 100%;">
               @php
-                $checkedInRoomIds = \App\Models\Booking::where('check_in_status', 'checked_in')
-                    ->pluck('room_id')
-                    ->toArray();
-                $checkedInRooms = \App\Models\Room::whereIn('id', $checkedInRoomIds)
-                    ->orderBy('room_number')
-                    ->get();
+                $allRooms = \App\Models\Room::orderBy('room_number')->get();
+                $today = \Carbon\Carbon::today();
+                
+                // Get active bookings for today to determine status
+                $activeBookings = \App\Models\Booking::whereIn('check_in_status', ['checked_in', 'pending'])
+                    ->where('check_in', '<=', $today->copy()->endOfDay())
+                    ->where('check_out', '>=', $today->copy()->startOfDay())
+                    ->get()
+                    ->groupBy('room_id');
               @endphp
-              @foreach($checkedInRooms as $room)
-              <option value="{{ $room->id }}" data-status="occupied">
-                Room {{ $room->room_number }} ({{ $room->room_type }})
-              </option>
+              @foreach($allRooms as $room)
+                @php
+                  $roomBookings = $activeBookings->get($room->id, collect());
+                  $statusLabel = 'Available';
+                  $dataStatus = 'available';
+                  
+                  if ($roomBookings->where('check_in_status', 'checked_in')->first()) {
+                      $statusLabel = 'OCCUPIED';
+                      $dataStatus = 'occupied';
+                  } elseif ($roomBookings->where('check_in_status', 'pending')->first()) {
+                      $statusLabel = 'RESERVED';
+                      $dataStatus = 'reserved';
+                  } elseif ($room->status === 'maintenance') {
+                      $statusLabel = 'MAINTENANCE';
+                      $dataStatus = 'maintenance';
+                  } elseif ($room->status === 'to_be_cleaned') {
+                      $statusLabel = 'DIRTY';
+                      $dataStatus = 'dirty';
+                  }
+                @endphp
+                <option value="{{ $room->id }}" data-status="{{ $dataStatus }}" data-type="{{ $room->room_type }}">
+                  Room {{ $room->room_number }} ({{ $room->room_type }}) — [{{ $statusLabel }}]
+                </option>
               @endforeach
             </select>
-            <small class="form-text text-muted">Only rooms with active check-ins are shown. Leave blank for general cleaning use.</small>
+            <small class="form-text text-muted">All rooms are shown with their current status. Leave blank for general cleaning use.</small>
+          </div>
+          
+          <div id="room_distribution_section" style="display: none; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-bottom: 15px; background-color: #f9f9f9;">
+            <p class="mb-2"><small><strong>Room Distribution (Set per room)</strong></small></p>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered mb-0" id="room_distribution_table" style="font-size: 11px;">
+                <thead class="bg-light">
+                  <tr>
+                    <th>Room</th>
+                    <th>Type</th>
+                    <th>Qty</th>
+                  </tr>
+                </thead>
+                <tbody id="room_distribution_body">
+                  <!-- JS populated -->
+                </tbody>
+              </table>
+            </div>
           </div>
           
           <div class="form-group">
@@ -514,26 +557,46 @@ $(document).ready(function() {
         dropdownParent: $('#updateStockModal')
     });
 
-    // Select All Occupied Rooms button
+    // Select Active (Occupied/Reserved) Rooms button
     $('#selectOccupiedRooms').on('click', function() {
-        var occupiedRoomIds = [];
+        var activeRoomIds = [];
         $('#room_id option').each(function() {
-            if ($(this).data('status') === 'occupied') {
-                occupiedRoomIds.push($(this).val());
+            var status = $(this).data('status');
+            if (status === 'occupied' || status === 'reserved') {
+                activeRoomIds.push($(this).val());
             }
         });
         
-        if (occupiedRoomIds.length > 0) {
-            $('#room_id').val(occupiedRoomIds).trigger('change');
+        if (activeRoomIds.length > 0) {
+            $('#room_id').val(activeRoomIds).trigger('change');
             swal({
                 title: "Rooms Selected!",
-                text: "Selected " + occupiedRoomIds.length + " checked-in rooms.",
+                text: "Selected " + activeRoomIds.length + " active (occupied/reserved) rooms.",
                 type: "info",
                 timer: 1500,
                 showConfirmButton: false
             });
         } else {
-            swal("Notification", "No rooms currently marked as checked-in.", "info");
+            swal("Notification", "No rooms currently marked as occupied or reserved.", "info");
+        }
+    });
+
+    // Select All Rooms button
+    $('#selectAllRoomsBtn').on('click', function() {
+        var allRoomIds = [];
+        $('#room_id option').each(function() {
+            allRoomIds.push($(this).val());
+        });
+        
+        if (allRoomIds.length > 0) {
+            $('#room_id').val(allRoomIds).trigger('change');
+            swal({
+                title: "All Rooms Selected!",
+                text: "Selected all " + allRoomIds.length + " rooms.",
+                type: "info",
+                timer: 1500,
+                showConfirmButton: false
+            });
         }
     });
 
@@ -707,10 +770,71 @@ $(document).ready(function() {
         $('#current_stock_display').text(currentStock);
         $('#quantity').val('');
         $('#notes').val('');
-        $('#movement_type').val('consumption'); // Always default to consumption (deduction)
         $('#room_id').val(null).trigger('change');
+        
+        // Initial setup for consumption mode
+        $('label[for="quantity"]').html('Total Quantity Used <span class="text-danger">*</span>');
+        $('#quantity').attr('placeholder', 'Enter total amount used (automatic sum below)');
+        $('#room_select_group').show();
+        updateRoomDistribution();
+        
         $('#updateStockModal').modal('show');
     });
+
+    // Listen for room selection changes
+    $('#room_id').on('change', function() {
+        updateRoomDistribution();
+    });
+    
+    function updateRoomDistribution() {
+        // Logic now simplified as it's always consumption
+        
+        var selectedRoomData = [];
+        $('#room_id option:selected').each(function() {
+            selectedRoomData.push({
+                id: $(this).val(),
+                number: $(this).text().split('(')[0].replace('Room', '').trim(),
+                type: $(this).data('type') || 'Single'
+            });
+        });
+        
+        if (selectedRoomData.length > 0) {
+            var html = '';
+            selectedRoomData.forEach(function(room) {
+                // Rule: Twins: 3, Double: 2, Single: 1
+                var defaultQty = 1;
+                if (room.type === 'Double') defaultQty = 2;
+                else if (room.type === 'Twins') defaultQty = 3;
+                
+                html += '<tr>' +
+                    '<td><strong>' + room.number + '</strong></td>' +
+                    '<td><small>' + room.type + '</small></td>' +
+                    '<td><input type="number" step="0.5" class="form-control form-control-sm room-qty-input" ' +
+                    'name="room_quantities[' + room.id + ']" value="' + defaultQty + '" ' +
+                    'style="padding: 2px 5px; height: 25px; width: 60px;"></td>' +
+                    '</tr>';
+            });
+            
+            $('#room_distribution_body').html(html);
+            $('#room_distribution_section').show();
+            calculateTotalFromRooms();
+            
+            // Re-bind change listener for new inputs
+            $('.room-qty-input').on('input', function() {
+                calculateTotalFromRooms();
+            });
+        } else {
+            $('#room_distribution_section').hide();
+        }
+    }
+    
+    function calculateTotalFromRooms() {
+        var total = 0;
+        $('.room-qty-input').each(function() {
+            total += parseFloat($(this).val()) || 0;
+        });
+        $('#quantity').val(total);
+    }
     
     $('#updateStockForm').on('submit', function(e) {
         e.preventDefault();
@@ -722,6 +846,18 @@ $(document).ready(function() {
             quantity: $('#quantity').val(),
             notes: $('#notes').val()
         };
+        
+        // Collect individual room quantities if they exist
+        var roomQuantities = {};
+        $('.room-qty-input').each(function() {
+            var name = $(this).attr('name');
+            var roomId = name.match(/\[(\d+)\]/)[1];
+            roomQuantities[roomId] = $(this).val();
+        });
+        
+        if (Object.keys(roomQuantities).length > 0) {
+            formData.room_quantities = roomQuantities;
+        }
         
         if ($('#room_id').val() && $('#room_id').val().length > 0) {
             formData.room_id = $('#room_id').val();

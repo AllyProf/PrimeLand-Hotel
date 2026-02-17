@@ -127,14 +127,17 @@
                         $isUrgentCheckout = in_array($room->id, $roomsWithUrgentCheckout ?? []);
                         $isUpcomingCheckin = in_array($room->id, $roomsWithUpcomingCheckin ?? []);
                         
-                        // Image Handling
-                        $bgImage = 'https://via.placeholder.com/400x250?text=No+Image'; // Default
+                        // Image Handling - find the first image that actually exists
+                        $bgImage = asset('dashboard_assets/images/room-placeholder.jpg'); // Default local placeholder
                         if($room->images) {
                             $images = is_string($room->images) ? json_decode($room->images, true) : $room->images;
                             if(is_array($images) && count($images) > 0) {
-                                $imagePath = is_string($images[0]) ? trim($images[0], '/') : '';
-                                if($imagePath) {
-                                  $bgImage = asset('storage/' . $imagePath);
+                                foreach($images as $path) {
+                                    $imagePath = is_string($path) ? trim($path, '/') : '';
+                                    if($imagePath && file_exists(public_path('storage/' . $imagePath))) {
+                                        $bgImage = asset('storage/' . $imagePath);
+                                        break;
+                                    }
                                 }
                             }
                         }

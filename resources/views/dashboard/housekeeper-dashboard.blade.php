@@ -119,12 +119,21 @@
               $cardBorderColor = '#6c757d'; // Gray border
             }
             
-            // Get room image
+            // Get room image - try to find the first image that actually exists
             $roomImage = null;
             if ($room->images && is_array($room->images) && count($room->images) > 0) {
-              $roomImage = asset('storage/' . $room->images[0]);
-            } else {
-              $roomImage = asset('dashboard_assets/images/room-placeholder.jpg');
+                foreach ($room->images as $imagePath) {
+                    $fullPath = public_path('storage/' . ltrim($imagePath, '/'));
+                    if (file_exists($fullPath)) {
+                        $roomImage = asset('storage/' . ltrim($imagePath, '/'));
+                        break;
+                    }
+                }
+            }
+            
+            // Fallback to placeholder if no valid image found
+            if (!$roomImage) {
+                $roomImage = asset('dashboard_assets/images/room-placeholder.jpg');
             }
             
             // Get check-in/check-out info
@@ -196,7 +205,7 @@
               <div class="room-image-container" style="height: 180px; overflow: hidden; position: relative; background: #f0f0f0;">
                 <img src="{{ $roomImage }}" alt="Room {{ $room->room_number }}" 
                      style="width: 100%; height: 100%; object-fit: cover;"
-                     onerror="this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
+                     onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
                 <!-- Status Badge Overlay -->
                 <div class="room-status-badge" style="position: absolute; top: 10px; right: 10px;">
                   @if($isAboutToCheckOut)

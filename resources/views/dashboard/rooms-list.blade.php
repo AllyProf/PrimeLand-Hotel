@@ -308,15 +308,22 @@
               <td>
                 @if($room->images && is_array($room->images) && count($room->images) > 0)
                   @php
-                    $imagePath = trim($room->images[0]);
-                    // Images are stored as 'rooms/filename.jpg' in database
-                    // Ensure path doesn't start with a slash
-                    $imagePath = ltrim($imagePath, '/');
-                    // Generate URL using asset() helper
-                    $imageUrl = asset('storage/' . $imagePath);
+                    $validImagePath = null;
+                    foreach ($room->images as $path) {
+                        $p = ltrim(trim($path), '/');
+                        if (file_exists(public_path('storage/' . $p))) {
+                            $validImagePath = $p;
+                            break;
+                        }
+                    }
+                    $imageUrl = $validImagePath ? asset('storage/' . $validImagePath) : asset('dashboard_assets/images/room-placeholder.jpg');
                   @endphp
                   <div class="room-images-preview">
-                    <img src="{{ $imageUrl }}" alt="Room Image" class="room-thumbnail" data-toggle="modal" data-target="#imageModal{{ $room->id }}" onerror="this.onerror=null; this.style.display='none'; this.parentElement.innerHTML='<span class=\'text-muted\'>Image not found</span>';">
+                    @if($validImagePath)
+                      <img src="{{ $imageUrl }}" alt="Room Image" class="room-thumbnail" data-toggle="modal" data-target="#imageModal{{ $room->id }}" onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
+                    @else
+                      <img src="{{ asset('dashboard_assets/images/room-placeholder.jpg') }}" alt="No Image" class="room-thumbnail opacity-50">
+                    @endif
                     @if(count($room->images) > 1)
                       <span class="image-count">+{{ count($room->images) - 1 }}</span>
                     @endif
@@ -1334,7 +1341,7 @@ function displayCurrentImages(images) {
       img.style.objectFit = 'cover';
       img.onerror = function() {
         this.onerror = null;
-        this.src = '{{ asset("dashboard_assets/img/placeholder-room.jpg") }}';
+        this.src = '{{ asset("dashboard_assets/images/room-placeholder.jpg") }}';
         this.style.opacity = '0.5';
       };
       previewDiv.appendChild(img);

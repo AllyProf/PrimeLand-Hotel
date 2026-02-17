@@ -981,7 +981,7 @@
                             @else
                                 <img src="" alt="Guest Photo" id="guestPhotoImg" style="display: none;" onerror="this.style.display='none'; this.parentElement.classList.remove('has-image');">
                             @endif
-                            <img src="{{ asset('dashboard_assets/images/img placeholder.jpg') }}" alt="Photo Placeholder" class="placeholder-default-img" onerror="console.error('Placeholder image failed to load:', this.src); this.style.backgroundColor='#e0e0e0';">
+                            <img src="{{ asset('dashboard_assets/images/room-placeholder.jpg') }}" alt="Photo Placeholder" class="placeholder-default-img" onerror="console.error('Placeholder image failed to load:', this.src); this.style.backgroundColor='#e0e0e0';">
                             <i class="fas fa-user photo-icon"></i>
                             <div class="photo-text">Photo</div>
                         </div>
