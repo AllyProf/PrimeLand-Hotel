@@ -40,9 +40,7 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => env('APP_ENV') === 'production' 
-                ? '/home/primkgek/public_html/storage' 
-                : public_path('storage'),
+            'root' => public_path('storage'),
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,
