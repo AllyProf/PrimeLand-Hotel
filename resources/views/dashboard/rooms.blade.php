@@ -1158,6 +1158,7 @@ function setupCurrencyConversion() {
     const field = document.getElementById(fieldId);
     const displayField = document.getElementById(fieldId + '_tzs');
     
+    // Only setup conversion if BOTH elements exist
     if (field && displayField) {
       // Update on input (real-time as user types)
       field.addEventListener('input', function() {
@@ -1186,6 +1187,9 @@ function setupCurrencyConversion() {
         displayField.style.fontWeight = '500';
         displayField.style.display = 'block';
       }
+    } else if (!displayField && field) {
+      // Element doesn't exist - this is fine, just skip currency conversion display
+      console.log(`Currency display element '${fieldId}_tzs' not found - skipping conversion display`);
     }
   });
 }
