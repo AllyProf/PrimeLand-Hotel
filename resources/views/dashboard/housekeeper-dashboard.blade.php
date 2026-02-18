@@ -120,15 +120,11 @@
             }
             
             // Get room image - try to find the first image that actually exists
+            // Get room image - just take the first one and let browser handle 404 via onerror
             $roomImage = null;
             if ($room->images && is_array($room->images) && count($room->images) > 0) {
-                foreach ($room->images as $imagePath) {
-                    $fullPath = public_path('storage/' . ltrim($imagePath, '/'));
-                    if (file_exists($fullPath)) {
-                        $roomImage = asset('storage/' . ltrim($imagePath, '/'));
-                        break;
-                    }
-                }
+                $firstImage = $room->images[0];
+                $roomImage = asset('storage/' . ltrim($firstImage, '/'));
             }
             
             // Fallback to placeholder if no valid image found
