@@ -306,6 +306,7 @@
                 <br><small class="text-muted">≈ {{ number_format($room->price_per_night * ($exchangeRate ?? 2400), 0) }} TZS</small>
               </td>
               <td>
+                @if($room->images && is_array($room->images) && count($room->images) > 0)
                   @php
                     // Get the first image path
                     $firstImage = is_array($room->images) ? ($room->images[0] ?? null) : $room->images;
