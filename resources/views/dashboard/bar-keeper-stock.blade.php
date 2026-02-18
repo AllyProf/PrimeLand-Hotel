@@ -15,39 +15,97 @@
 
 <!-- Stats Row -->
 <div class="row mb-4">
-  <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small primary coloured-icon"><i class="icon fa fa-wine-bottle fa-3x"></i>
-      <div class="info">
-        <h4>Products</h4>
-        <p><b>{{ $myStock->count() }}</b></p>
-      </div>
+    <!-- Total Products -->
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #4e54c8 0%, #8f94fb 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
+                        <i class="fa fa-wine-bottle text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Products</h6>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ $myStock->count() }}</h3>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Total drink variants</small>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small info coloured-icon"><i class="icon fa fa-cubes fa-3x"></i>
-      <div class="info">
-        <h4>In Stock</h4>
-        <p><b>{{ number_format($myStock->sum('current_stock_pics'), 1) }}</b></p>
-      </div>
+    
+    <!-- In Stock -->
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #11998e 0%, #38ef7d 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
+                        <i class="fa fa-cubes text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">In Stock</h6>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ number_format($myStock->sum('current_stock_pics'), 0) }}</h3>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 85%; border-radius: 10px;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Total physical bottles/pics</small>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small warning coloured-icon" style="background-color: #e77a31;"><i class="icon fa fa-money fa-3x"></i>
-      <div class="info">
-        <h4>Revenue</h4>
-        <p><b>{{ number_format($myStock->sum('revenue_generated'), 0) }}</b></p>
-      </div>
+    
+    <!-- Revenue -->
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #e67e22 0%, #f39c12 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
+                        <i class="fa fa-money text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Revenue</h6>
+                        <h3 class="text-white mb-0 font-weight-bold" style="font-size: 1.25rem;">{{ number_format($myStock->sum('revenue_generated'), 0) }}</h3>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Total TSH generated</small>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small primary coloured-icon" style="background-color: #764ba2;"><i class="icon fa fa-money-bill-wave fa-3x"></i>
-      <div class="info">
-        <h4>Value</h4>
-        <p><b>{{ number_format($myStock->sum('revenue_serving'), 0) }}</b></p>
-      </div>
+    
+    <!-- Stock Value -->
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #1d2b64 0%, #f8cdda 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
+                        <i class="fa fa-chart-line text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Stock Value</h6>
+                        <h3 class="text-white mb-0 font-weight-bold" style="font-size: 1.25rem;">{{ number_format($myStock->sum('revenue_serving'), 0) }}</h3>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Potential worth (TSH)</small>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
 </div>
 
 <div class="row">
