@@ -464,7 +464,7 @@
                   <div class="col-6 mb-3 pos-item-card" data-name="{{ strtolower($food->name) }}">
                     <div class="card h-100 border rounded-lg hover-shadow transition-all" onclick="addToPosCart('{{ addslashes($food->name) }}', {{ $food->price_tsh }}, null, null, 'food', '{{ $food->id }}', '{{ $food->image }}')" style="cursor: pointer;">
                       <div class="card-body p-2 text-center">
-                        <img src="{{ $food->image }}" class="img-fluid mb-2 rounded" style="height: 60px; object-fit: contain;">
+                        <img src="{{ $food->image }}" class="img-fluid mb-2 rounded" style="height: 60px; object-fit: contain;" onerror="this.onerror=null;this.src='https://img.icons8.com/color/144/restaurant.png'">
                         <h6 class="card-title mb-1 text-dark" style="font-size: 0.85rem; height: 1.5rem; overflow: hidden;">{{ $food->name }}</h6>
                         <div class="badge badge-light-info px-2 py-1 mb-2">{{ number_format($food->price_tsh) }} TZS</div>
                         <button class="btn btn-sm btn-primary btn-block"><i class="fa fa-plus"></i> ADD</button>
@@ -834,7 +834,7 @@ function renderPosCart() {
         html += '<div class="d-flex justify-content-between align-items-center mb-3 bg-white p-2 rounded shadow-sm">';
         html += '<div class="d-flex align-items-center" style="max-width: 65%;">';
         if (item.image) {
-            html += '<img src="' + item.image + '" class="mr-2 rounded" style="width: 40px; height: 40px; object-fit: cover;">';
+            html += '<img src="' + item.image + '" class="mr-2 rounded" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null;this.src=\'https://img.icons8.com/color/144/restaurant.png\'">';
         }
         html += '<div>';
         html += '<div class="font-weight-bold" style="font-size: 0.85rem; line-height: 1.2;">' + item.name + '</div>';

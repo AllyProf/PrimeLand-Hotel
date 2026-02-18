@@ -552,7 +552,7 @@
 
                       <div class="card-body p-3 d-flex flex-column h-100">
                         <div class="bg-light rounded p-2 mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                            <img src="{{ $drink->image ? asset('storage/'.$drink->image) : 'https://img.icons8.com/color/144/glass-with-straw.png' }}" class="img-fluid" style="max-height: 80px; object-fit: contain;">
+                            <img src="{{ $drink->image ? asset('storage/'.$drink->image) : 'https://img.icons8.com/color/144/glass-with-straw.png' }}" class="img-fluid" style="max-height: 80px; object-fit: contain;" onerror="this.onerror=null;this.src='https://img.icons8.com/color/144/glass-with-straw.png'">
                         </div>
                         
                         <div class="mb-3 text-center">
@@ -788,7 +788,7 @@ function renderPosCart() {
         html += `
             <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-2 rounded shadow-sm">
                 <div class="d-flex align-items-center" style="max-width: 65%;">
-                    ${item.image ? `<img src="${item.image}" class="mr-2 rounded" style="width: 40px; height: 40px; object-fit: cover;">` : ''}
+                    ${item.image ? `<img src="${item.image}" class="mr-2 rounded" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null;this.src='https://img.icons8.com/color/144/glass-with-straw.png'">` : ''}
                     <div>
                         <div class="font-weight-bold" style="font-size: 0.85rem; line-height: 1.2;">${item.name}</div>
                         <small class="text-muted">${item.price.toLocaleString()} x ${item.qty}</small>

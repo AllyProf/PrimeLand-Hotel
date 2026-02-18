@@ -270,7 +270,7 @@
     <div class="item-card food-item" data-name="{{ strtolower($food['name']) }}">
         <div class="item-img">
             @if(isset($food['image']))
-                <img src="{{ Storage::url($food['image']) }}" alt="{{ $food['name'] }}">
+                <img src="{{ asset('storage/' . $food['image']) }}" alt="{{ $food['name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($food['name']) }}&background=fff3e0&color=e77a31'">
             @else
                 <i class="fa fa-cutlery fa-2x text-muted"></i>
             @endif

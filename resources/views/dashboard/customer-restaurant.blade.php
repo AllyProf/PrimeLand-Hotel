@@ -431,7 +431,7 @@
                         <div class="card-image-holder">
                             <span class="category-label">{{ $food['category'] }}</span>
                             @if(isset($food['image']) && $food['image'])
-                                <img src="{{ Storage::url($food['image']) }}" alt="{{ $food['name'] }}">
+                                <img src="{{ asset('storage/' . $food['image']) }}" alt="{{ $food['name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($food['name']) }}&background=fff3e0&color=e77a31&size=200'">
                             @else
                                 <div class="opacity-25"><i class="fa fa-cutlery fa-5x"></i></div>
                             @endif

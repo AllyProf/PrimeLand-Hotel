@@ -60,10 +60,10 @@
           <!-- Product Image -->
           <div class="card-header bg-white p-0" style="height: 120px; overflow: hidden; border-radius: 4px 4px 0 0;">
             @if($product->image)
-              <img src="{{ \Illuminate\Support\Facades\Storage::url($product->image) }}" alt="{{ $product->name }}" 
+              <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" 
                    class="card-img-top" 
                    style="width: 100%; height: 100%; object-fit: cover;"
-                   onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/img/placeholder-product.png') }}';">
+                   onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
             @else
               <div class="d-flex align-items-center justify-content-center bg-light" style="width: 100%; height: 100%;">
                 <i class="fa fa-cube fa-3x text-muted"></i>
