@@ -179,10 +179,6 @@
                             @endif
                         </strong>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mt-1" style="font-size: 11px;">
-                        <span class="text-muted">Profit Potential:</span>
-                        <strong class="text-{{ $item['current_profit'] < 0 ? 'danger' : 'success' }}">{{ number_format($item['current_profit'], 0) }} <small>TSH</small></strong>
-                    </div>
                 </div>
             
             <!-- Expiry & Status Badges -->

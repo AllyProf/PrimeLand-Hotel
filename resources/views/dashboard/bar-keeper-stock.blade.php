@@ -3,8 +3,8 @@
 @section('content')
 <div class="app-title">
     <div>
-        <h1><i class="fa fa-cubes"></i> My Stock & Revenue Potential</h1>
-        <p>Manage your bar inventory and maximize revenue</p>
+        <h1><i class="fa fa-cubes"></i> My Stock Inventory</h1>
+        <p>Manage your bar inventory and track stock levels</p>
     </div>
     <ul class="app-breadcrumb breadcrumb">
         <li class="breadcrumb-item"><i class="fa fa-home fa-lg"></i></li>
@@ -47,14 +47,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md col-sm-6 mb-2">
-    <div class="widget-small success coloured-icon"><i class="icon fa fa-chart-line fa-3x"></i>
-      <div class="info">
-        <h4>Potential</h4>
-        <p><b>{{ number_format($myStock->sum('current_profit'), 0) }}</b></p>
-      </div>
-    </div>
-  </div>
+
 </div>
 
 <div class="row">
