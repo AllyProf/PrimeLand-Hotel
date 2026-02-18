@@ -306,24 +306,16 @@
                 <br><small class="text-muted">≈ {{ number_format($room->price_per_night * ($exchangeRate ?? 2400), 0) }} TZS</small>
               </td>
               <td>
-                @if($room->images && is_array($room->images) && count($room->images) > 0)
                   @php
-                    $validImagePath = null;
-                    foreach ($room->images as $path) {
-                        $p = ltrim(trim($path), '/');
-                        if (file_exists(public_path('storage/' . $p))) {
-                            $validImagePath = $p;
-                            break;
-                        }
-                    }
-                    $imageUrl = $validImagePath ? asset('storage/' . $validImagePath) : asset('dashboard_assets/images/room-placeholder.jpg');
+                    // Get the first image path
+                    $firstImage = is_array($room->images) ? ($room->images[0] ?? null) : $room->images;
+                    $imageUrl = $firstImage ? asset('storage/' . ltrim($firstImage, '/')) : asset('dashboard_assets/images/room-placeholder.jpg');
                   @endphp
                   <div class="room-images-preview">
-                    @if($validImagePath)
-                      <img src="{{ $imageUrl }}" alt="Room Image" class="room-thumbnail" data-toggle="modal" data-target="#imageModal{{ $room->id }}" onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
-                    @else
-                      <img src="{{ asset('dashboard_assets/images/room-placeholder.jpg') }}" alt="No Image" class="room-thumbnail opacity-50">
-                    @endif
+                    <img src="{{ $imageUrl }}" alt="Room Image" class="room-thumbnail" 
+                         onclick="viewRoom({{ $room->id }})" 
+                         onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
+
                     @if(count($room->images) > 1)
                       <span class="image-count">+{{ count($room->images) - 1 }}</span>
                     @endif
