@@ -15,38 +15,104 @@
 
 <!-- Stats Row -->
 <div class="row mb-4">
-  <div class="col-md-3 col-sm-6 mb-2">
-    <div class="widget-small primary coloured-icon"><i class="icon fa fa-utensils fa-2x"></i>
-      <div class="info">
-        <h6 class="text-uppercase small mb-1">Total Items</h6>
-        <p class="mb-0"><b>{{ $recipes->total() }}</b></p>
-      </div>
+    <!-- Total Items -->
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #4e54c8 0%, #8f94fb 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
+                        <i class="fa fa-utensils text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Total Items</h6>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ $recipes->total() }}</h3>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Total catalog size</small>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="col-md-3 col-sm-6 mb-2">
-    <div class="widget-small success coloured-icon"><i class="icon fa fa-check-circle fa-2x"></i>
-      <div class="info">
-        <h6 class="text-uppercase small mb-1">Available</h6>
-        <p class="mb-0"><b>{{ $recipes->where('is_available', true)->count() }}</b></p>
-      </div>
+    
+    <!-- Available -->
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #11998e 0%, #38ef7d 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
+                        <i class="fa fa-check-circle text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Available</h6>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ $recipes->where('is_available', true)->count() }}</h3>
+                    </div>
+                </div>
+                @php
+                    $totalCount = $recipes->total() > 0 ? $recipes->total() : 1;
+                    $availPercent = ($recipes->where('is_available', true)->count() / $totalCount) * 100;
+                @endphp
+                <div class="mt-3">
+                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: {{ $availPercent }}%; border-radius: 10px;" aria-valuenow="{{ $availPercent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">{{ round($availPercent) }}% of total menu</small>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="col-md-3 col-sm-6 mb-2">
-    <div class="widget-small warning coloured-icon"><i class="icon fa fa-eye-slash fa-2x"></i>
-      <div class="info">
-        <h6 class="text-uppercase small mb-1">Unavailable</h6>
-        <p class="mb-0"><b>{{ $recipes->where('is_available', false)->count() }}</b></p>
-      </div>
+    
+    <!-- Unavailable -->
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #f85032 0%, #f16232 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
+                        <i class="fa fa-eye-slash text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Unavailable</h6>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ $recipes->where('is_available', false)->count() }}</h3>
+                    </div>
+                </div>
+                @php
+                    $unavailPercent = ($recipes->where('is_available', false)->count() / $totalCount) * 100;
+                @endphp
+                <div class="mt-3">
+                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: {{ $unavailPercent }}%; border-radius: 10px;" aria-valuenow="{{ $unavailPercent }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">{{ round($unavailPercent) }}% out of stock</small>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-  <div class="col-md-3 col-sm-6 mb-2">
-    <div class="widget-small info coloured-icon"><i class="icon fa fa-list fa-2x"></i>
-      <div class="info">
-        <h6 class="text-uppercase small mb-1">Categories</h6>
-        <p class="mb-0"><b>{{ $categories->count() }}</b></p>
-      </div>
+    
+    <!-- Categories -->
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #1d2b64 0%, #f8cdda 100%);">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
+                        <i class="fa fa-list text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Categories</h6>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ $categories->count() }}</h3>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Active menu groups</small>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <div class="row">
