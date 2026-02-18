@@ -30,12 +30,12 @@
         </div>
         
         <div class="text-center mt-2 mb-3">
-            <!-- Product Image -->
-            @if(!empty($item['product_image']) && file_exists(public_path('storage/' . $item['product_image'])))
-                <img src="{{ asset('storage/' . $item['product_image']) }}" 
+            @if(!empty($item['product_image']))
+                <img src="{{ asset('storage/' . ltrim($item['product_image'], '/')) }}" 
                      alt="{{ $item['product_name'] }}" 
                      class="img-fluid rounded" 
-                     style="max-height: 150px; object-fit: cover;">
+                     style="max-height: 150px; object-fit: cover;"
+                     onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
             @else
                 <div class="d-flex align-items-center justify-content-center bg-light rounded" style="height: 150px; width: 100%;">
                     <i class="fa fa-cube fa-4x text-muted" style="opacity: 0.3;"></i>

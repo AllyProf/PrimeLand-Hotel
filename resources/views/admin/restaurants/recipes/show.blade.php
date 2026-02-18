@@ -17,7 +17,7 @@
     <div class="col-md-4">
         <div class="tile p-0">
             @if($recipe->image)
-                <img src="{{ Storage::url($recipe->image) }}" class="img-fluid w-100" style="object-fit: cover; max-height: 300px;">
+                <img src="{{ asset('storage/' . ltrim($recipe->image, '/')) }}" class="img-fluid w-100" style="object-fit: cover; max-height: 300px;" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($recipe->name) }}&background=fff3e0&color=e77a31&size=200'">
             @else
                 <div class="bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
                     <i class="fa fa-cutlery fa-5x text-muted"></i>

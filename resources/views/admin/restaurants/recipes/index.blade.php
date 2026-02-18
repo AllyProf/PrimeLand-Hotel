@@ -136,7 +136,7 @@
                                 <div class="row">
                                     <div class="col-4 pr-1">
                                         @if($recipe->image)
-                                            <img src="{{ Storage::url($recipe->image) }}" class="rounded shadow-sm" alt="{{ $recipe->name }}" style="width: 100%; height: 90px; object-fit: cover; border: 2px solid #f0f0f0;">
+                                            <img src="{{ asset('storage/' . ltrim($recipe->image, '/')) }}" class="rounded shadow-sm" alt="{{ $recipe->name }}" style="width: 100%; height: 90px; object-fit: cover; border: 2px solid #f0f0f0;" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($recipe->name) }}&background=fff3e0&color=e77a31&size=200'">
                                         @else
                                             <div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 100%; height: 90px;">
                                                 <i class="fa fa-utensils fa-2x text-muted opacity-50"></i>

@@ -505,7 +505,7 @@
                 <tr>
                     <td style="text-align: center; padding: 2px;">
                         @if($item->image)
-                            <img src="{{ Storage::url($item->image) }}" class="rounded shadow-sm" style="width: 30px; height: 30px; object-fit: cover; border: 1px solid #ddd;">
+                            <img src="{{ asset('storage/' . ltrim($item->image, '/')) }}" class="rounded shadow-sm" style="width: 30px; height: 30px; object-fit: cover; border: 1px solid #ddd;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
                         @else
                             <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; border: 1px solid #eee;">
                                 <i class="fa fa-glass text-muted" style="font-size: 10px;"></i>

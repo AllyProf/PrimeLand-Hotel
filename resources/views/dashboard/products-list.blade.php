@@ -193,7 +193,7 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
                       
                       <div class="card-header border-0 p-0 position-relative" style="height: 180px; background: #f0f2f5; cursor: pointer;">
                         @if($variant->image)
-                          <img src="{{ Storage::url($variant->image) }}" alt="{{ $variant->variant_name }}" 
+                          <img src="{{ asset('storage/' . ltrim($variant->image, '/')) }}" alt="{{ $variant->variant_name }}" 
                                class="w-100 h-100" style="object-fit: cover;"
                                onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
                         @else
@@ -369,7 +369,7 @@ function viewProduct(id) {
     const p = data.product;
     const variants = p.variants || [];
     
-    const mainImage = p.image ? '/storage/' + p.image : (variants.length > 0 && variants[0].image ? '/storage/' + variants[0].image : '{{ asset("dashboard_assets/images/room-placeholder.jpg") }}');
+    const mainImage = p.image ? '{{ asset("storage") }}/' + p.image : (variants.length > 0 && variants[0].image ? '{{ asset("storage") }}/' + variants[0].image : '{{ asset("dashboard_assets/images/room-placeholder.jpg") }}');
     
     let html = `
       <div class="row align-items-center">
@@ -404,7 +404,7 @@ function viewProduct(id) {
               ${variants.map(v => `
                 <tr>
                   <td>
-                    ${v.image ? `<img src="/storage/${v.image}" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">` : '<div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;"><i class="fa fa-image text-muted"></i></div>'}
+                    ${v.image ? `<img src="{{ asset('storage') }}/${v.image}" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">` : '<div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;"><i class="fa fa-image text-muted"></i></div>'}
                   </td>
                   <td class="font-weight-bold align-middle">
                       ${v.variant_name || 'Standard'} <span class="text-muted small">(${v.measurement})</span>

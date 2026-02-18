@@ -85,7 +85,7 @@
             <!-- Product Image Header -->
             <div class="position-relative" style="height: 150px; background: #f0f2f5; overflow: hidden; border-bottom: 1px solid #eee;">
                 @if($item['product_image'])
-                    <img src="{{ Storage::url($item['product_image']) }}" alt="{{ $item['product_name'] }}" class="w-100 h-100" style="object-fit: cover;">
+                    <img src="{{ asset('storage/' . ltrim($item['product_image'], '/')) }}" alt="{{ $item['product_name'] }}" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
                 @else
                     <div class="d-flex align-items-center justify-content-center h-100" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
                         <i class="fa fa-wine-glass fa-4x text-white opacity-50"></i>

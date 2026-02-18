@@ -113,8 +113,8 @@
                     <div class="form-group">
                         <label>Current Image</label>
                         <div>
-                            <img src="{{ Storage::url($recipe->image) }}" alt="{{ $recipe->name }}" 
-                                 class="img-thumbnail" style="max-height: 200px;">
+                            <img src="{{ asset('storage/' . ltrim($recipe->image, '/')) }}" alt="{{ $recipe->name }}" 
+                                 class="img-thumbnail" style="max-height: 200px;" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($recipe->name) }}&background=fff3e0&color=e77a31&size=200'">
                         </div>
                     </div>
                     @endif
