@@ -170,15 +170,7 @@
                         <span class="text-muted">Profit Generated:</span>
                         <strong class="text-info">{{ number_format($item['profit_generated'] ?? 0, 0) }} <small>TSH</small></strong>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mt-1" style="font-size: 11px;">
-                        <span class="text-muted">Buying Price (Avg):</span>
-                        <strong class="{{ $item['unit_cost'] > $item['selling_price_per_pic'] ? 'text-danger' : 'text-dark' }}">
-                            {{ number_format($item['unit_cost'], 0) }} <small>TSH</small>
-                            @if($item['unit_cost'] > $item['selling_price_per_pic'])
-                                <i class="fa fa-arrow-up text-danger" title="Cost is higher than Selling Price!"></i>
-                            @endif
-                        </strong>
-                    </div>
+
                 </div>
             
             <!-- Expiry & Status Badges -->
