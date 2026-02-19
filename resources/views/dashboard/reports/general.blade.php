@@ -8,11 +8,6 @@
     <h1><i class="fa fa-dashboard text-primary"></i> General Performance Overview</h1>
     <p>Strategic analysis and revenue trends</p>
   </div>
-  <div class="d-print-none">
-    <button onclick="window.print()" class="btn btn-secondary shadow-sm">
-        <i class="fa fa-print"></i> Print Executive Summary
-    </button>
-  </div>
 </div>
 
 <!-- DASHBOARD VIEW (Screen Only) -->
