@@ -1,7 +1,9 @@
 @extends('dashboard.layouts.reports')
 
 @section('reports-content')
-<div class="app-title d-flex justify-content-between align-items-center">
+@include('dashboard.reports.partials.receipt-styles')
+
+<div class="app-title d-flex justify-content-between align-items-center d-print-none">
   <div>
     <h1><i class="fa fa-dashboard text-primary"></i> General Performance Overview</h1>
     <p>Strategic analysis and revenue trends</p>
@@ -13,8 +15,11 @@
   </div>
 </div>
 
+<!-- DASHBOARD VIEW (Screen Only) -->
+<div class="d-print-none">
+
 <!-- Advanced Report Filter -->
-<div class="row mb-4 d-print-none">
+<div class="row mb-4">
   <div class="col-md-12">
     <div class="tile border-0 shadow-sm" style="border-radius: 15px;">
       <div class="tile-body">
@@ -188,6 +193,158 @@
     </div>
 </div>
 
+</div>{{-- end d-print-none --}}
+
+<!-- OFFICIAL PRINTABLE VERSION (Hidden on Screen) -->
+<div class="d-none d-print-block">
+    <div class="receipt-report-container">
+        <!-- Header -->
+        <div class="receipt-report-header">
+            <div class="logo-container">
+                <img src="{{ asset('royal-master/image/logo/Logo.png') }}" alt="PrimeLand Logo">
+            </div>
+            <h1>PRIMELAND HOTEL</h1>
+            <div style="line-height: 1.6;">
+                <p><strong>Location:</strong> Sokoine Road - Moshi, Kilimanjaro - Tanzania</p>
+                <p><strong>Mobile/WhatsApp:</strong> 0677-155-156 / +255 677-155-157</p>
+                <p><strong>Email:</strong> info@primelandhotel.co.tz / infoprimelandhotel@gmail.com</p>
+            </div>
+            <p style="margin-top: 20px; font-size: 22px; font-weight: bold; color: #e07632; text-decoration: underline;">GENERAL REVENUE PERFORMANCE REPORT</p>
+        </div>
+
+        <div class="receipt-report-number">
+            <strong>Report #:</strong> GEN-RPT-{{ date('Ymd') }}-{{ strtoupper(substr(md5('gen'.$period.$startDate.$endDate), 0, 6)) }}
+        </div>
+
+        <div class="receipt-report-title">
+            PERIOD:
+            @if($period == 'today') Today — {{ \Carbon\Carbon::parse($startDate)->format('l, F d, Y') }}
+            @elseif($period == 'week') This Week — {{ \Carbon\Carbon::parse($startDate)->format('d M') }} to {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+            @elseif($period == 'month') This Month — {{ \Carbon\Carbon::parse($startDate)->format('F Y') }}
+            @elseif($period == 'year') This Year — {{ \Carbon\Carbon::parse($startDate)->format('Y') }}
+            @else {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} – {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}
+            @endif
+        </div>
+
+        <div class="receipt-two-column">
+            <div class="receipt-column">
+                <div class="receipt-info-section">
+                    <h3>1. Executive Summary</h3>
+                    <div class="receipt-info-row">
+                        <span class="receipt-info-label">Report Period:</span>
+                        <span class="receipt-info-value">{{ ucfirst($period) }}</span>
+                    </div>
+                    <div class="receipt-info-row">
+                        <span class="receipt-info-label">Total Reservations:</span>
+                        <span class="receipt-info-value">{{ $totalBookings }} Bookings</span>
+                    </div>
+                    <div class="receipt-info-row">
+                        <span class="receipt-info-label">Occupancy Rate:</span>
+                        <span class="receipt-info-value">{{ $occupancyRate }}%</span>
+                    </div>
+                    <div class="receipt-info-row">
+                        <span class="receipt-info-label">Rooms Occupied:</span>
+                        <span class="receipt-info-value">{{ $occupiedRooms }} / {{ $totalRooms }} Rooms</span>
+                    </div>
+                    <div class="receipt-info-row">
+                        <span class="receipt-info-label">Avg Revenue / Booking:</span>
+                        <span class="receipt-info-value">{{ $totalBookings > 0 ? number_format($roomRevenueTZS / $totalBookings, 0) : 0 }} TZS</span>
+                    </div>
+                </div>
+            </div>
+            <div class="receipt-column">
+                <div class="receipt-info-section">
+                    <h3>2. Revenue Overview</h3>
+                    <div class="receipt-info-row">
+                        <span class="receipt-info-label">Room Bookings:</span>
+                        <span class="receipt-info-value">{{ number_format($roomRevenueTZS) }} TZS</span>
+                    </div>
+                    <div class="receipt-info-row">
+                        <span class="receipt-info-label">F&B Services:</span>
+                        <span class="receipt-info-value">{{ number_format($serviceRevenueTZS) }} TZS</span>
+                    </div>
+                    <div class="receipt-info-row">
+                        <span class="receipt-info-label">Day Services:</span>
+                        <span class="receipt-info-value">{{ number_format($dayServiceRevenueTZS) }} TZS</span>
+                    </div>
+                    <div class="receipt-info-row mt-2 pt-2" style="border-top: 2px solid #e07632;">
+                        <span class="receipt-info-label"><strong>GRAND TOTAL:</strong></span>
+                        <span class="receipt-info-value"><strong class="amount-highlight">{{ number_format($totalRevenueTZS) }} TZS</strong></span>
+                    </div>
+                    <div style="text-align: right; margin-top: 5px;">
+                        <small class="text-muted">≈ ${{ number_format($totalRevenueUSD, 2) }} USD</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="receipt-info-section">
+            <h3>3. Revenue Source Breakdown</h3>
+            <table class="receipt-details-table">
+                <thead>
+                    <tr>
+                        <th>Revenue Stream</th>
+                        <th class="text-right">Amount (TZS)</th>
+                        <th class="text-right">% of Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Room Bookings & Accommodation</td>
+                        <td class="text-right">{{ number_format($roomRevenueTZS) }}</td>
+                        <td class="text-right">{{ $totalRevenueTZS > 0 ? round(($roomRevenueTZS / $totalRevenueTZS) * 100, 1) : 0 }}%</td>
+                    </tr>
+                    <tr>
+                        <td>Food, Drinks & Room Service (F&B)</td>
+                        <td class="text-right">{{ number_format($serviceRevenueTZS) }}</td>
+                        <td class="text-right">{{ $totalRevenueTZS > 0 ? round(($serviceRevenueTZS / $totalRevenueTZS) * 100, 1) : 0 }}%</td>
+                    </tr>
+                    <tr>
+                        <td>Pool, Spa & Day Activities</td>
+                        <td class="text-right">{{ number_format($dayServiceRevenueTZS) }}</td>
+                        <td class="text-right">{{ $totalRevenueTZS > 0 ? round(($dayServiceRevenueTZS / $totalRevenueTZS) * 100, 1) : 0 }}%</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td><strong>TOTAL REVENUE</strong></td>
+                        <td class="text-right"><strong>{{ number_format($totalRevenueTZS) }}</strong></td>
+                        <td class="text-right"><strong>100%</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="receipt-info-section">
+            <div class="recommendation-box info">
+                <h4><i class="fa fa-info-circle"></i> Auditor's Note</h4>
+                <p>This report consolidates data from room bookings, POS service requests, and day service entries for the {{ ucfirst($period) }} period.
+                All figures reflect payments and completions recorded in the management system and are subject to final audit verification.</p>
+            </div>
+        </div>
+
+        <!-- Signature Grid -->
+        <div style="display: flex; justify-content: space-between; margin-top: 60px; padding: 0 40px;">
+            <div style="width: 200px; text-align: center;">
+                <div style="border-top: 1px solid #333; margin-bottom: 5px;"></div>
+                <strong style="font-size: 11px;">Accountant / Controller</strong>
+                <p style="font-size: 10px; margin-top: 3px; color: #666;">(Signature & Date)</p>
+            </div>
+            <div style="width: 200px; text-align: center;">
+                <div style="border-top: 1px solid #333; margin-bottom: 5px;"></div>
+                <strong style="font-size: 11px;">Hotel Manager</strong>
+                <p style="font-size: 10px; margin-top: 3px; color: #666;">(Signature & Date)</p>
+            </div>
+        </div>
+
+        <div class="receipt-footer">
+            <p><strong>PrimeLand Hotel Management System</strong></p>
+            <p>Generated on {{ now()->format('F d, Y \a\t g:i A') }} by {{ auth('staff')->user()->name }}</p>
+            <p class="powered-by">Powered By EmCa Technologies</p>
+        </div>
+    </div>
+</div>
+
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -299,13 +456,6 @@ function toggleDateInputs() {
 <style>
     .tile { transition: all 0.3s ease; }
     .card:hover { transform: translateY(-5px); transition: transform 0.3s; }
-    @media print {
-        .d-print-none { display: none !important; }
-        .app-content { margin: 0 !important; padding: 0 !important; background: white !important; }
-        .card { border: 1px solid #ddd !important; background: white !important; color: black !important; }
-        .text-white-50 { color: #666 !important; }
-        .tile { box-shadow: none !important; border: 1px solid #eee !important; }
-    }
 </style>
 @endsection
 
