@@ -382,7 +382,7 @@
         </div>
 
         <div class="receipt-info-section">
-            <h3>4. Forward Forecast ({{ $tomorrow->format('d M, Y') }})</h3>
+            <h3>4. Forward Forecast ({{ $selectedDate->copy()->addDay()->format('d M, Y') }})</h3>
             <div class="receipt-two-column mb-0">
                 <div class="receipt-column">
                     <div class="receipt-info-row">
