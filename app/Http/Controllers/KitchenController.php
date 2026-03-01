@@ -19,6 +19,9 @@ use App\Models\KitchenStockMovement;
 use App\Models\ServiceRequest;
 use App\Models\Service;
 use App\Mail\StaffTransferNotificationMail;
+use App\Mail\ShoppingListFinalizedMail;
+use App\Services\SmsService;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class KitchenController extends Controller
@@ -381,6 +384,15 @@ class KitchenController extends Controller
                 
                 $item->update($updateData);
 
+                // Auto-resolve and link variant if missing
+                if (!$item->product_variant_id) {
+                    $variant = $item->productVariant; // This triggers the smart matching logic
+                    if ($variant) {
+                        $item->update(['product_variant_id' => $variant->id]);
+                    }
+                }
+
+
                 // Update purchase request status if it exists
                 if ($item->purchaseRequest && $updateData['is_purchased']) {
                     $item->purchaseRequest->update(['status' => 'purchased']);
@@ -412,6 +424,34 @@ class KitchenController extends Controller
             if ($request->has('finalize')) {
                 $shoppingList->status = 'completed';
                 // Here we should probably officially add to stock if not done above
+                
+                // NOTIFY OWNER: SMS and Email
+                try {
+                    $owner = Staff::where('role', 'owner')->first();
+                    if ($owner) {
+                        // 1. Send SMS
+                        if ($owner->phone) {
+                            $smsService = new SmsService();
+                            $smsService->sendShoppingListFinalizedNotification(
+                                $owner->phone,
+                                $owner->name,
+                                $shoppingList->name,
+                                $shoppingList->total_actual_cost,
+                                $shoppingList->items->count()
+                            );
+                        }
+
+                        // 2. Send Email
+                        if ($owner->email) {
+                            Mail::to($owner->email)->send(new ShoppingListFinalizedMail($shoppingList));
+                        }
+                    } else {
+                        Log::warning('[ShoppingList] Finalization notification failed: Owner staff not found.');
+                    }
+                } catch (\Exception $e) {
+                    Log::error('[ShoppingList] Error sending finalization notifications: ' . $e->getMessage());
+                    // We don't want to break the finalization if notifications fail
+                }
             }
             
             $shoppingList->save();
@@ -581,8 +621,31 @@ class KitchenController extends Controller
         })->toArray();
         
         $activePage = 'transfers';
-        
-        return view('admin.restaurants.shopping_list.transfers', compact('itemsByDepartment', 'activePage'));
+
+        // Compute current bar stock for each linked variant
+        $variantStockMap = [];
+        foreach ($itemsByDepartment as $dept => $deptItems) {
+            if (strtolower($dept) !== 'bar') continue;
+            foreach ($deptItems as $item) {
+                $v = $item->productVariant;
+                if (!$v || isset($variantStockMap[$v->id])) continue;
+                $totalReceived = \App\Models\StockTransfer::where('product_variant_id', $v->id)
+                    ->where('status', 'completed')->sum('quantity_transferred');
+                $barCategories = ['drinks','alcoholic_beverage','non_alcoholic_beverage','water','juices','energy_drinks','food','restaurant','spirits','wines','cocktails','hot_beverages'];
+                $sales = \App\Models\ServiceRequest::where('status', 'completed')
+                    ->whereHas('service', fn($q) => $q->whereIn('category', $barCategories))
+                    ->get()
+                    ->filter(fn($s) => ($s->service_specific_data['product_variant_id'] ?? null) == $v->id);
+                $totalSold = 0;
+                foreach ($sales as $s) {
+                    $isPic = abs((float)$s->unit_price_tsh - (float)$v->selling_price_per_pic) < 100;
+                    $totalSold += $isPic ? $s->quantity : ($s->quantity / max(1, $v->servings_per_pic));
+                }
+                $variantStockMap[$v->id] = max(0, $totalReceived - $totalSold);
+            }
+        }
+
+        return view('admin.restaurants.shopping_list.transfers', compact('itemsByDepartment', 'activePage', 'variantStockMap'));
     }
 
     // === KITCHEN STOCK VIEW ===
@@ -768,7 +831,39 @@ class KitchenController extends Controller
             'recipes'
         ));
     }
+
+    /**
+     * Dedicated KDS (Kitchen Display System) Monitor
+     * High-visibility real-time screen for chefs to track incoming orders.
+     */
+    public function kds()
+{
+    $foodCategories = ['food', 'restaurant'];
+    $recentCutoff = now()->subMinutes(10); // Show cancellations for only 10 minutes (to alert the chef)
+    $todayStart = now()->startOfDay(); // Only show orders from today
     
+    $pendingOrders = \App\Models\ServiceRequest::with(['booking.room', 'service', 'approvedBy'])
+        ->where(function($q) use ($foodCategories) {
+            $q->whereHas('service', function($query) use ($foodCategories) {
+                $query->whereIn('category', $foodCategories);
+            })->orWhere('service_id', 4);
+        })
+        // Only show orders from today to avoid clutter from forgotten yesterday orders
+        ->where('requested_at', '>=', $todayStart)
+        // Exclude orders that are already paid/room_charged
+        ->whereNotIn('payment_status', ['paid', 'room_charge'])
+        ->where(function($q) use ($recentCutoff) {
+            $q->whereIn('status', ['pending', 'approved', 'preparing'])
+              ->orWhere(function($sub) use ($recentCutoff) {
+                  $sub->where('status', 'cancelled')
+                      ->where('updated_at', '>=', $recentCutoff);
+              });
+        })
+        ->orderBy('requested_at', 'asc') // FIFO for KDS
+        ->get();
+
+    return view('admin.restaurants.kitchen.kds', compact('pendingOrders'));
+}    
     /**
      * Show transfer items to departments page
      */
@@ -822,8 +917,31 @@ class KitchenController extends Controller
         })->toArray();
         
         $activePage = 'transfer';
-        
-        return view('admin.restaurants.shopping_list.transfer', compact('shoppingList', 'itemsByDepartment', 'activePage'));
+
+        // Compute current bar stock for each linked variant
+        $variantStockMap = [];
+        foreach ($itemsByDepartment as $dept => $deptItems) {
+            if (strtolower($dept) !== 'bar') continue;
+            foreach ($deptItems as $item) {
+                $v = $item->productVariant;
+                if (!$v || isset($variantStockMap[$v->id])) continue;
+                $totalReceived = \App\Models\StockTransfer::where('product_variant_id', $v->id)
+                    ->where('status', 'completed')->sum('quantity_transferred');
+                $barCategories = ['drinks','alcoholic_beverage','non_alcoholic_beverage','water','juices','energy_drinks','food','restaurant','spirits','wines','cocktails','hot_beverages'];
+                $sales = \App\Models\ServiceRequest::where('status', 'completed')
+                    ->whereHas('service', fn($q) => $q->whereIn('category', $barCategories))
+                    ->get()
+                    ->filter(fn($s) => ($s->service_specific_data['product_variant_id'] ?? null) == $v->id);
+                $totalSold = 0;
+                foreach ($sales as $s) {
+                    $isPic = abs((float)$s->unit_price_tsh - (float)$v->selling_price_per_pic) < 100;
+                    $totalSold += $isPic ? $s->quantity : ($s->quantity / max(1, $v->servings_per_pic));
+                }
+                $variantStockMap[$v->id] = max(0, $totalReceived - $totalSold);
+            }
+        }
+
+        return view('admin.restaurants.shopping_list.transfer', compact('shoppingList', 'itemsByDepartment', 'activePage', 'variantStockMap'));
     }
     
     /**
@@ -1031,15 +1149,22 @@ class KitchenController extends Controller
         
         DB::beginTransaction();
         try {
+            $transfersByDept = [];
+            $manager = Auth::guard('staff')->user();
+
             foreach ($request->transfers as $transferData) {
                 $item = ShoppingListItem::findOrFail($transferData['item_id']);
+                $deptName = $transferData['department'];
                 
                 // Update item with transfer info
                 $item->update([
-                    'transferred_to_department' => $transferData['department'],
+                    'transferred_to_department' => $deptName,
                     'is_received_by_department' => false, // Ensure it's false until staff receives it
                     'received_by_department_at' => null,
                 ]);
+
+                // Collect stats for notification
+                $transfersByDept[$deptName] = ($transfersByDept[$deptName] ?? 0) + 1;
                 
                 // Update product variant with PIC configuration if provided (usually for Bar)
                 $variant = $item->fresh()->productVariant;
@@ -1069,9 +1194,53 @@ class KitchenController extends Controller
 
                     $variant->update($updateData);
                 }
+
+                // Create official StockTransfer record so it appears in the Bar/Chef dashboard
+                if ($variant) {
+                    // Find a receiver for this department
+                    $roleMap = [
+                        'Housekeeping' => ['housekeeper'],
+                        'Reception' => ['reception'],
+                        'Bar' => ['bar_keeper', 'bar keeper', 'bartender'],
+                        'Food' => ['head_chef', 'head chef', 'chef'],
+                        'Kitchen' => ['head_chef', 'head chef', 'chef'],
+                    ];
+                    $roles = $roleMap[$deptName] ?? [];
+                    $receiver = Staff::where('is_active', true)
+                        ->where(function($q) use ($deptName, $roles) {
+                            $q->where('department', $deptName);
+                            if (!empty($roles)) {
+                                $q->orWhereIn('role', $roles);
+                            }
+                        })
+                        ->first();
+
+                    \App\Models\StockTransfer::create([
+                        'transfer_reference' => \App\Models\StockTransfer::generateReference(),
+                        'product_id' => $variant->product_id,
+                        'product_variant_id' => $variant->id,
+                        'quantity_transferred' => $transferData['quantity'] ?? $item->purchased_quantity,
+                        'quantity_unit' => 'pcs', // Using direct quantity from shopping
+                        'transferred_by' => $manager->id,
+                        'received_by' => $receiver ? $receiver->id : $manager->id, // Fallback to manager if no staff found
+                        'status' => 'pending',
+                        'transfer_date' => now(),
+                        'unit_cost' => $item->unit_price ?? 0,
+                        'total_cost' => $item->purchased_cost ?? 0,
+                        'expiry_date' => $item->expiry_date,
+                        'notes' => "Transferred from Shopping List: " . ($shoppingList->name ?? 'Market Purchase'),
+                        'selling_price_per_pic' => $variant->selling_price_per_pic,
+                        'selling_price_per_serving' => $variant->selling_price_per_serving,
+                        'servings_per_pic' => $variant->servings_per_pic,
+                    ]);
+                }
             }
             
             DB::commit();
+
+            // Notify departments via SMS
+            $this->notifyDepartmentsOfTransfer($transfersByDept);
+
             return redirect()->route('admin.restaurants.shopping-list.index')
                 ->with('success', 'Items transferred to departments. Departments can now receive them.');
         } catch (\Exception $e) {
@@ -1079,6 +1248,58 @@ class KitchenController extends Controller
             return back()->with('error', 'Error transferring items: ' . $e->getMessage());
         }
     }
+
+
+    /**
+     * Notify departments when items are transferred to them.
+     */
+    private function notifyDepartmentsOfTransfer(array $transfersByDept)
+    {
+        try {
+            $smsService = new SmsService();
+            
+            // Map common department names to potential staff roles for notification coverage
+            $roleMap = [
+                'Housekeeping' => ['housekeeper'],
+                'Reception' => ['reception'],
+                'Bar' => ['bar_keeper', 'bar keeper', 'bartender'],
+                'Food' => ['head_chef', 'head chef', 'chef'],
+                'Kitchen' => ['head_chef', 'head chef', 'chef'],
+            ];
+
+            foreach ($transfersByDept as $deptName => $count) {
+                $roles = $roleMap[$deptName] ?? [];
+                
+                // Find active staff in this department OR with matching roles
+                $staffMembers = Staff::where('is_active', true)
+                    ->where(function($q) use ($deptName, $roles) {
+                        $q->where('department', $deptName);
+                        if (!empty($roles)) {
+                            $q->orWhereIn('role', $roles);
+                        }
+                    })
+                    ->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+                    ->get();
+
+                foreach ($staffMembers as $staff) {
+                    try {
+                        $smsService->sendDepartmentTransferNotification(
+                            $staff->phone,
+                            $staff->name ?? 'Staff',
+                            $deptName,
+                            $count
+                        );
+                    } catch (\Exception $smsEx) {
+                        Log::error("[TransferSMS] Failed to send SMS to staff {$staff->id}: " . $smsEx->getMessage());
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("[TransferNotification] Master error: " . $e->getMessage());
+        }
+    }
+
 
     /**
      * View Kitchen Inventory (Mirror Housekeeper workflow)
@@ -1147,6 +1368,31 @@ class KitchenController extends Controller
             
             $item->save();
             
+            // Check for low stock and send SMS
+            if ($item->current_stock <= $item->minimum_stock) {
+                try {
+                    $smsService = new SmsService();
+                    $manager = Staff::whereIn('role', ['manager', 'owner', 'super_admin'])
+                        ->whereNotNull('phone')
+                        ->where('is_active', true)
+                        ->orderByRaw("FIELD(role, 'manager', 'owner', 'super_admin')")
+                        ->first();
+                    
+                    if ($manager) {
+                        $smsService->sendLowStockAlert(
+                            $manager->phone,
+                            $manager->name,
+                            $item->name,
+                            (float)$item->current_stock,
+                            (float)$item->minimum_stock,
+                            'Kitchen'
+                        );
+                    }
+                } catch (\Exception $smsEx) {
+                    Log::error('[LowStockSMS] Kitchen error: ' . $smsEx->getMessage());
+                }
+            }
+            
             KitchenStockMovement::create([
                 'inventory_item_id' => $item->id,
                 'movement_type' => $request->type,
@@ -1176,6 +1422,32 @@ class KitchenController extends Controller
     {
         $request->validate(['minimum_stock' => 'required|numeric|min:0']);
         $item->update(['minimum_stock' => $request->minimum_stock]);
+
+        // Check for low stock Alert when setting it
+        if ($item->current_stock <= $item->minimum_stock) {
+            try {
+                $smsService = new SmsService();
+                $manager = Staff::whereIn('role', ['manager', 'owner', 'super_admin'])
+                    ->whereNotNull('phone')
+                    ->where('is_active', true)
+                    ->orderByRaw("FIELD(role, 'manager', 'owner', 'super_admin')")
+                    ->first();
+                
+                if ($manager) {
+                    $smsService->sendLowStockAlert(
+                        $manager->phone,
+                        $manager->name,
+                        $item->name,
+                        (float)$item->current_stock,
+                        (float)$item->minimum_stock,
+                        'Kitchen'
+                    );
+                }
+            } catch (\Exception $smsEx) {
+                Log::error('[LowStockSMS] Kitchen error: ' . $smsEx->getMessage());
+            }
+        }
+
         return response()->json(['success' => true, 'message' => 'Minimum stock updated.']);
     }
 
@@ -1257,6 +1529,31 @@ class KitchenController extends Controller
         try {
             $item->current_stock -= $request->quantity;
             $item->save();
+
+            // Check for low stock and send SMS
+            if ($item->current_stock <= $item->minimum_stock) {
+                try {
+                    $smsService = new SmsService();
+                    $manager = Staff::whereIn('role', ['manager', 'owner', 'super_admin'])
+                        ->whereNotNull('phone')
+                        ->where('is_active', true)
+                        ->orderByRaw("FIELD(role, 'manager', 'owner', 'super_admin')")
+                        ->first();
+                    
+                    if ($manager) {
+                        $smsService->sendLowStockAlert(
+                            $manager->phone,
+                            $manager->name,
+                            $item->name,
+                            (float)$item->current_stock,
+                            (float)$item->minimum_stock,
+                            'Kitchen'
+                        );
+                    }
+                } catch (\Exception $smsEx) {
+                    Log::error('[LowStockSMS] Kitchen error: ' . $smsEx->getMessage());
+                }
+            }
 
             KitchenStockMovement::create([
                 'inventory_item_id' => $item->id,
@@ -1410,7 +1707,7 @@ class KitchenController extends Controller
         $totalRev = $productionData->sum('total_revenue');
         $totalQty = $productionData->sum('total_qty');
 
-        $activePage = 'kitchen/reports';
+        $activePage = 'chef-master/reports';
         return view('admin.restaurants.kitchen.reports', compact(
             'reportData', 
             'productionData',

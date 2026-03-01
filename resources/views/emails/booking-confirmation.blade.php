@@ -1,35 +1,19 @@
 <x-mail::message>
-# Booking Confirmation
+# {{ ($booking->status === 'pending' || (isset($generalNotes) && str_contains(strtolower($generalNotes), 'proforma'))) ? 'Proforma Invoice / Quotation' : 'Booking Confirmation' }}
 
 Hello {{ $booking->guest_name }},
 
 Thank you for your booking at PrimeLand Hotel! We're excited to host you.
 
-## Booking Details
+## Stay Summary
 
-**Booking Reference:** {{ $booking->booking_reference }}
-
-**Room:** {{ $booking->room->room_number }} ({{ $booking->room->room_type }})
-
-**Check-in:** {{ \Carbon\Carbon::parse($booking->check_in)->format('F d, Y') }}
-
-**Check-out:** {{ \Carbon\Carbon::parse($booking->check_out)->format('F d, Y') }}
-
+**Booking Reference:** {{ $booking->booking_reference }}  
+**Room:** {{ $booking->room->room_number }} ({{ $booking->room->room_type }})  
+**Check-in:** {{ \Carbon\Carbon::parse($booking->check_in)->format('F d, Y') }}  
+**Check-out:** {{ \Carbon\Carbon::parse($booking->check_out)->format('F d, Y') }}  
 **Number of Nights:** {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays($booking->check_out) }} night(s)
 
-**Total Amount:** ${{ number_format($booking->total_price, 2) }}
-
-@if(isset($paymentPercentage) && $paymentPercentage)
-**Payment Status:** {{ $paymentPercentage }}% Paid
-**Amount Paid:** ${{ number_format($booking->amount_paid ?? ($booking->total_price * $paymentPercentage / 100), 2) }}
-**Remaining Amount:** ${{ number_format($remainingAmount ?? ($booking->total_price - ($booking->amount_paid ?? 0)), 2) }}
-@else
-**Payment Status:** {{ $booking->payment_status === 'paid' ? 'Paid' : ($booking->payment_status === 'partial' ? 'Partially Paid' : 'Pending Payment') }}
-@if($booking->amount_paid)
-**Amount Paid:** ${{ number_format($booking->amount_paid, 2) }}
-**Remaining Amount:** ${{ number_format($booking->total_price - $booking->amount_paid, 2) }}
-@endif
-@endif
+Please find your **Booking Invoice & Receipt (PDF)** attached for the full cost breakdown and payment details.
 
 ## Your Account Credentials
 

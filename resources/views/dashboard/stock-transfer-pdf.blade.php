@@ -115,7 +115,7 @@
         <div class="header">
             <h1>PRIMELAND HOTEL</h1>
             <p>Sokoine Road - Moshi Kilimanjaro - Tanzania</p>
-            <p>Phone: 0677-155-156 / +255 677-155-157</p>
+            <p>Phone: 0677-155-156</p>
         </div>
 
         <div class="title-box">
@@ -189,7 +189,7 @@
 
         <div class="footer">
             <p>PrimeLand Hotel - Excellence in Hospitality</p>
-            <p>Powered By EmCa Technologies</p>
+            <p>Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
         </div>
     </div>
 

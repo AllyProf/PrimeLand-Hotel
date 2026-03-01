@@ -56,4 +56,16 @@ return [
         'maps_api_key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    'sms' => [
+        'token'     => env('SMS_TOKEN'),
+        'sender_id' => env('SMS_SENDER_ID', 'PrimeLand'),
+        'base_url'  => env('SMS_BASE_URL', 'https://messaging-service.co.tz'),
+    ],
+
+    'whatsapp' => [
+        'token'     => env('WHATSAPP_TOKEN', env('SMS_TOKEN')),
+        'sender_id' => env('WHATSAPP_SENDER_ID', env('SMS_SENDER_ID', 'PrimeLand')),
+        'base_url'  => env('WHATSAPP_BASE_URL', 'https://messaging-service.co.tz'),
+    ],
+
 ];

@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!--<< Header Area >>-->
+    <head>
+        <!-- ========== Meta Tags ========== -->
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="iamlabib">
+        <meta name="description" content="Laxary- Hotel & Resort Booking HTML Template">
+        <!-- ======== Page title ============ -->
+        <title>Laxary- Hotel & Resort Booking HTML Template</title>
+        <!--<< Favcion >>-->
+        <link rel="shortcut icon" href="assets/img/favicon.svg">
+        <!--<< Bootstrap min.css >>-->
+        <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+        <!--<< All Min Css >>-->
+        <link rel="stylesheet" href="assets/css/all.min.css">
+        <!--<< Animate.css >>-->
+        <link rel="stylesheet" href="assets/css/animate.css">
+        <!--<< Magnific Popup.css >>-->
+        <link rel="stylesheet" href="assets/css/magnific-popup.css">
+        <!--<< MeanMenu.css >>-->
+        <link rel="stylesheet" href="assets/css/meanmenu.css">
+        <!--<< Swiper Bundle.css >>-->
+        <link rel="stylesheet" href="assets/css/swiper-bundle.min.css">
+        <!--<< Nice Select.css >>-->
+        <link rel="stylesheet" href="assets/css/nice-select.css">
+        <!--<< Main.css >>-->
+        <link rel="stylesheet" href="assets/css/flaticon.css">
+         <!--<< Main.css >>-->
+        <link rel="stylesheet" href="assets/css/main.css">
+    </head>
+    <body>
+
+        <!-- Preloader Start -->
+        <div id="preloader" class="preloader">
+            <div class="animation-preloader">
+                <div class="spinner">                
+                </div>
+                <div class="txt-loading">
+                    <span data-text-preloader="L" class="letters-loading">
+                        L
+                    </span>
+                    <span data-text-preloader="A" class="letters-loading">
+                        A
+                    </span>
+                    <span data-text-preloader="X" class="letters-loading">
+                        X
+                    </span>
+                    <span data-text-preloader="A" class="letters-loading">
+                        A
+                    </span>
+                    <span data-text-preloader="R" class="letters-loading">
+                        R
+                    </span>
+                    <span data-text-preloader="Y" class="letters-loading">
+                        Y
+                    </span>
+                </div>
+                <p class="text-center">Loading</p>
+            </div>
+            <div class="loader">
+                <div class="row">
+                    <div class="col-3 loader-section section-left">
+                        <div class="bg"></div>
+                    </div>
+                    <div class="col-3 loader-section section-left">
+                        <div class="bg"></div>
+                    </div>
+                    <div class="col-3 loader-section section-right">
+                        <div class="bg"></div>
+                    </div>
+                    <div class="col-3 loader-section section-right">
+                        <div class="bg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>  
+
+        <!-- GT Back To Top Start -->
+        <button id="gt-back-top" class="gt-back-to-top show">
+          <i class="fa-solid fa-chevrons-up"></i>
+        </button>
+
+        <!-- GT MouseCursor Start -->
+        <div class="mouseCursor cursor-outer"></div>
+        <div class="mouseCursor cursor-inner"></div>
+
+         <!-- Offcanvas Area Start -->
+        <div class="fix-area">
+            <div class="offcanvas__info">
+                <div class="offcanvas__wrapper">
+                    <div class="offcanvas__content">
+                        <div class="offcanvas__top mb-5 d-flex justify-content-between align-items-center">
+                            <div class="offcanvas__logo">
+                                <a href="index.html">
+                                    <img src="assets/img/logo/black-logo.svg" alt="logo-img">
+                                </a>
+                            </div>
+                            <div class="offcanvas__close">
+                                <button>
+                                <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text d-none d-xl-block">
+                            Nullam dignissim, ante scelerisque the  is euismod fermentum odio sem semper the is erat, a feugiat leo urna eget eros. Duis Aenean a imperdiet risus.
+                        </p>
+                        <div class="mobile-menu fix mb-3"></div>
+                        <div class="offcanvas__contact">
+                            <h4>Contact Info</h4>
+                            <ul>
+                                <li class="d-flex align-items-center">
+                                    <div class="offcanvas__contact-icon">
+                                        <i class="fal fa-map-marker-alt"></i>
+                                    </div>
+                                    <div class="offcanvas__contact-text">
+                                        <a target="_blank" href="#">Main Street, Melbourne, Australia</a>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <div class="offcanvas__contact-icon mr-15">
+                                        <i class="fal fa-envelope"></i>
+                                    </div>
+                                    <div class="offcanvas__contact-text">
+                                        <a href="mailto:info@example.com"><span class="mailto:info@example.com">info@example.com</span></a>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <div class="offcanvas__contact-icon mr-15">
+                                        <i class="fal fa-clock"></i>
+                                    </div>
+                                    <div class="offcanvas__contact-text">
+                                        <a target="_blank" href="#">Mod-friday, 09am -05pm</a>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <div class="offcanvas__contact-icon mr-15">
+                                        <i class="far fa-phone"></i>
+                                    </div>
+                                    <div class="offcanvas__contact-text">
+                                        <a href="tel:+11002345909">+11002345909</a>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div class="header-button mt-4">
+                                
+                            </div>
+                            <a href="contact.html" class="gt-theme-btn">BOOK NOW</a>
+                            <div class="social-icon d-flex align-items-center">
+                                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a href="#"><i class="fab fa-twitter"></i></a>
+                                <a href="#"><i class="fab fa-youtube"></i></a>
+                                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="offcanvas__overlay"></div>
+
+        <!-- Header Section Start -->
+        <header id="header-sticky" class="header-1 header-2">
+            <div class="container">
+                <div class="mega-menu-wrapper">
+                    <div class="header-main">
+                        <div class="logo">
+                            <a href="index.html" class="header-logo">
+                                <img src="assets/img/logo/white-logo.svg" alt="logo-img">
+                            </a>
+                            <a href="index.html" class="header-logo-2">
+                                <img src="assets/img/logo/black-logo.svg" alt="logo-img">
+                            </a>
+                        </div>
+                        <div class="header-right d-flex justify-content-end align-items-center">
+                             <div class="mean__menu-wrapper">
+                            <div class="main-menu">
+                                <nav id="mobile-menu">
+                                    <ul>
+                                        <li class="has-dropdown active menu-thumb">
+                                            <a href="index.html">
+                                                Home 
+                                            </a>
+                                            <ul class="submenu has-homemenu">
+                                                <li>
+                                                    <div class="homemenu-items">
+                                                        <div class="homemenu">
+                                                            <div class="homemenu-thumb">
+                                                                <img src="assets/img/header/home-01.jpg" alt="img">
+                                                                <div class="demo-button">
+                                                                <a href="index.html" class="gt-theme-btn">Demo page</a>
+                                                                </div>
+                                                            </div>
+                                                            <div class="homemenu-content text-center">
+                                                                <h4 class="homemenu-title">
+                                                                    Home 01
+                                                                </h4>
+                                                            </div>
+                                                        </div>
+                                                        <div class="homemenu">
+                                                            <div class="homemenu-thumb mb-15">
+                                                            <img src="assets/img/header/home-02.jpg" alt="img">
+                                                                <div class="demo-button">
+                                                                <a href="index-2.html" class="gt-theme-btn">Demo page</a>
+                                                                </div>
+                                                            </div>
+                                                            <div class="homemenu-content text-center">
+                                                                <h4 class="homemenu-title">
+                                                                    Home 02
+                                                                </h4>
+                                                            </div>
+                                                        </div>
+                                                        <div class="homemenu">
+                                                            <div class="homemenu-thumb mb-15">
+                                                            <img src="assets/img/header/home-03.jpg" alt="img">
+                                                                <div class="demo-button">
+                                                                <a href="index-3.html" class="gt-theme-btn">Demo page</a>
+                                                                </div>
+                                                            </div>
+                                                            <div class="homemenu-content text-center">
+                                                                <h4 class="homemenu-title">
+                                                                    Home 03
+                                                                </h4>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li class="has-dropdown active d-xl-none">
+                                            <a href="index.html" class="border-none">
+                                            Home
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="index.html">Home 01</a></li>
+                                                <li><a href="index-2.html">Home 02</a></li>
+                                                <li><a href="index-3.html">Home 03</a></li>
+                                            </ul>
+                                        </li>
+                                        <li class="has-dropdown">
+                                            <a href="news.html">
+                                                Pages
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="about.html">About Us</a></li>
+                                                <li class="has-dropdown">
+                                                    <a href="team-details.html">
+                                                        Our Team
+                                                        <i class="fas fa-angle-right"></i>
+                                                    </a>
+                                                    <ul class="submenu">
+                                                        <li><a href="team.html">Our Team</a></li>
+                                                        <li><a href="team-details.html">Team Details</a></li>
+                                                    </ul>
+                                                </li>
+                                                <li><a href="restaurant.html">Restaurant</a></li>
+                                                <li><a href="testimonial.html">Our Testimonial</a></li>
+                                                <li><a href="404.html">404 Page</a></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <a href="service-details.html">
+                                                Services
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="service.html">Service Page</a></li>
+                                                <li><a href="service-details.html">Service Details</a></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <a href="room-details.html">
+                                                Room
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="room.html">Room 01 Page</a></li>
+                                                <li><a href="room-2.html">Room 02 Page</a></li>
+                                                <li><a href="room-details.html">Room Details</a></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <a href="news-details.html">
+                                                Blog
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="news-grid.html">Blog Grid</a></li>
+                                                <li><a href="news.html">Blog Standard</a></li>
+                                                <li><a href="news-details.html">Blog Details</a></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <a href="contact.html">Contact Us</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                           <a href="#" class="main-header__search search-toggler">
+                                <i class="fa-regular fa-magnifying-glass"></i>
+                            </a>
+                            <div class="hero-button">
+                                <a href="contact.html" class="gt-theme-btn">Book now</a>
+                            </div>
+                             <div class="header__hamburger my-auto d-xl-none">
+                                <div class="sidebar__toggle">
+                                   <i class="fa-regular fa-bars"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+         <!-- GT Search Start -->
+        <div class="search-popup">
+            <div class="search-popup__overlay search-toggler"></div>
+            <div class="search-popup__content">
+                <form role="search" method="get" class="search-popup__form" action="#">
+                    <input type="text" id="search" name="search" placeholder="Search Here...">
+                    <button type="submit" aria-label="search submit" class="search-btn">
+                        <span><i class="fa-regular fa-magnifying-glass"></i></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    
+        <!-- Breadcrumb Section Start -->
+        <div class="gt-breadcrumb-wrapper bg-cover" style="background-image: url('assets/img/breadcrumb.jpg');">
+            <div class="container">
+                <div class="gt-page-heading">
+                    <div class="gt-breadcrumb-sub-title">
+                        <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Oceanview Deluxe Room</h1>
+                    </div>
+                    <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
+                        <li>
+                            <a href="index.html">
+                               Home
+                            </a>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </li>
+                        <li>
+                            Oceanview Deluxe Room
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- GT Room Details Section Start -->
+        <section class="gt-room-details section section-padding">
+            <div class="container">
+                <div class="gt-room-details-wrapper">
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                            <div class="gt-room-items">
+                                <div class="room-image">
+                                    <img src="assets/img/room-details-img.jpg" alt="img">
+                                </div>
+                                <div class="gt-room-content">
+                                    <h5>Luxury Room</h5>
+                                    <h2>Oceanview Deluxe Room</h2>
+                                    <p>Designed with space, comfort, and convenience in mind, our Deluxe Family Room is perfect for families looking to enjoy a relaxing and memorable stay together.</p>
+                                <div class="gt-list">
+                                        <div class="row">
+                                        <div class="col-lg-6">
+                                            <ul class="chack-list">
+                                                <li>
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                    Check-In:
+                                                </li>
+                                                <li>
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                    Check-in from 8:30 AM - anytime
+                                                </li>
+                                                <li>
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                    Early Arrival is Contingent Upon Availability.
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <ul class="chack-list">
+                                                <li>
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                    Check Out
+                                                </li>
+                                                <li>
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                    Leave by Midday.
+                                                </li>
+                                                <li>
+                                                    <i class="fa-solid fa-circle-check"></i>
+                                                    Check - Out is At Any Time Starting at 9:00 AM.
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <h3>Childreen and Additional Beds</h3>
+                                <p>Applications that don't have Smooth data. Underwhelming quality outsourcing prior to open partnerships is unique. Effectively cultivate a variety of relationships while utilizing the new house café</p>
+                                <ul class="chack-list">
+                                    <li>
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        Produce Bricks-and-Clicks Fast.
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        Develop innovative platforms in an interactive manner.
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        Energistically envisioneer resource
+                                    </li>
+                                    <li>
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        Restore turnkey concepts in a unique way
+                                    </li>
+                                </ul>
+                                <h3>Room Features:</h3>
+                                <div class="gt-list-content">
+                                    <h3>What We Offer:</h3>
+                                    <ul>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Spacious Family-Sized Layout (Approx. 45–60 sqm)
+                                            </span>
+                                        Ideal for families with children, offering plenty of room to unwind.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                            1 King Bed + 1 or 2 Twin Beds / Sofa Bed
+                                            </span>
+                                            Flexible sleeping arrangements for up to 4 guests (extra bed on request).
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                            Modern Ensuite Bathroom
+                                            </span>
+                                            Equipped with a rain shower, bathtub (in select rooms), and kid-friendly amenities.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Complimentary High-Speed Wi-Fi
+                                            </span>
+                                        Stay connected and stream your family favorites with ease.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <h3>House Rules</h3>
+                                <p>
+                                    Deliver thoroughly researched situations with turnkey communities in a professional manner. Without smooth data, launch empowered applications with competence. Underwhelming quality outsourcing prior to open partnerships is unique. Effectively strengthen a variety of interactions while utilizing
+                                </p>
+                                <div class="gt-list-content mb-0 pb-0">
+                                    <h3>Booking Information:</h3>
+                                    <ul>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                            Occupancy:
+                                            </span>
+                                        Up to 2 Adults + 2 Children (or 3 Adults)
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                            nclusions:
+                                            </span>
+                                            Daily breakfast for the family, access to pool, kids’ play area, and hotel facilities
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                            Extras:
+                                            </span>
+                                            Baby cot, high chair, and childproofing available upon request
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Cancellation Policy:
+                                            </span>
+                                        Free cancellation up to 48 hours before arrival (varies by rate plan)
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="gt-main-sideber sticky-style">
+                             <div class="gt-single-sideber-widget">
+                                <div class="gt-widget-title">
+                                    <h3>Hotel Booking</h3>
+                                </div>
+                                <div class="booking-item">
+                                    <form action="#">
+                                        <div class="row g-4">
+                                            <div class="col-lg-12">
+                                                <div class="form-clt">
+                                                    <input type="text" placeholder="Check In">
+                                                </div>
+                                            </div>
+                                                <div class="col-lg-12">
+                                                <div class="form-clt">
+                                                    <input type="text" placeholder="Check Out">
+                                                </div>
+                                            </div>
+                                                <div class="col-lg-12">
+                                                <div class="form-clt">
+                                                    <div class="form">
+                                                        <select class="single-select w-100">
+                                                            <option>Room</option>
+                                                            <option>01</option>
+                                                            <option>02</option>
+                                                            <option>03</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-12">
+                                                <div class="form-clt">
+                                                    <div class="form">
+                                                        <select class="single-select w-100">
+                                                            <option>Guest</option>
+                                                            <option>01</option>
+                                                            <option>02</option>
+                                                            <option>03</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-12">
+                                                <button class="gt-theme-btn w-100" type="submit">
+                                                    CHECK AVAILABILITY
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="gt-single-sideber-widget">
+                                <div class="gt-widget-title">
+                                    <h3>Amenities</h3>
+                                </div>
+                                <ul class="amenities-list">
+                                    <li>
+                                        <img src="assets/img/user.png" alt="img">
+                                        2 - 5 Persons
+                                    </li>
+                                    <li>
+                                        <img src="assets/img/wifi.png" alt="img">
+                                       Free WiFi Available
+                                    </li>
+                                    <li>
+                                        <img src="assets/img/car.png" alt="img">
+                                       Free Car Parking
+                                    </li>
+                                    <li>
+                                        <img src="assets/img/food.png" alt="img">
+                                        Food & Drink
+                                    </li>
+                                    <li>
+                                        <img src="assets/img/bed.png" alt="img">
+                                        250 SQFT Rooms
+                                    </li>
+                                     <li>
+                                        <img src="assets/img/pool.png" alt="img">
+                                       Swimming - Pool
+                                    </li>
+                                </ul>
+                            </div>
+                           
+                            <div class="service-details-contact-bg text-center bg-cover" style="background-image: url('assets/img/inner/service-details/contact-bg.jpg');">
+                                <h3>
+                                    Please Contact Us By Phone or Email to Make a Reservation.
+                                </h3>
+                                <div class="icon">
+                                    <img src="assets/img/inner/service-details/call.png" alt="img">
+                                </div>
+                                <p>Need Reservation? Call us, it's toll-free.</p>
+                                <h3><a href="tel:+0094382229540">+009 (438) 222 9540 </a></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <!-- GT Instagram Section Start -->
+        <div class="gt-instagram-section">
+             <div class="swiper gt-instagram-slider">
+                    <div class="swiper-wrapper">
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image mt-0">
+                                <img src="assets/img/home-1/instagram/01.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image mt-0">
+                                <img src="assets/img/home-1/instagram/02.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image mt-0">
+                                <img src="assets/img/home-1/instagram/03.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image mt-0">
+                                <img src="assets/img/home-1/instagram/04.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image mt-0">
+                                <img src="assets/img/home-1/instagram/05.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image mt-0">
+                                <img src="assets/img/home-1/instagram/06.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <!-- GT Footer Section Start -->
+        <footer class="gt-footer-section fix bg-cover" style="background-image: url('assets/img/home-1/footer/footer-img.jpg');">
+            <div class="container">
+                <div class="footer-newsletter-items">
+                    <h2>Join Our Newsletter</h2>
+                    <form action="#">
+                        <div class="form-clt">
+                            <input type="text" placeholder="Enter your email">
+                        </div>
+                        <button class="gt-theme-btn">Subscribe</button>
+                    </form>
+                </div>
+                <div class="footer-widget-wrapper">
+                    <div class="row">
+                        <div class="col-xl-4 col-lg-5 col-md-7">
+                            <div class="footer-single-widget">
+                                <div class="widget-head">
+                                    <a href="index.html" class="footer-logo">
+                                        <img src="assets/img/logo/white-logo.svg" alt="img">
+                                    </a>
+                                </div>
+                                <div class="footer-content">
+                                    <p>
+                                        The purpose of a FAQ is generally provide information on Perfect for Small Teams, Startups, and Growing.
+                                    </p>
+                                    <div class="social-icon d-flex align-items-center">
+                                            <a href="#"><i class="fab fa-facebook-f"></i></a>
+                                            <a href="#"><i class="fab fa-twitter"></i></a>
+                                            <a href="#"><i class="fab fa-vimeo-v"></i></a>
+                                            <a href="#"><i class="fab fa-pinterest-p"></i></a>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-2 col-lg-3 col-md-5 col-sm-6 col-6">
+                             <div class="footer-single-widget">
+                                <div class="widget-head">
+                                    <h3>Quick Links</h3>
+                                </div>
+                                <ul class="gt-list-area">
+                                    <li>
+                                        <a href="index.html">
+                                           Home
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="about.html">
+                                        About us
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="room.html">
+                                            Hotel
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="contact.html">
+                                        Contact
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="news.html">
+                                        Blogs
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 ps-xl-5 col-lg-4 col-md-6 col-sm-6 col-6">
+                             <div class="footer-single-widget">
+                                <div class="widget-head">
+                                    <h3>Guest Services</h3>
+                                </div>
+                                <ul class="gt-list-area">
+                                    <li>
+                                        <a href="service-details.html">
+                                           24/7 Front Desk
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="service-details.html">
+                                           Parking
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="service-details.html">
+                                          Room Service
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="service-details.html">
+                                           Free Wi-Fi
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="service-details.html">
+                                           Concierge Service
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-md-6">
+                             <div class="footer-single-widget">
+                                <div class="widget-head">
+                                    <h3>Contact Us</h3>
+                                </div>
+                                <ul class="contact-list">
+                                    <li>
+                                        United States — <br>
+                                        350 Fifth Avenue, 21st Floor New York, NY 10118
+                                    </li>
+                                    <li>
+                                        <a href="tel:+86661233562">+8 (666) 123-3562</a>
+                                    </li>
+                                    <li>
+                                        Mon-Fri 9:00am - 5:00pm
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <div class="footer-bottom-wrapper">
+                        <p class="wow fadeInUp" data-wow-delay=".3s">
+                            © 2025 <b>Laxary.</b> All rights reserved.
+                        </p>
+                        <ul class="footer-list wow fadeInUp" data-wow-delay=".7s">
+                            <li>
+                                <a href="contact.html">Privacy policy</a>
+                            </li>
+                            <li>।</li>
+                            <li>
+                                <a href="contact.html">Terms &amp; conditions</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        
+        <!--<< All JS Plugins >>-->
+        <script src="assets/js/jquery-3.7.1.min.js"></script>
+        <!--<< Viewport Js >>-->
+        <script src="assets/js/viewport.jquery.js"></script>
+        <!--<< Bootstrap Js >>-->
+        <script src="assets/js/bootstrap.bundle.min.js"></script>
+        <!--<< nice-selec Js >>-->
+        <script src="assets/js/jquery.nice-select.min.js"></script>
+        <!--<< Waypoints Js >>-->
+        <script src="assets/js/jquery.waypoints.js"></script>
+        <!--<< Counterup Js >>-->
+        <script src="assets/js/jquery.counterup.min.js"></script>
+        <!--<< Swiper Slider Js >>-->
+        <script src="assets/js/swiper-bundle.min.js"></script>
+        <!--<< MeanMenu Js >>-->
+        <script src="assets/js/jquery.meanmenu.min.js"></script>
+        <!--<< Parallaxie Js >>-->
+        <script src="assets/js/parallaxie.js"></script>
+        <!--<< Magnific Popup Js >>-->
+        <script src="assets/js/jquery.magnific-popup.min.js"></script>
+        <!--<< Wow Animation Js >>-->
+        <script src="assets/js/wow.min.js"></script>
+        <!--<< Main.js >>-->
+        <script src="assets/js/main.js"></script>
+    </body>
+</html>

@@ -49,6 +49,7 @@
 </li>
 
 {{-- FINANCIAL REPORTS --}}
+@php $isManager = Auth::guard('staff')->check() && strtolower(trim(Auth::guard('staff')->user()->role ?? '')) === 'manager'; @endphp
 <li class="treeview {{ str_contains($activePage, 'reports') && (str_contains($activePage, 'revenue') || str_contains($activePage, 'profitability') || str_contains($activePage, 'cash-flow')) ? 'is-expanded' : '' }}">
   <a class="app-menu__item" href="#" data-toggle="treeview">
     <i class="app-menu__icon fa fa-money"></i>
@@ -68,12 +69,14 @@
         <i class="icon fa fa-money"></i> Cash Flow
       </a>
     </li>
+    @if(!$isManager)
     <li>
-      <a class="treeview-item {{ str_contains($activePage, 'reports/profitability') ? 'active' : '' }}" 
+      <a class="treeview-item {{ str_contains($activePage, 'reports/profitability') ? 'active' : '' }}"
          href="{{ route('admin.reports.profitability') }}">
         <i class="icon fa fa-calculator"></i> Profitability
       </a>
     </li>
+    @endif
   </ul>
 </li>
 

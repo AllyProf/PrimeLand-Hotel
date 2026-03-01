@@ -20,6 +20,7 @@ class DayService extends Model
         'service_time',
         'items_ordered',
         'package_items',
+        'package_items_paid',
         'amount',
         'payment_status',
         'payment_method',
@@ -48,6 +49,7 @@ class DayService extends Model
         'adult_quantity' => 'integer',
         'child_quantity' => 'integer',
         'package_items' => 'array',
+        'package_items_paid' => 'array',
         'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
     ];

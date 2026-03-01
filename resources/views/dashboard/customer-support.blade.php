@@ -26,24 +26,13 @@
             <i class="fa fa-mobile" style="color: #25D366;"></i> Mobile/WhatsApp
           </h4>
           <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-12 mb-3">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <i class="fa fa-phone" style="color: #e77a3a; font-size: 18px;"></i>
                 <div>
                   <strong style="display: block; margin-bottom: 5px;">Phone/WhatsApp</strong>
                   <a href="tel:+255677155156" style="color: #e77a3a; text-decoration: none; font-size: 16px; font-weight: 600;">
                     0677-155-156
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6 mb-3">
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <i class="fa fa-phone" style="color: #e77a3a; font-size: 18px;"></i>
-                <div>
-                  <strong style="display: block; margin-bottom: 5px;">International</strong>
-                  <a href="tel:+255677155157" style="color: #e77a3a; text-decoration: none; font-size: 16px; font-weight: 600;">
-                    +255 677-155-157
                   </a>
                 </div>
               </div>
@@ -60,22 +49,14 @@
             <i class="fa fa-envelope" style="color: #007bff;"></i> Email
           </h4>
           <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-12 mb-3">
               <div style="display: flex; align-items: flex-start; gap: 10px;">
                 <i class="fa fa-envelope-o" style="color: #e77a3a; font-size: 18px; margin-top: 3px;"></i>
                 <div>
-                  <strong style="display: block; margin-bottom: 5px;">Primary Email</strong>
-                  <a href="mailto:info@primelandhotel.co.tz" style="color: #e77a3a; text-decoration: none; font-size: 14px; word-break: break-all;">
-                    info@primelandhotel.co.tz
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6 mb-3">
-              <div style="display: flex; align-items: flex-start; gap: 10px;">
-                <i class="fa fa-envelope-o" style="color: #e77a3a; font-size: 18px; margin-top: 3px;"></i>
-                <div>
-                  <strong style="display: block; margin-bottom: 5px;">Alternative Email</strong>
+                  <strong style="display: block; margin-bottom: 5px;">Contact Emails</strong>
+                  <a href="mailto:info@primelandhotel.com" style="color: #e77a3a; text-decoration: none; font-size: 14px; word-break: break-all;">
+                    info@primelandhotel.com
+                  </a><br>
                   <a href="mailto:infoprimelandhotel@gmail.com" style="color: #e77a3a; text-decoration: none; font-size: 14px; word-break: break-all;">
                     infoprimelandhotel@gmail.com
                   </a>

@@ -1305,7 +1305,13 @@ function updatePreview() {
     imagePreview.innerHTML = '';
     imagePreview.appendChild(container);
   } else {
-    imagePreview.innerHTML = '<span class="text-muted">No images uploaded</span>';
+    imagePreview.innerHTML = `
+      <div class="text-center p-4 border rounded bg-light" style="border-style: dashed !important; width: 100%;">
+        <i class="fa fa-bed fa-4x text-muted mb-3"></i>
+        <p class="text-muted mb-0">No images uploaded</p>
+        <small class="text-muted">A default room placeholder will be used.</small>
+      </div>
+    `;
   }
 }
 

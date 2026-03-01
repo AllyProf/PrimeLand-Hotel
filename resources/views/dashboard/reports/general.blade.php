@@ -201,8 +201,8 @@
             <h1>PRIMELAND HOTEL</h1>
             <div style="line-height: 1.6;">
                 <p><strong>Location:</strong> Sokoine Road - Moshi, Kilimanjaro - Tanzania</p>
-                <p><strong>Mobile/WhatsApp:</strong> 0677-155-156 / +255 677-155-157</p>
-                <p><strong>Email:</strong> info@primelandhotel.co.tz / infoprimelandhotel@gmail.com</p>
+                <p><strong>Mobile/WhatsApp:</strong> 0677-155-156</p>
+                <p><strong>Email:</strong> info@primelandhotel.com / infoprimelandhotel@gmail.com</p>
             </div>
             <p style="margin-top: 20px; font-size: 22px; font-weight: bold; color: #e07632; text-decoration: underline;">GENERAL REVENUE PERFORMANCE REPORT</p>
         </div>
@@ -335,7 +335,7 @@
         <div class="receipt-footer">
             <p><strong>PrimeLand Hotel Management System</strong></p>
             <p>Generated on {{ now()->format('F d, Y \a\t g:i A') }} by {{ auth('staff')->user()->name }}</p>
-            <p class="powered-by">Powered By EmCa Technologies</p>
+            <p class="powered-by">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
         </div>
     </div>
 </div>

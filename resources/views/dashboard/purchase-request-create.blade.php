@@ -113,7 +113,7 @@
                   <div class="col-md-6">
                     <div class="form-group">
                       <label>Item Name <span class="text-danger">*</span></label>
-                      <input type="text" class="form-control item-name" name="items[{{ $index }}][item_name]" value="{{ $preItem['item_name'] }}" required>
+                      <input type="text" class="form-control item-name" name="items[{{ $index }}][item_name]" value="{{ $routePrefix === 'bar-keeper' ? ($preItem['item_name'] ?? '') : ($preItem['item_name'] ?? '') }}" required>
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -157,18 +157,22 @@
                     <div class="form-group">
                       <label>Unit <span class="text-danger">*</span></label>
                       <select class="form-control item-unit" name="items[{{ $index }}][unit]" required onchange="toggleCustomUnit(this)">
-                        <option value="">Select Unit</option>
-                        <option value="kg" {{ strtolower($preItem['unit']) == 'kg' || strtolower($preItem['unit']) == 'kilograms' ? 'selected' : '' }}>Kilograms (kg)</option>
-                        <option value="g" {{ strtolower($preItem['unit']) == 'g' || strtolower($preItem['unit']) == 'grams' ? 'selected' : '' }}>Grams (g)</option>
-                        <option value="liters" {{ strtolower($preItem['unit']) == 'liters' || strtolower($preItem['unit']) == 'l' ? 'selected' : '' }}>Liters (L)</option>
-                        <option value="ml" {{ strtolower($preItem['unit']) == 'ml' || strtolower($preItem['unit']) == 'milliliters' ? 'selected' : '' }}>Milliliters (ml)</option>
-                        <option value="pcs" {{ strtolower($preItem['unit']) == 'pcs' || strtolower($preItem['unit']) == 'pieces' ? 'selected' : '' }}>Pieces (pcs)</option>
-                        <option value="bottles" {{ strtolower($preItem['unit']) == 'bottles' || strtolower($preItem['unit']) == 'bottle' || strtolower($preItem['unit']) == 'pic' ? 'selected' : '' }}>Bottles / PIC</option>
-                        <option value="packs" {{ strtolower($preItem['unit']) == 'packs' || strtolower($preItem['unit']) == 'pack' ? 'selected' : '' }}>Packs</option>
-                        <option value="boxes" {{ strtolower($preItem['unit']) == 'boxes' || strtolower($preItem['unit']) == 'box' ? 'selected' : '' }}>Boxes</option>
-                        <option value="cartons" {{ strtolower($preItem['unit']) == 'cartons' || strtolower($preItem['unit']) == 'carton' ? 'selected' : '' }}>Cartons</option>
-                        <option value="trays" {{ strtolower($preItem['unit']) == 'trays' || strtolower($preItem['unit']) == 'tray' ? 'selected' : '' }}>Trays</option>
-                        <option value="custom">Custom Unit</option>
+                        @if($routePrefix === 'bar-keeper')
+                          <option value="bottles" selected>Bottles / PIC</option>
+                        @else
+                          <option value="">Select Unit</option>
+                          <option value="kg" {{ strtolower($preItem['unit']) == 'kg' || strtolower($preItem['unit']) == 'kilograms' ? 'selected' : '' }}>Kilograms (kg)</option>
+                          <option value="g" {{ strtolower($preItem['unit']) == 'g' || strtolower($preItem['unit']) == 'grams' ? 'selected' : '' }}>Grams (g)</option>
+                          <option value="liters" {{ strtolower($preItem['unit']) == 'liters' || strtolower($preItem['unit']) == 'l' ? 'selected' : '' }}>Liters (L)</option>
+                          <option value="ml" {{ strtolower($preItem['unit']) == 'ml' || strtolower($preItem['unit']) == 'milliliters' ? 'selected' : '' }}>Milliliters (ml)</option>
+                          <option value="pcs" {{ strtolower($preItem['unit']) == 'pcs' || strtolower($preItem['unit']) == 'pieces' ? 'selected' : '' }}>Pieces (pcs)</option>
+                          <option value="bottles" {{ strtolower($preItem['unit']) == 'bottles' || strtolower($preItem['unit']) == 'bottle' || strtolower($preItem['unit']) == 'pic' ? 'selected' : '' }}>Bottles / PIC</option>
+                          <option value="packs" {{ strtolower($preItem['unit']) == 'packs' || strtolower($preItem['unit']) == 'pack' ? 'selected' : '' }}>Packs</option>
+                          <option value="boxes" {{ strtolower($preItem['unit']) == 'boxes' || strtolower($preItem['unit']) == 'box' ? 'selected' : '' }}>Boxes</option>
+                          <option value="cartons" {{ strtolower($preItem['unit']) == 'cartons' || strtolower($preItem['unit']) == 'carton' ? 'selected' : '' }}>Cartons</option>
+                          <option value="trays" {{ strtolower($preItem['unit']) == 'trays' || strtolower($preItem['unit']) == 'tray' ? 'selected' : '' }}>Trays</option>
+                          <option value="custom">Custom Unit</option>
+                        @endif
                       </select>
                     </div>
                   </div>
@@ -270,18 +274,22 @@
                     <div class="form-group">
                       <label>Unit <span class="text-danger">*</span></label>
                       <select class="form-control item-unit" name="items[0][unit]" required onchange="toggleCustomUnit(this)">
-                        <option value="">Select Unit</option>
-                        <option value="kg">Kilograms (kg)</option>
-                        <option value="g">Grams (g)</option>
-                        <option value="liters">Liters (L)</option>
-                        <option value="ml">Milliliters (ml)</option>
-                        <option value="pcs">Pieces (pcs)</option>
-                        <option value="bottles">Bottles / PIC</option>
-                        <option value="packs">Packs</option>
-                        <option value="boxes">Boxes</option>
-                        <option value="cartons">Cartons</option>
-                        <option value="trays">Trays</option>
-                        <option value="custom">Custom Unit</option>
+                        @if($routePrefix === 'bar-keeper')
+                          <option value="bottles" selected>Bottles / PIC</option>
+                        @else
+                          <option value="">Select Unit</option>
+                          <option value="kg">Kilograms (kg)</option>
+                          <option value="g">Grams (g)</option>
+                          <option value="liters">Liters (L)</option>
+                          <option value="ml">Milliliters (ml)</option>
+                          <option value="pcs">Pieces (pcs)</option>
+                          <option value="bottles">Bottles / PIC</option>
+                          <option value="packs">Packs</option>
+                          <option value="boxes">Boxes</option>
+                          <option value="cartons">Cartons</option>
+                          <option value="trays">Trays</option>
+                          <option value="custom">Custom Unit</option>
+                        @endif
                       </select>
                     </div>
                   </div>
@@ -338,6 +346,15 @@
 @section('scripts')
 <script src="{{ asset('dashboard_assets/js/plugins/sweetalert.min.js') }}"></script>
 <script>
+// Global helper for picker display names
+function getPickerDisplayName(vName, pName) {
+    if (vName && vName.trim()) {
+        // For Bar Keeper, always combine to avoid generic names like 'Small' or 'Bottle'
+        return vName + ' ' + pName;
+    }
+    return pName;
+}
+
 $(document).ready(function() {
     let itemIndex = 1;
     
@@ -401,18 +418,22 @@ $(document).ready(function() {
                   <div class="form-group">
                     <label>Unit <span class="text-danger">*</span></label>
                     <select class="form-control item-unit" name="items[${itemIndex}][unit]" required onchange="toggleCustomUnit(this)">
-                      <option value="pcs">Pieces (pcs)</option>
-                      <option value="liters">Liters (L)</option>
-                      <option value="ml">Milliliters (ml)</option>
-                      <option value="kg">Kilograms (kg)</option>
-                      <option value="g">Grams (g)</option>
-                      <option value="boxes">Boxes</option>
-                      <option value="bottles">PIC (Bottle)</option>
-                      <option value="rolls">Rolls</option>
-                      <option value="packs">Packs</option>
-                      <option value="cartons">Cartons</option>
-                      <option value="bags">Bags</option>
-                      <option value="custom">Custom Unit</option>
+                      @if($routePrefix === 'bar-keeper')
+                        <option value="bottles" selected>Bottles / PIC</option>
+                      @else
+                        <option value="pcs">Pieces (pcs)</option>
+                        <option value="liters">Liters (L)</option>
+                        <option value="ml">Milliliters (ml)</option>
+                        <option value="kg">Kilograms (kg)</option>
+                        <option value="g">Grams (g)</option>
+                        <option value="boxes">Boxes</option>
+                        <option value="bottles">PIC (Bottle)</option>
+                        <option value="rolls">Rolls</option>
+                        <option value="packs">Packs</option>
+                        <option value="cartons">Cartons</option>
+                        <option value="bags">Bags</option>
+                        <option value="custom">Custom Unit</option>
+                      @endif
                     </select>
                   </div>
                 </div>
@@ -794,18 +815,22 @@ $(document).ready(function() {
                   <div class="form-group">
                     <label>Unit <span class="text-danger">*</span></label>
                     <select class="form-control item-unit" name="items[${index}][unit]" required>
-                      <option value="pcs" ${itemData.unit === 'pcs' ? 'selected' : ''}>Pieces (pcs)</option>
-                      <option value="liters" ${itemData.unit === 'liters' ? 'selected' : ''}>Liters (L)</option>
-                      <option value="ml" ${itemData.unit === 'ml' ? 'selected' : ''}>Milliliters (ml)</option>
-                      <option value="kg" ${itemData.unit === 'kg' ? 'selected' : ''}>Kilograms (kg)</option>
-                      <option value="g" ${itemData.unit === 'g' ? 'selected' : ''}>Grams (g)</option>
-                      <option value="boxes" ${itemData.unit === 'boxes' ? 'selected' : ''}>Boxes</option>
-                      <option value="bottles" ${itemData.unit === 'bottles' ? 'selected' : ''}>Bottles</option>
-                      <option value="rolls" ${itemData.unit === 'rolls' ? 'selected' : ''}>Rolls</option>
-                      <option value="packs" ${itemData.unit === 'packs' ? 'selected' : ''}>Packs</option>
-                      <option value="cartons" ${itemData.unit === 'cartons' ? 'selected' : ''}>Cartons</option>
-                      <option value="bags" ${itemData.unit === 'bags' ? 'selected' : ''}>Bags</option>
-                      <option value="custom" ${isCustomUnit ? 'selected' : ''}>Custom Unit</option>
+                      @if($routePrefix === 'bar-keeper')
+                        <option value="bottles" selected>Bottles / PIC</option>
+                      @else
+                        <option value="pcs" ${itemData.unit === 'pcs' ? 'selected' : ''}>Pieces (pcs)</option>
+                        <option value="liters" ${itemData.unit === 'liters' ? 'selected' : ''}>Liters (L)</option>
+                        <option value="ml" ${itemData.unit === 'ml' ? 'selected' : ''}>Milliliters (ml)</option>
+                        <option value="kg" ${itemData.unit === 'kg' ? 'selected' : ''}>Kilograms (kg)</option>
+                        <option value="g" ${itemData.unit === 'g' ? 'selected' : ''}>Grams (g)</option>
+                        <option value="boxes" ${itemData.unit === 'boxes' ? 'selected' : ''}>Boxes</option>
+                        <option value="bottles" ${itemData.unit === 'bottles' ? 'selected' : ''}>Bottles</option>
+                        <option value="rolls" ${itemData.unit === 'rolls' ? 'selected' : ''}>Rolls</option>
+                        <option value="packs" ${itemData.unit === 'packs' ? 'selected' : ''}>Packs</option>
+                        <option value="cartons" ${itemData.unit === 'cartons' ? 'selected' : ''}>Cartons</option>
+                        <option value="bags" ${itemData.unit === 'bags' ? 'selected' : ''}>Bags</option>
+                        <option value="custom" ${isCustomUnit ? 'selected' : ''}>Custom Unit</option>
+                      @endif
                     </select>
                   </div>
                 </div>

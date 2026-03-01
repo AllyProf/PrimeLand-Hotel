@@ -103,15 +103,10 @@
           <table class="table table-hover table-bordered">
             <thead>
               <tr>
-                <th>Booking Reference</th>
-                <th>Guest</th>
-                <th>Room</th>
-                <th>Check-in</th>
-                <th>Check-out</th>
-                <th>Status</th>
-                <th>Payment Status</th>
-                <th>Check-in Status</th>
-                <th>Exchange Rate</th>
+                <th>Reference</th>
+                <th>Guest Information</th>
+                <th>Room & Dates</th>
+                <th>Status & Payment</th>
                 <th>Total Price</th>
                 <th>Actions</th>
               </tr>
@@ -125,102 +120,99 @@
                   data-booking-ref="{{ strtolower($booking->booking_reference) }}"
                   data-guest-name="{{ strtolower($booking->guest_name) }}"
                   data-guest-email="{{ strtolower($booking->guest_email) }}">
-                <td><strong>{{ $booking->booking_reference }}</strong></td>
+                <td>
+                  <strong>{{ $booking->booking_reference }}</strong><br>
+                  <small class="text-muted">{{ $booking->created_at->format('M d, Y') }}</small>
+                </td>
                 <td>
                   <strong>{{ $booking->guest_name }}</strong><br>
-                  <small>{{ $booking->guest_email }}</small>
+                  <small>{{ $booking->guest_email }}</small><br>
+                  <small class="text-muted">{{ $booking->guest_phone }}</small>
                 </td>
                 <td>
                   <span class="badge badge-primary">{{ $booking->room->room_type ?? 'N/A' }}</span><br>
-                  <small>{{ $booking->room->room_number ?? 'N/A' }}</small>
-                </td>
-                <td>{{ $booking->check_in->format('M d, Y') }}</td>
-                <td>{{ $booking->check_out->format('M d, Y') }}</td>
-                <td>
-                  @if($booking->status === 'confirmed')
-                    <span class="badge badge-success">Confirmed</span>
-                  @elseif($booking->status === 'pending')
-                    <span class="badge badge-warning">Pending</span>
-                  @elseif($booking->status === 'completed')
-                    <span class="badge badge-info">Completed</span>
-                  @else
-                    <span class="badge badge-danger">Cancelled</span>
-                  @endif
+                  <small><strong>{{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}</strong></small><br>
+                  <small class="text-muted">{{ $booking->check_in->diffInDays($booking->check_out) }} night(s)</small>
                 </td>
                 <td>
-                  @if($booking->payment_status === 'paid')
-                    <span class="badge badge-success">Paid</span>
-                  @elseif($booking->payment_status === 'partial')
-                    <span class="badge badge-info">Partial</span>
-                  @else
-                    <span class="badge badge-warning">Pending</span>
-                  @endif
-                </td>
-                <td>
-                  @if($booking->check_in_status === 'checked_in')
-                    <span class="badge badge-success">Checked In</span>
-                  @elseif($booking->check_in_status === 'checked_out')
-                    <span class="badge badge-info">Checked Out</span>
-                  @else
-                    <span class="badge badge-warning">Pending</span>
-                  @endif
-                </td>
-                <td>
-                  @if($booking->locked_exchange_rate)
-                    <strong>{{ number_format($booking->locked_exchange_rate, 2) }}</strong><br>
-                    <small class="text-muted">TZS/USD</small>
-                  @else
-                    <span class="text-muted">N/A</span><br>
-                    <small class="text-muted">(Old booking)</small>
-                  @endif
+                  <div class="mb-1">
+                    @if($booking->status === 'confirmed')
+                      <span class="badge badge-success">Confirmed</span>
+                    @elseif($booking->status === 'pending')
+                      <span class="badge badge-warning">Pending</span>
+                    @elseif($booking->status === 'completed')
+                      <span class="badge badge-info">Completed</span>
+                    @else
+                      <span class="badge badge-danger">Cancelled</span>
+                    @endif
+                  </div>
+                  <div>
+                    @if($booking->payment_status === 'paid')
+                      <span class="badge badge-success">Paid</span>
+                    @elseif($booking->payment_status === 'partial')
+                      <span class="badge badge-info">Partial</span>
+                    @else
+                      <span class="badge badge-warning">Payment Pending</span>
+                    @endif
+                  </div>
                 </td>
                 <td>
                   <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                  <small>
+                  <small class="text-muted">
                     @if($booking->locked_exchange_rate)
                       {{ number_format($booking->total_price * $booking->locked_exchange_rate, 2) }} TZS
                     @else
-                      {{ number_format($booking->total_price * $exchangeRate, 2) }} TZS
+                      {{ number_format($booking->total_price * ($exchangeRate ?? 2500), 2) }} TZS
                     @endif
                   </small>
                 </td>
                 <td>
-                  <button onclick="viewBookingDetailsModal({{ $booking->id }})" 
-                          class="btn btn-sm btn-info" 
-                          title="View Details"
-                          data-booking-id="{{ $booking->id }}"
-                          data-booking-ref="{{ $booking->booking_reference }}"
-                          data-guest-name="{{ htmlspecialchars($booking->guest_name, ENT_QUOTES, 'UTF-8') }}"
-                          data-guest-email="{{ $booking->guest_email }}"
-                          data-guest-phone="{{ $booking->guest_phone }}"
-                          data-country-code="{{ $booking->country_code }}"
-                          data-country="{{ $booking->country }}"
-                          data-guest-id="{{ $booking->guest_id }}"
-                          data-room-type="{{ $booking->room->room_type ?? 'N/A' }}"
-                          data-room-number="{{ $booking->room->room_number ?? 'N/A' }}"
-                          data-check-in="{{ $booking->check_in->format('M d, Y') }}"
-                          data-check-out="{{ $booking->check_out->format('M d, Y') }}"
-                          data-nights="{{ $booking->check_in->diffInDays($booking->check_out) }}"
-                          data-guests="{{ $booking->number_of_guests }}"
-                          data-status="{{ $booking->status }}"
-                          data-payment-status="{{ $booking->payment_status }}"
-                          data-check-in-status="{{ $booking->check_in_status }}"
-                          data-total-price="{{ $booking->total_price }}"
-                          data-amount-paid="{{ $booking->amount_paid ?? 0 }}"
-                          data-payment-percentage="{{ $booking->payment_percentage ?? 0 }}"
-                          data-exchange-rate="{{ $booking->locked_exchange_rate ?? '' }}"
-                          data-special-requests="{{ htmlspecialchars($booking->special_requests ?? '', ENT_QUOTES, 'UTF-8') }}"
-                          data-airport-pickup="{{ $booking->airport_pickup_required ? '1' : '0' }}"
-                          data-flight-number="{{ $booking->flight_number ?? '' }}"
-                          data-airline="{{ $booking->airline ?? '' }}"
-                          data-arrival-time="{{ $booking->arrival_time_pickup ? $booking->arrival_time_pickup->format('M d, Y H:i') : '' }}"
-                          data-pickup-passengers="{{ $booking->pickup_passengers ?? '' }}"
-                          data-pickup-contact="{{ $booking->pickup_contact_number ?? '' }}"
-                          data-created-at="{{ $booking->created_at->format('M d, Y H:i') }}"
-                          data-checked-in-at="{{ $booking->checked_in_at ? $booking->checked_in_at->format('M d, Y H:i') : '' }}"
-                          data-checked-out-at="{{ $booking->checked_out_at ? $booking->checked_out_at->format('M d, Y H:i') : '' }}">
-                    <i class="fa fa-eye"></i>
-                  </button>
+                  <div class="btn-group">
+                    <button onclick="viewBookingDetailsModal({{ $booking->id }})" 
+                            class="btn btn-sm btn-info" 
+                            title="View Details"
+                            data-booking-id="{{ $booking->id }}"
+                            data-booking-ref="{{ $booking->booking_reference }}"
+                            data-guest-name="{{ htmlspecialchars($booking->guest_name, ENT_QUOTES, 'UTF-8') }}"
+                            data-guest-email="{{ $booking->guest_email }}"
+                            data-guest-phone="{{ $booking->guest_phone }}"
+                            data-country-code="{{ $booking->country_code }}"
+                            data-country="{{ $booking->country }}"
+                            data-guest-id="{{ $booking->guest_id }}"
+                            data-room-type="{{ $booking->room->room_type ?? 'N/A' }}"
+                            data-room-number="{{ $booking->room->room_number ?? 'N/A' }}"
+                            data-check-in="{{ $booking->check_in->format('M d, Y') }}"
+                            data-check-out="{{ $booking->check_out->format('M d, Y') }}"
+                            data-nights="{{ $booking->check_in->diffInDays($booking->check_out) }}"
+                            data-guests="{{ $booking->number_of_guests }}"
+                            data-status="{{ $booking->status }}"
+                            data-payment-status="{{ $booking->payment_status }}"
+                            data-check-in-status="{{ $booking->check_in_status }}"
+                            data-total-price="{{ $booking->total_price }}"
+                            data-amount-paid="{{ $booking->amount_paid ?? 0 }}"
+                            data-payment-percentage="{{ $booking->payment_percentage ?? 0 }}"
+                            data-exchange-rate="{{ $booking->locked_exchange_rate ?? '' }}"
+                            data-special-requests="{{ htmlspecialchars($booking->special_requests ?? '', ENT_QUOTES, 'UTF-8') }}"
+                            data-airport-pickup="{{ $booking->airport_pickup_required ? '1' : '0' }}"
+                            data-flight-number="{{ $booking->flight_number ?? '' }}"
+                            data-airline="{{ $booking->airline ?? '' }}"
+                            data-arrival-time="{{ $booking->arrival_time_pickup ? $booking->arrival_time_pickup->format('M d, Y H:i') : '' }}"
+                            data-pickup-passengers="{{ $booking->pickup_passengers ?? '' }}"
+                            data-pickup-contact="{{ $booking->pickup_contact_number ?? '' }}"
+                            data-created-at="{{ $booking->created_at->format('M d, Y H:i') }}"
+                            data-checked-in-at="{{ $booking->checked_in_at ? $booking->checked_in_at->format('M d, Y H:i') : '' }}"
+                            data-checked-out-at="{{ $booking->checked_out_at ? $booking->checked_out_at->format('M d, Y H:i') : '' }}"
+                            data-id-type="{{ $booking->id_document_type ?? '' }}"
+                            data-id-number="{{ $booking->id_document_number ?? '' }}"
+                            data-id-scan="{{ $booking->id_scan_path ? asset($booking->id_scan_path) : '' }}"
+                            data-guest-signature="{{ $booking->guest_signature_path ? asset($booking->guest_signature_path) : '' }}"
+                            data-id-captured-at="{{ $booking->identity_captured_at ? $booking->identity_captured_at->format('M d, Y H:i') : '' }}">
+                      <i class="fa fa-eye"></i> View
+                    </button>
+                    <a href="{{ route('reception.invoices.download', $booking->id) }}" class="btn btn-sm btn-danger" title="Download PDF Invoice">
+                      <i class="fa fa-file-pdf-o"></i> PDF
+                    </a>
+                  </div>
                 </td>
               </tr>
               @endforeach
@@ -366,7 +358,12 @@ function viewBookingDetailsModal(bookingId) {
     pickup_contact_number: button.getAttribute('data-pickup-contact'),
     created_at: button.getAttribute('data-created-at'),
     checked_in_at: button.getAttribute('data-checked-in-at'),
-    checked_out_at: button.getAttribute('data-checked-out-at')
+    checked_out_at: button.getAttribute('data-checked-out-at'),
+    id_type: button.getAttribute('data-id-type'),
+    id_number: button.getAttribute('data-id-number'),
+    id_scan: button.getAttribute('data-id-scan'),
+    guest_signature: button.getAttribute('data-guest-signature'),
+    id_captured_at: button.getAttribute('data-id-captured-at')
   };
   
   const exchangeRate = bookingData.locked_exchange_rate || {{ $exchangeRate ?? 2500 }};
@@ -557,6 +554,44 @@ function viewBookingDetailsModal(bookingId) {
     </div>
     ` : ''}
     
+    ${bookingData.id_type || bookingData.id_scan || bookingData.guest_signature ? `
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <h5 style="color: #e77a3a; border-bottom: 2px solid #e77a3a; padding-bottom: 10px; margin-bottom: 15px;">
+          <i class="fa fa-id-card"></i> Check-In Identity Records
+        </h5>
+      </div>
+      <div class="col-md-6">
+        <div class="card bg-light border-0">
+          <div class="card-body">
+            <h6><strong>Identity Document</strong></h6>
+            <p class="mb-2"><strong>Type:</strong> ${bookingData.id_type || 'N/A'}</p>
+            <p class="mb-2"><strong>Number:</strong> ${bookingData.id_number || 'N/A'}</p>
+            ${bookingData.id_scan ? `
+              <div class="mt-2 text-center">
+                <img src="${bookingData.id_scan}" style="max-width: 100%; border-radius: 4px; border: 1px solid #ddd; max-height: 200px; cursor: pointer;" onclick="window.open('${bookingData.id_scan}', '_blank')">
+                <br><small class="text-muted">Click to enlarge ID Scan</small>
+              </div>
+            ` : '<p class="text-muted italic small">No ID scan captured</p>'}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card bg-light border-0">
+          <div class="card-body">
+            <h6><strong>Guest Signature</strong></h6>
+            ${bookingData.guest_signature ? `
+              <div class="mt-2 text-center" style="background: white; border-radius: 4px; padding: 10px; border: 1px solid #ddd;">
+                <img src="${bookingData.guest_signature}" style="max-width: 100%; max-height: 150px;">
+              </div>
+              <p class="small text-muted mt-2">Captured on: ${bookingData.id_captured_at || 'Check-in time'}</p>
+            ` : '<p class="text-muted italic small">No digital signature captured</p>'}
+          </div>
+        </div>
+      </div>
+    </div>
+    ` : ''}
+
     ${bookingData.airport_pickup_required ? `
     <div class="row mt-3">
       <div class="col-md-12">

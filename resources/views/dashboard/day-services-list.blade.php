@@ -262,9 +262,11 @@
               </td>
               <td>
                 @php
-                  $barUsage = $service->serviceRequests->sum('total_price_tsh');
-                  $barPaid = $service->serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
-                  $barUnpaid = $service->serviceRequests->where('payment_status', 'pending')->sum('total_price_tsh');
+                  // Only count non-cancelled and non-billed service requests
+                  $activeRequests = $service->serviceRequests->filter(fn($req) => !in_array(strtolower($req->status ?? ''), ['cancelled', 'billed']));
+                  $barUsage = $activeRequests->sum('total_price_tsh');
+                  $barPaid = $activeRequests->where('payment_status', 'paid')->sum('total_price_tsh');
+                  $barUnpaid = $activeRequests->where('payment_status', 'pending')->sum('total_price_tsh');
                 @endphp
                 @if($barUsage > 0)
                   <div class="small">
@@ -284,47 +286,45 @@
               <td>
                 <div class="btn-group">
                   <button class="btn btn-sm btn-info" onclick="viewService({{ $service->id }})" title="View Details">
-                    <i class="fa fa-eye"></i>
+                    <i class="fa fa-eye"></i> View More
                   </button>
-                  @php
-                    $serviceKey = strtolower($service->service_type ?? '');
-                    $isCeremonyService = str_contains($serviceKey, 'ceremony') || 
-                                        str_contains($serviceKey, 'ceremory') || 
-                                        str_contains($serviceKey, 'birthday') || 
-                                        str_contains($serviceKey, 'package');
-                  @endphp
-                  @if($isCeremonyService)
-                  <button class="btn btn-sm btn-primary" onclick="editServiceItems({{ $service->id }})" title="Edit Items & Prices">
-                    <i class="fa fa-edit"></i>
-                  </button>
-                  <a href="{{ route($baseRoute . '.docket', $service) }}" 
-                     class="btn btn-sm btn-secondary" target="_blank" title="Print Bill/Docket">
-                    <i class="fa fa-print"></i>
-                  </a>
-                  @endif
-                  @if($service->payment_status === 'paid')
-                  <a href="{{ route($baseRoute . '.receipt', $service) }}" 
-                     class="btn btn-sm btn-success" target="_blank" title="Download Receipt">
-                    <i class="fa fa-download"></i>
-                  </a>
-                  @endif
-
-                  @php
-                      $hasUnpaidWeb = $isCeremonyService && $service->serviceRequests->where('payment_status', 'pending')->count() > 0;
-                  @endphp
-
-                  @if($service->payment_status !== 'paid')
-                    @if($service->service_type === 'restaurant' || $service->service_type === 'bar' || $isCeremonyService)
-                      <button class="btn btn-sm btn-warning" onclick="processPayment({{ $service->id }})" title="Process Payment (Service Fee)">
-                        <i class="fa fa-money"></i>
-                      </button>
-                    @endif
-                  @endif
-
-                  @if($hasUnpaidWeb)
-                    <button class="btn btn-sm btn-success" onclick="openSettleUsageModal({{ $service->id }}, '{{ addslashes($service->guest_name ?? '') }}', {{ $service->serviceRequests->where('payment_status', 'pending')->sum('total_price_tsh') }})" title="Settle Usage: {{ number_format($service->serviceRequests->where('payment_status', 'pending')->sum('total_price_tsh')) }} TZS">
-                      <i class="fa fa-cutlery"></i>
+                  
+                  @if($role !== 'bar_keeper' && $role !== 'head_chef')
+                    @php
+                      $serviceKey = strtolower($service->service_type ?? '');
+                      $isCeremonyService = str_contains($serviceKey, 'ceremony') || 
+                                          str_contains($serviceKey, 'ceremory') || 
+                                          str_contains($serviceKey, 'birthday') || 
+                                          str_contains($serviceKey, 'package');
+                    @endphp
+                    @if($isCeremonyService)
+                    <button class="btn btn-sm btn-primary" onclick="editServiceItems({{ $service->id }})" title="Edit Items & Prices">
+                      <i class="fa fa-edit"></i>
                     </button>
+                    <a href="{{ route($baseRoute . '.docket', $service) }}" 
+                       class="btn btn-sm btn-secondary" target="_blank" title="Print Bill/Docket">
+                      <i class="fa fa-print"></i>
+                    </a>
+                    @endif
+                    @if($service->payment_status === 'paid')
+                    <a href="{{ route($baseRoute . '.receipt', $service) }}" 
+                       class="btn btn-sm btn-success" target="_blank" title="Download Receipt">
+                      <i class="fa fa-download"></i>
+                    </a>
+                    @endif
+
+                    @php
+                        $hasUnpaidWeb = $isCeremonyService && $activeRequests->where('payment_status', 'pending')->count() > 0;
+                    @endphp
+
+                    @if($service->payment_status !== 'paid')
+                      @if($service->service_type === 'restaurant' || $service->service_type === 'bar' || $isCeremonyService)
+                        <button class="btn btn-sm btn-warning" onclick="processPayment({{ $service->id }})" title="Process Payment (Service Fee)">
+                          <i class="fa fa-money"></i>
+                        </button>
+                      @endif
+                    @endif
+
                   @endif
                 </div>
               </td>
@@ -571,94 +571,118 @@
             <i class="fa fa-info-circle"></i> Update prices for existing items or add new items that were not included in the original ceremony package.
           </div>
           
-          <h5 class="mb-3"><i class="fa fa-gift"></i> Package Items</h5>
-          <div id="packageItemsContainer">
-            <!-- Package items will be loaded here dynamically -->
-          </div>
-          
-          <h5 class="mt-4 mb-3"><i class="fa fa-plus-circle"></i> Additional Items</h5>
-          <div id="editAdditionalItemsContainer">
-            <!-- Additional items will be loaded here dynamically -->
-          </div>
-          
-          <div class="row mt-3">
+          <div class="row">
             <div class="col-md-12">
-              <button type="button" class="btn btn-sm btn-outline-primary" onclick="addEditItemRow()">
-                <i class="fa fa-plus"></i> Add New Item
-              </button>
-            </div>
-          </div>
-          
-          <div class="row mt-3">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label for="edit_total_amount"><strong>Total Amount <span class="text-danger">*</span></strong></label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text" id="edit_items_currency_symbol">TZS</span>
-                  </div>
-                  <input class="form-control" type="number" id="edit_total_amount" name="total_amount" 
-                         step="0.01" min="0" required readonly>
+              <div class="card border-primary mb-3 shadow-sm">
+                <div class="card-header bg-primary text-white py-2 px-3 d-flex justify-content-between align-items-center">
+                  <h6 class="mb-0"><i class="fa fa-list-ul mr-2"></i>Ceremony Package & Service Items</h6>
+                  <button type="button" class="btn btn-xs btn-light" onclick="addEditItemRow()">
+                    <i class="fa fa-plus text-primary"></i>
+                  </button>
                 </div>
-                <small class="form-text text-muted">Calculated from all items above</small>
-              </div>
-            </div>
-          </div>
-          
-          <h5 class="mt-4 mb-3"><i class="fa fa-money"></i> Payment Information (if amount changed)</h5>
-          
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label for="edit_items_payment_method">Payment Method</label>
-                <select class="form-control" id="edit_items_payment_method" name="payment_method" onchange="toggleEditItemsPaymentProvider()">
-                  <option value="">Select payment method (if updating payment)...</option>
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
-                  <option value="mobile">Mobile Money</option>
-                  <option value="bank">Bank Transfer</option>
-                  <option value="online">Online Payment</option>
-                  <option value="other">Other</option>
-                </select>
-                <small class="form-text text-muted">Optional: Only fill if updating payment method</small>
-              </div>
-            </div>
-          </div>
-          
-          <div class="row" id="edit_items_payment_provider_section" style="display: none;">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label for="edit_items_payment_provider">Payment Provider / Platform</label>
-                <select class="form-control" id="edit_items_payment_provider" name="payment_provider">
-                  <option value="">Select provider...</option>
-                </select>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label for="edit_items_payment_reference">Reference Number / Transaction ID</label>
-                <input class="form-control" type="text" id="edit_items_payment_reference" name="payment_reference" placeholder="Enter transaction reference">
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" style="vertical-align: middle;">
+                      <thead class="bg-light text-uppercase font-weight-bold" style="font-size: 10px; color: #666;">
+                        <tr>
+                          <th style="padding-left: 15px;">Item Name / Description</th>
+                          <th style="width: 160px;">Price</th>
+                          <th style="width: 80px; text-align: center;">Paid</th>
+                          <th style="width: 40px;"></th>
+                        </tr>
+                      </thead>
+                      <tbody id="packageItemsContainer">
+                        <!-- Package items will be loaded here dynamically -->
+                      </tbody>
+                      <tbody id="editAdditionalItemsContainer">
+                        <!-- Additional items will be loaded here dynamically -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="card-footer bg-light py-2 text-right">
+                  <span class="text-muted small">Add extras like cakes, flowers, or missing package items.</span>
+                </div>
               </div>
             </div>
           </div>
           
           <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label for="edit_items_amount_paid">Amount Paid</label>
-                <div class="input-group">
-                  <div class="input-group-prepend">
-                    <span class="input-group-text" id="edit_items_paid_currency_symbol">TZS</span>
-                  </div>
-                  <input class="form-control" type="number" id="edit_items_amount_paid" name="amount_paid" 
-                         step="0.01" min="0">
+            <div class="col-md-7">
+              <div class="card border-info h-100 shadow-sm">
+                <div class="card-header bg-info text-white py-2 px-3">
+                  <h6 class="mb-0"><i class="fa fa-credit-card mr-2"></i>Payment Reconciliation</h6>
                 </div>
-                <small class="form-text text-muted">Optional: Only fill if updating payment amount</small>
+                <div class="card-body py-3 px-3">
+                  <div class="form-group row mb-2">
+                    <label class="col-sm-5 col-form-label py-1">Payment Method</label>
+                    <div class="col-sm-7">
+                      <select class="form-control form-control-sm" id="edit_items_payment_method" name="payment_method" onchange="toggleEditItemsPaymentProvider()">
+                        <option value="">Choose method...</option>
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="mobile">Mobile Money</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="online">Online Payment</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div id="edit_items_payment_provider_section" style="display: none;">
+                    <div class="form-group row mb-2">
+                      <label class="col-sm-5 col-form-label py-1">Provider</label>
+                      <div class="col-sm-7">
+                        <select class="form-control form-control-sm" id="edit_items_payment_provider" name="payment_provider">
+                          <option value="">Select...</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="form-group row mb-2">
+                      <label class="col-sm-5 col-form-label py-1">Reference</label>
+                      <div class="col-sm-7">
+                        <input class="form-control form-control-sm" type="text" id="edit_items_payment_reference" placeholder="Transaction ID">
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="form-group row mb-0 mt-3 pt-3 border-top">
+                    <label class="col-sm-5 col-form-label py-1 text-success font-weight-bold" style="font-size: 1.1em;">TOTAL PAID</label>
+                    <div class="col-sm-7">
+                      <div class="input-group">
+                        <div class="input-group-prepend">
+                          <span class="input-group-text bg-success border-success text-white" id="edit_items_paid_currency_symbol">TZS</span>
+                        </div>
+                        <input class="form-control font-weight-bold border-success text-center h5 mb-0" type="number" id="edit_items_amount_paid" name="amount_paid" step="0.01" min="0" style="background: #f0fff4;">
+                      </div>
+                      <small class="text-muted d-block mt-1" style="font-size: 10px;">Update this if guest made more payments.</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-5">
+              <div class="card bg-white h-100 border-secondary shadow-sm">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+                  <h6 class="text-uppercase text-muted mb-2 font-weight-bold" style="letter-spacing: 1px; font-size: 11px;">GRAND TOTAL BILL</h6>
+                  <div class="mb-1">
+                    <span class="h4 mb-0 text-muted" id="edit_items_currency_symbol">TZS</span>
+                    <h2 class="display-4 font-weight-bold mb-0 text-primary" id="edit_display_total" style="font-size: 2.5rem;">0.00</h2>
+                    <input type="hidden" id="edit_total_amount" name="total_amount">
+                  </div>
+                  <hr class="w-100 my-3">
+                  <div id="payment_suggestion" class="w-100" style="display: none;">
+                    <div class="alert alert-info py-2 px-3 mb-0" style="font-size: 11px;">
+                      <i class="fa fa-lightbulb-o mr-1"></i> Checked items sum up to: 
+                      <strong id="suggestion_text" class="d-block mt-1 h6 mb-2"></strong>
+                      <button type="button" class="btn btn-xs btn-info btn-block shadow-sm" onclick="applyPaymentSuggestion()">Update Total Paid</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div id="editItemsAlert"></div>
+          <div id="editItemsAlert" class="mt-3"></div>
         </form>
       </div>
       <div class="modal-footer">
@@ -906,8 +930,10 @@ function viewService(serviceId) {
       }
 
       // 2. Add Bar/Restaurant Consumption Items
-      if (service.service_requests && service.service_requests.length > 0) {
-          service.service_requests.forEach(req => {
+      const activeRequests = (service.service_requests || []).filter(req => (req.status || '').toLowerCase() !== 'cancelled');
+      
+      if (activeRequests.length > 0) {
+          activeRequests.forEach(req => {
               const itemName = (req.service_specific_data && req.service_specific_data.item_name) 
                                ? req.service_specific_data.item_name 
                                : (req.service ? req.service.name : 'Consumption Item');
@@ -1019,11 +1045,11 @@ function viewService(serviceId) {
       const totalDisplay = document.getElementById('barUsageTotal');
       const noUsageMsg = document.getElementById('noUsageMessage');
       
-      if (service.service_requests && service.service_requests.length > 0) {
+      if (activeRequests.length > 0) {
           let consumptionHtml = '';
           let totalUsage = 0;
           
-          service.service_requests.forEach(req => {
+          activeRequests.forEach(req => {
               const itemName = (req.service_specific_data && req.service_specific_data.item_name) 
                                ? req.service_specific_data.item_name 
                                : (req.service ? req.service.name : 'Unknown Item');
@@ -1050,7 +1076,7 @@ function viewService(serviceId) {
           // Set paid/unpaid totals
           let paidUsage = 0;
           let unpaidUsage = 0;
-          service.service_requests.forEach(req => {
+          activeRequests.forEach(req => {
               const total = parseFloat(req.total_price_tsh || 0);
               if (req.payment_status === 'paid') {
                   paidUsage += total;
@@ -1127,7 +1153,8 @@ function processPayment(serviceId) {
       let unpaidConsumption = 0;
       if (service.service_requests && service.service_requests.length > 0) {
          service.service_requests.forEach(req => {
-            if (req.payment_status !== 'paid') {
+            const status = (req.status || '').toLowerCase();
+            if (req.payment_status !== 'paid' && status !== 'cancelled') {
                unpaidConsumption += parseFloat(req.total_price_tsh || 0);
             }
          });
@@ -1559,9 +1586,6 @@ function editServiceItems(serviceId) {
       document.getElementById('edit_items_paid_currency_symbol').textContent = currencySymbol;
       
       // Load package items
-      const packageItemsContainer = document.getElementById('packageItemsContainer');
-      packageItemsContainer.innerHTML = '';
-      
       const packageItemLabels = {
         'food': 'Food',
         'swimming': 'Swimming',
@@ -1570,94 +1594,129 @@ function editServiceItems(serviceId) {
         'decoration': 'Decoration'
       };
       
-      if (service.package_items && typeof service.package_items === 'object') {
-        for (const [key, price] of Object.entries(service.package_items)) {
-          // Skip if it's already an additional item (has a custom name)
-          if (packageItemLabels[key] || key.toLowerCase().match(/^(food|swimming|drinks|photos|decoration)$/i)) {
-            const label = packageItemLabels[key] || key.charAt(0).toUpperCase() + key.slice(1);
-            const itemHtml = `
-              <div class="row package-item-row mb-2" data-item-key="${key}">
-                <div class="col-md-4">
-                  <div class="form-group mb-0">
-                    <label>${label}</label>
-                    <input type="hidden" name="package_items[${key}][name]" value="${key}">
-                  </div>
+      const dbPackageItems = service.package_items || {};
+      const dbPackageItemsPaid = service.package_items_paid || {};
+      
+      // Load all standard package items first
+      for (const [key, label] of Object.entries(packageItemLabels)) {
+        const price = dbPackageItems[key] || 0;
+        const isPaid = dbPackageItemsPaid[key] ? 'checked' : '';
+        
+        const itemHtml = `
+          <tr class="package-item-row" data-item-key="${key}">
+            <td style="padding-left: 15px;">
+              <div class="font-weight-bold">${label}</div>
+              <input type="hidden" name="package_items[${key}][name]" value="${key}">
+            </td>
+            <td>
+              <div class="input-group input-group-sm">
+                <div class="input-group-prepend">
+                  <span class="input-group-text">${currencySymbol}</span>
                 </div>
-                <div class="col-md-6">
-                  <div class="form-group mb-0">
-                    <label>Price <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text">${currencySymbol}</span>
-                      </div>
-                      <input class="form-control package-item-price" type="number" 
-                             name="package_items[${key}][price]" 
-                             step="0.01" min="0" value="${parseFloat(price) || 0}" 
-                             required oninput="calculateEditTotal()">
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-group mb-0">
-                    <label>&nbsp;</label>
-                    <button type="button" class="btn btn-sm btn-danger btn-block" onclick="removeEditItemRow(this)" disabled title="Cannot remove package items">
-                      <i class="fa fa-times"></i>
-                    </button>
-                  </div>
-                </div>
+                <input class="form-control package-item-price" type="number" 
+                       name="package_items[${key}][price]" 
+                       step="0.01" min="0" value="${parseFloat(price) || 0}" 
+                       required oninput="calculateEditTotal()">
               </div>
-            `;
-            packageItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
-          }
-        }
+            </td>
+            <td class="text-center">
+              <input class="package-item-paid-checkbox" type="checkbox" 
+                     value="1" ${isPaid} onchange="calculateEditTotal()" style="width: 18px; height: 18px;">
+            </td>
+            <td></td>
+          </tr>
+        `;
+        packageItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
       }
       
-      // Load additional items (items not in packageItemLabels)
+      // Load additional items (items not in packageItemLabels but in dbPackageItems)
       const additionalItemsContainer = document.getElementById('editAdditionalItemsContainer');
       additionalItemsContainer.innerHTML = '';
       
-      if (service.package_items && typeof service.package_items === 'object') {
-        for (const [key, price] of Object.entries(service.package_items)) {
-          // If it's not a predefined package item, treat it as additional
-          if (!packageItemLabels[key] && !key.toLowerCase().match(/^(food|swimming|drinks|photos|decoration)$/i)) {
+      for (const [key, price] of Object.entries(dbPackageItems)) {
+        // If it's not a standard package item, treat it as additional
+        if (!packageItemLabels[key]) {
+          editItemCounter++;
+          const isPaid = dbPackageItemsPaid[key] ? 'checked' : '';
+          const itemHtml = `
+            <tr class="additional-item-row" id="edit_item_row_${editItemCounter}" data-item-name="${key}">
+              <td style="padding-left: 15px;">
+                <input class="form-control form-control-sm edit-additional-item-name" type="text" 
+                       name="additional_items[${editItemCounter}][name]" 
+                       value="${key}" required oninput="calculateEditTotal()">
+              </td>
+              <td>
+                <div class="input-group input-group-sm">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text">${currencySymbol}</span>
+                  </div>
+                  <input class="form-control edit-additional-item-price" type="number" 
+                         name="additional_items[${editItemCounter}][price]" 
+                         step="0.01" min="0" value="${parseFloat(price) || 0}" 
+                         required oninput="calculateEditTotal()">
+                </div>
+              </td>
+              <td class="text-center">
+                <input class="additional-item-paid-checkbox" type="checkbox" 
+                       value="1" ${isPaid} onchange="calculateEditTotal()" style="width: 18px; height: 18px;">
+              </td>
+              <td>
+                <button type="button" class="btn btn-xs btn-outline-danger" onclick="removeEditItemRow(this)">
+                  <i class="fa fa-times"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+          additionalItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
+        }
+      }
+
+      // Automatically pull in unbilled consumption from serviceRequests
+      if (service.service_requests && service.service_requests.length > 0) {
+        service.service_requests.forEach(request => {
+          // Only pull items that aren't cancelled or already billed
+          if (request.status !== 'cancelled' && request.status !== 'billed') {
+            const itemName = (request.service_specific_data && request.service_specific_data.item_name) 
+                              ? request.service_specific_data.item_name 
+                              : (request.service ? request.service.name : 'Unknown Item');
+            const fullItemName = `${itemName} (x${request.quantity})`;
+            const itemPrice = parseFloat(request.total_price_tsh) || 0;
+            const isPaid = request.payment_status === 'paid' ? 'checked' : '';
+            
             editItemCounter++;
             const itemHtml = `
-              <div class="row additional-item-row mb-2" id="edit_item_row_${editItemCounter}" data-item-name="${key}">
-                <div class="col-md-4">
-                  <div class="form-group mb-0">
-                    <label>Item Name <span class="text-danger">*</span></label>
-                    <input class="form-control edit-additional-item-name" type="text" 
-                           name="additional_items[${editItemCounter}][name]" 
-                           value="${key}" required oninput="calculateEditTotal()">
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group mb-0">
-                    <label>Price <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                      <div class="input-group-prepend">
-                        <span class="input-group-text">${currencySymbol}</span>
-                      </div>
-                      <input class="form-control edit-additional-item-price" type="number" 
-                             name="additional_items[${editItemCounter}][price]" 
-                             step="0.01" min="0" value="${parseFloat(price) || 0}" 
-                             required oninput="calculateEditTotal()">
+              <tr class="additional-item-row service-request-row" id="edit_item_row_${editItemCounter}" data-request-id="${request.id}">
+                <td style="padding-left: 15px;">
+                  <div class="small text-primary font-italic mb-1">Consumption (from Waiter)</div>
+                  <input class="form-control form-control-sm edit-additional-item-name" type="text" 
+                         name="additional_items[${editItemCounter}][name]" 
+                         value="${fullItemName}" required oninput="calculateEditTotal()">
+                </td>
+                <td>
+                  <div class="input-group input-group-sm">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text">${currencySymbol}</span>
                     </div>
+                    <input class="form-control edit-additional-item-price" type="number" 
+                           name="additional_items[${editItemCounter}][price]" 
+                           step="0.01" min="0" value="${itemPrice}" 
+                           required oninput="calculateEditTotal()">
                   </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-group mb-0">
-                    <label>&nbsp;</label>
-                    <button type="button" class="btn btn-sm btn-danger btn-block" onclick="removeEditItemRow(this)">
-                      <i class="fa fa-times"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
+                </td>
+                <td class="text-center">
+                  <input class="additional-item-paid-checkbox" type="checkbox" 
+                         value="1" ${isPaid} onchange="calculateEditTotal()" style="width: 18px; height: 18px;">
+                </td>
+                <td>
+                  <button type="button" class="btn btn-xs btn-outline-info" onclick="removeEditItemRow(this)" title="Exclude from bill">
+                    <i class="fa fa-minus"></i>
+                  </button>
+                </td>
+              </tr>
             `;
             additionalItemsContainer.insertAdjacentHTML('beforeend', itemHtml);
           }
-        }
+        });
       }
       
       // Set current amount and amount paid
@@ -1685,45 +1744,40 @@ function addEditItemRow() {
   const currencySymbol = service && service.guest_type === 'tanzanian' ? 'TZS' : 'USD';
   
   const itemHtml = `
-    <div class="row additional-item-row mb-2" id="edit_item_row_${editItemCounter}">
-      <div class="col-md-4">
-        <div class="form-group mb-0">
-          <label>Item Name <span class="text-danger">*</span></label>
-          <input class="form-control edit-additional-item-name" type="text" 
-                 name="additional_items[${editItemCounter}][name]" 
-                 placeholder="Enter item name" required oninput="calculateEditTotal()">
-        </div>
-      </div>
-      <div class="col-md-6">
-        <div class="form-group mb-0">
-          <label>Price <span class="text-danger">*</span></label>
-          <div class="input-group">
-            <div class="input-group-prepend">
-              <span class="input-group-text">${currencySymbol}</span>
-            </div>
-            <input class="form-control edit-additional-item-price" type="number" 
-                   name="additional_items[${editItemCounter}][price]" 
-                   step="0.01" min="0" value="0" 
-                   required oninput="calculateEditTotal()">
+    <tr class="additional-item-row" id="edit_item_row_${editItemCounter}">
+      <td style="padding-left: 15px;">
+        <input class="form-control form-control-sm edit-additional-item-name" type="text" 
+               name="additional_items[${editItemCounter}][name]" 
+               placeholder="Enter item name" required oninput="calculateEditTotal()">
+      </td>
+      <td>
+        <div class="input-group input-group-sm">
+          <div class="input-group-prepend">
+            <span class="input-group-text">${currencySymbol}</span>
           </div>
+          <input class="form-control edit-additional-item-price" type="number" 
+                 name="additional_items[${editItemCounter}][price]" 
+                 step="0.01" min="0" value="0" 
+                 required oninput="calculateEditTotal()">
         </div>
-      </div>
-      <div class="col-md-2">
-        <div class="form-group mb-0">
-          <label>&nbsp;</label>
-          <button type="button" class="btn btn-sm btn-danger btn-block" onclick="removeEditItemRow(this)">
-            <i class="fa fa-times"></i>
-          </button>
-        </div>
-      </div>
-    </div>
+      </td>
+      <td class="text-center">
+        <input class="additional-item-paid-checkbox" type="checkbox" 
+               value="1" checked onchange="calculateEditTotal()" style="width: 18px; height: 18px;">
+      </td>
+      <td>
+        <button type="button" class="btn btn-xs btn-outline-danger" onclick="removeEditItemRow(this)">
+          <i class="fa fa-times"></i>
+        </button>
+      </td>
+    </tr>
   `;
   
   container.insertAdjacentHTML('beforeend', itemHtml);
 }
 
 function removeEditItemRow(button) {
-  const row = button.closest('.row');
+  const row = button.closest('tr');
   if (row) {
     row.remove();
     calculateEditTotal();
@@ -1732,24 +1786,61 @@ function removeEditItemRow(button) {
 
 function calculateEditTotal() {
   let total = 0;
+  let paidTotal = 0;
   
   // Calculate from package items
-  const packagePriceInputs = document.querySelectorAll('.package-item-price');
-  packagePriceInputs.forEach(input => {
-    const price = parseFloat(input.value) || 0;
+  document.querySelectorAll('.package-item-row').forEach(row => {
+    const priceInput = row.querySelector('.package-item-price');
+    const paidCheckbox = row.querySelector('.package-item-paid-checkbox');
+    const price = parseFloat(priceInput.value) || 0;
     total += price;
+    if (paidCheckbox && paidCheckbox.checked) {
+      paidTotal += price;
+    }
   });
   
   // Calculate from additional items
-  const additionalPriceInputs = document.querySelectorAll('.edit-additional-item-price');
-  additionalPriceInputs.forEach(input => {
-    const price = parseFloat(input.value) || 0;
+  document.querySelectorAll('.additional-item-row').forEach(row => {
+    const priceInput = row.querySelector('.edit-additional-item-price');
+    const paidCheckbox = row.querySelector('.additional-item-paid-checkbox');
+    const price = parseFloat(priceInput.value) || 0;
     total += price;
+    if (paidCheckbox && paidCheckbox.checked) {
+      paidTotal += price;
+    }
   });
+  
+  // Update Display Total
+  const displayTotal = document.getElementById('edit_display_total');
+  if (displayTotal) {
+    displayTotal.textContent = total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
   
   const totalInput = document.getElementById('edit_total_amount');
   if (totalInput) {
     totalInput.value = total.toFixed(2);
+  }
+
+  // Handle Payment Suggestion
+  const suggestionContainer = document.getElementById('payment_suggestion');
+  const suggestionText = document.getElementById('suggestion_text');
+  const amountPaidInput = document.getElementById('edit_items_amount_paid');
+  const currentPaid = parseFloat(amountPaidInput.value) || 0;
+
+  if (Math.abs(paidTotal - currentPaid) > 0.01 && paidTotal > 0) {
+    suggestionContainer.style.display = 'block';
+    const symbol = document.getElementById('edit_items_paid_currency_symbol').textContent;
+    suggestionText.textContent = `${symbol} ${paidTotal.toLocaleString()}`;
+    window.suggestedPaidAmount = paidTotal;
+  } else {
+    suggestionContainer.style.display = 'none';
+  }
+}
+
+function applyPaymentSuggestion() {
+  if (window.suggestedPaidAmount !== undefined) {
+    document.getElementById('edit_items_amount_paid').value = window.suggestedPaidAmount.toFixed(2);
+    calculateEditTotal();
   }
 }
 
@@ -1817,12 +1908,17 @@ function submitEditItems() {
   
   // Collect package items
   const packageItemsData = {};
+  const packageItemsPaidData = {};
   document.querySelectorAll('.package-item-row').forEach(row => {
     const key = row.getAttribute('data-item-key');
     const priceInput = row.querySelector('.package-item-price');
+    const paidCheckbox = row.querySelector('.package-item-paid-checkbox');
     if (key && priceInput) {
       const price = parseFloat(priceInput.value) || 0;
-      packageItemsData[key] = price;
+      if (price > 0) {
+        packageItemsData[key] = price;
+        packageItemsPaidData[key] = (paidCheckbox && paidCheckbox.checked) ? 1 : 0;
+      }
     }
   });
   
@@ -1831,11 +1927,13 @@ function submitEditItems() {
   document.querySelectorAll('.additional-item-row').forEach(row => {
     const nameInput = row.querySelector('.edit-additional-item-name');
     const priceInput = row.querySelector('.edit-additional-item-price');
+    const paidCheckbox = row.querySelector('.additional-item-paid-checkbox');
     if (nameInput && priceInput) {
       const name = nameInput.value.trim();
       const price = parseFloat(priceInput.value) || 0;
       if (name && price > 0) {
         additionalItemsData[name] = price;
+        packageItemsPaidData[name] = (paidCheckbox && paidCheckbox.checked) ? 1 : 0;
       }
     }
   });
@@ -1853,9 +1951,20 @@ function submitEditItems() {
     return;
   }
   
+  // Collect merged service request IDs
+  const mergedRequestIds = [];
+  document.querySelectorAll('.service-request-row').forEach(row => {
+    const requestId = row.getAttribute('data-request-id');
+    if (requestId) {
+      mergedRequestIds.push(requestId);
+    }
+  });
+
   const formData = {
     package_items: packageItemsData,
     additional_items: additionalItemsData,
+    package_items_paid: packageItemsPaidData,
+    merged_request_ids: mergedRequestIds,
     total_amount: totalAmount,
     payment_method: paymentMethod || null,
     payment_provider: paymentProvider || null,
@@ -1914,146 +2023,6 @@ function submitEditItems() {
     submitBtn.innerHTML = originalText;
   });
 }
-
-function openSettleUsageModal(id, name, amount) {
-    document.getElementById('managerCeremonyDayServiceId').value = id;
-    document.getElementById('managerCeremonyGuestName').innerText = name;
-    document.getElementById('managerCeremonyUnpaidAmount').innerText = amount.toLocaleString() + ' TZS';
-    
-    // Reset fields
-    document.getElementById('managerCeremonyPaymentMethod').value = 'cash';
-    document.getElementById('managerCeremonyPaymentReference').value = '';
-    toggleManagerCeremonyRefField();
-    
-    $('#managerCeremonyPaymentModal').modal('show');
-}
-
-function openManagerCeremonyPaymentModal() {
-    if (!window.currentCeremonyContext) {
-        swal("Error", "Ceremony context not found. Please try again.", "error");
-        return;
-    }
-    
-    const context = window.currentCeremonyContext;
-    document.getElementById('managerCeremonyDayServiceId').value = context.dayServiceId;
-    document.getElementById('managerCeremonyGuestName').innerText = context.guestName;
-    document.getElementById('managerCeremonyUnpaidAmount').innerText = context.unpaidAmount.toLocaleString() + ' TZS';
-    document.getElementById('managerCeremonyPaymentMethod').value = 'cash';
-    document.getElementById('managerCeremonyPaymentReference').value = '';
-    toggleManagerCeremonyRefField();
-    $('#managerCeremonyPaymentModal').modal('show');
-}
-
-function toggleManagerCeremonyRefField() {
-    const method = document.getElementById('managerCeremonyPaymentMethod').value;
-    const container = document.getElementById('managerCeremonyRefFieldContainer');
-    if (method === 'cash') {
-        container.style.display = 'none';
-    } else {
-        container.style.display = 'block';
-    }
-}
-
-function submitManagerCeremonyPayment() {
-    const dayServiceId = document.getElementById('managerCeremonyDayServiceId').value;
-    const method = document.getElementById('managerCeremonyPaymentMethod').value;
-    const reference = document.getElementById('managerCeremonyPaymentReference').value.trim();
-    
-    if (method !== 'cash' && !reference) {
-        swal("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
-        return;
-    }
-
-    swal({
-        title: "Confirm Settlement",
-        text: "Mark all unpaid consumption for this ceremony as paid?",
-        type: "info",
-        showCancelButton: true,
-        confirmButtonColor: "#28a745",
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Yes, Settle!",
-        cancelButtonText: "Cancel",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
-            const url = `/customer/ceremonies/settle-usage`;
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    day_service_id: dayServiceId,
-                    payment_method: method,
-                    payment_reference: reference
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    swal({
-                        title: "Success!",
-                        text: data.message + ` (${data.count} items settled)`,
-                        type: "success",
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    swal("Error!", data.message, "error");
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                swal("Error!", "Failed to settle payment. Please try again.", "error");
-            });
-        }
-    });
-}
 </script>
-
-<!-- Manager Ceremony Payment Modal -->
-<div class="modal fade" id="managerCeremonyPaymentModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title"><i class="fa fa-money mr-2"></i>Settle Ceremony Consumption</h5>
-        <button type="button" class="close text-white" data-dismiss="modal">
-          <span>&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="managerCeremonyDayServiceId">
-        <div class="alert alert-info">
-          <strong id="managerCeremonyGuestName"></strong><br>
-          <small>Total Unpaid Consumption: <strong id="managerCeremonyUnpaidAmount"></strong></small>
-        </div>
-        <div class="form-group">
-          <label>Payment Method <span class="text-danger">*</span></label>
-          <select class="form-control" id="managerCeremonyPaymentMethod" onchange="toggleManagerCeremonyRefField()">
-            <option value="cash">Cash</option>
-            <option value="mpesa">M-Pesa</option>
-            <option value="halopesa">Halopesa</option>
-            <option value="airtel_money">Airtel Money</option>
-            <option value="mixx_by_yass">Mixx by Yass</option>
-            <option value="nmb">NMB Bank</option>
-            <option value="crdb">CRDB Bank</option>
-            <option value="kcb">KCB Bank</option>
-          </select>
-        </div>
-        <div class="form-group" id="managerCeremonyRefFieldContainer" style="display: none;">
-          <label>Reference Number <span class="text-danger">*</span></label>
-          <input type="text" class="form-control" id="managerCeremonyPaymentReference" placeholder="Enter transaction reference">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-success" onclick="submitManagerCeremonyPayment()"><i class="fa fa-check mr-1"></i>Settle Payment</button>
-      </div>
-    </div>
-  </div>
-</div>
 @endsection
 

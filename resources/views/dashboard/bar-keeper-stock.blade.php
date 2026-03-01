@@ -21,7 +21,7 @@
             <div class="card-body p-3">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-wine-bottle text-white fa-lg"></i>
+                        <i class="fa fa-glass text-white fa-lg"></i>
                     </div>
                     <div>
                         <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Products</h6>
@@ -90,7 +90,7 @@
             <div class="card-body p-3">
                 <div class="d-flex align-items-center mb-2">
                     <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-chart-line text-white fa-lg"></i>
+                        <i class="fa fa-line-chart text-white fa-lg"></i>
                     </div>
                     <div>
                         <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Stock Value</h6>
@@ -141,37 +141,37 @@
                 </div>
                 @else
                 <!-- Enhanced Category Tabs -->
-                <ul class="nav nav-pills nav-fill mb-3" role="tablist" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 10px; border-radius: 10px;">
+                <ul class="nav nav-pills nav-fill mb-2" role="tablist" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 5px; border-radius: 8px;">
                     <li class="nav-item">
-                        <a class="nav-link active" id="all-tab" data-toggle="tab" href="#all" role="tab" style="border-radius: 8px; font-weight: 600; color: white;">
+                        <a class="nav-link active py-1" id="all-tab" data-toggle="tab" href="#all" role="tab" style="border-radius: 6px; font-weight: 600; color: white; font-size: 13px;">
                             <i class="fa fa-th-large"></i> All
-                            <span class="badge badge-light ml-1">{{ $myStock->count() }}</span>
+                            <span class="badge badge-light ml-1" style="font-size: 10px;">{{ $myStock->count() }}</span>
                         </a>
                     </li>
                     @php
                         $categoryIcons = [
-                            'spirits' => 'fa-wine-bottle',
-                            'wines' => 'fa-wine-glass-alt',
-                            'alcoholic_beverage' => 'fa-beer',
-                            'non_alcoholic_beverage' => 'fa-glass-whiskey',
+                            'spirits' => 'fa-glass',
+                            'wines' => 'fa-glass',
+                            'alcoholic_beverage' => 'fa-glass',
+                            'non_alcoholic_beverage' => 'fa-glass',
                             'water' => 'fa-tint',
-                            'juices' => 'fa-lemon',
+                            'juices' => 'fa-glass',
                             'energy_drinks' => 'fa-bolt',
-                            'hot_beverages' => 'fa-mug-hot',
-                            'cocktails' => 'fa-cocktail',
+                            'hot_beverages' => 'fa-coffee',
+                            'cocktails' => 'fa-glass',
                         ];
                     @endphp
                     @foreach($categories as $category => $items)
                     <li class="nav-item">
-                        <a class="nav-link" id="{{ $category }}-tab" data-toggle="tab" href="#{{ $category }}" role="tab" style="border-radius: 8px; font-weight: 600; color: rgba(255,255,255,0.8);">
+                        <a class="nav-link py-1" id="{{ $category }}-tab" data-toggle="tab" href="#{{ $category }}" role="tab" style="border-radius: 6px; font-weight: 600; color: rgba(255,255,255,0.8); font-size: 13px;">
                             <i class="fa {{ $categoryIcons[$category] ?? 'fa-tag' }}"></i> {{ $items->first()['category_name'] ?? ucfirst(str_replace('_', ' ', $category)) }}
-                            <span class="badge badge-light ml-1">{{ $items->count() }}</span>
+                            <span class="badge badge-light ml-1" style="font-size: 10px;">{{ $items->count() }}</span>
                         </a>
                     </li>
                     @endforeach
                 </ul>
 
-                <div class="tab-content" style="background: #fff; padding: 20px 0;">
+                <div class="tab-content" style="background: #fff; padding: 10px 0;">
                     <!-- All Products Tab -->
                     <div class="tab-pane fade show active" id="all" role="tabpanel">
                         <div class="row" id="inventoryCards">
@@ -232,29 +232,7 @@
           </div>
           @endif
 
-          <!-- Section 2: Pricing (Crucial for manager) -->
-          <div class="p-3 rounded" style="background: #fff3e0; border-left: 5px solid #e77a31;">
-              <h6 class="font-weight-bold text-warning" style="color: #cc6a27 !important;"><i class="fa fa-money-bill-wave"></i> Active Pricing (Daily Charges)</h6>
-              <form id="priceUpdateForm">
-                  <input type="hidden" class="settings_variant_id" name="variant_id">
-                  
-                  <div class="form-row mt-2">
-                    <div class="col-6">
-                        <div class="form-group">
-                            <label class="small font-weight-bold">Bottle/PIC Price (TSH)</label>
-                            <input type="number" class="form-control border-warning" id="price_pic" name="selling_price_per_pic" required min="0">
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="form-group">
-                            <label class="small font-weight-bold">Glass/Tot Price (TSH)</label>
-                            <input type="number" class="form-control border-warning" id="price_glass" name="selling_price_per_serving" min="0">
-                        </div>
-                    </div>
-                  </div>
-                  <button type="submit" class="btn btn-block text-white" style="background: #e77a31;">Update All Prices</button>
-              </form>
-          </div>
+          <!-- Pricing section removed as requested -->
       </div>
       <div class="modal-footer bg-light">
           <button type="button" class="btn btn-link text-muted" data-dismiss="modal">Close</button>
@@ -268,7 +246,9 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
       <div class="modal-header bg-dark text-white" style="border-radius: 15px 15px 0 0;">
-        <h5 class="modal-title"><i class="fa fa-history"></i> Usage Tracking: <span id="track_item_name"></span></h5>
+        <h5 class="modal-title"><i class="fa fa-history"></i> Usage Tracking: <span id="track_item_name"></span>
+          <span id="track_current_stock_badge" class="badge badge-success ml-2" style="font-size:12px; display:none;"></span>
+        </h5>
         <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
       </div>
       <div class="modal-body">
@@ -276,10 +256,10 @@
           <table class="table table-hover table-striped" id="usageTimelineTable">
             <thead class="bg-light">
               <tr>
-                <th>Date & Time</th>
+                <th>Date &amp; Time</th>
                 <th>Type</th>
                 <th>Change</th>
-                <th>Balance</th>
+                <th>In Stock</th>
                 <th>Staff</th>
                 <th>Notes</th>
               </tr>
@@ -485,17 +465,28 @@ $(document).ready(function() {
                         } else if (m.is_addition) {
                             colorClass = 'success';
                         }
+
+                        var inStockCell = '-';
+                        if (m.in_stock !== null && m.in_stock !== undefined) {
+                            var stockNum = parseFloat(m.in_stock);
+                            var stockColor = stockNum > 0 ? '#27ae60' : '#e74c3c';
+                            inStockCell = '<strong style="color:' + stockColor + '">' + m.in_stock + '</strong>';
+                        }
                         
                         html += '<tr>' +
                             '<td>' + m.date + '</td>' +
                             '<td><span class="badge badge-' + badgeClass + '">' + icon + m.type + '</span></td>' +
                             '<td class="text-' + colorClass + '"><strong>' + m.quantity + '</strong></td>' +
-                            '<td><strong>' + m.balance + '</strong> <small>' + m.unit + '</small></td>' +
+                            '<td>' + inStockCell + '</td>' +
                             '<td>' + m.user + '</td>' +
                             '<td class="small">' + (m.notes || '-') + '</td>' +
                             '</tr>';
                     });
                     $('#usageTrackContent').html(html);
+                    // Show current stock badge
+                    if (response.current_stock !== undefined) {
+                        $('#track_current_stock_badge').text('Current: ' + response.current_stock + ' Pic').show();
+                    }
                 } else {
                     $('#usageTrackContent').empty();
                     $('#noUsageData').removeClass('d-none');

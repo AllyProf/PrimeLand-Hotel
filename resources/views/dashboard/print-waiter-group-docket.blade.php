@@ -129,14 +129,15 @@
 <body>
     <div class="docket">
         @php
-            $isPaid = $orders->every(fn($o) => in_array($o->payment_status, ['paid', 'room_charge']));
+            $activeOrders = $orders->filter(fn($o) => strtolower($o->status) !== 'cancelled');
+            $isPaid = $activeOrders->isNotEmpty() && $activeOrders->every(fn($o) => in_array($o->payment_status, ['paid', 'room_charge']));
         @endphp
         
         @if($isPaid)
             <div class="watermark">PAID</div>
         @endif
         <div class="header">
-            <h1>🏨 PrimeLand Hotel</h1>
+            <h1>PrimeLand Hotel</h1>
             <p>Moshi, Kilimanjaro, Tanzania</p>
             <p>Tel: +255 XXX XXX XXX</p>
             <p style="margin-top: 10px; font-weight: bold; font-size: 13px;">GUEST BILL</p>
@@ -165,15 +166,17 @@
             <div class="section-title">Items Ordered</div>
             @php
                 $groupedItems = $orders->groupBy(function($item) {
-                     return $item->service_specific_data['item_name'] ?? $item->service->name;
+                     $itemName = $item->service_specific_data['item_name'] ?? $item->service->name;
+                     return $itemName . ($item->status === 'cancelled' ? ' [CANCELLED]' : '');
                 });
             @endphp
 
             @foreach($groupedItems as $itemName => $items)
                 @php
+                    $isGroupCancelled = $items->first()->status === 'cancelled';
                     $qty = $items->sum('quantity');
-                    $total = $items->sum('total_price_tsh');
-                    $unitPrice = $qty > 0 ? $total / $qty : 0;
+                    $total = $isGroupCancelled ? 0 : $items->sum('total_price_tsh');
+                    $unitPrice = $qty > 0 ? ($items->sum('total_price_tsh') / $qty) : 0;
                     
                     // Collect and clean notes
                     $notes = [];
@@ -198,9 +201,9 @@
                         }
                     }
                 @endphp
-                <div class="item-row">
+                <div class="item-row" style="{{ $isGroupCancelled ? 'opacity: 0.6; border-left: 3px solid #ccc; background: #eee;' : '' }}">
                     <div class="item-header">
-                        <span>{{ $itemName }}</span>
+                        <span>{{ $itemName }} @if($isGroupCancelled) <span style="color: #666;">(CANCELLED)</span> @endif</span>
                         <span>{{ number_format($total) }} TZS</span>
                     </div>
                     <div class="info-row">
@@ -221,20 +224,31 @@
             </div>
             
             @php
+                $paidOrder = $orders->whereIn('payment_status', ['paid', 'room_charge'])->first();
+                $paymentMethod = $paidOrder->payment_method ?? null;
+                $paymentRef = $paidOrder->payment_reference ?? null;
                 $paidAmount = $orders->whereIn('payment_status', ['paid', 'room_charge'])->sum('total_price_tsh');
                 $pendingAmount = $totalAmount - $paidAmount;
             @endphp
 
-            @if($paidAmount > 0 && $pendingAmount > 0)
-                <div class="info-row" style="color: green; font-weight: bold; justify-content: space-between; font-size: 14px;">
-                    <span>PAID:</span>
+            @if($paidAmount > 0)
+                <div class="info-row" style="color: #27ae60; font-weight: bold; justify-content: space-between; font-size: 14px; margin-top: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                    <span>PAID AMOUNT:</span>
                     <span>{{ number_format($paidAmount) }} TZS</span>
+                </div>
+                <div class="info-row" style="font-size: 12px; margin-top: 5px;">
+                    <span>Method:</span>
+                    <span style="font-weight: bold;">{{ strtoupper(str_replace('_', ' ', $paymentMethod ?? 'N/A')) }}</span>
+                </div>
+                <div class="info-row" style="font-size: 12px; margin-top: 2px;">
+                    <span>Ref #:</span>
+                    <span style="font-weight: bold;">{{ $paymentRef ?: 'N/A' }}</span>
                 </div>
             @endif
 
-            @if($pendingAmount > 0)
-                <div class="total-row" style="color: #d35400; border-top: 1px dashed #ccc; padding-top: 5px; margin-top: 5px;">
-                    <span>PENDING:</span>
+            @if($pendingAmount > 10)
+                <div class="total-row" style="color: #d35400; border-top: 1px dashed #ccc; padding-top: 5px; margin-top: 10px;">
+                    <span>OUTSTANDING:</span>
                     <span>{{ number_format($pendingAmount) }} TZS</span>
                 </div>
             @endif

@@ -37,6 +37,8 @@
     <ul class="treeview-menu">
         <li><a class="treeview-item" href="{{ route('reception.bookings') }}"><i class="icon fa fa-list"></i> All Bookings</a></li>
         <li><a class="treeview-item" href="{{ route('reception.bookings.manual.create') }}"><i class="icon fa fa-plus-circle"></i> Individual Booking</a></li>
+        <li><a class="treeview-item" href="{{ route('reception.invoices.create') }}"><i class="icon fa fa-plus-square"></i> Create Quick Invoice</a></li>
+        <li><a class="treeview-item" href="{{ route('reception.invoices.index') }}"><i class="icon fa fa-file-text"></i> Sent Quotations</a></li>
         <li><a class="treeview-item" href="{{ route('admin.bookings.corporate.create') }}"><i class="icon fa fa-building"></i> Corporate Booking</a></li>
         <li><a class="treeview-item" href="{{ route('admin.bookings.calendar') }}"><i class="icon fa fa-calendar"></i> Calendar View</a></li>
         <li class="treeview-divider"></li>
@@ -58,6 +60,20 @@
 
 <li><a class="app-menu__item {{ str_contains($activePage, 'reception/guests') ? 'active' : '' }}" href="{{ route('reception.guests') }}"><i class="app-menu__icon fa fa-users"></i><span class="app-menu__label">Guest List</span></a></li>
 
+{{-- Shift & Ops --}}
+<li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Shift & Operations</li>
+
+<li><a class="app-menu__item {{ str_contains($activePage, 'orders/monitor') ? 'active' : '' }}" href="{{ route('reception.orders.monitor') }}"><i class="app-menu__icon fa fa-television"></i><span class="app-menu__label">Live Order Monitor</span></a></li>
+
+<li class="treeview {{ str_contains($activePage, 'shift/') ? 'is-expanded' : '' }}">
+    <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-lock"></i><span class="app-menu__label">Shift Management</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+    <ul class="treeview-menu">
+        <li><a class="treeview-item" href="{{ route('reception.shift.open') }}"><i class="icon fa fa-key"></i> Open New Shift</a></li>
+        <li><a class="treeview-item" href="{{ route('reception.shift.close') }}"><i class="icon fa fa-sign-out"></i> Close & Reconcile</a></li>
+        <li><a class="treeview-item" href="{{ route('reception.reports.waiter-sales') }}"><i class="icon fa fa-line-chart"></i> Waiter Sales Report</a></li>
+    </ul>
+</li>
+
 <li><a class="app-menu__item {{ str_contains($activePage, 'reception/service-requests') ? 'active' : '' }}" href="{{ route('reception.service-requests') }}"><i class="app-menu__icon fa fa-bell"></i><span class="app-menu__label">Service Requests</span> @if($badges['service_requests'] > 0)<span class="badge badge-warning badge-pill ml-2">{{ $badges['service_requests'] }}</span>@endif</a></li>
 
 {{-- 3. FACILITY STATUS --}}
@@ -71,6 +87,7 @@
     <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-bed"></i><span class="app-menu__label">Room Status</span><i class="treeview-indicator fa fa-angle-right"></i></a>
     <ul class="treeview-menu">
         <li><a class="treeview-item" href="{{ route('reception.rooms') }}"><i class="icon fa fa-info-circle"></i> View Occupancy</a></li>
+        <li><a class="treeview-item" href="{{ route('reception.rooms.qr-generator') }}"><i class="icon fa fa-qrcode"></i> Generate QR Codes</a></li>
         <li><a class="treeview-item" href="{{ route('admin.rooms.index') }}"><i class="icon fa fa-list"></i> Manage Rooms</a></li>
         <li><a class="treeview-item" href="{{ route('admin.rooms.create') }}"><i class="icon fa fa-plus-circle"></i> Add New Room</a></li>
         <li><a class="treeview-item" href="{{ route('reception.rooms.cleaning') }}"><i class="icon fa fa-broom"></i> Cleaning Schedule</a></li>
@@ -87,5 +104,7 @@
 <li><a class="app-menu__item {{ str_contains($activePage, 'reception/payments') ? 'active' : '' }}" href="{{ route('reception.payments') }}"><i class="app-menu__icon fa fa-money"></i><span class="app-menu__label">All Payments</span></a></li>
 
 <li><a class="app-menu__item {{ str_contains($activePage, 'exchange-rates') ? 'active' : '' }}" href="{{ route('exchange-rates') }}"><i class="app-menu__icon fa fa-exchange"></i><span class="app-menu__label">Exchange Rates</span></a></li>
+
+<li><a class="app-menu__item {{ str_contains($activePage, 'reception/messaging') ? 'active' : '' }}" href="{{ route('reception.sms.index') }}"><i class="app-menu__icon fa fa-envelope"></i><span class="app-menu__label">Messaging Center</span></a></li>
 
 <li><a class="app-menu__item {{ str_contains($activePage, 'profile') ? 'active' : '' }}" href="{{ route('reception.profile') }}"><i class="app-menu__icon fa fa-user"></i><span class="app-menu__label">My Profile</span></a></li>

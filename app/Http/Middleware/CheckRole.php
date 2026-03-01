@@ -47,7 +47,10 @@ class CheckRole
                 $userRole = 'housekeeper';
             } elseif ($normalizedRole === 'waiter' || $rawRoleLower === 'waiter') {
                 $userRole = 'waiter';
+            } elseif ($normalizedRole === 'owner' || $rawRoleLower === 'owner') {
+                $userRole = 'owner';
             }
+
         } elseif ($user instanceof \App\Models\Guest) {
             $userRole = 'customer'; // Guests are mapped to 'customer' role
         }
@@ -68,10 +71,11 @@ class CheckRole
         }, $roles);
         
         // Check if user has one of the required roles
-        // Super Admin always has access to everything
-        if ($userRole === 'super_admin') {
+        // Super Admin, Manager and Owner always have access to everything
+        if (in_array($userRole, ['super_admin', 'manager', 'owner'])) {
             return $next($request);
         }
+
 
         if (!in_array($userRole, $normalizedRoles)) {
             // Log for debugging

@@ -19,17 +19,19 @@ class BookingConfirmationMail extends Mailable
     public $paymentPercentage;
     public $remainingAmount;
     public $generalNotes;
+    protected $pdfData;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Booking $booking, $password, $paymentPercentage = null, $remainingAmount = null, $generalNotes = null)
+    public function __construct(Booking $booking, $password, $paymentPercentage = null, $remainingAmount = null, $generalNotes = null, $pdfData = null)
     {
         $this->booking = $booking->load('room');
         $this->password = $password;
         $this->paymentPercentage = $paymentPercentage ?? $booking->payment_percentage;
         $this->remainingAmount = $remainingAmount ?? ($booking->total_price - ($booking->amount_paid ?? 0));
         $this->generalNotes = $generalNotes;
+        $this->pdfData = $pdfData;
     }
 
     /**
@@ -37,8 +39,12 @@ class BookingConfirmationMail extends Mailable
      */
     public function envelope(): Envelope
     {
+        $subject = ($this->booking->status === 'pending' || str_contains(strtolower($this->generalNotes ?? ''), 'proforma')) 
+            ? 'Proforma Invoice - ' . $this->booking->booking_reference . ' - PrimeLand Hotel'
+            : 'Booking Confirmation - ' . $this->booking->booking_reference . ' - PrimeLand Hotel';
+
         return new Envelope(
-            subject: 'Booking Confirmation - PrimeLand Hotel',
+            subject: $subject,
         );
     }
 
@@ -54,11 +60,18 @@ class BookingConfirmationMail extends Mailable
 
     /**
      * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
     public function attachments(): array
     {
-        return [];
+        $attachments = [];
+
+        if ($this->pdfData) {
+            $attachments[] = \Illuminate\Mail\Mailables\Attachment::fromData(
+                fn () => $this->pdfData,
+                'PrimeLand_Booking_Invoice.pdf'
+            )->withMime('application/pdf');
+        }
+
+        return $attachments;
     }
 }

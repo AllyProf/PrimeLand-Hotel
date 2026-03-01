@@ -433,11 +433,11 @@
           <div class="form-group">
             <label for="minimum_stock">Minimum Stock Level <span class="text-danger">*</span></label>
             <input type="number" step="0.01" class="form-control" id="minimum_stock" name="minimum_stock" required min="0">
-            <small class="form-text text-muted">When stock falls below this level, you will receive email notifications.</small>
+            <small class="form-text text-muted">When stock falls below this level, an SMS alert will be sent to managers and owners.</small>
           </div>
           
           <div class="alert alert-info">
-            <i class="fa fa-info-circle"></i> <strong>Note:</strong> Email notifications will be sent to managers and housekeeping staff when stock goes below this level.
+            <i class="fa fa-info-circle"></i> <strong>Note:</strong> SMS and Email notifications will be sent to managers when stock goes below this level.
           </div>
         </div>
         <div class="modal-footer">

@@ -16,105 +16,89 @@ class BarKeeperController extends Controller
     {
         $user = Auth::guard('staff')->user();
         
-        // Get pending transfers for this bar keeper
-        $pendingTransfers = StockTransfer::with(['product', 'productVariant', 'transferredBy'])
-            ->where('received_by', $user->id)
-            ->where('status', 'pending')
-            ->orderBy('transfer_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        
-        // Get completed transfers (recent)
-        $completedTransfers = StockTransfer::with(['product', 'productVariant', 'transferredBy'])
-            ->where('received_by', $user->id)
-            ->where('status', 'completed')
-            ->orderBy('received_at', 'desc')
-            ->limit(10)
-            ->get();
-            
         $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'bar'];
         
-        $pendingOrders = \App\Models\ServiceRequest::with(['booking.room', 'service'])
+        $pendingOrders = \App\Models\ServiceRequest::with(['booking.room', 'service', 'dayService', 'approvedBy', 'paidBy', 'cancelledBy'])
             ->where(function($q) use ($barCategories) {
                 $q->whereHas('service', function($query) use ($barCategories) {
                     $query->whereIn('category', $barCategories);
                 })->orWhere('service_id', 3); // Generic Bar Order (ID 3)
             })
             ->where(function($query) {
-                // All pending orders (from waiters, guests, etc.)
-                $query->where('status', 'pending')
-                    // OR approved orders waiting to be served
-                    ->orWhere('status', 'approved')
-                    // OR completed orders that haven't been paid yet (exclude room_charge as they're already paid)
+                $recentCutoff = now()->subHours(2);
+
+                // 1. Always show truly active/pending items
+                $query->whereIn('status', ['pending', 'approved', 'ready'])
+                    // 2. Show completed but unpaid items (need collection)
                     ->orWhere(function($q) {
                         $q->where('status', 'completed')
                           ->whereIn('payment_status', ['pending', 'unpaid']);
+                    })
+                    // 3. Show recently PAID items (within last 2 hours) for context
+                    ->orWhere(function($q) use ($recentCutoff) {
+                        $q->where('status', 'completed')
+                          ->whereIn('payment_status', ['paid', 'room_charge'])
+                          ->where('updated_at', '>=', $recentCutoff);
+                    })
+                    // 4. Show recently CANCELLED items (within last 2 hours) for context
+                    ->orWhere(function($q) use ($recentCutoff) {
+                        $q->where('status', 'cancelled')
+                          ->where('updated_at', '>=', $recentCutoff);
                     });
             })
-            ->with('approvedBy')
             ->orderBy('requested_at', 'desc')
             ->get();
         
-        // Statistics
-        $totalPending = StockTransfer::where('received_by', $user->id)
-            ->where('status', 'pending')
+        $totalPendingOrders = $pendingOrders->whereIn('status', ['pending', 'approved', 'ready'])->count();
+        $totalCancelledToday = \App\Models\ServiceRequest::where('status', 'cancelled')
+            ->whereDate('updated_at', today())
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($query) use ($barCategories) {
+                    $query->whereIn('category', $barCategories);
+                })->orWhere('service_id', 3);
+            })
             ->count();
-        
-        $totalCompleted = StockTransfer::where('received_by', $user->id)
-            ->where('status', 'completed')
-            ->count();
-        
-        $totalProducts = StockTransfer::where('received_by', $user->id)
-            ->where('status', 'completed')
-            ->distinct('product_id')
-            ->count('product_id');
-            
-        $totalPendingOrders = $pendingOrders->count();
 
-        // Get active ceremonies (registered by reception today)
+        // Get active ceremonies (Any date if unpaid, or any for today)
         $activeCeremonies = \App\Models\DayService::with(['serviceRequests.service'])
             ->where(function($query) {
                 $query->where('service_type', 'LIKE', '%ceremony%')
                       ->orWhere('service_type', 'LIKE', '%ceremory%')
-                      ->orWhere('service_type', 'LIKE', '%birthday%');
+                      ->orWhere('service_type', 'LIKE', '%birthday%')
+                      ->orWhere('service_type', 'LIKE', '%package%');
             })
-            ->whereDate('service_date', now()->toDateString())
+            ->where(function($q) {
+                $q->whereDate('service_date', now()->toDateString())
+                  ->orWhereIn('payment_status', ['pending', 'partial']);
+            })
             ->get();
 
-        // Filter out ceremonies where bar usage is fully settled
-        $activeCeremonies = $activeCeremonies->filter(function($ceremony) {
-            $barCategories = ['alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'soft_drinks', 'beers', 'wines', 'spirits', 'cocktails', 'drinks', 'liquor'];
-            
-            // Get requests related to bar
-            $barRequests = $ceremony->serviceRequests->filter(function($req) use ($barCategories) {
-                return $req->service && in_array($req->service->category, $barCategories);
-            });
-            
-            // If bar requests exist, use their payment status
-            if ($barRequests->isNotEmpty()) {
-                // Keep visible if ANY bar request is pending/unpaid
-                return $barRequests->contains(function ($req) {
-                    return !in_array($req->payment_status, ['paid', 'room_charge']);
-                });
-            }
-            
-            // If NO bar requests exist, check the main ceremony payment status
-            if (in_array($ceremony->payment_status, ['paid', 'room_charge'])) {
-                return false;
-            }
-            
-            return true;
-        });
+        // Show ALL today's ceremonies so bar keeper can always add usage
+        // No filtering by payment status here — bar keeper needs to record drinks anytime
         
         // --- Walk-in Sale Menu Items (POS) ---
         // Match logic from customer restaurant page for consistency
         $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'wines', 'cocktails', 'hot_beverages', 'beers', 'liquor', 'whiskey'];
         
-        // 1. Calculate stock levels from transfers and sales
-        $allTransfers = \App\Models\StockTransfer::where('status', 'completed')->get();
-        $allSales = \App\Models\ServiceRequest::where('status', 'completed')
-            ->whereHas('service', function($q) use ($barCategories) {
-                $q->whereIn('category', $barCategories);
+        // 1. Calculate stock levels from transfers and sales (Matching Reports logic)
+        $targetUserIds = [$user->id];
+        if (in_array($user->role, ['manager', 'admin', 'super_admin'])) {
+            $barKeeperIds = \App\Models\Staff::where('role', 'bar_keeper')->pluck('id')->toArray();
+            if (!empty($barKeeperIds)) {
+                $targetUserIds = $barKeeperIds;
+            }
+        }
+
+        $allTransfers = \App\Models\StockTransfer::where('status', 'completed')
+            ->whereIn('received_by', $targetUserIds)
+            ->get();
+
+        $allSales = \App\Models\ServiceRequest::where(function($q) {
+                $q->where('status', 'completed')
+                  ->orWhereNotNull('day_service_id');
+            })->where(function($q) {
+                $q->whereNotNull('service_specific_data->product_variant_id')
+                  ->orWhereNotNull('service_specific_data->variant_id');
             })->get();
 
         $stockLevels = [];
@@ -128,17 +112,19 @@ class BarKeeperController extends Controller
 
         foreach ($allSales as $s) {
             $meta = $s->service_specific_data;
+            if (empty($meta)) continue;
+            
             $vid = $meta['product_variant_id'] ?? ($meta['variant_id'] ?? null);
             if ($vid && isset($stockLevels[$vid])) {
                 $variant = \App\Models\ProductVariant::find($vid);
                 if ($variant) {
-                    $unitPrice = (float)$s->unit_price_tsh;
-                    $isPicSale = abs($unitPrice - (float)$variant->selling_price_per_pic) < 100;
-                    if ($isPicSale) {
-                        $stockLevels[$vid] -= $s->quantity;
-                    } else {
-                        $servingsPerPic = $variant->servings_per_pic > 0 ? $variant->servings_per_pic : 1;
+                    $servingsPerPic = ($variant->servings_per_pic > 0) ? (float)$variant->servings_per_pic : 1.0;
+                    $isGlass = (isset($meta['selling_method']) && in_array(strtolower($meta['selling_method']), ['glass', 'serving']));
+                    
+                    if ($isGlass) {
                         $stockLevels[$vid] -= ($s->quantity / $servingsPerPic);
+                    } else {
+                        $stockLevels[$vid] -= $s->quantity;
                     }
                 }
             }
@@ -220,57 +206,31 @@ class BarKeeperController extends Controller
             }
         }
 
+        $activeBookings = \App\Models\Booking::with('room')
+            ->where('check_in_status', 'checked_in')
+            ->get()
+            ->sortBy(function($booking) {
+                return $booking->room->room_number ?? '';
+            });
+
         $role = 'bar_keeper';
         
+        $drinksCollection = collect($drinks);
+        $drinkCategories = $drinksCollection->groupBy('category')->sortKeys();
+
         return view('dashboard.bar-keeper-dashboard', compact(
-            'pendingTransfers',
-            'completedTransfers',
             'pendingOrders',
-            'totalPending',
-            'totalCompleted',
-            'totalProducts',
-            'totalProducts',
             'totalPendingOrders',
+            'totalCancelledToday',
             'drinks',
+            'drinkCategories',
             'activeCeremonies',
+            'activeBookings',
             'role'
         ));
     }
     
-    /**
-     * Update transfer status (mark as received)
-     */
-    public function receiveTransfer(Request $request, StockTransfer $stockTransfer)
-    {
-        // Verify this transfer is for the logged-in bar keeper
-        if ($stockTransfer->received_by != Auth::guard('staff')->id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. This transfer is not assigned to you.',
-            ], 403);
-        }
-        
-        $validated = $request->validate([
-            'status' => 'required|in:completed,cancelled',
-        ]);
-        
-        if ($validated['status'] === 'completed' && !$stockTransfer->received_at) {
-            $validated['received_at'] = now();
-        }
-        
-        $stockTransfer->update($validated);
-        
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Transfer status updated successfully!',
-                'transfer' => $stockTransfer->load(['product', 'productVariant', 'transferredBy']),
-            ]);
-        }
-        
-        return redirect()->back()
-            ->with('success', 'Transfer status updated successfully!');
-    }
+
     
     /**
      * Bar Keeper Stock & Sales Reports (Matching Kitchen Style)
@@ -364,10 +324,11 @@ class BarKeeperController extends Controller
                 })
                 ->get()
                 ->sum(function($s) use ($variant) {
+                    $meta = $s->service_specific_data;
                     $servingsPerPic = ($variant->servings_per_pic > 0) ? (float)$variant->servings_per_pic : 1.0;
-                    return (isset($s->service_specific_data['selling_method']) && $s->service_specific_data['selling_method'] === 'serving')
-                        ? ($s->quantity / $servingsPerPic)
-                        : $s->quantity;
+                    $isGlass = (isset($meta['selling_method']) && in_array($meta['selling_method'], ['glass', 'serving']));
+                    
+                    return $isGlass ? ($s->quantity / $servingsPerPic) : $s->quantity;
                 });
 
             $openingStock = max(0, $receivedBefore - $soldBefore);
@@ -403,10 +364,11 @@ class BarKeeperController extends Controller
                 ->get();
 
             $soldInPeriod = $salesInPeriod->sum(function($s) use ($variant) {
+                $meta = $s->service_specific_data;
                 $servingsPerPic = ($variant->servings_per_pic > 0) ? (float)$variant->servings_per_pic : 1.0;
-                return (isset($s->service_specific_data['selling_method']) && $s->service_specific_data['selling_method'] === 'serving')
-                    ? ($s->quantity / $servingsPerPic)
-                    : $s->quantity;
+                $isGlass = (isset($meta['selling_method']) && in_array($meta['selling_method'], ['glass', 'serving']));
+                
+                return $isGlass ? ($s->quantity / $servingsPerPic) : $s->quantity;
             });
 
             // Financial Metrics
@@ -497,12 +459,22 @@ class BarKeeperController extends Controller
                 $guestLabel = 'Room ' . ($order->booking->room->room_number ?? 'N/A');
             }
 
+            // Calculate Pic Equivalent for Statistics
+            $meta = $order->service_specific_data;
+            $vId = $meta['product_variant_id'] ?? null;
+            $variant = $vId ? \App\Models\ProductVariant::find($vId) : null;
+            $servings = $variant->servings_per_pic ?? 1;
+            $isGlass = isset($meta['selling_method']) && in_array($meta['selling_method'], ['glass', 'serving']);
+            $picEquiv = $isGlass ? ($order->quantity / $servings) : $order->quantity;
+
             return (object)[
                 'item_name' => $order->service_specific_data['item_name'] ?? $order->service->name ?? 'Unknown Drink',
                 'destinations' => $dest,
                 'guest_label' => $guestLabel,
                 'category' => ucfirst($order->service->category ?? 'Beverage'),
                 'total_qty' => $order->quantity,
+                'pic_equivalent' => $picEquiv,
+                'servings_per_pic' => $servings,
                 'unit_price' => $order->unit_price_tsh,
                 'total_revenue' => $order->total_price_tsh,
                 'time' => $order->completed_at ? $order->completed_at->format('H:i') : '-',
@@ -525,6 +497,7 @@ class BarKeeperController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $activePage = 'bar-keeper/reports';
         return view('dashboard.bar-keeper-reports', compact(
             'reportData', 
             'salesData',
@@ -532,7 +505,8 @@ class BarKeeperController extends Controller
             'date', 
             'startDate', 
             'endDate', 
-            'dateType'
+            'dateType',
+            'activePage'
         ));
     }
 
@@ -554,6 +528,24 @@ class BarKeeperController extends Controller
             // 1. Mark status as completed
             $isRoomCharge = $request->payment_method === 'room_charge';
             
+            // Payment Rule Enforcement
+            if ($serviceRequest->booking) {
+                $resp = $serviceRequest->booking->payment_responsibility ?? 'self';
+                if ($resp === 'company' && $request->payment_method !== 'room_charge') {
+                    return response()->json(['success' => false, 'message' => 'Company-Sponsored: Mandatory Room Charge required.']);
+                }
+                
+                $digitalMethods = ['mpesa', 'halopesa', 'tigopesa', 'airtel', 'mixx', 'nmb', 'crdb', 'kcb', 'nbc', 'dtb', 'visa', 'mastercard', 'amex'];
+                if ($resp === 'self' && !in_array($request->payment_method, array_merge(['room_charge'], $digitalMethods))) {
+                    return response()->json(['success' => false, 'message' => 'Self-Payer: Only Mobile, Bank, Card or Room Charge allowed.']);
+                }
+            } else {
+                $digitalMethods = ['mpesa', 'halopesa', 'tigopesa', 'airtel', 'mixx', 'nmb', 'crdb', 'kcb', 'nbc', 'dtb', 'visa', 'mastercard', 'amex'];
+                if (!in_array($request->payment_method, $digitalMethods)) {
+                    return response()->json(['success' => false, 'message' => 'Walk-in/Ceremony: Only Mobile, Bank or Card allowed.']);
+                }
+            }
+
             $serviceRequest->update([
                 'status' => 'completed',
                 'completed_at' => now(),
@@ -562,6 +554,7 @@ class BarKeeperController extends Controller
                 'payment_status' => $isRoomCharge ? 'room_charge' : 'paid',
                 'payment_method' => $request->payment_method,
                 'payment_reference' => $request->payment_reference,
+                'paid_to' => $user->id,
                 'reception_notes' => $serviceRequest->reception_notes . " | Served by {$user->name} (" . ucfirst(str_replace('_', ' ', $request->payment_method)) . ")" . ($request->payment_reference ? " Ref: {$request->payment_reference}" : ""),
             ]);
             
@@ -581,7 +574,7 @@ class BarKeeperController extends Controller
                 $newAmountPaidUsd = ($booking->amount_paid ?? 0) + $amountUsd;
                 
                 // Finalize Booking Payment Status if fully paid
-                $serviceTotalTsh = $booking->serviceRequests()->whereIn('status', ['approved', 'completed'])->sum('total_price_tsh');
+                $serviceTotalTsh = $booking->serviceRequests()->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])->sum('total_price_tsh');
                 $roomTotalTsh = ($booking->total_price * $exchangeRate);
                 
                 // Extension cost check
@@ -604,6 +597,11 @@ class BarKeeperController extends Controller
             // Bar item stock deduction is handled via transfers and sales logic in the stock view.
 
             \DB::commit();
+            
+            // Check for low stock Alert
+            if ($serviceRequest->product_variant_id) {
+                self::checkAndSendLowStockAlert($serviceRequest->product_variant_id);
+            }
             
             return response()->json([
                 'success' => true,
@@ -629,37 +627,49 @@ class BarKeeperController extends Controller
         $user = Auth::guard('staff')->user();
         
         try {
-            // Check if this is a company-paid booking
-            $isCompanyPaid = !$serviceRequest->is_walk_in && 
-                             $serviceRequest->booking && 
-                             $serviceRequest->booking->payment_responsibility === 'company';
+            $fresh = $serviceRequest->fresh();
+            $isCompanyPaid = !$fresh->is_walk_in && 
+                             $fresh->booking && 
+                             $fresh->booking->payment_responsibility === 'company';
             
+            $isAlreadyPaid = in_array($fresh->payment_status, ['paid', 'room_charge']);
+                         
             $updateData = [
-                'status' => 'completed', // Moved from Pending to Completed (Taken out of queue)
+                'status' => 'completed',
                 'completed_at' => now(),
                 'approved_by' => $user->id,
                 'approved_at' => now(),
             ];
             
-            if ($isCompanyPaid) {
-                // Auto-charge to room for company-paid bookings
-                $updateData['payment_status'] = 'room_charge';
-                $updateData['payment_method'] = 'room_charge';
-                $servedText = "Served by {$user->name} (Auto-charged to Company)";
+            if ($isAlreadyPaid) {
+                // Keep existing payment info
+                $updateData['payment_status'] = $fresh->payment_status;
+                $updateData['payment_method'] = $fresh->payment_method;
+                $statusLabel = "(Paid)";
             } else {
-                // Regular flow - mark as pending payment
                 $updateData['payment_status'] = 'pending';
-                $servedText = "Served by {$user->name} (Pending Payment)";
+                // We still use the label to distinguish it in the notes, but status remains pending
+                $statusLabel = $isCompanyPaid ? "(Company Resp.)" : "(Pending Payment)";
             }
 
-            if (str_contains($serviceRequest->reception_notes ?? '', "Served by {$user->name}")) {
-                $updateData['reception_notes'] = $serviceRequest->reception_notes;
-            } else {
-                $updateData['reception_notes'] = ($serviceRequest->reception_notes ? ($serviceRequest->reception_notes . " | ") : "") . $servedText;
+        $servedText = "Served by {$user->name} $statusLabel";
+
+        // Clean up notes: remove any old "Served by..." or "(Pending Payment)" markers
+        $cleanNotes = $serviceRequest->reception_notes ?? '';
+        $cleanNotes = str_replace('(Pending Payment)', '', $cleanNotes);
+        $cleanNotes = str_replace('(Company Resp.)', '', $cleanNotes);
+        $cleanNotes = preg_replace('/\| Served by [^|]+/', '', $cleanNotes);
+        $cleanNotes = trim(trim($cleanNotes, '|'));
+        
+        $updateData['reception_notes'] = ($cleanNotes ? $cleanNotes . " | " : "") . $servedText;
+        
+        $serviceRequest->update($updateData);
+            
+            // Check for low stock Alert
+            if ($serviceRequest->product_variant_id) {
+                self::checkAndSendLowStockAlert($serviceRequest->product_variant_id);
             }
-            
-            $serviceRequest->update($updateData);
-            
+
             $message = $isCompanyPaid 
                 ? 'Order marked as SERVED and auto-charged to Company!' 
                 : 'Order marked as SERVED (Awaiting Payment)!';
@@ -713,30 +723,7 @@ class BarKeeperController extends Controller
         return view('dashboard.bar-keeper-orders', compact('orders', 'stats'));
     }
 
-    /**
-     * Dedicated Stock Transfers Page
-     */
-    public function transfers(Request $request)
-    {
-        $user = Auth::guard('staff')->user();
-        
-        $query = StockTransfer::with(['product', 'productVariant', 'transferredBy'])
-            ->where('received_by', $user->id);
-            
-        // Status filter
-        if ($request->has('status') && in_array($request->status, ['pending', 'completed', 'cancelled'])) {
-            $query->where('status', $request->status);
-        }
-        
-        // Sort by date (pending first effectively via status check, but mainly date)
-        $transfers = $query->orderBy('transfer_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-            
-        $role = 'bar_keeper';
-        
-        return view('dashboard.bar-keeper-transfers', compact('transfers', 'role'));
-    }
+
 
     /**
      * My Stock Overview Page
@@ -745,7 +732,7 @@ class BarKeeperController extends Controller
     {
         $user = Auth::guard('staff')->user();
         $role = strtolower($user->role ?? 'bar_keeper');
-        $isManager = $role === 'manager';
+        $isManager = in_array($role, ['manager', 'owner', 'super_admin']);
         
         // 1. Fetch Key Data
         // ----------------------------------------
@@ -1006,12 +993,15 @@ class BarKeeperController extends Controller
                 'change' => (float)$qty,
                 'is_addition' => true,
                 'user' => $t->receivedBy->name ?? 'System',
-                'notes' => $t->notes ?: 'Transfer from warehouse'
+                'notes' => $t->notes ?: 'Transfer from warehouse',
+                'unit_cost' => (float)($t->unit_cost ?? 0),
+                'selling_price' => (float)($t->selling_price_per_pic ?? 0),
+                'total_cost' => (float)($t->total_cost ?? 0),
             ]);
         }
 
         // 2. Sales (OUT)
-        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'food', 'restaurant', 'spirits', 'wines', 'cocktails', 'hot_beverages'];
+        $barCategories = ['bar', 'drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'food', 'restaurant', 'spirits', 'wines', 'cocktails', 'hot_beverages'];
         
         $sales = \App\Models\ServiceRequest::where('status', 'completed')
             ->whereHas('service', function($q) use ($barCategories) {
@@ -1021,28 +1011,24 @@ class BarKeeperController extends Controller
 
         foreach ($sales as $s) {
             $meta = $s->service_specific_data;
-            if (isset($meta['product_variant_id']) && $meta['product_variant_id'] == $variant->id) {
-                // Check if it was a pic sale or serving sale
-                $unitPrice = (float)$s->unit_price_tsh;
-                $isPicSale = abs($unitPrice - (float)$variant->selling_price_per_pic) < 100;
-                
-                $qtyDeduction = 0;
-                if ($isPicSale) {
-                    $qtyDeduction = $s->quantity;
-                } else {
-                    $servingsPerPic = $variant->servings_per_pic > 0 ? $variant->servings_per_pic : 1;
-                    $qtyDeduction = ($s->quantity / $servingsPerPic);
-                }
-
-                $movements->push([
-                    'date' => $s->completed_at ?: $s->created_at,
-                    'type' => $s->is_walk_in ? 'Walk-in Sale' : 'Room Service',
-                    'change' => (float)$qtyDeduction,
-                    'is_addition' => false,
-                    'user' => 'System',
-                    'notes' => $s->booking ? 'Room ' . $s->booking->room->room_number : 'Direct Sale'
-                ]);
+            if (!isset($meta['product_variant_id']) || $meta['product_variant_id'] != $variant->id) {
+                continue;
             }
+
+            // Determine qty deduction using selling_method (more reliable than price comparison)
+            $sellingMethod = $meta['selling_method'] ?? 'pic';
+            $isServing = in_array(strtolower($sellingMethod), ['glass', 'serving', 'tot', 'shot']);
+            $servingsPerPic = $variant->servings_per_pic > 0 ? $variant->servings_per_pic : 1;
+            $qtyDeduction = $isServing ? ($s->quantity / $servingsPerPic) : (float)$s->quantity;
+
+            $movements->push([
+                'date' => $s->completed_at ?: $s->created_at,
+                'type' => $s->is_walk_in ? 'Walk-in Sale' : 'Room Service',
+                'change' => $qtyDeduction,
+                'is_addition' => false,
+                'user' => 'System',
+                'notes' => $s->booking ? 'Room ' . ($s->booking->room->room_number ?? '?') : 'Direct Sale'
+            ]);
         }
 
         // 2.5 Price Changes (LOGS)
@@ -1106,14 +1092,23 @@ class BarKeeperController extends Controller
                 }
             }
 
+            $priceNote = "";
+            if (isset($m['unit_cost']) && $m['unit_cost'] > 0) {
+                $priceNote .= " | Buy: " . number_format($m['unit_cost']);
+            }
+            if (isset($m['selling_price']) && $m['selling_price'] > 0) {
+                $priceNote .= " | Sell: " . number_format($m['selling_price']);
+            }
+
             $formatted[] = [
                 'date' => \Carbon\Carbon::parse($m['date'])->format('M d, Y H:i'),
                 'type' => $m['type'],
                 'quantity' => $changeText,
                 'balance' => $balanceText,
+                'in_stock' => $m['type'] !== 'Price Change' ? number_format($runningBalance, 1) : null,
                 'unit' => ($m['type'] === 'Price Change') ? 'TSH' : 'Pic',
                 'user' => $m['user'],
-                'notes' => $m['notes'],
+                'notes' => $m['notes'] . $priceNote,
                 'is_addition' => $m['is_addition'],
                 'is_price_change' => isset($m['is_price_change']) ? $m['is_price_change'] : false
             ];
@@ -1122,6 +1117,7 @@ class BarKeeperController extends Controller
         return response()->json([
             'success' => true,
             'item_name' => $variant->product->name . ' (' . $variant->measurement . ')',
+            'current_stock' => number_format(max(0, $runningBalance), 1),
             'movements' => array_reverse($formatted)
         ]);
     }
@@ -1136,6 +1132,7 @@ class BarKeeperController extends Controller
 
         $query = ServiceRequest::with(['service', 'dayService'])
             ->where('is_walk_in', true)
+            ->whereNotIn('status', ['cancelled', 'billed'])
             ->orderBy('created_at', 'desc');
 
         // Filter by date range
@@ -1164,12 +1161,12 @@ class BarKeeperController extends Controller
 
         // Calculate statistics
         $stats = [
-            'total_items' => ServiceRequest::where('is_walk_in', true)->count(),
-            'total_paid' => ServiceRequest::where('is_walk_in', true)->where('payment_status', 'paid')->count(),
-            'total_unpaid' => ServiceRequest::where('is_walk_in', true)->where('payment_status', 'pending')->count(),
-            'total_revenue' => ServiceRequest::where('is_walk_in', true)->where('payment_status', 'paid')->sum('total_price_tsh'),
-            'ceremony_items' => ServiceRequest::where('is_walk_in', true)->whereNotNull('day_service_id')->count(),
-            'walk_in_items' => ServiceRequest::where('is_walk_in', true)->whereNull('day_service_id')->count(),
+            'total_items' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->count(),
+            'total_paid' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->where('payment_status', 'paid')->count(),
+            'total_unpaid' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->where('payment_status', 'pending')->count(),
+            'total_revenue' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->where('payment_status', 'paid')->sum('total_price_tsh'),
+            'ceremony_items' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->whereNotNull('day_service_id')->count(),
+            'walk_in_items' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->whereNull('day_service_id')->count(),
         ];
 
         return view('dashboard.bar-keeper-recorded-items', compact('recordedItems', 'stats', 'role'));
@@ -1197,6 +1194,9 @@ class BarKeeperController extends Controller
         $variant->update([
             'minimum_stock_level' => $request->minimum_stock,
         ]);
+
+        // Trigger Alert if already below
+        self::checkAndSendLowStockAlert($variantId);
 
         return response()->json([
             'success' => true,
@@ -1246,16 +1246,25 @@ class BarKeeperController extends Controller
         
         if ($isWalkIn) {
             $orders = $orders->where('is_walk_in', true)
-                ->where('walk_in_name', $identifier)
-                ->whereDate('requested_at', \Carbon\Carbon::today());
+                ->where('walk_in_name', $identifier);
         } else {
             $orders = $orders->where('booking_id', $identifier);
         }
         
-        $orders = $orders->orderBy('requested_at', 'desc')->get();
+        $orders = $orders->orderBy('requested_at', 'desc')
+            ->get();
         
         if ($orders->isEmpty()) {
-            abort(404, 'No orders found');
+            abort(404, 'No orders found for this guest');
+        }
+
+        // If walk-in, further filter by date to avoid picking up same name from different days
+        // We pick the date of the most recent order in the collection
+        if ($isWalkIn) {
+            $firstDate = $orders->first()->requested_at->toDateString();
+            $orders = $orders->filter(function($o) use ($firstDate) {
+                return $o->requested_at->toDateString() === $firstDate;
+            });
         }
         
         $first = $orders->first();
@@ -1294,9 +1303,60 @@ class BarKeeperController extends Controller
             $requestedBy = $first->approvedBy->name;
         }
         
-        // Calculate total
-        $totalAmount = $orders->sum('total_price_tsh');
+        // Calculate total amount from non-cancelled orders only
+        $totalAmount = $orders->filter(fn($o) => strtolower($o->status) !== 'cancelled')->sum('total_price_tsh');
         
         return view('dashboard.print-waiter-group-docket', compact('orders', 'destination', 'guestName', 'requestedBy', 'totalAmount', 'first'));
+    }
+
+    /**
+     * Helper to check and send low stock SMS alert for a bar item
+     */
+    public static function checkAndSendLowStockAlert($variantId)
+    {
+        try {
+            $variant = \App\Models\ProductVariant::with('product')->find($variantId);
+            if (!$variant) return;
+
+            // Calculate current stock level (same logic as stock view)
+            $totalRecv = \App\Models\StockTransfer::where('product_variant_id', $variantId)
+                ->where('status', 'completed')
+                ->sum('quantity_transferred');
+            
+            $totalSold = \App\Models\ServiceRequest::where('status', 'completed')
+                ->where('service_specific_data->product_variant_id', (string)$variantId)
+                ->get()
+                ->sum(function($s) use ($variant) {
+                    $meta = $s->service_specific_data;
+                    if (isset($meta['selling_method']) && $meta['selling_method'] === 'glass') {
+                        return (float)$s->quantity / (float)($variant->servings_per_pic ?: 1);
+                    }
+                    return (float)$s->quantity;
+                });
+
+            $currentStock = $totalRecv - $totalSold;
+
+            if ($variant->minimum_stock_level > 0 && $currentStock <= $variant->minimum_stock_level) {
+                $smsService = new \App\Services\SmsService();
+                $manager = \App\Models\Staff::whereIn('role', ['manager', 'owner', 'super_admin'])
+                    ->whereNotNull('phone')
+                    ->where('is_active', true)
+                    ->orderByRaw("FIELD(role, 'manager', 'owner', 'super_admin')")
+                    ->first();
+                
+                if ($manager) {
+                    $smsService->sendLowStockAlert(
+                        $manager->phone, 
+                        $manager->name, 
+                        $variant->product->name . ' (' . $variant->measurement . ')', 
+                        round($currentStock, 2), 
+                        (float)$variant->minimum_stock_level, 
+                        'Bar'
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('[BarLowStockSMS] Error: ' . $e->getMessage());
+        }
     }
 }

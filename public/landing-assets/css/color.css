@@ -1,0 +1,55 @@
+/*======================================================================================
+  PrimeLand Hotel - Brand Color Overrides
+  Primary :  #e77a3a  (PrimeLand Orange)
+  Dark    :  #000000  (Black)
+  Light   :  #ffffff  (White)
+======================================================================================*/
+
+:root {
+    /* Override core theme color from green to PrimeLand orange */
+    --gt-theme: #e77a3a;
+
+    /* Override header/dark color to pure black */
+    --gt-header: #000000;
+
+    /* Light backgrounds: keep white / very light warm tint instead of green-tinted */
+    --gt-bg: #fff8f4;
+    --gt-bg2: #fff8f4;
+    --gt-bg3: #fff8f4;
+
+    /* Keep body white */
+    --gt-body: #ffffff;
+    --gt-white: #ffffff;
+    --gt-black: #000000;
+}
+
+/* ── Section bg overrides ── */
+.section-bg {
+    background-color: #fff8f4 !important;
+}
+
+/* ── Preloader brand color ── */
+.animation-preloader .spinner {
+    border-top-color: #e77a3a;
+}
+
+/* ── Ensure any hard-coded green accent colours are overridden ── */
+.gt-section-title h6 {
+    color: #e77a3a;
+}
+
+/* ── Booking form highlight ── */
+.gt-booking-reserve-wrapper .gt-theme-btn,
+.gt-booking-reserve-wrapper button[type="submit"] {
+    background-color: #e77a3a;
+}
+
+/* ── Footer accent border ── */
+.offcanvas__info {
+    border-left-color: #e77a3a;
+}
+
+/* ── Sub-menu top border ── */
+.header-main .main-menu ul li .submenu {
+    border-top-color: #e77a3a;
+}

@@ -52,13 +52,6 @@
     </a>
 </li>
 
-<li>
-    <a class="app-menu__item {{ str_contains($activePage, 'transfers') ? 'active' : '' }}" href="{{ route('bar-keeper.transfers.index') }}">
-        <i class="app-menu__icon fa fa-exchange"></i>
-        <span class="app-menu__label">Stock Transfers</span>
-    </a>
-</li>
-
 {{-- 4. PURCHASING --}}
 <li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Purchasing</li>
 

@@ -134,7 +134,7 @@ class StockTransferController extends Controller
             'product_id' => 'required|exists:products,id',
             'product_variant_id' => 'required|exists:product_variants,id',
             'quantity_transferred' => 'required|numeric|min:0.01',
-            'quantity_unit' => 'required|in:packages,bottles,pic',
+            'quantity_unit' => 'required|in:packages,bottles,pic,pcs',
             'received_by' => 'required|exists:staffs,id',
             'transfer_date' => 'required|date',
             'expiry_date' => 'nullable|date',
@@ -142,8 +142,9 @@ class StockTransferController extends Controller
             'unit_cost' => 'nullable|numeric|min:0',
         ]);
 
-        if ($validated['quantity_unit'] === 'pic') {
-            $validated['quantity_unit'] = 'bottles'; // Map 'pic' to 'bottles' for DB compatibility if needed, or keep as is if enum supports it. Assuming 'bottles' encompasses 'pic' for now based on previous context.
+        if (in_array($validated['quantity_unit'], ['pic', 'pcs'])) {
+            // Standardize internally if necessary, or keep as is since DB now supports VARCHAR
+            // For now, let's keep 'pcs' as 'pcs' and 'pic' as 'pic' (mapped in model accessor)
         }
 
         // Verify product variant belongs to product

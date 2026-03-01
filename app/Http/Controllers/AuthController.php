@@ -15,6 +15,7 @@ use App\Models\FailedLoginAttempt;
 use App\Models\LoginOtp;
 use App\Models\SystemLog;
 use App\Mail\LoginOtpMail;
+use App\Services\WhatsappService;
 
 class AuthController extends Controller
 {
@@ -43,6 +44,8 @@ class AuthController extends Controller
                 return redirect()->route('chef-master.dashboard');
             } elseif ($userRole === 'waiter') {
                 return redirect()->route('waiter.dashboard');
+            } elseif ($userRole === 'owner') {
+                return redirect()->route('owner.dashboard');
             } elseif ($userRole === 'guest') {
                 return redirect()->route('customer.dashboard');
             }
@@ -281,6 +284,11 @@ class AuthController extends Controller
                 $redirectUrl = $intendedUrl && in_array($intendedUrl, $validDashboardRoutes) 
                     ? $intendedUrl 
                     : route('waiter.dashboard');
+                return redirect($redirectUrl)->with('success', 'Welcome back, ' . $user->name . '!');
+            } elseif ($userRole === 'owner') {
+                $redirectUrl = $intendedUrl && in_array($intendedUrl, $validDashboardRoutes) 
+                    ? $intendedUrl 
+                    : route('owner.dashboard');
                 return redirect($redirectUrl)->with('success', 'Welcome back, ' . $user->name . '!');
             } elseif ($userRole === 'guest') {
                 $redirectUrl = $intendedUrl && in_array($intendedUrl, $validDashboardRoutes) 
@@ -578,6 +586,10 @@ class AuthController extends Controller
                         $redirectUrl = $intendedUrl && in_array($intendedUrl, $validDashboardRoutes) 
                             ? $intendedUrl 
                             : route('waiter.dashboard');
+                    } elseif ($userRole === 'owner') {
+                        $redirectUrl = $intendedUrl && in_array($intendedUrl, $validDashboardRoutes) 
+                            ? $intendedUrl 
+                            : route('owner.dashboard');
                     } else {
                         // Default to customer dashboard for guest or any other role
                         $redirectUrl = $intendedUrl && in_array($intendedUrl, $validDashboardRoutes) 
@@ -952,6 +964,16 @@ class AuthController extends Controller
             ));
 
             \Log::info('OTP resend email sent successfully', ['email' => $email]);
+
+            // Send WhatsApp OTP if user is staff
+            if ($userType === 'staff' && !empty($user->phone)) {
+                try {
+                    $whatsappService = new WhatsappService();
+                    $whatsappService->sendStaffOtp($user->phone, $loginOtp->otp);
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send WhatsApp OTP: ' . $e->getMessage());
+                }
+            }
 
             // Log to system logs with verification code in context
             SystemLog::log('info', "Login verification code resent to user: {$user->name} ({$email})", 'security', [

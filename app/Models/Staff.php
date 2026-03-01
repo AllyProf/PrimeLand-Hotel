@@ -137,6 +137,18 @@ class Staff extends Authenticatable
     }
 
     /**
+     * Check if staff is owner
+     */
+    public function isOwner(): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+        $normalizedRole = strtolower(trim($this->role));
+        return $normalizedRole === 'owner';
+    }
+
+    /**
      * Check if staff is manager
      */
     public function isManager(): bool
@@ -220,10 +232,11 @@ class Staff extends Authenticatable
             return false;
         }
         
-        // Super admin always has all permissions (bypass role permission check)
-        if ($this->isSuperAdmin()) {
+        // Super admin, Manager and Owner always have all permissions (bypass role permission check)
+        if ($this->isSuperAdmin() || $this->isManager() || $this->isOwner()) {
             return true;
         }
+
 
         // For other roles, check through role system
         $role = $this->roleModel();

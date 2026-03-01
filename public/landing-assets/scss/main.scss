@@ -1,0 +1,65 @@
+/*======================================================================================
+Theme Name: Laxary
+Author: iamlabib
+Author URI: https://themeforest.net/user/iamlabib/portfolio
+Description: Laxary – Hotel & Resort Booking HTML Template
+Service: Hotel & Resort Booking HTML Template
+Version: 1.0.0
+=======================================================================================*/
+
+/*======================================================================================
+  >> TABLE OF CONTENTS <<
+========================================================================================
+01. Core Utilities
+02. Base Styles
+03. Layout & Structure
+04. Template Sections
+05. Effects & Animations
+======================================================================================*/
+
+
+/*---------------------------------------
+01. Core Utilities
+---------------------------------------*/
+@import "_mixins";
+@import "_variables";
+
+
+/*---------------------------------------
+02. Base Styles
+---------------------------------------*/
+@import "_typography";
+@import "_buttons";
+
+
+/*---------------------------------------
+03. Layout & Structure
+---------------------------------------*/
+@import "_section";
+@import "_header";
+@import "_footer";
+@import "_meanmenu";
+@import "_preloader";
+
+
+/*---------------------------------------
+04. Template Sections
+---------------------------------------*/
+@import "_hero";
+@import "_about";
+@import "_feature";
+@import "_service";
+@import "_room";
+@import "_team";
+@import "_testimonial";
+@import "_faq";
+@import "_cta";
+@import "_contact";
+@import "_news";
+@import "_helping";
+
+
+/*---------------------------------------
+05. Effects & Animations
+---------------------------------------*/
+@import "_animation";

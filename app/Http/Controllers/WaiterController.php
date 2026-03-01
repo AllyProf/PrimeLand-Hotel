@@ -30,6 +30,8 @@ class WaiterController extends Controller
                 'room_type' => $b->room->room_type ?? 'Room',
                 'guest_name' => $b->guest_name,
                 'company' => $b->company->name ?? 'Private Guest',
+                'payment_responsibility' => $b->payment_responsibility ?? 'self',
+                'is_corporate' => (bool)$b->is_corporate_booking,
                 'pax' => $b->number_of_guests,
                 'arrival' => $b->check_in->format('d M'),
                 'stay' => $b->check_in->diffInDays($b->check_out) . ' Nights'
@@ -43,8 +45,10 @@ class WaiterController extends Controller
         $allTransfers = \App\Models\StockTransfer::where('status', 'completed')->get();
         // Fetch all completed sales to deduct from stock
         $allSales = \App\Models\ServiceRequest::where('status', 'completed')
-            ->whereHas('service', function($q) use ($barCategories) {
-                $q->whereIn('category', $barCategories);
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($sq) use ($barCategories) {
+                    $sq->whereIn('category', $barCategories);
+                })->orWhereIn('service_id', [3, 4]);
             })->get();
 
         // Build a stock mapping [variant_id => current_stock_in_pics]
@@ -54,19 +58,23 @@ class WaiterController extends Controller
             if (!isset($stockLevels[$vid])) $stockLevels[$vid] = 0;
             
             $itemsPerPkg = $t->productVariant->items_per_package ?? 1;
-            $pics = ($t->quantity_unit === 'packages') ? ($t->quantity_transferred * $itemsPerPkg) : $t->quantity_transferred;
+            $pics = ($t->quantity_unit === 'packages') ? ((float)$t->quantity_transferred * (float)$itemsPerPkg) : (float)$t->quantity_transferred;
             $stockLevels[$vid] += $pics;
         }
 
         foreach ($allSales as $s) {
-            if ($s->service_id == 3 && $s->product_variant_id) { // Generic Bar Order Ref
-                $vid = $s->product_variant_id;
+            $meta = $s->service_specific_data;
+            if (isset($meta['product_variant_id'])) {
+                $vid = (int)$meta['product_variant_id'];
                 if (isset($stockLevels[$vid])) {
                     $variant = \App\Models\ProductVariant::find($vid);
-                    if ($variant && $s->selling_method === 'glass') {
-                        $stockLevels[$vid] -= ($s->quantity / ($variant->servings_per_pic ?: 1));
-                    } else {
-                        $stockLevels[$vid] -= $s->quantity;
+                    if ($variant) {
+                        $isGlass = isset($meta['selling_method']) && $meta['selling_method'] === 'glass';
+                        if ($isGlass) {
+                            $stockLevels[$vid] -= ((float)$s->quantity / (float)($variant->servings_per_pic ?: 1));
+                        } else {
+                            $stockLevels[$vid] -= (float)$s->quantity;
+                        }
                     }
                 }
             }
@@ -99,6 +107,7 @@ class WaiterController extends Controller
                         'options' => $options,
                         'in_stock' => $currentStock > 0.01,
                         'current_stock' => round($currentStock, 2),
+                        'unit' => 'Pcs',
                         'servings_per_pic' => $variant->servings_per_pic > 0 ? (float)$variant->servings_per_pic : 1
                     ];
                 }
@@ -119,7 +128,31 @@ class WaiterController extends Controller
             ];
         }
 
-        return view('dashboard.waiter-dashboard', compact('activeBookings', 'foodItems', 'drinks'));
+        // 4. Get Active Ceremonies (Any date if unpaid, or any for today)
+        $activeCeremonies = \App\Models\DayService::where(function($q) {
+                $q->whereDate('service_date', now()->toDateString())
+                  ->orWhereIn('payment_status', ['pending', 'partial']);
+            })
+            ->where(function($q) {
+                $q->where('service_type', 'LIKE', '%ceremony%')
+                  ->orWhere('service_type', 'LIKE', '%ceremory%')
+                  ->orWhere('service_type', 'LIKE', '%birthday%')
+                  ->orWhere('service_type', 'LIKE', '%package%');
+            })
+            ->get()
+            ->map(function($c) {
+                return [
+                    'id' => $c->id,
+                    'reference' => $c->service_reference,
+                    'guest_name' => $c->guest_name,
+                    'package_items' => $c->package_items ?? []
+                ];
+            });
+
+        $drinksCollection = collect($drinks);
+        $drinkCategories = $drinksCollection->groupBy('category')->sortKeys();
+
+        return view('dashboard.waiter-dashboard', compact('activeBookings', 'foodItems', 'drinks', 'drinkCategories', 'activeCeremonies'));
     }
 
     /**
@@ -147,17 +180,56 @@ class WaiterController extends Controller
     public function storeOrder(Request $request)
     {
         $request->validate([
-            'order_type' => 'required|in:resident,walk_in',
+            'order_type' => 'required|in:resident,walk_in,ceremony',
             'booking_id' => 'required_if:order_type,resident',
+            'day_service_id' => 'required_if:order_type,ceremony',
             'walk_in_name' => 'nullable|string',
             'items' => 'required|array|min:1',
             'payment_intent' => 'nullable|string', // 'now' or 'later'
+            'payment_method' => 'nullable|string', // 'cash', 'mobile', 'card', 'room_charge'
+            'payment_reference' => 'nullable|string',
         ]);
 
         try {
             DB::beginTransaction();
             $user = Auth::guard('staff')->user();
             $createdRequests = [];
+
+            // 1. Pre-validate Bar Stock for all items in the basket
+            foreach ($request->items as $item) {
+                if (isset($item['variantId']) && $item['variantId']) {
+                    $vid = $item['variantId'];
+                    $variant = \App\Models\ProductVariant::find($vid);
+                    if (!$variant) continue;
+
+                    // Calculate current stock level for this variant (Pics)
+                    $totalRecv = \App\Models\StockTransfer::where('product_variant_id', $vid)
+                        ->where('status', 'completed')
+                        ->sum('quantity_transferred');
+                    
+                    $totalSold = \App\Models\ServiceRequest::where('status', 'completed')
+                        ->where('service_specific_data->product_variant_id', (string)$vid)
+                        ->get()
+                        ->sum(function($s) use ($variant) {
+                            $meta = $s->service_specific_data;
+                            if (isset($meta['selling_method']) && $meta['selling_method'] === 'glass') {
+                                return (float)$s->quantity / (float)($variant->servings_per_pic ?: 1);
+                            }
+                            return (float)$s->quantity;
+                        });
+
+                    $currentStockPics = $totalRecv - $totalSold;
+
+                    // Calculate requested stock for this order
+                    $requestedPics = ($item['method'] === 'glass') 
+                        ? ($item['qty'] / ($variant->servings_per_pic ?: 1)) 
+                        : $item['qty'];
+
+                    if ($requestedPics > ($currentStockPics + 0.001)) { // Buffer for small decimals
+                        throw new \Exception("Insufficient stock for " . ($item['name'] ?? 'Item') . ". Available: " . round($currentStockPics, 2) . " Pcs. Please refresh your inventory.");
+                    }
+                }
+            }
 
             foreach ($request->items as $item) {
                 // Determine base note
@@ -166,28 +238,36 @@ class WaiterController extends Controller
                     $notePrefix .= ' [PAY AT COUNTER]';
                 }
                 
+                // Protection: Ceremonies MUST NOT have payment recorded by waiter.
+                // It must go to Reception's reconciliation modal.
+                $isCeremony = $request->order_type === 'ceremony';
+                $forceLater = $isCeremony;
+                $finalIntent = $forceLater ? 'later' : $request->payment_intent;
+
                 $data = [
                     'quantity' => $item['qty'],
                     'unit_price_tsh' => $item['price'],
                     'total_price_tsh' => $item['price'] * $item['qty'],
-                    'status' => 'pending',
                     'requested_at' => now(),
                     'reception_notes' => $notePrefix . (isset($item['note']) && $item['note'] ? (' - Msg: ' . $item['note']) : ''),
-                    'payment_status' => 'pending', // Waiters always send as pending for Bar/Chef to settle
+                    'payment_status' => $finalIntent === 'now' ? 'paid' : 'pending',
+                    'payment_method' => ($finalIntent === 'now') ? $request->payment_method : null,
+                    'payment_reference' => ($finalIntent === 'now') ? $request->payment_reference : null,
+                    'paid_to' => ($finalIntent === 'now') ? $user->id : null,
+                    'approved_by' => $user->id, // Track who recorded this usage
                 ];
 
-                // Handle Identity (Booking or Walk-in)
+                // Handle Identity (Booking, Ceremony or Walk-in)
                 if ($request->order_type === 'resident') {
                     $data['booking_id'] = $request->booking_id;
+                    $data['is_walk_in'] = false;
+                } elseif ($request->order_type === 'ceremony') {
+                    $data['day_service_id'] = $request->day_service_id;
                     $data['is_walk_in'] = false;
                 } else {
                     $data['is_walk_in'] = true;
                     $data['walk_in_name'] = $request->walk_in_name;
                 }
-
-                // Handle Item Type (Food Recipe vs Drink Product vs Generic Service)
-                // DEBUG: Inspect item data
-                \Log::info("Waiter Order Item: " . json_encode($item));
 
                 $isFood = isset($item['isFood']) && filter_var($item['isFood'], FILTER_VALIDATE_BOOLEAN);
 
@@ -199,9 +279,6 @@ class WaiterController extends Controller
                     ];
                 } elseif (isset($item['variantId']) && $item['variantId']) {
                     $data['service_id'] = 3; // Generic Bar Order ID
-                    $data['product_id'] = $item['productId'];
-                    $data['product_variant_id'] = $item['variantId'];
-                    $data['selling_method'] = $item['method'];
                     $data['service_specific_data'] = [
                         'product_id' => $item['productId'],
                         'product_variant_id' => $item['variantId'],
@@ -231,7 +308,7 @@ class WaiterController extends Controller
             Log::error('Error submitting waiter order: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to submit order: ' . $e->getMessage()
+                'message' => 'Order Failed: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -239,16 +316,59 @@ class WaiterController extends Controller
     /**
      * Show Waiter Order History
      */
-    public function orders()
+    public function orders(Request $request)
     {
         $user = Auth::guard('staff')->user();
+        $search = $request->input('search');
+        $tab = $request->input('tab', 'all');
         
-        $orders = ServiceRequest::with(['service', 'booking.room'])
-            ->where('reception_notes', 'LIKE', '%Waiter: ' . $user->name . '%')
-            ->orderBy('requested_at', 'desc')
-            ->paginate(15);
+        $query = ServiceRequest::with(['service', 'booking.room', 'booking.company', 'dayService', 'approvedBy', 'paidBy', 'cancelledBy'])
+            ->where('reception_notes', 'LIKE', '%Waiter: ' . $user->name . '%');
+
+        // Search Logic
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('walk_in_name', 'LIKE', "%{$search}%")
+                  ->orWhereHas('booking', function($bq) use ($search) {
+                      $bq->where('guest_name', 'LIKE', "%{$search}%")
+                         ->orWhereHas('room', function($rq) use ($search) {
+                             $rq->where('room_number', 'LIKE', "%{$search}%");
+                         });
+                  })
+                  ->orWhereHas('dayService', function($dq) use ($search) {
+                      $dq->where('guest_name', 'LIKE', "%{$search}%")
+                         ->orWhere('service_reference', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        // Filter Logic
+        switch ($tab) {
+            case 'pending':
+                $query->whereNotIn('status', ['completed', 'cancelled']);
+                break;
+            case 'completed':
+                $query->where('status', 'completed');
+                break;
+            case 'unpaid':
+                $query->whereIn('payment_status', ['pending', 'unpaid'])
+                      ->where('status', '!=', 'cancelled');
+                break;
+            case 'paid':
+                $query->whereIn('payment_status', ['paid', 'room_charge']);
+                break;
+            case 'cancelled':
+                $query->where('status', 'cancelled');
+                break;
+        }
+        
+        $orders = $query->orderBy('requested_at', 'desc')->paginate(20)->withQueryString();
+
+        if ($request->ajax()) {
+            return view('dashboard.waiter-orders-partial', compact('orders', 'tab', 'search'));
+        }
             
-        return view('dashboard.waiter-orders', compact('orders'));
+        return view('dashboard.waiter-orders', compact('orders', 'tab', 'search'));
     }
 
     /**
@@ -301,7 +421,8 @@ class WaiterController extends Controller
         
         // Get group key from request
         $isWalkIn = $request->input('is_walk_in', false);
-        $identifier = $request->input('identifier'); // walk_in_name or booking_id
+        $isCeremony = $request->input('is_ceremony', false);
+        $identifier = $request->input('identifier'); // walk_in_name or booking_id or day_service_id
         
         // Fetch all orders for this group
         $orders = ServiceRequest::with(['service', 'booking.room', 'dayService'])
@@ -310,14 +431,18 @@ class WaiterController extends Controller
         if ($isWalkIn) {
             $orders = $orders->where('is_walk_in', true)
                 ->where('walk_in_name', $identifier);
+        } elseif ($isCeremony) {
+            $orders = $orders->where('day_service_id', $identifier);
         } else {
             $orders = $orders->where('booking_id', $identifier);
         }
         
-        $orders = $orders->orderBy('requested_at', 'desc')->get();
+        $orders = $orders->whereNotIn('status', ['cancelled'])
+            ->orderBy('requested_at', 'desc')
+            ->get();
         
         if ($orders->isEmpty()) {
-            abort(404, 'No orders found');
+            abort(404, 'No active orders found for this group');
         }
 
         // If walk-in, further filter by date to avoid picking up same name from different days
@@ -335,12 +460,16 @@ class WaiterController extends Controller
         if ($first->is_walk_in) {
             $walkInName = $first->walk_in_name ?? 'Guest';
             $destination = str_contains(strtolower($walkInName), 'walk-in') ? $walkInName : 'WALK-IN (' . $walkInName . ')';
+        } elseif ($first->dayService) {
+            $destination = 'CEREMONY (' . ($first->dayService->service_reference ?? 'N/A') . ')';
         } elseif ($first->booking) {
             $destination = 'ROOM ' . ($first->booking->room->room_number ?? 'N/A');
         }
         
         // Determine Guest Name
-        $guestName = $first->is_walk_in ? ($first->walk_in_name ?? 'General Guest') : ($first->booking->guest_name ?? 'Hotel Guest');
+        $guestName = $first->is_walk_in ? ($first->walk_in_name ?? 'General Guest') : 
+            ($first->dayService ? ($first->dayService->guest_name ?? 'Ceremony Guest') : 
+            ($first->booking->guest_name ?? 'Hotel Guest'));
         
         // Determine Requested By
         $requestedBy = 'N/A';
@@ -365,9 +494,13 @@ class WaiterController extends Controller
             'reason' => 'required|string|max:500',
         ]);
 
-        // Only allow cancelling if not already completed or cancelled
-        if (in_array($serviceRequest->status, ['completed', 'cancelled'])) {
-            return back()->with('error', 'Cannot cancel an order that is already ' . $serviceRequest->status . '.');
+        // Only allow cancelling if not already finalized (paid or already cancelled)
+        if ($serviceRequest->status === 'cancelled') {
+            return back()->with('error', 'This order is already cancelled.');
+        }
+
+        if ($serviceRequest->payment_status === 'paid' || $serviceRequest->payment_status === 'room_charge') {
+            return back()->with('error', 'Cannot cancel an order that has already been paid.');
         }
 
         $user = Auth::guard('staff')->user();
@@ -375,6 +508,7 @@ class WaiterController extends Controller
         
         $serviceRequest->update([
             'status' => 'cancelled',
+            'cancelled_by' => $user->id,
             'reception_notes' => ($serviceRequest->reception_notes ? $serviceRequest->reception_notes . " | " : "") . "CANCELLED by Waiter (" . ($user->name ?? 'Staff') . "): " . $reason
         ]);
 
@@ -422,5 +556,157 @@ class WaiterController extends Controller
             'roomChargeSales', 'itemsBreakdown', 'date',
             'activeOrders', 'completedOrders', 'cancelledOrders'
         ));
+    }
+
+    /**
+     * Register payment for a group of orders
+     */
+    public function registerPayment(Request $request)
+    {
+        $request->validate([
+            'is_walk_in' => 'required|boolean',
+            'is_ceremony' => 'nullable|boolean',
+            'identifier' => 'required',
+            'payment_method' => 'required|string',
+            'payment_reference' => 'nullable|string',
+        ]);
+
+        if ($request->is_ceremony) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Ceremony payments cannot be recorded by waiters. Please guide the guest to Reception for bill reconciliation.'
+            ]);
+        }
+
+        $user = Auth::guard('staff')->user();
+        $isWalkIn = $request->input('is_walk_in');
+        $identifier = $request->input('identifier');
+
+        $query = ServiceRequest::whereIn('payment_status', ['pending', 'unpaid'])
+            ->where('status', '!=', 'cancelled');
+
+        if ($isWalkIn) {
+            $query->where('is_walk_in', true)->where('walk_in_name', $identifier);
+        } elseif ($request->is_ceremony) {
+            $query->where('day_service_id', $identifier);
+        } else {
+            // For Room Guests: Settle items for this booking
+            $query->where('booking_id', $identifier);
+
+            // Isolation: Only settle items the waiter typically handles (recorded by them OR non-bar categories)
+            $barCats = [
+                'drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 
+                'energy_drinks', 'bar', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 
+                'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages'
+            ];
+
+            $query->where(function($q) use ($user, $barCats) {
+                // Settle if recorded by this waiter
+                $q->where('reception_notes', 'LIKE', '%Waiter: ' . $user->name . '%')
+                  // OR if it's NOT a bar item (meaning it's likely a food/kitchen item)
+                  ->orWhere(function($sub) use ($barCats) {
+                      $sub->whereHas('service', function($sq) use ($barCats) {
+                          $sq->whereNotIn('category', $barCats);
+                      })->where('service_id', '!=', 3);
+                  });
+            });
+        }
+
+
+        $orders = $query->with(['service', 'booking'])->get();
+
+        if ($orders->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No pending payments found for this group.']);
+        }
+
+        // Enforcement of Payment Responsibility Rules
+        $firstOrder = $orders->first();
+        if ($firstOrder->booking) {
+            $resp = $firstOrder->booking->payment_responsibility ?? 'self';
+
+            if ($resp === 'company') {
+                // RULE 1: MANDATORY ROOM CHARGE
+                if ($request->payment_method !== 'room_charge') {
+                    return response()->json(['success' => false, 'message' => 'This guest is COMPANY-SPONSORED. All services MUST be charged to the room.']);
+                }
+            } else {
+                // RULE 2: SELF-PAYER (Resident)
+                $mobilePlatforms = ['mpesa', 'halopesa', 'tigopesa', 'airtel', 'mixx'];
+                $bankPlatforms = ['nmb', 'crdb', 'kcb', 'nbc', 'dtb'];
+                $cardPlatforms = ['visa', 'mastercard', 'amex'];
+                $allowed = array_merge(['cash', 'room_charge'], $mobilePlatforms, $bankPlatforms, $cardPlatforms);
+                
+                if (!in_array($request->payment_method, $allowed)) {
+                    return response()->json(['success' => false, 'message' => 'Self-Payer: Please use Cash, Mobile, Bank, Card or Room Charge.']);
+                }
+            }
+        } else {
+            // RULE 3: WALK-IN / CEREMONY (No Room Charge)
+            $mobilePlatforms = ['mpesa', 'halopesa', 'tigopesa', 'airtel', 'mixx'];
+            $bankPlatforms = ['nmb', 'crdb', 'kcb', 'nbc', 'dtb'];
+            $cardPlatforms = ['visa', 'mastercard', 'amex'];
+            $allowed = array_merge(['cash'], $mobilePlatforms, $bankPlatforms, $cardPlatforms);
+
+            if (!in_array($request->payment_method, $allowed)) {
+                return response()->json(['success' => false, 'message' => 'Walk-in/Ceremony: Only Cash, Mobile, Bank or Card payments are accepted.']);
+            }
+        }
+
+        $totalCollected = $orders->sum('total_price_tsh');
+        $isRoomCharge = $request->payment_method === 'room_charge';
+
+        foreach ($orders as $order) {
+            $currentNotes = $order->reception_notes;
+            
+            // Determine suffix based on payment method
+            $paymentSuffix = $isRoomCharge 
+                ? ' | Charged to Room by Waiter: ' . $user->name
+                : ' | Payment recorded by Waiter: ' . $user->name;
+
+            // Clean up previous markers
+            $cleanNotes = str_replace(['(Pending Payment)', '(Paid)'], '', $currentNotes);
+            
+            if (!str_contains($cleanNotes, 'Payment recorded') && !str_contains($cleanNotes, 'Charged to Room')) {
+                $cleanNotes .= $paymentSuffix;
+            }
+
+            $updateData = [
+                'payment_status' => $isRoomCharge ? 'room_charge' : 'paid',
+                'payment_method' => $request->payment_method,
+                'payment_reference' => $request->payment_reference,
+                'paid_to' => $user->id,
+                'reception_notes' => $cleanNotes
+            ];
+
+            // Automatically mark orders as "COMPLETED" on payment
+            // This allows the Chef to focus on cooking without needing to touch the system.
+            // If it was already completed (e.g. by Bar Keeper), we just keep it completed.
+            if ($order->status !== 'completed' && $order->status !== 'cancelled') {
+                $updateData['status'] = 'completed'; 
+                $updateData['completed_at'] = now();
+                $updateData['approved_at'] = $order->approved_at ?? now();
+                $updateData['reception_notes'] .= " | Finalized on Payment by Waiter: " . $user->name;
+            }
+
+            $order->update($updateData);
+        }
+
+        // Log activity
+        try {
+            $itemNames = $orders->map(fn($o) => $o->service->name ?? ($o->service_specific_data['item_name'] ?? 'Item'))->implode(', ');
+            \App\Models\ActivityLog::create([
+                'user_id' => $user->id,
+                'user_type' => get_class($user),
+                'action' => 'payment_received',
+                'description' => "Waiter " . $user->name . " recorded payment of " . number_format($totalCollected) . " TSH for: " . $itemNames . " (Guest: " . $identifier . ")",
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+        } catch (\Exception $e) {}
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment registered successfully for ' . $orders->count() . ' items.'
+        ]);
     }
 }

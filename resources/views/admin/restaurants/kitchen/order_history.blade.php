@@ -20,13 +20,13 @@
                 <table class="table table-hover table-bordered">
                     <thead>
                         <tr>
-                            <th>Completed At</th>
+                            <th>Date / Time</th>
+                            <th>Status</th>
                             <th>Requested By</th>
                             <th>Room / Guest</th>
                             <th>Item Name</th>
                             <th>Qty</th>
-                            <th>Total Price</th>
-                            <th>Served By</th>
+                            <th>Handled By</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -36,7 +36,16 @@
                             $recipe = $foodId ? \App\Models\Recipe::find($foodId) : null;
                         @endphp
                         <tr>
-                            <td>{{ $order->completed_at->format('M d, Y H:i') }}</td>
+                            <td>{{ ($order->completed_at ?? $order->requested_at)->format('M d, H:i') }}</td>
+                            <td>
+                                @php
+                                    $sClass = [
+                                        'completed' => 'success',
+                                        'cancelled' => 'danger'
+                                    ][$order->status] ?? 'info';
+                                @endphp
+                                <span class="badge badge-{{ $sClass }}">{{ strtoupper($order->status) }}</span>
+                            </td>
                             <td>
                                 @php
                                   $by = 'N/A';
@@ -61,8 +70,13 @@
                                 <strong>{{ $order->service_specific_data['item_name'] ?? ($recipe ? $recipe->name : ($order->service->name ?? 'Unknown dish')) }}</strong>
                             </td>
                             <td>{{ $order->quantity }}</td>
-                            <td>{{ number_format($order->total_price_tsh) }} TZS</td>
-                            <td>{{ $order->approvedBy->name ?? 'Staff' }}</td>
+                            <td>
+                                @if($order->status === 'cancelled')
+                                    <span class="text-danger"><i class="fa fa-times-circle"></i> {{ $order->cancelledBy->name ?? 'Staff' }}</span>
+                                @else
+                                    <span class="text-success"><i class="fa fa-check-circle"></i> {{ $order->approvedBy->name ?? 'Staff' }}</span>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>

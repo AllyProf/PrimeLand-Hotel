@@ -346,7 +346,7 @@ function autoResetPassword(userId, userName, userEmail) {
                 <div class="alert alert-info">
                   <code id="generated-password" style="font-size: 18px; font-weight: bold; color: #e77a3a; letter-spacing: 2px;">${data.password}</code>
                 </div>
-                <p class="text-danger"><small><i class="fa fa-exclamation-triangle"></i> Please copy this password and share it securely with the user. It will not be shown again.</small></p>
+                <p class="text-success"><small><i class="fa fa-envelope"></i> Notifications have been sent to the user via Email and SMS.</small></p>
                 <button onclick="copyPassword('${data.password.replace(/'/g, "\\'")}')" class="btn btn-primary btn-block">
                   <i class="fa fa-copy"></i> Copy Password
                 </button>
@@ -410,7 +410,7 @@ function copyPassword(password) {
         <div class="alert alert-info">
           <code style="font-size: 18px; font-weight: bold; color: #e77a3a;">{{ session('generated_password') }}</code>
         </div>
-        <p class="text-danger"><small><i class="fa fa-exclamation-triangle"></i> Please copy this password and share it securely with the user. It will not be shown again.</small></p>
+        <p class="text-success"><small><i class="fa fa-envelope"></i> Notifications have been sent to the user via Email and SMS.</small></p>
         <button onclick="copyPassword('{{ session('generated_password') }}')" class="btn btn-primary btn-block">
           <i class="fa fa-copy"></i> Copy Password
         </button>

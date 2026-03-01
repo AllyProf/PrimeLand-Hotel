@@ -16,8 +16,28 @@ class FeedbackController extends Controller
     {
         $user = Auth::guard('guest')->user() ?? Auth::user();
         
+        // If not logged in, we'll still show the page but with a message or guest identification form
+        // To find their specific bookings, they'll need to be logged in or identify themselves
+        
         if (!$user) {
-            abort(403, 'Unauthorized. Please log in.');
+            // Public view - No user context
+            $allRooms = \App\Models\Room::select('id', 'room_number', 'room_type')
+                ->where('status', 'available')
+                ->orWhere('status', 'occupied')
+                ->orderBy('room_number')
+                ->get();
+
+            return view('dashboard.customer-feedback', [
+                'role' => 'public',
+                'userName' => 'Valued Guest',
+                'userRole' => 'Guest',
+                'user' => null,
+                'bookings' => collect(),
+                'allRooms' => $allRooms,
+                'submittedFeedback' => collect(),
+                'hideSidebar' => true, // Flag to hide sidebar for public guests
+                'message' => 'Please share your experience with us. Selecting a room is optional.'
+            ]);
         }
         
         // Get completed bookings for feedback
@@ -94,7 +114,12 @@ class FeedbackController extends Controller
     public function submit(Request $request)
     {
         $request->validate([
-            'booking_id' => 'required|exists:bookings,id',
+            'booking_id' => 'nullable|exists:bookings,id',
+            'room_id' => 'nullable|exists:rooms,id',
+            'guest_name' => 'nullable|string|max:255',
+            'guest_email' => 'nullable|email|max:255',
+            'guest_phone' => 'nullable|string|max:50',
+            'country' => 'nullable|string|max:100',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
             'categories' => 'nullable|array',
@@ -102,46 +127,81 @@ class FeedbackController extends Controller
 
         $user = Auth::guard('guest')->user() ?? Auth::user();
         
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Please log in.',
-            ], 401);
-        }
-        
-        // Verify booking belongs to user and is completed/checked out
-        $booking = Booking::where('id', $request->booking_id)
-            ->where('guest_email', $user->email)
-            ->where(function($query) {
-                $query->where('check_in_status', 'checked_out')
-                      ->orWhere('status', 'completed')
-                      ->orWhere(function($q) {
-                          $q->where('check_out', '<', now())
-                            ->where('status', '!=', 'pending');
-                      });
-            })
-            ->where('status', '!=', 'cancelled')
-            ->firstOrFail();
-
-        // Check if feedback already exists for this booking
-        $existingFeedback = Feedback::where('booking_id', $request->booking_id)->first();
-        
-        if ($existingFeedback) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You have already submitted feedback for this booking.',
-            ], 422);
-        }
-
-        // Store feedback
-        Feedback::create([
-            'booking_id' => $request->booking_id,
-            'guest_name' => $booking->guest_name,
-            'guest_email' => $booking->guest_email,
+        // Data for storage
+        $data = [
             'rating' => $request->rating,
             'comment' => $request->comment,
             'categories' => $request->categories ?? [],
-        ]);
+            'country' => $request->country,
+        ];
+
+        if ($user) {
+            // Case 1: Logged in user with a specific booking
+            if ($request->booking_id) {
+                $booking = Booking::where('id', $request->booking_id)
+                    ->where('guest_email', $user->email)
+                    ->firstOrFail();
+
+                // Check if feedback already exists for this booking
+                if (Feedback::where('booking_id', $request->booking_id)->exists()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You have already submitted feedback for this booking.',
+                    ], 422);
+                }
+
+                $data['booking_id'] = $booking->id;
+                $data['guest_name'] = $booking->guest_name;
+                $data['guest_email'] = $booking->guest_email;
+                $data['guest_phone'] = $booking->guest_phone;
+            } else {
+                // Logged in user submitting general feedback
+                $data['guest_name'] = $user->name;
+                $data['guest_email'] = $user->email;
+                // Try to get phone from recent booking if not provided
+                $recentBooking = Booking::where('guest_email', $user->email)->orderBy('created_at', 'desc')->first();
+                $data['guest_phone'] = $recentBooking->guest_phone ?? null;
+            }
+        } else {
+            // Case 2: Public Guest submission (Not logged in)
+            $data['guest_name'] = $request->guest_name ?? 'Anonymous Guest';
+            $data['guest_email'] = $request->guest_email ?? 'guest@example.com';
+            $data['guest_phone'] = $request->guest_phone;
+            
+            // If they provided a room but no booking
+            if ($request->room_id && !$request->booking_id) {
+                // Let's check if there's a recent booking for this room to associate with
+                $recentBooking = Booking::where('room_id', $request->room_id)
+                    ->where('status', '!=', 'cancelled')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                if ($recentBooking) {
+                    $data['booking_id'] = $recentBooking->id;
+                }
+            }
+        }
+
+        // Store feedback
+        $feedback = Feedback::create($data);
+
+        // Send Notifications
+        try {
+            // 1. Send SMS
+            if ($feedback->guest_phone) {
+                $smsService = app(\App\Services\SmsService::class);
+                $message = "Hello {$feedback->guest_name}, thank you for your feedback at PrimeLand Hotel. Your {$feedback->rating}-star review helps us improve. We hope to see you again soon!";
+                $smsService->sendSingle($feedback->guest_phone, $message);
+            }
+
+            // 2. Send Email
+            if ($feedback->guest_email && $feedback->guest_email !== 'guest@example.com') {
+                \Illuminate\Support\Facades\Mail::to($feedback->guest_email)->send(new \App\Mail\FeedbackReceivedMail($feedback));
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Failed to send feedback notifications: ' . $e->getMessage());
+            // We don't fail the request if notifications fail
+        }
         
         return response()->json([
             'success' => true,

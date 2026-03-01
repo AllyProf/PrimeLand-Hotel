@@ -23,12 +23,14 @@ class CompanyInvoiceMail extends Mailable
     public $totalCompanyPaid;
     public $checkIn;
     public $checkOut;
+    public $nights;
     public $generalNotes;
+    protected $pdfData;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Company $company, $bookings, $companyCharges, $selfPaidCharges, $totalCompanyPaid, $checkIn, $checkOut, $generalNotes = null)
+    public function __construct(Company $company, $bookings, $companyCharges, $selfPaidCharges, $totalCompanyPaid, $checkIn, $checkOut, $generalNotes = null, $pdfData = null)
     {
         $this->company = $company;
         $this->bookings = $bookings;
@@ -37,7 +39,9 @@ class CompanyInvoiceMail extends Mailable
         $this->totalCompanyPaid = $totalCompanyPaid;
         $this->checkIn = $checkIn;
         $this->checkOut = $checkOut;
+        $this->nights = \Carbon\Carbon::parse($checkIn)->diffInDays($checkOut);
         $this->generalNotes = $generalNotes;
+        $this->pdfData = $pdfData;
     }
 
     /**
@@ -46,7 +50,7 @@ class CompanyInvoiceMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Corporate Booking Invoice - PrimeLand Hotel',
+            subject: 'Corporate Booking Invoice - ' . $this->company->name . ' - PrimeLand Hotel',
         );
     }
 
@@ -57,6 +61,9 @@ class CompanyInvoiceMail extends Mailable
     {
         return new Content(
             markdown: 'emails.company-invoice',
+            with: [
+                'nights' => $this->nights,
+            ]
         );
     }
 
@@ -65,6 +72,15 @@ class CompanyInvoiceMail extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        $attachments = [];
+
+        if ($this->pdfData) {
+            $attachments[] = \Illuminate\Mail\Mailables\Attachment::fromData(
+                fn () => $this->pdfData,
+                'Corporate_Booking_Invoice.pdf'
+            )->withMime('application/pdf');
+        }
+
+        return $attachments;
     }
 }

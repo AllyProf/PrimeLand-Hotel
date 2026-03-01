@@ -106,6 +106,7 @@
                 <th>Total</th>
                 <th>Status</th>
                 <th>Requested At</th>
+                <th>Made By</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -198,8 +199,40 @@
                   @else
                     <span class="badge badge-danger">Cancelled</span>
                   @endif
+
+                  @if(in_array($request->payment_status, ['paid', 'room_charge']))
+                    <div class="mt-1"><span class="badge badge-success small" style="font-size: 0.7rem;"><i class="fa fa-check-circle"></i> PAID</span></div>
+                  @else
+                    <div class="mt-1"><span class="badge badge-warning small" style="font-size: 0.7rem;"><i class="fa fa-clock-o"></i> UNPAID</span></div>
+                  @endif
                 </td>
                 <td>{{ $request->requested_at->format('M d, Y H:i') }}</td>
+                <td>
+                  @php
+                    $madeBy = 'Guest';
+                    $notes = $request->reception_notes ?? '';
+                    $prefixes = [
+                        'POS Order by Waiter: ',
+                        'Order by Waiter: ',
+                        'Recorded by: ',
+                        'Payment recorded by Waiter: ',
+                        'Payment recorded by: ',
+                        'Served by '
+                    ];
+                    foreach ($prefixes as $prefix) {
+                        if (str_contains($notes, $prefix)) {
+                            $parts = explode($prefix, $notes);
+                            $afterPrefix = $parts[1] ?? '';
+                            $madeBy = trim(explode('|', explode('[', explode('(', $afterPrefix)[0])[0])[0] ?? 'Staff');
+                            break;
+                        }
+                    }
+                    if ($madeBy === 'Guest' && $request->approvedBy) {
+                        $madeBy = $request->approvedBy->name;
+                    }
+                  @endphp
+                  <small class="font-weight-bold"><i class="fa fa-user-circle text-muted"></i> {{ $madeBy }}</small>
+                </td>
                 <td>
                   <button class="btn btn-sm btn-info" onclick="viewServiceRequest({{ $request->id }})" title="View Details">
                     <i class="fa fa-eye"></i>
@@ -482,6 +515,34 @@ function viewServiceDetails(requestId) {
             ${request.completed_at ? `<tr><td><strong>Completed At:</strong></td><td>${request.completed_at}</td></tr>` : ''}
         </table>
     `;
+
+    // Payment Information
+    html += `
+        <hr>
+        <h6 style="color: #e07632; border-bottom: 2px solid #e07632; padding-bottom: 5px; margin-bottom: 15px;">Payment Details</h6>
+        <table class="table table-bordered">
+            <tr>
+                <td width="40%"><strong>Payment Status:</strong></td>
+                <td>
+                    ${request.payment_status === 'paid' ? '<span class="badge badge-success"><i class="fa fa-check-circle"></i> PAID</span>' : ''}
+                    ${request.payment_status === 'room_charge' ? '<span class="badge badge-success"><i class="fa fa-building"></i> COMPANY CHARGE</span>' : ''}
+                    ${request.payment_status !== 'paid' && request.payment_status !== 'room_charge' ? '<span class="badge badge-warning"><i class="fa fa-clock-o"></i> PENDING PAYMENT</span>' : ''}
+                </td>
+            </tr>
+            ${request.payment_method ? `
+                <tr>
+                    <td><strong>Payment Method:</strong></td>
+                    <td><span class="badge badge-info text-uppercase">${request.payment_method.replace(/_/g, ' ')}</span></td>
+                </tr>
+            ` : ''}
+            ${request.payment_reference ? `
+                <tr>
+                    <td><strong>Reference #:</strong></td>
+                    <td><code>${request.payment_reference}</code></td>
+                </tr>
+            ` : ''}
+        </table>
+    `;
     
     document.getElementById('serviceDetailsContent').innerHTML = html;
     $('#serviceDetailsModal').modal('show');
@@ -553,6 +614,18 @@ function confirmUpdateStatus() {
         alertContainer.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
     });
 }
+
+// Auto-open modal if ID is in URL
+$(document).ready(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestId = urlParams.get('id');
+    if (requestId) {
+        // Wait a bit for data to be ready
+        setTimeout(() => {
+            viewServiceDetails(requestId);
+        }, 300);
+    }
+});
 </script>
 @endsection
 

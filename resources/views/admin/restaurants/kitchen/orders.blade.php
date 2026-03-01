@@ -31,9 +31,14 @@
         </div>
     </div>
     <div class="col-md-6 text-right">
-        <a href="{{ route('admin.restaurants.kitchen.orders.history') }}" class="btn btn-secondary mt-3">
-            <i class="fa fa-history"></i> View Order History
-        </a>
+        <div class="btn-group mt-3">
+            <a href="{{ route('chef-master.kds') }}" class="btn btn-dark mr-2">
+                <i class="fa fa-desktop"></i> KDS MONITOR
+            </a>
+            <a href="{{ route('admin.restaurants.kitchen.orders.history') }}" class="btn btn-secondary">
+                <i class="fa fa-history"></i> View Order History
+            </a>
+        </div>
     </div>
 </div>
 

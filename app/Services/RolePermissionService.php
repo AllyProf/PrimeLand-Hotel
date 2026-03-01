@@ -28,6 +28,8 @@ class RolePermissionService
                 return 'reception';
             } elseif ($normalizedRole === 'headchef' || $rawRole === 'head_chef') {
                 return 'head_chef';
+            } elseif ($normalizedRole === 'owner' || $rawRole === 'owner') {
+                return 'owner';
             }
         } elseif ($user instanceof Guest) {
             return 'customer';
@@ -73,9 +75,12 @@ class RolePermissionService
             return false;
         }
         
-        // Super admin always has all permissions
-        if ($user instanceof Staff && $user->isSuperAdmin()) {
-            return true;
+        // Super admin, Manager and Owner always have all permissions
+        if ($user instanceof \App\Models\Staff) {
+            $userRole = self::getUserRole($user);
+            if (in_array($userRole, ['super_admin', 'manager', 'owner'])) {
+                return true;
+            }
         }
         
         // Guest model doesn't have hasPermission method
@@ -117,6 +122,11 @@ class RolePermissionService
             'customer' => ['customer.dashboard', 'customer.bookings', 'customer.profile'],
         ];
         
+        // Super admin, Manager and Owner can access almost everything
+        if (in_array($userRole, ['super_admin', 'manager', 'owner'])) {
+            return true;
+        }
+
         foreach ($routeRoleMap as $role => $routes) {
             if ($userRole === $role && in_array($routeName, $routes)) {
                 return true;
@@ -128,6 +138,9 @@ class RolePermissionService
             return true;
         }
         if ($userRole === 'manager' && str_starts_with($routeName, 'admin.')) {
+            return true;
+        }
+        if ($userRole === 'owner' && (str_starts_with($routeName, 'owner.') || str_starts_with($routeName, 'admin.'))) {
             return true;
         }
         if ($userRole === 'reception' && str_starts_with($routeName, 'reception.')) {

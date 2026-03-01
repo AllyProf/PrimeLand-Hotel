@@ -6,6 +6,8 @@ use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\WhatsappService;
+use App\Services\SmsService;
 
 class PaymentController extends Controller
 {
@@ -71,7 +73,7 @@ class PaymentController extends Controller
         elseif ($isAlreadyPaid && !$isInitialPayment) {
             // Calculate additional charges only (room booking already paid)
             $serviceRequests = $booking->serviceRequests()
-                ->whereIn('status', ['approved', 'completed'])
+                ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
                 ->with('service')
                 ->get();
             
@@ -300,7 +302,7 @@ class PaymentController extends Controller
             if ($isCheckoutPayment) {
                 // For checkout payments, add to existing payment amount
                 $serviceRequests = $booking->serviceRequests()
-                    ->whereIn('status', ['approved', 'completed'])
+                    ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
                     ->with('service')
                     ->get();
                 
@@ -434,11 +436,41 @@ class PaymentController extends Controller
                 // Check if guest has notifications enabled
                 $guest = \App\Models\Guest::where('email', $booking->guest_email)->first();
                 if (!$guest || $guest->isNotificationEnabled('payment')) {
+                    $booking = $booking->fresh()->load('room');
+                    
+                    // Generate PDF receipt for attachment
+                    $pdfData = null;
+                    try {
+                        $password = strtoupper($booking->first_name ?? explode(' ', $booking->guest_name)[0]);
+                        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.pdf-individual-invoice', [
+                            'booking' => $booking,
+                            'password' => $password,
+                            'paymentPercentage' => round($booking->payment_percentage, 1),
+                            'remainingAmount' => max(0, $booking->total_price - $booking->amount_paid)
+                        ]);
+                        $pdfData = $pdf->output();
+                    } catch (\Exception $pdfEx) {
+                        Log::error('PDF generation failed in PaymentController@success: ' . $pdfEx->getMessage());
+                    }
+
                     \Illuminate\Support\Facades\Mail::to($booking->guest_email)
-                        ->send(new \App\Mail\PaymentConfirmationMail($booking->fresh()));
+                        ->send(new \App\Mail\PaymentConfirmationMail($booking, $pdfData));
                 }
             } catch (\Exception $e) {
                 Log::error('Failed to send payment confirmation email: ' . $e->getMessage());
+            }
+
+            // Send payment confirmation SMS
+            try {
+                $smsService = new SmsService();
+                $smsService->sendPaymentConfirmation(
+                    $booking->guest_phone,
+                    $booking->guest_name,
+                    $booking->booking_reference,
+                    '$' . number_format($booking->amount_paid, 2)
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to send payment confirmation SMS: ' . $e->getMessage());
             }
 
             // Send email notification to managers and super admins for payment received
@@ -750,6 +782,32 @@ class PaymentController extends Controller
             }
         } catch (\Exception $e) {
             Log::error('Failed to send payment confirmation email: ' . $e->getMessage());
+        }
+
+        // Send payment confirmation SMS
+        try {
+            $smsService = new SmsService();
+            $smsService->sendPaymentConfirmation(
+                $booking->guest_phone,
+                $booking->guest_name,
+                $booking->booking_reference,
+                '$' . number_format($booking->amount_paid, 2)
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to send payment confirmation SMS: ' . $e->getMessage());
+        }
+
+        // Send WhatsApp payment confirmation
+        try {
+            $whatsappService = new WhatsappService();
+            $whatsappService->sendPaymentReceipt(
+                $booking->guest_phone,
+                $booking->guest_name,
+                '$' . number_format($booking->amount_paid, 2),
+                $booking->booking_reference
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to send WhatsApp payment confirmation: ' . $e->getMessage());
         }
 
         // Send email notification to managers and super admins for payment received

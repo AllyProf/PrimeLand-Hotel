@@ -173,8 +173,38 @@ class AdminController extends Controller
                     ->where('check_out', '>=', $today)
                     ->sum('number_of_guests') ?: Booking::where('check_in_status', 'checked_in')->count(),
             ];
+
+            // Messaging Statistics
+            $smsStats = [
+                'balance' => 'N/A',
+                'recent_logs' => [],
+                'today_count' => 0
+            ];
+            
+            try {
+                $smsService = new \App\Services\SmsService();
+                $balanceRes = $smsService->getBalance();
+                if ($balanceRes['success']) {
+                    $smsStats['balance'] = $balanceRes['balance'];
+                }
+
+                $logsRes = $smsService->getLogs(['limit' => 5]);
+                if ($logsRes['success']) {
+                    $smsStats['recent_logs'] = $logsRes['logs'];
+                    // Count today's logs
+                    $todayStr = $today->format('Y-m-d');
+                    foreach ($logsRes['logs'] as $log) {
+                        if (isset($log['sentAt']) && str_starts_with($log['sentAt'], $todayStr)) {
+                            $smsStats['today_count']++;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Failed to fetch SMS stats for dashboard', ['error' => $e->getMessage()]);
+            }
             
             // Recent bookings (include all, including expired - they'll be handled in the view)
+
             // Get recent bookings - group corporate bookings by company
             $allRecentBookings = Booking::with(['room', 'company'])
                 ->orderBy('created_at', 'desc')
@@ -255,12 +285,14 @@ class AdminController extends Controller
                 'userName' => $user->name ?? 'Manager',
                 'userRole' => 'Manager',
                 'stats' => $stats,
+                'smsStats' => $smsStats,
                 'recentBookings' => $recentBookings,
                 'exchangeRate' => $exchangeRate,
                 'pendingExtensions' => $pendingExtensions,
                 'revenueData' => $revenueData,
                 'bookingStatusData' => $bookingStatusData,
             ]);
+
         } catch (\Exception $e) {
             \Log::error('Admin dashboard error', [
                 'error' => $e->getMessage(),
@@ -433,6 +465,7 @@ class AdminController extends Controller
             'stats' => $stats,
             'tab' => $tab,
             'filters' => $request->only(['search_employee', 'search_customer']),
+            'activePage' => 'admin/users',
         ]);
     }
     
@@ -621,6 +654,7 @@ class AdminController extends Controller
             'totalRevenueTZS' => $totalRevenueTZS,
             'stats' => $stats,
             'filters' => $request->only(['search', 'payment_method', 'payment_status', 'date_from', 'date_to']),
+            'activePage' => 'admin/payments',
         ]);
     }
     
@@ -974,6 +1008,7 @@ class AdminController extends Controller
             'role' => 'manager',
             'userName' => (auth()->guard('staff')->user() ?? auth()->guard('guest')->user())->name ?? 'Manager',
             'userRole' => 'Manager',
+            'activePage' => 'admin/reports',
             'bookings' => $bookings,
             'stats' => $stats,
             'exchangeRate' => $exchangeRate,
@@ -2134,6 +2169,41 @@ class AdminController extends Controller
         $allStock = collect($stockMap)->sortBy('product_name');
         
         return view('dashboard.admin-stock', compact('allStock'));
+    }
+
+    /**
+     * Override the exchange rate for a specific booking.
+     * Available to Admin (manager) and Reception roles.
+     */
+    public function overrideExchangeRate(Request $request, \App\Models\Booking $booking)
+    {
+        $request->validate([
+            'exchange_rate'      => 'required|numeric|min:100|max:10000000',
+            'rate_source'        => 'required|string|in:manual,booking.com,bank,paypal,agoda,expedia,airbnb,other',
+            'exchange_rate_note' => 'nullable|string|max:500',
+        ]);
+
+        $staffUser = auth()->guard('staff')->user();
+        $newRate   = (float) $request->exchange_rate;
+        $oldRate   = (float) ($booking->locked_exchange_rate ?? 0);
+
+        $booking->update([
+            'locked_exchange_rate'        => $newRate,
+            'original_exchange_rate'      => $oldRate ?: null,
+            'rate_source'                 => $request->rate_source,
+            'exchange_rate_note'          => $request->exchange_rate_note,
+            'exchange_rate_overridden_by' => $staffUser ? $staffUser->name : 'Staff',
+            'exchange_rate_overridden_at' => now(),
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'Exchange rate updated successfully.',
+            'new_rate'     => $newRate,
+            'old_rate'     => $oldRate,
+            'overridden_by'=> $staffUser ? $staffUser->name : 'Staff',
+            'overridden_at'=> now()->format('M d, Y H:i'),
+        ]);
     }
 }
 

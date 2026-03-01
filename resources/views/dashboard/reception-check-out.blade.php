@@ -119,6 +119,7 @@
                 <th>Check-out Date</th>
                 <th>Checked In At</th>
                 <th>Time Remaining</th>
+                <th>Signature Status</th>
                 <th>Services Used</th>
                 <th>Total Price</th>
                 <th>Actions</th>
@@ -248,6 +249,18 @@
                       @else
                         <span class="text-muted">N/A</span>
                       @endif
+                    <td>
+                      @if($companyBookings->contains(fn($b) => !empty($b->checkout_signature_path)))
+                        <span class="badge badge-info" title="Some guests have signed checkout">
+                          <i class="fa fa-file-text-o"></i> Signed
+                        </span>
+                      @elseif($companyBookings->contains(fn($b) => !empty($b->guest_signature_path)))
+                        <span class="badge badge-warning" title="Check-in signatures are on file">
+                          <i class="fa fa-pencil"></i> Check-in Sign
+                        </span>
+                      @else
+                        <span class="text-muted small">No Signature</span>
+                      @endif
                     </td>
                     <td>
                       <small class="text-muted"><i class="fa fa-info-circle"></i> Expand to view guest services</small>
@@ -305,17 +318,29 @@
                           : 'reception.bookings.checkout-bill';
                         $safeCompanyName = $company->name ?? 'Company';
                       @endphp
-                       <button class="btn btn-sm btn-info mr-1" onclick="viewCompanyBookings({{ $company->id ?? 0 }}, {{ $loop->index }})" title="View All Bookings">
+                        <button class="btn btn-sm btn-info mr-1" onclick="viewCompanyBookings({{ $company->id ?? 0 }}, {{ $loop->index }})" title="View All Bookings">
                         <i class="fa fa-eye"></i> View More
                       </button>
+                      @php
+                        $anyCheckedIn = $companyBookings->contains(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_in'; });
+                      @endphp
                       <a href="{{ route('reception.companies.group-bill', $company->id ?? 0) }}" class="btn btn-sm btn-dark mr-1" target="_blank" title="Print Group Bill">
                         <i class="fa fa-print"></i> Group Bill
                       </a>
-                      @if($totalOutstandingTsh >= 50)
-                        <button class="btn btn-sm btn-success mr-1" onclick="openCashPaymentModalCompany({{ $company->id ?? 0 }}, {{ json_encode($safeCompanyName) }}, {{ $totalOutstandingUsd }}, {{ $totalOutstandingTsh }})" title="Process Payment">
-                          <i class="fa fa-money"></i> Pay Company Bill
-                        </button>
-                        <button class="btn btn-sm btn-danger" disabled title="Cannot check out - Outstanding balance must be paid first">
+                      @php
+                        $hasAnyOutstanding = ($totalOutstandingTsh >= 50 || $selfPaidGuestsWithBalance->count() > 0);
+                        $outstandingMessage = $totalOutstandingTsh >= 50 
+                            ? "Cannot check out - Company has an outstanding balance that must be paid first" 
+                            : "Cannot check out - One or more guests have individual outstanding charges that must be paid first";
+                      @endphp
+
+                      @if($hasAnyOutstanding)
+                        @if($totalOutstandingTsh >= 50)
+                          <button class="btn btn-sm btn-success mr-1" onclick="openCashPaymentModalCompany({{ $company->id ?? 0 }}, {{ json_encode($safeCompanyName) }}, {{ $totalOutstandingUsd }}, {{ $totalOutstandingTsh }})" title="Process Payment">
+                            <i class="fa fa-money"></i> Pay Company Bill
+                          </button>
+                        @endif
+                        <button class="btn btn-sm btn-danger" disabled title="{{ $outstandingMessage }}">
                           <i class="fa fa-sign-out"></i> Check Out
                         </button>
                       @elseif($isFullyCheckedOut)
@@ -341,6 +366,7 @@
                               <th>Guest</th>
                               <th>Room</th>
                               <th>Status</th>
+                              <th>Signature</th>
                                <th>Check-out</th>
                               <th>Services Used</th>
                               <th>Total Price</th>
@@ -367,19 +393,33 @@
                                   <span class="badge badge-success"><i class="fa fa-user"></i> Stay</span>
                                 @endif
                               </td>
+                                <td>
+                                  @if($booking->checkout_signature_path)
+                                    <span class="badge badge-info" title="Guest has signed for check-out">
+                                      <i class="fa fa-file-text-o"></i> Signed
+                                    </span>
+                                  @elseif($booking->guest_signature_path)
+                                    <span class="badge badge-warning" title="Check-in signature exists">
+                                      <i class="fa fa-pencil"></i> Check-in Sign
+                                    </span>
+                                  @else
+                                    <span class="text-muted small">No Sign</span>
+                                  @endif
+                                </td>
                                <td>{{ $booking->check_out->format('M d, Y') }}</td>
-                              <td>
-                                @php
-                                  $usedSvs = $booking->serviceRequests->whereIn('status', ['approved', 'completed']);
-                                @endphp
-                                @forelse($usedSvs as $svc)
-                                  <div class="mb-1" style="line-height: 1.2;">
-                                    <small><strong>{{ $svc->quantity }}x</strong> {{ $svc->service_specific_data['item_name'] ?? $svc->service->name }}</small>
-                                  </div>
-                                @empty
-                                  <small class="text-muted">No services</small>
-                                @endforelse
-                              </td>
+                                <td>
+                                  @php
+                                    // Be more inclusive of statuses for checkout view
+                                    $usedSvs = $booking->serviceRequests->whereIn('status', ['pending', 'approved', 'preparing', 'delivered', 'completed']);
+                                  @endphp
+                                  @forelse($usedSvs as $svc)
+                                    <div class="mb-1" style="line-height: 1.2;">
+                                      <small><strong>{{ $svc->quantity }}x</strong> {{ $svc->service_specific_data['item_name'] ?? $svc->service->name }}</small>
+                                    </div>
+                                  @empty
+                                    <small class="text-muted">No services</small>
+                                  @endforelse
+                                </td>
                                <td>
                                 @php
                                   $bookingCurrentRate = $booking->locked_exchange_rate ?? $exchangeRate;
@@ -412,13 +452,18 @@
                                 @endif
                               </td>
                               <td>
-                                <a href="{{ route($checkoutBillRoute, $booking) }}" class="btn btn-xs btn-info" target="_blank" title="View Bill">
+                                 <a href="{{ route($checkoutBillRoute, $booking) }}" class="btn btn-xs btn-info" target="_blank" title="View Bill">
                                   <i class="fa fa-file-text"></i> Bill
                                 </a>
                                 @if(isset($booking->outstanding_balance_tsh) && $booking->outstanding_balance_tsh >= 50)
                                       <button class="btn btn-xs btn-success" onclick="openCashPaymentModal({{ $booking->id }}, {{ json_encode($booking->booking_reference) }}, {{ $booking->outstanding_balance_usd ?? 0 }}, {{ $booking->outstanding_balance_tsh ?? 0 }})" title="Process Payment">
                                         <i class="fa fa-money"></i> Pay Guest Charge
                                       </button>
+                                      <!-- Individual checkout button removed for corporate view to favor group action -->
+                                @elseif($booking->check_in_status !== 'checked_out')
+                                  <button class="btn btn-xs btn-danger" onclick="checkOutGuest({{ $booking->id }}, '{{ $booking->booking_reference }}')" title="Scan Check Out">
+                                    <i class="fa fa-sign-out"></i> Scan
+                                  </button>
                                 @endif
                               </td>
                             </tr>
@@ -535,8 +580,21 @@
                   @endif
                 </td>
                 <td>
+                  @if($booking->checkout_signature_path)
+                    <span class="badge badge-info" title="Guest has signed checkout">
+                      <i class="fa fa-file-text-o"></i> Signed
+                    </span>
+                  @elseif($booking->guest_signature_path)
+                    <span class="badge badge-warning" title="Check-in signature exists">
+                      <i class="fa fa-pencil"></i> Check-in Sign
+                    </span>
+                  @else
+                    <span class="text-muted small">No Signature</span>
+                  @endif
+                </td>
+                <td>
                   @php
-                    $usedSvs = $booking->serviceRequests->whereIn('status', ['approved', 'completed']);
+                    $usedSvs = $booking->serviceRequests->whereIn('status', ['pending', 'approved', 'preparing', 'delivered', 'completed']);
                   @endphp
                   @forelse($usedSvs as $svc)
                     <div class="mb-1" style="line-height: 1.2;">
@@ -550,8 +608,8 @@
                   @php
                     $bookingRate = $booking->locked_exchange_rate ?? $exchangeRate;
                     
-                    // Calculate service charges
-                    $serviceRequests = $booking->serviceRequests->whereIn('status', ['approved', 'completed']);
+                    // Calculate service charges - matching the inclusive status filter
+                    $serviceRequests = $booking->serviceRequests->whereIn('status', ['pending', 'approved', 'preparing', 'delivered', 'completed']);
                     $serviceChargesTsh = $serviceRequests->sum('total_price_tsh');
                     $serviceChargesUsd = $serviceChargesTsh / $bookingRate;
                     
@@ -589,23 +647,26 @@
                   @endif
                 </td>
                 <td>
-                  <a href="{{ route($checkoutBillRoute, $booking) }}" class="btn btn-sm btn-info mr-1" target="_blank" title="View Bill">
-                    <i class="fa fa-file-text"></i> View Bill
-                  </a>
-                  @if(isset($booking->outstanding_balance_tsh) && $booking->outstanding_balance_tsh >= 50)
-                    <button class="btn btn-sm btn-success mr-1" onclick="openCashPaymentModal({{ $booking->id }}, {{ json_encode($booking->booking_reference) }}, {{ $booking->outstanding_balance_usd ?? 0 }}, {{ $booking->outstanding_balance_tsh ?? 0 }})" title="Process Payment">
-                      <i class="fa fa-money"></i> Pay
-                    </button>
-                    <button class="btn btn-sm btn-danger" disabled title="Cannot check out - Outstanding balance must be paid first">
-                      <i class="fa fa-sign-out"></i> Check Out
-                    </button>
-                  @elseif($booking->check_in_status === 'checked_out')
+                    <a href="{{ route($checkoutBillRoute, $booking) }}" class="btn btn-sm btn-info mr-1" target="_blank" title="View Bill">
+                      <i class="fa fa-file-text"></i> Bill
+                    </a>
+                    @if(isset($booking->outstanding_balance_tsh) && $booking->outstanding_balance_tsh >= 50)
+                      <button class="btn btn-sm btn-success mr-1" onclick="openCashPaymentModal({{ $booking->id }}, {{ json_encode($booking->booking_reference) }}, {{ $booking->outstanding_balance_usd ?? 0 }}, {{ $booking->outstanding_balance_tsh ?? 0 }})" title="Process Payment">
+                        <i class="fa fa-money"></i> Pay
+                      </button>
+                      <button class="btn btn-sm btn-danger" disabled title="Cannot check out - Outstanding balance must be paid first">
+                        <i class="fa fa-sign-out"></i> Check Out
+                      </button>
+                    @elseif($booking->check_in_status === 'checked_out')
                     <a href="{{ route($checkoutPaymentRoute, $booking) }}" class="btn btn-sm btn-warning mr-1" title="Process Payment">
                       <i class="fa fa-credit-card"></i> Payment
                     </a>
                   @else
-                    <button class="btn btn-sm btn-danger" onclick="checkOutGuest({{ $booking->id }}, {{ json_encode($booking->booking_reference) }})" title="Check Out Guest">
-                      <i class="fa fa-sign-out"></i> Check Out
+                    @php
+                      $isSigned = !empty($booking->checkout_signature_path);
+                    @endphp
+                    <button class="btn btn-sm {{ $isSigned ? 'btn-info' : 'btn-danger' }}" onclick="checkOutGuest({{ $booking->id }}, {{ json_encode($booking->booking_reference) }})" title="{{ $isSigned ? 'Review & Check Out' : 'Check Out Guest' }}">
+                      <i class="fa {{ $isSigned ? 'fa-eye' : 'fa-sign-out' }}"></i> {{ $isSigned ? 'Review & Check Out' : 'Check Out' }}
                     </button>
                   @endif
                 </td>
@@ -757,6 +818,19 @@
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                  <span style="font-weight: 600; color: #495057; font-size: 14px; flex: 0 0 40%;">Signature:</span>
+                  <span style="text-align: right; flex: 1;">
+                    @if($companyBookings->contains(fn($b) => !empty($b->checkout_signature_path)))
+                      <span class="badge badge-info" style="font-size: 11px;"><i class="fa fa-file-text-o"></i> Signed</span>
+                    @elseif($companyBookings->contains(fn($b) => !empty($b->guest_signature_path)))
+                      <span class="badge badge-warning" style="font-size: 11px;"><i class="fa fa-pencil"></i> Check-in Sign</span>
+                    @else
+                      <span class="text-muted" style="font-size: 11px;">No Signature</span>
+                    @endif
+                  </span>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
                   <span style="font-weight: 600; color: #495057; font-size: 14px; flex: 0 0 40%;">Total Price:</span>
                   <span style="text-align: right; flex: 1;">
                     <strong>${{ number_format($totalPrice, 2) }}</strong><br>
@@ -812,15 +886,27 @@
                   <button class="btn btn-sm btn-info" onclick="viewCompanyBookingsMobile({{ $company->id ?? 0 }}, {{ $loop->index }})" title="View All Bookings" style="flex: 1; min-width: calc(50% - 4px);">
                     <i class="fa fa-eye"></i> View More
                   </button>
+                  @php
+                    $anyCheckedIn = $companyBookings->contains(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_in'; });
+                  @endphp
                   <a href="{{ route('reception.companies.group-bill', $company->id ?? 0) }}" class="btn btn-sm btn-dark" target="_blank" title="Print Group Bill" style="flex: 1; min-width: calc(50% - 4px); text-align: center;">
                     <i class="fa fa-print"></i> Group Bill
                   </a>
-                  @if($totalOutstandingTsh >= 50)
-                    <button class="btn btn-sm btn-success" onclick="openCashPaymentModalCompany({{ $company->id ?? 0 }}, {{ json_encode($safeCompanyName) }}, {{ $totalOutstandingUsd }}, {{ $totalOutstandingTsh }})" title="Process Payment" style="flex: 1; min-width: calc(50% - 4px);">
-                      <i class="fa fa-money"></i> Pay Company Bill
-                    </button>
-                    <button class="btn btn-sm btn-danger" disabled title="Cannot check out - Outstanding balance must be paid first" style="flex: 0 0 100%; margin-top: 8px;">
-                      <i class="fa fa-sign-out"></i> Check Out (Disabled)
+                  @php
+                    $hasAnyOutstanding = ($totalOutstandingTsh >= 50 || $selfPaidGuestsWithBalance->count() > 0);
+                    $outstandingMessage = $totalOutstandingTsh >= 50 
+                        ? "Cannot check out - Company balance must be paid first" 
+                        : "Cannot check out - Guest charges must be paid first";
+                  @endphp
+
+                  @if($hasAnyOutstanding)
+                    @if($totalOutstandingTsh >= 50)
+                      <button class="btn btn-sm btn-success" onclick="openCashPaymentModalCompany({{ $company->id ?? 0 }}, {{ json_encode($safeCompanyName) }}, {{ $totalOutstandingUsd }}, {{ $totalOutstandingTsh }})" title="Process Payment" style="flex: 1; min-width: calc(50% - 4px);">
+                        <i class="fa fa-money"></i> Pay Company Bill
+                      </button>
+                    @endif
+                    <button class="btn btn-sm btn-danger" disabled title="{{ $outstandingMessage }}" style="flex: 0 0 100%; margin-top: 8px;">
+                      <i class="fa fa-sign-out"></i> Check Out (Blocked)
                     </button>
                   @else
                     <button class="btn btn-sm btn-danger btn-block" onclick="checkOutCompanyGroup({{ $company->id ?? 0 }}, {{ json_encode($safeCompanyName) }})" title="Check Out All Guests" style="flex: 1; min-width: 100%;">
@@ -957,6 +1043,17 @@
               </div>
               
               <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
+                <span style="font-weight: 600; color: #495057; font-size: 14px; flex: 0 0 40%;">Signature:</span>
+                <span style="text-align: right; flex: 1;">
+                  @if(!empty($booking->checkout_signature_path))
+                    <span class="badge badge-info" style="font-size: 11px;"><i class="fa fa-file-text-o"></i> Signed</span>
+                  @else
+                    <span class="text-muted" style="font-size: 11px;">No Signature</span>
+                  @endif
+                </span>
+              </div>
+              
+              <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
                 <span style="font-weight: 600; color: #495057; font-size: 14px; flex: 0 0 40%;">Total Price:</span>
                 <span style="text-align: right; flex: 1;">
                   @php
@@ -999,7 +1096,7 @@
               
               <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6; display: flex; gap: 8px; flex-wrap: wrap;">
                 <a href="{{ route($checkoutBillRoute, $booking) }}" class="btn btn-sm btn-info" target="_blank" title="View Bill" style="flex: 1; min-width: calc(50% - 4px); text-align: center;">
-                  <i class="fa fa-file-text"></i> View Bill
+                  <i class="fa fa-file-text"></i> Bill
                 </a>
                 @if(isset($booking->outstanding_balance_tsh) && $booking->outstanding_balance_tsh >= 50)
                 <button class="btn btn-sm btn-success" onclick="openCashPaymentModal({{ $booking->id }}, '{{ $booking->booking_reference }}', {{ $booking->outstanding_balance_usd ?? 0 }}, {{ $booking->outstanding_balance_tsh ?? 0 }})" title="Process Payment" style="flex: 1; min-width: calc(50% - 4px);">
@@ -1013,8 +1110,11 @@
                   <i class="fa fa-credit-card"></i> Payment
                 </a>
                 @else
-                <button class="btn btn-sm btn-danger" onclick="checkOutGuest({{ $booking->id }}, '{{ $booking->booking_reference }}')" title="Check Out Guest" style="flex: 1; min-width: calc(50% - 4px);">
-                  <i class="fa fa-sign-out"></i> Check Out
+                @php
+                  $isSigned = !empty($booking->checkout_signature_path);
+                @endphp
+                <button class="btn btn-sm {{ $isSigned ? 'btn-info' : 'btn-danger' }}" onclick="checkOutGuest({{ $booking->id }}, '{{ $booking->booking_reference }}')" title="{{ $isSigned ? 'Review & Check Out' : 'Check Out Guest' }}" style="flex: 1; min-width: calc(50% - 4px);">
+                  <i class="fa {{ $isSigned ? 'fa-eye' : 'fa-sign-out' }}"></i> {{ $isSigned ? 'Review' : 'Check Out' }}
                 </button>
                 @endif
               </div>
@@ -1098,10 +1198,100 @@
   </div>
 </div>
 
+<!-- Company Group Check-Out Modal -->
+<div class="modal fade" id="companyGroupCheckOutModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1050;">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-dark text-white border-0">
+        <h5 class="modal-title"><i class="fa fa-building"></i> Company Group Check-Out</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="mb-4 d-flex justify-content-between align-items-start">
+          <div>
+            <h4 id="checkoutModalCompanyName" class="font-weight-bold mb-1">Company Name</h4>
+            <p id="checkoutModalCompanyInfo" class="text-muted small mb-0"></p>
+          </div>
+          <div class="text-right">
+            <span class="badge badge-info p-2"><i class="fa fa-users"></i> <span id="checkoutModalGuestCount">0</span> Guests</span>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-hover border">
+            <thead class="bg-light">
+              <tr>
+                <th>Guest</th>
+                <th>Room</th>
+                <th>Status</th>
+                <th>Signature</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="companyCheckoutGuestListBody">
+              <!-- Content populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer bg-light border-0">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        @if($role === 'manager')
+          <button type="button" class="btn btn-danger" id="bulkCheckOutBtn" style="display: none;">
+            <i class="fa fa-sign-out"></i> Check Out All Guests
+          </button>
+        @endif
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Enhanced Check-Out Modal (QR Bridge) -->
+<div class="modal fade" id="enhancedCheckOutModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 1100;">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header" style="background: #e77a3a; color: white;">
+        <h5 class="modal-title font-weight-bold"><i class="fa fa-qrcode"></i> Digital Guest Check-Out</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white;">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body text-center p-5">
+        <div id="checkout-qr-step">
+            <h5 class="font-weight-bold mb-4">Please ask the guest to scan:</h5>
+            <div id="checkout-qrcode" class="d-inline-block p-4 bg-white border mb-4 rounded shadow-sm" style="min-height: 260px; min-width: 260px;">
+                <!-- QR Code Appears Here -->
+            </div>
+            <div class="mt-2">
+                <p class="text-info mb-1"><i class="fa fa-spinner fa-spin"></i> <strong>Live Connection Active</strong></p>
+                <p class="text-muted small">Guest uses their own phone to review their bill and sign digital records. This screen will automatically refresh once they finish.</p>
+            </div>
+        </div>
+
+        <div id="checkout-preview-step" style="display: none;">
+            <h5 class="font-weight-bold mb-4 text-success"><i class="fa fa-check-circle"></i> Signature Received!</h5>
+            <div class="p-4 bg-white border rounded shadow-sm mb-4" style="min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                <img id="checkout-sig-preview" src="" style="max-width: 100%; max-height: 180px;" alt="Signature Preview">
+            </div>
+            <p class="text-muted small">The guest has signed the checkout records. Please verify the signature above before finalizing.</p>
+        </div>
+      </div>
+      <div class="modal-footer bg-light py-2 d-flex justify-content-between align-items-center">
+        <small class="text-muted"><i class="fa fa-lock"></i> Secure Check-Out Bridge</small>
+        <div id="checkout-footer-actions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 @endsection
 
 @section('scripts')
 <script src="{{ asset('dashboard_assets/js/plugins/sweetalert.min.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 /* Mobile Responsive Styles */
 @media (max-width: 767px) {
@@ -1190,6 +1380,530 @@
 }
 </style>
 <script>
+const currentRole = '{{ $role }}';
+const isReception = currentRole === 'reception';
+let currentBookingId = null;
+let currentBookingRef = null;
+let pollingInterval = null;
+
+// Stay Modification Data
+let managerBookingData = {};
+@if(($bookingType ?? 'individual') == 'corporate')
+  @foreach($bookings as $group)
+    @php
+      $companyBookings = $group['bookings'] ?? collect();
+    @endphp
+    @foreach($companyBookings as $booking)
+      @if($booking->check_in_status === 'checked_in' && $booking->room)
+        @php
+          $foundCompanyId = $booking->company_id ?? ($group['company_id'] ?? ($group['company']->id ?? null));
+        @endphp
+        managerBookingData[{{ $booking->id }}] = {
+          id: {{ $booking->id }},
+          companyId: {{ $foundCompanyId ?? 'null' }},
+          roomId: {{ $booking->room_id }},
+          roomPrice: {{ $booking->room->price_per_night ?? 0 }},
+          currentCheckOut: '{{ $booking->check_out->format('Y-m-d') }}',
+          checkIn: '{{ $booking->check_in->format('Y-m-d') }}'
+        };
+      @endif
+    @endforeach
+  @endforeach
+@else
+  @foreach($bookings as $booking)
+    @if($booking->check_in_status === 'checked_in' && $booking->room)
+      managerBookingData[{{ $booking->id }}] = {
+        id: {{ $booking->id }},
+        companyId: null,
+        roomId: {{ $booking->room_id }},
+        roomPrice: {{ $booking->room->price_per_night ?? 0 }},
+        currentCheckOut: '{{ $booking->check_out->format('Y-m-d') }}',
+        checkIn: '{{ $booking->check_in->format('Y-m-d') }}'
+      };
+    @endif
+  @endforeach
+@endif
+
+function openManagerExtensionModal(bookingId, checkIn, currentCheckOut) {
+  const bookingData = managerBookingData[bookingId];
+  if (!bookingData) {
+    swal("Error", "Booking information not found.", "error");
+    return;
+  }
+  
+  document.getElementById('manager_extension_booking_id').value = bookingId;
+  document.getElementById('manager_extension_company_id').value = '';
+  const dateInput = document.getElementById('manager_extension_new_check_out');
+  dateInput.value = '';
+  dateInput.min = currentCheckOut;
+  document.getElementById('manager_extension_reason').value = '';
+  document.getElementById('managerExtensionCostPreview').style.display = 'none';
+  
+  $('#managerExtensionModal .modal-title').html('<i class="fa fa-calendar-plus-o"></i> Extend Booking');
+  $('#managerExtensionModal .alert-info').text('The booking stay will be extended and the price will be adjusted automatically.');
+
+  $('#managerExtensionModal').modal('show');
+}
+
+function openGroupExtensionModal(companyId, checkIn, currentCheckOut) {
+  document.getElementById('manager_extension_booking_id').value = '';
+  document.getElementById('manager_extension_company_id').value = companyId;
+  
+  const dateInput = document.getElementById('manager_extension_new_check_out');
+  dateInput.value = '';
+  dateInput.min = currentCheckOut;
+  document.getElementById('manager_extension_reason').value = '';
+  document.getElementById('managerExtensionCostPreview').style.display = 'none';
+  
+  $('#managerExtensionModal .modal-title').html('<i class="fa fa-calendar-plus-o"></i> Extend Group Stay');
+  $('#managerExtensionModal .alert-info').html('<i class="fa fa-info-circle"></i> <strong>Note:</strong> This will extend the stay for ALL guests in this group who are currently checked in.');
+
+  $('#managerExtensionModal').modal('show');
+}
+
+function openManagerDecreaseModal(bookingId, checkIn, currentCheckOut) {
+  const bookingData = managerBookingData[bookingId];
+  if (!bookingData) {
+    swal("Error", "Booking information not found.", "error");
+    return;
+  }
+  
+  document.getElementById('manager_decrease_booking_id').value = bookingId;
+  document.getElementById('manager_decrease_company_id').value = '';
+  const dateInput = document.getElementById('manager_decrease_new_check_out');
+  dateInput.value = '';
+  dateInput.max = currentCheckOut;
+  document.getElementById('manager_decrease_reason').value = '';
+  
+  $('#managerDecreaseModal .modal-title').html('<i class="fa fa-calendar-minus-o"></i> Decrease Booking');
+  $('#managerDecreaseModal').modal('show');
+}
+
+function openGroupDecreaseModal(companyId, checkIn, currentCheckOut) {
+  document.getElementById('manager_decrease_booking_id').value = '';
+  document.getElementById('manager_decrease_company_id').value = companyId;
+  
+  const dateInput = document.getElementById('manager_decrease_new_check_out');
+  dateInput.value = '';
+  dateInput.max = currentCheckOut;
+  document.getElementById('manager_decrease_reason').value = '';
+  
+  $('#managerDecreaseModal .modal-title').html('<i class="fa fa-calendar-minus-o"></i> Decrease Group Stay');
+  $('#managerDecreaseModal .alert-warning').html('<i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> This will decrease the stay for ALL guests in this group who are currently checked in.');
+  
+  $('#managerDecreaseModal').modal('show');
+}
+
+$('#managerExtensionModal').on('shown.bs.modal', function() {
+  const dateInputEl = document.getElementById('manager_extension_new_check_out');
+  $(dateInputEl).off('change input').on('change input', calculateManagerExtensionCost);
+});
+
+$('#managerDecreaseModal').on('shown.bs.modal', function() {
+  const dateInputEl = document.getElementById('manager_decrease_new_check_out');
+  $(dateInputEl).off('change input');
+});
+
+function calculateManagerExtensionCost() {
+  const bookingId = document.getElementById('manager_extension_booking_id').value;
+  const companyId = document.getElementById('manager_extension_company_id').value;
+  const isGroup = !!companyId;
+  const alertDiv = document.getElementById('managerExtensionAlert');
+  alertDiv.innerHTML = ''; // Clear previous alerts
+
+  let bookingData = null;
+  let currentCheckOutDate = null;
+  let totalDailyRate = 0;
+
+  if (isGroup) {
+    // For group, sum all checked-in bookings for this company
+    for (const id in managerBookingData) {
+      if (managerBookingData[id].companyId == companyId) {
+        totalDailyRate += managerBookingData[id].roomPrice;
+        if (!currentCheckOutDate) {
+          currentCheckOutDate = new Date(managerBookingData[id].currentCheckOut + 'T00:00:00');
+        }
+      }
+    }
+  } else {
+    bookingData = managerBookingData[bookingId];
+    if (bookingData) {
+      totalDailyRate = bookingData.roomPrice;
+      currentCheckOutDate = new Date(bookingData.currentCheckOut + 'T00:00:00');
+    }
+  }
+
+  if (!currentCheckOutDate) {
+    document.getElementById('managerExtensionCostPreview').style.display = 'none';
+    return;
+  }
+  
+  const newDateVal = document.getElementById('manager_extension_new_check_out').value;
+  if (!newDateVal) {
+    document.getElementById('managerExtensionCostPreview').style.display = 'none';
+    return;
+  }
+  
+  const requestedDate = new Date(newDateVal + 'T00:00:00');
+  
+  if (requestedDate <= currentCheckOutDate) {
+    document.getElementById('managerExtensionCostPreview').style.display = 'none';
+    return;
+  }
+
+  // Live availability check (for single booking)
+  if (!isGroup && bookingData) {
+    checkManagerExtensionAvailability(bookingData.id, bookingData.checkIn, newDateVal);
+  }
+  
+  const diffTime = requestedDate - currentCheckOutDate;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays > 0) {
+    const totalCost = totalDailyRate * diffDays;
+    document.getElementById('managerExtensionNights').textContent = diffDays;
+    document.getElementById('managerExtensionRoomPrice').textContent = totalDailyRate.toFixed(2);
+    document.getElementById('managerExtensionTotalCost').textContent = totalCost.toFixed(2);
+    
+    // Update labels if it's a group
+    if (isGroup) {
+      const previewP = document.querySelector('#managerExtensionCostPreview p');
+      if (previewP) {
+        previewP.innerHTML = 
+          `<span id="managerExtensionNights">${diffDays}</span> night(s) extension × 
+          $<span id="managerExtensionRoomPrice">${totalDailyRate.toFixed(2)}</span> (Group Total Rate) = 
+          <strong>Additional Cost: $<span id="managerExtensionTotalCost">${totalCost.toFixed(2)}</span></strong>`;
+      }
+    }
+
+    document.getElementById('managerExtensionCostPreview').style.display = 'block';
+  } else {
+    document.getElementById('managerExtensionCostPreview').style.display = 'none';
+  }
+}
+
+function checkManagerExtensionAvailability(bookingId, checkIn, newCheckOut) {
+    const bookingData = managerBookingData[bookingId];
+    if (!bookingData) return;
+
+    const alertDiv = document.getElementById('managerExtensionAlert');
+    const roomId = bookingData.room_id || bookingData.roomId; // Ensure we have the room ID
+    
+    // Attempt to get room ID if not in data (fallback for some views)
+    const effectiveRoomId = roomId || bookingData.id; // This is a fallback, ideally roomId is there
+
+    const url = `{{ route('admin.bookings.check-availability') }}?room_id=${effectiveRoomId}&check_in=${checkIn}&check_out=${newCheckOut}&exclude_booking_id=${bookingId}`;
+
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && !data.available) {
+            alertDiv.innerHTML = `<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> <strong>Conflict Detected:</strong> ${data.message}</div>`;
+        } else if (data.success && data.available) {
+            alertDiv.innerHTML = `<div class="alert alert-success"><i class="fa fa-check-circle"></i> Room is available for the extended period.</div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error checking availability:', error);
+    });
+}
+
+
+function submitManagerExtension(btn) {
+  const bookingId = document.getElementById('manager_extension_booking_id').value;
+  const companyId = document.getElementById('manager_extension_company_id').value;
+  const newCheckOut = document.getElementById('manager_extension_new_check_out').value;
+  const reason = document.getElementById('manager_extension_reason').value;
+  const submitBtn = btn || (typeof event !== 'undefined' ? event.target : null);
+  
+  if (!newCheckOut) {
+    swal("Error", "Please select a new check-out date.", "error");
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
+
+  const isGroup = !!companyId;
+  const url = isGroup 
+    ? (isReception ? '{{ url("/reception/companies") }}/' + companyId + '/modify-dates' : '{{ url("/manager/companies") }}/' + companyId + '/modify-dates')
+    : (isReception ? '{{ url("/reception/bookings") }}/' + bookingId + '/modify-dates' : '{{ url("/manager/bookings") }}/' + bookingId + '/modify-dates');
+
+  fetch(url, {
+    method: 'PUT',
+    headers: {
+      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      new_check_out: newCheckOut,
+      reason: reason
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      swal({
+        title: "Success!",
+        text: data.message,
+        type: "success"
+      }, function() {
+        location.reload();
+      });
+    } else {
+      swal("Error", data.message || "Failed to update stay.", "error");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Save Extension';
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    swal("Error", "A system error occurred.", "error");
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Save Extension';
+  });
+}
+
+function submitManagerDecrease(btn) {
+  const bookingId = document.getElementById('manager_decrease_booking_id').value;
+  const companyId = document.getElementById('manager_decrease_company_id').value;
+  const newCheckOut = document.getElementById('manager_decrease_new_check_out').value;
+  const reason = document.getElementById('manager_decrease_reason').value;
+  const submitBtn = btn || (typeof event !== 'undefined' ? event.target : null);
+  
+  if (!newCheckOut) {
+    swal("Error", "Please select a new check-out date.", "error");
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
+  
+  const isGroup = !!companyId;
+  const url = isGroup
+    ? (isReception ? '{{ url("/reception/companies") }}/' + companyId + '/modify-dates' : '{{ url("/manager/companies") }}/' + companyId + '/modify-dates')
+    : (isReception ? '{{ url("/reception/bookings") }}/' + bookingId + '/modify-dates' : '{{ url("/manager/bookings") }}/' + bookingId + '/modify-dates');
+
+  fetch(url, {
+    method: 'PUT',
+    headers: {
+      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      new_check_out: newCheckOut,
+      reason: reason
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      swal({
+        title: "Success!",
+        text: data.message,
+        type: "success"
+      }, function() {
+        location.reload();
+      });
+    } else {
+      swal("Error", data.message || "Failed to update stay.", "error");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = 'Save Changes';
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    swal("Error", "A system error occurred.", "error");
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = 'Save Changes';
+  });
+}
+
+function startPollingCheckoutStatus(bookingId) {
+    if (pollingInterval) clearInterval(pollingInterval);
+
+    const doPoll = async () => {
+        try {
+            const response = await fetch(`/check-in/status/${bookingId}`);
+            const data = await response.json();
+
+            console.log('[Checkout Poll]', bookingId, data);
+
+            if (data.is_checkout_submitted && !data.is_checked_out) {
+                // Signature submitted — switch to preview immediately
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+
+                const sigUrl = data.checkout_signature_path || data.signature_path;
+
+                // Switch modal panels
+                document.getElementById('checkout-qr-step').style.display = 'none';
+                document.getElementById('checkout-preview-step').style.display = 'block';
+
+                const sigImg = document.getElementById('checkout-sig-preview');
+                if (sigImg && sigUrl) {
+                    sigImg.src = sigUrl + '?t=' + Date.now(); // cache-bust
+                }
+
+                // Show action buttons
+                document.getElementById('checkout-footer-actions').innerHTML = `
+                    <button class="btn btn-sm btn-outline-danger mr-2" onclick="clearCheckoutSignature(${bookingId})">
+                        <i class="fa fa-undo"></i> Clear &amp; Retry
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="finalizeCheckOut(${bookingId})">
+                        <i class="fa fa-check"></i> Finalize Check-Out
+                    </button>
+                `;
+
+            } else if (data.is_checked_out) {
+                // Already fully checked out
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+                $('#enhancedCheckOutModal').modal('hide');
+                location.reload();
+            }
+        } catch (err) {
+            console.error('[Checkout Poll] Error:', err);
+        }
+    };
+
+    // Immediate first check then every 2 seconds
+    doPoll();
+    pollingInterval = setInterval(doPoll, 2000);
+}
+
+async function finalizeCheckOut(bookingId) {
+    try {
+        const response = await fetch('{{ route($updateCheckInRoute, ":id") }}'.replace(':id', bookingId), {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                check_in_status: 'checked_out'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            swal({
+                title: "Checked Out!",
+                text: data.message || "Guest checked out successfully.",
+                type: "success"
+            }, function() {
+                location.reload();
+            });
+        } else {
+            swal("Error", data.message || "Failed to finalize checkout.", "error");
+        }
+    } catch (err) {
+        console.error("Finalize error:", err);
+        swal("Error", "Connection error. Please try again.", "error");
+    }
+}
+
+function checkOutGuest(bookingId, bookingReference) {
+    currentBookingId = bookingId;
+    currentBookingRef = bookingReference;
+    
+    // Reset Modal UI to QR step
+    document.getElementById('checkout-qr-step').style.display = 'block';
+    document.getElementById('checkout-preview-step').style.display = 'none';
+    document.getElementById('checkout-footer-actions').innerHTML = '';
+    
+    // Show QR Modal
+    $('#enhancedCheckOutModal').modal('show');
+
+    // Generate QR
+    setTimeout(() => {
+        triggerMobileBridgeCheckoutAuto();
+        startPollingCheckoutStatus(bookingId);
+    }, 300);
+}
+
+async function triggerMobileBridgeCheckoutAuto() {
+    if (!currentBookingId) return;
+    
+    const qrContainer = document.getElementById('checkout-qrcode');
+    qrContainer.innerHTML = '<div class="p-5 text-center"><i class="fa fa-spinner fa-spin fa-2x text-primary"></i><br>Generating QR Code...</div>';
+    
+    @php
+        $tokenRoute = ($role === 'manager') ? 'admin.bookings.generate-checkout-token' : 'reception.bookings.generate-checkout-token';
+    @endphp
+
+    try {
+        const response = await fetch('{{ route($tokenRoute, "99999", false) }}'.replace('99999', currentBookingId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: data.url,
+                width: 260,
+                height: 260,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        } else {
+            qrContainer.innerHTML = '<div class="text-danger p-4">Error generating QR. Please try again.</div>';
+        }
+    } catch (err) {
+        console.error("QR Error:", err);
+        qrContainer.innerHTML = '<div class="text-danger p-4">Connection error.</div>';
+    }
+}
+
+// Stop polling when modal is closed
+$(document).ready(function() {
+    $('#enhancedCheckOutModal').on('hidden.bs.modal', function () {
+        if (pollingInterval) clearInterval(pollingInterval);
+    });
+});
+
+async function clearCheckoutSignature(bookingId) {
+    try {
+        const response = await fetch(`/check-in/status/${bookingId}/clear`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Reset modal UI
+            document.getElementById('checkout-qr-step').style.display = 'block';
+            document.getElementById('checkout-preview-step').style.display = 'none';
+            document.getElementById('checkout-sig-preview').src = '';
+            document.getElementById('checkout-footer-actions').innerHTML = '';
+            
+            // Re-generate QR and start polling again
+            triggerMobileBridgeCheckoutAuto();
+            startPollingCheckoutStatus(bookingId);
+        } else {
+            swal("Error", data.message || "Failed to clear signature.", "error");
+        }
+    } catch (err) {
+        console.error("Clear error:", err);
+        swal("Error", "Connection error. Please try again.", "error");
+    }
+}
+
 function handlePaymentMethodChange() {
     const paymentMethod = document.getElementById('cash_payment_method').value;
     const providerGroup = document.getElementById('cash_payment_provider_group');
@@ -1406,13 +2120,26 @@ function updateBookingAfterPayment(bookingId) {
                 : 'reception.bookings.checkout-bill';
             @endphp
             const billUrl = '{{ route($checkoutBillRoute, ":id") }}'.replace(':id', bookingId);
+            
+            let actionBtnHtml = '';
+            // For corporate bookings in dashboard expansion, we don't show individual checkout buttons anymore
+            const isInCorporateExpansion = !!row.closest('.company-bookings-detail');
+            
+            if (isInCorporateExpansion) {
+                actionBtnHtml = '<span class="text-muted small">Group Action</span>';
+            } else {
+                actionBtnHtml = `
+                    <button class="btn btn-sm btn-danger" onclick="checkOutGuest(${bookingId}, '${bookingRef}')" title="Check Out Guest">
+                        <i class="fa fa-sign-out"></i> Check Out
+                    </button>
+                `;
+            }
+
             actionsCell.innerHTML = `
                 <a href="${billUrl}" class="btn btn-sm btn-info mr-1" target="_blank" title="View Bill">
                     <i class="fa fa-file-text"></i> View Bill
                 </a>
-                <button class="btn btn-sm btn-danger" onclick="checkOutGuest(${bookingId}, '${bookingRef}')" title="Check Out Guest">
-                    <i class="fa fa-sign-out"></i> Check Out
-                </button>
+                ${actionBtnHtml}
             `;
         }
     } else {
@@ -1421,7 +2148,8 @@ function updateBookingAfterPayment(bookingId) {
     }
 }
 
-function checkOutGuest(bookingId, bookingReference) {
+// This function is now superseded by the QR bridge flow, but kept for reference or direct usage if needed
+function originalCheckOutGuest(bookingId, bookingReference) {
     swal({
         title: "Check Out Guest?",
         text: "Are you sure you want to check out booking " + bookingReference + "?",
@@ -1575,19 +2303,132 @@ function openCashPaymentModalCompany(companyId, companyName, outstandingUsd, out
 }
 
 function checkOutCompanyGroup(companyId, companyName) {
+    console.log('checkOutCompanyGroup called with companyId:', companyId);
+    
+    if (!companyId || companyId === 0) {
+        swal({ title: "Error!", text: "Invalid company ID", type: "error" });
+        return;
+    }
+
+    // Show Modal
+    $('#companyGroupCheckOutModal').modal('show');
+    document.getElementById('checkoutModalCompanyName').textContent = companyName;
+    
+    const listBody = document.getElementById('companyCheckoutGuestListBody');
+    listBody.innerHTML = '<tr><td colspan="5" class="text-center p-4"><i class="fa fa-spinner fa-spin fa-2x"></i><br>Fetching guest list...</td></tr>';
+
+    // Fetch Bookings
+    const companyBookingsUrl = '{{ route("admin.bookings.company", ":id") }}'.replace(':id', companyId);
+    fetch(companyBookingsUrl, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) throw new Error(data.message || 'Failed to fetch');
+        
+        const company = data.company;
+        const bookings = data.bookings;
+        
+        document.getElementById('checkoutModalCompanyName').textContent = company.name;
+        document.getElementById('checkoutModalCompanyInfo').textContent = `${company.email} | ${company.phone || 'No phone'}`;
+        document.getElementById('checkoutModalGuestCount').textContent = bookings.length;
+        
+        listBody.innerHTML = '';
+        
+        if (bookings.length === 0) {
+            listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted p-4">No bookings found for this company.</td></tr>';
+            return;
+        }
+
+        // Handle Bulk Button display for Manager
+        if (currentRole === 'manager') {
+            const hasPending = bookings.some(b => b.check_in_status === 'checked_in');
+            const bulkBtn = document.getElementById('bulkCheckOutBtn');
+            if (bulkBtn) {
+                bulkBtn.style.display = hasPending ? 'inline-block' : 'none';
+                bulkBtn.onclick = () => bulkCheckOutCompanyGuests(companyId);
+            }
+        }
+
+        bookings.forEach(booking => {
+            const isCheckedOut = booking.check_in_status === 'checked_out';
+            const isSigned = !!booking.checkout_signature_path;
+            
+            let statusBadge = '';
+            if (isCheckedOut) {
+                statusBadge = '<span class="badge badge-secondary"><i class="fa fa-check"></i> Checked Out</span>';
+            } else if (booking.check_in_status === 'checked_in') {
+                statusBadge = '<span class="badge badge-success"><i class="fa fa-user"></i> In House</span>';
+            } else {
+                statusBadge = `<span class="badge badge-warning">${booking.check_in_status || 'Pending'}</span>`;
+            }
+
+            let sigBadge = isSigned 
+                ? '<span class="badge badge-info"><i class="fa fa-file-text-o"></i> Signed</span>' 
+                : '<span class="text-muted small">No Sign</span>';
+
+            let actionBtn = '';
+            if (isCheckedOut) {
+                actionBtn = '<span class="text-muted small"><i class="fa fa-check"></i> Complete</span>';
+            } else {
+                const btnClass = isSigned ? 'btn-info' : 'btn-danger';
+                const btnIcon = isSigned ? 'fa-eye' : 'fa-sign-out';
+                const btnText = isSigned ? 'Review' : 'Check Out';
+                
+                const canIndividualCheckOut = true; // All roles can trigger individual scan checkout
+                
+                if (canIndividualCheckOut) {
+                    actionBtn = `
+                        <button class="btn btn-xs ${btnClass}" onclick="checkOutGuest(${booking.id}, '${booking.booking_reference}')">
+                            <i class="fa ${btnIcon}"></i> ${btnText}
+                        </button>
+                    `;
+                }
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <strong>${booking.guest_name}</strong><br>
+                    <small class="text-muted">${booking.booking_reference}</small>
+                </td>
+                <td>
+                    <span class="badge badge-primary">${booking.room.room_type || 'N/A'}</span><br>
+                    <small>${booking.room.room_number || 'N/A'}</small>
+                </td>
+                <td>${statusBadge}</td>
+                <td>${sigBadge}</td>
+                <td class="text-right">${actionBtn}</td>
+            `;
+            listBody.appendChild(row);
+        });
+    })
+    .catch(err => {
+        console.error("Fetch error:", err);
+        listBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger p-4"><i class="fa fa-exclamation-triangle"></i> Error: ${err.message}</td></tr>`;
+    });
+}
+
+async function bulkCheckOutCompanyGuests(companyId) {
+    const companyName = document.getElementById('checkoutModalCompanyName').textContent;
+    
     swal({
         title: "Check Out All Guests?",
-        text: "Are you sure you want to check out all guests from " + companyName + "?",
+        text: "Are you sure you want to check out all remaining guests for " + companyName + "?",
         type: "warning",
         showCancelButton: true,
         confirmButtonColor: "#d33",
-        cancelButtonColor: "#6c757d",
         confirmButtonText: "Yes, Check Out All!",
-        cancelButtonText: "Cancel",
         closeOnConfirm: false,
         showLoaderOnConfirm: true
-    }, function(isConfirm) {
-        if (isConfirm) {
+    }, async function(isConfirm) {
+        if (!isConfirm) return;
+        
+        try {
             @php
               $currentRoute = request()->route()->getName() ?? '';
               $checkoutCompanyRoute = (str_starts_with($currentRoute, 'admin.')) 
@@ -1595,47 +2436,32 @@ function checkOutCompanyGroup(companyId, companyName) {
                 : 'reception.bookings.checkout-company-group';
             @endphp
             
-            fetch('{{ route($checkoutCompanyRoute, ":id") }}'.replace(':id', companyId), {
+            const response = await fetch('{{ route($checkoutCompanyRoute, ":id") }}'.replace(':id', companyId), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json'
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    swal({
-                        title: "Success!",
-                        text: data.message || "All guests checked out successfully!",
-                        type: "success",
-                        confirmButtonColor: "#28a745"
-                    }, function() {
-                        if (data.redirect) {
-                            window.location.href = data.redirect;
-                        } else {
-                            location.reload();
-                        }
-                    });
-                } else {
-                    swal({
-                        title: "Error!",
-                        text: data.message || "Failed to check out. Please ensure all payments are completed.",
-                        type: "error",
-                        confirmButtonColor: "#d33"
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                swal({
-                    title: "Error!",
-                    text: "An error occurred. Please try again.",
-                    type: "error",
-                    confirmButtonColor: "#d33"
-                });
             });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                swal({
+                    title: "Success!",
+                    text: data.message || "All guests checked out successfully.",
+                    type: "success"
+                }, function() {
+                    $('#companyGroupCheckOutModal').modal('hide');
+                    location.reload();
+                });
+            } else {
+                swal("Error", data.error || data.message || "Bulk check-out failed.", "error");
+            }
+        } catch (err) {
+            console.error("Bulk error:", err);
+            swal("Error", "An unexpected error occurred. Please try again.", "error");
         }
     });
 }

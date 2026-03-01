@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+    <!--<< Header Area >>-->
+    <head>
+        <!-- ========== Meta Tags ========== -->
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="iamlabib">
+        <meta name="description" content="Laxary- Hotel & Resort Booking HTML Template">
+        <!-- ======== Page title ============ -->
+        <title>Laxary- Hotel & Resort Booking HTML Template</title>
+        <!--<< Favcion >>-->
+        <link rel="shortcut icon" href="assets/img/favicon.svg">
+        <!--<< Bootstrap min.css >>-->
+        <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+        <!--<< All Min Css >>-->
+        <link rel="stylesheet" href="assets/css/all.min.css">
+        <!--<< Animate.css >>-->
+        <link rel="stylesheet" href="assets/css/animate.css">
+        <!--<< Magnific Popup.css >>-->
+        <link rel="stylesheet" href="assets/css/magnific-popup.css">
+        <!--<< MeanMenu.css >>-->
+        <link rel="stylesheet" href="assets/css/meanmenu.css">
+        <!--<< Swiper Bundle.css >>-->
+        <link rel="stylesheet" href="assets/css/swiper-bundle.min.css">
+        <!--<< Nice Select.css >>-->
+        <link rel="stylesheet" href="assets/css/nice-select.css">
+        <!--<< Main.css >>-->
+        <link rel="stylesheet" href="assets/css/flaticon.css">
+         <!--<< Main.css >>-->
+        <link rel="stylesheet" href="assets/css/main.css">
+    </head>
+    <body>
+
+        <!-- Preloader Start -->
+        <div id="preloader" class="preloader">
+            <div class="animation-preloader">
+                <div class="spinner">                
+                </div>
+                <div class="txt-loading">
+                    <span data-text-preloader="L" class="letters-loading">
+                        L
+                    </span>
+                    <span data-text-preloader="A" class="letters-loading">
+                        A
+                    </span>
+                    <span data-text-preloader="X" class="letters-loading">
+                        X
+                    </span>
+                    <span data-text-preloader="A" class="letters-loading">
+                        A
+                    </span>
+                    <span data-text-preloader="R" class="letters-loading">
+                        R
+                    </span>
+                    <span data-text-preloader="Y" class="letters-loading">
+                        Y
+                    </span>
+                </div>
+                <p class="text-center">Loading</p>
+            </div>
+            <div class="loader">
+                <div class="row">
+                    <div class="col-3 loader-section section-left">
+                        <div class="bg"></div>
+                    </div>
+                    <div class="col-3 loader-section section-left">
+                        <div class="bg"></div>
+                    </div>
+                    <div class="col-3 loader-section section-right">
+                        <div class="bg"></div>
+                    </div>
+                    <div class="col-3 loader-section section-right">
+                        <div class="bg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>  
+
+        <!-- GT Back To Top Start -->
+        <button id="gt-back-top" class="gt-back-to-top show">
+          <i class="fa-solid fa-chevrons-up"></i>
+        </button>
+
+        <!-- GT MouseCursor Start -->
+        <div class="mouseCursor cursor-outer"></div>
+        <div class="mouseCursor cursor-inner"></div>
+
+         <!-- Offcanvas Area Start -->
+        <div class="fix-area">
+            <div class="offcanvas__info">
+                <div class="offcanvas__wrapper">
+                    <div class="offcanvas__content">
+                        <div class="offcanvas__top mb-5 d-flex justify-content-between align-items-center">
+                            <div class="offcanvas__logo">
+                                <a href="index.html">
+                                    <img src="assets/img/logo/black-logo.svg" alt="logo-img">
+                                </a>
+                            </div>
+                            <div class="offcanvas__close">
+                                <button>
+                                <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="text d-none d-xl-block">
+                            Nullam dignissim, ante scelerisque the  is euismod fermentum odio sem semper the is erat, a feugiat leo urna eget eros. Duis Aenean a imperdiet risus.
+                        </p>
+                        <div class="mobile-menu fix mb-3"></div>
+                        <div class="offcanvas__contact">
+                            <h4>Contact Info</h4>
+                            <ul>
+                                <li class="d-flex align-items-center">
+                                    <div class="offcanvas__contact-icon">
+                                        <i class="fal fa-map-marker-alt"></i>
+                                    </div>
+                                    <div class="offcanvas__contact-text">
+                                        <a target="_blank" href="#">Main Street, Melbourne, Australia</a>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <div class="offcanvas__contact-icon mr-15">
+                                        <i class="fal fa-envelope"></i>
+                                    </div>
+                                    <div class="offcanvas__contact-text">
+                                        <a href="mailto:info@example.com"><span class="mailto:info@example.com">info@example.com</span></a>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <div class="offcanvas__contact-icon mr-15">
+                                        <i class="fal fa-clock"></i>
+                                    </div>
+                                    <div class="offcanvas__contact-text">
+                                        <a target="_blank" href="#">Mod-friday, 09am -05pm</a>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    <div class="offcanvas__contact-icon mr-15">
+                                        <i class="far fa-phone"></i>
+                                    </div>
+                                    <div class="offcanvas__contact-text">
+                                        <a href="tel:+11002345909">+11002345909</a>
+                                    </div>
+                                </li>
+                            </ul>
+                            <div class="header-button mt-4">
+                                
+                            </div>
+                            <a href="contact.html" class="gt-theme-btn">BOOK NOW</a>
+                            <div class="social-icon d-flex align-items-center">
+                                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                                <a href="#"><i class="fab fa-twitter"></i></a>
+                                <a href="#"><i class="fab fa-youtube"></i></a>
+                                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="offcanvas__overlay"></div>
+
+        <!-- Header Section Start -->
+        <header id="header-sticky" class="header-1 header-2">
+            <div class="container">
+                <div class="mega-menu-wrapper">
+                    <div class="header-main">
+                        <div class="logo">
+                            <a href="index.html" class="header-logo">
+                                <img src="assets/img/logo/white-logo.svg" alt="logo-img">
+                            </a>
+                            <a href="index.html" class="header-logo-2">
+                                <img src="assets/img/logo/black-logo.svg" alt="logo-img">
+                            </a>
+                        </div>
+                        <div class="header-right d-flex justify-content-end align-items-center">
+                             <div class="mean__menu-wrapper">
+                            <div class="main-menu">
+                                <nav id="mobile-menu">
+                                    <ul>
+                                        <li class="has-dropdown active menu-thumb">
+                                            <a href="index.html">
+                                                Home 
+                                            </a>
+                                            <ul class="submenu has-homemenu">
+                                                <li>
+                                                    <div class="homemenu-items">
+                                                        <div class="homemenu">
+                                                            <div class="homemenu-thumb">
+                                                                <img src="assets/img/header/home-01.jpg" alt="img">
+                                                                <div class="demo-button">
+                                                                <a href="index.html" class="gt-theme-btn">Demo page</a>
+                                                                </div>
+                                                            </div>
+                                                            <div class="homemenu-content text-center">
+                                                                <h4 class="homemenu-title">
+                                                                    Home 01
+                                                                </h4>
+                                                            </div>
+                                                        </div>
+                                                        <div class="homemenu">
+                                                            <div class="homemenu-thumb mb-15">
+                                                            <img src="assets/img/header/home-02.jpg" alt="img">
+                                                                <div class="demo-button">
+                                                                <a href="index-2.html" class="gt-theme-btn">Demo page</a>
+                                                                </div>
+                                                            </div>
+                                                            <div class="homemenu-content text-center">
+                                                                <h4 class="homemenu-title">
+                                                                    Home 02
+                                                                </h4>
+                                                            </div>
+                                                        </div>
+                                                        <div class="homemenu">
+                                                            <div class="homemenu-thumb mb-15">
+                                                            <img src="assets/img/header/home-03.jpg" alt="img">
+                                                                <div class="demo-button">
+                                                                <a href="index-3.html" class="gt-theme-btn">Demo page</a>
+                                                                </div>
+                                                            </div>
+                                                            <div class="homemenu-content text-center">
+                                                                <h4 class="homemenu-title">
+                                                                    Home 03
+                                                                </h4>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li class="has-dropdown active d-xl-none">
+                                            <a href="index.html" class="border-none">
+                                            Home
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="index.html">Home 01</a></li>
+                                                <li><a href="index-2.html">Home 02</a></li>
+                                                <li><a href="index-3.html">Home 03</a></li>
+                                            </ul>
+                                        </li>
+                                        <li class="has-dropdown">
+                                            <a href="news.html">
+                                                Pages
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="about.html">About Us</a></li>
+                                                <li class="has-dropdown">
+                                                    <a href="team-details.html">
+                                                        Our Team
+                                                        <i class="fas fa-angle-right"></i>
+                                                    </a>
+                                                    <ul class="submenu">
+                                                        <li><a href="team.html">Our Team</a></li>
+                                                        <li><a href="team-details.html">Team Details</a></li>
+                                                    </ul>
+                                                </li>
+                                                <li><a href="restaurant.html">Restaurant</a></li>
+                                                <li><a href="testimonial.html">Our Testimonial</a></li>
+                                                <li><a href="404.html">404 Page</a></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <a href="service-details.html">
+                                                Services
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="service.html">Service Page</a></li>
+                                                <li><a href="service-details.html">Service Details</a></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <a href="room-details.html">
+                                                Room
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="room.html">Room 01 Page</a></li>
+                                                <li><a href="room-2.html">Room 02 Page</a></li>
+                                                <li><a href="room-details.html">Room Details</a></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <a href="news-details.html">
+                                                Blog
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="news-grid.html">Blog Grid</a></li>
+                                                <li><a href="news.html">Blog Standard</a></li>
+                                                <li><a href="news-details.html">Blog Details</a></li>
+                                            </ul>
+                                        </li>
+                                        <li>
+                                            <a href="contact.html">Contact Us</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                           <a href="#" class="main-header__search search-toggler">
+                                <i class="fa-regular fa-magnifying-glass"></i>
+                            </a>
+                            <div class="hero-button">
+                                <a href="contact.html" class="gt-theme-btn">Book now</a>
+                            </div>
+                             <div class="header__hamburger my-auto d-xl-none">
+                                <div class="sidebar__toggle">
+                                   <i class="fa-regular fa-bars"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+         <!-- GT Search Start -->
+        <div class="search-popup">
+            <div class="search-popup__overlay search-toggler"></div>
+            <div class="search-popup__content">
+                <form role="search" method="get" class="search-popup__form" action="#">
+                    <input type="text" id="search" name="search" placeholder="Search Here...">
+                    <button type="submit" aria-label="search submit" class="search-btn">
+                        <span><i class="fa-regular fa-magnifying-glass"></i></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    
+        <!-- Breadcrumb Section Start -->
+        <div class="gt-breadcrumb-wrapper bg-cover" style="background-image: url('assets/img/breadcrumb.jpg');">
+            <div class="container">
+                <div class="gt-page-heading">
+                    <div class="gt-breadcrumb-sub-title">
+                        <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Rooms & Suttes</h1>
+                    </div>
+                    <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
+                        <li>
+                            <a href="index.html">
+                               Home
+                            </a>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </li>
+                        <li>
+                           Rooms & Suttes
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- GT Room Section Start -->
+        <section class="gt-room-section fix section-padding section-bg">
+            <div class="gt-room-wrapper">
+                <div class="container">
+                     <div class="gt-section-title text-center">
+                        <h6 class="wow fadeInUp justify-content-center">
+                            Explore
+                        </h6>
+                        <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                          Rooms & Suttes
+                        </h2>
+                    </div>
+                    <div class="row">
+                        <div class="col-xl-4 col-lg-6 col-md-6">
+                            <div class="gt-room-box-items">
+                                <div class="gt-thumb">
+                                    <img src="assets/img/home-1/room/room-01.jpg" alt="img">
+                                    <img src="assets/img/home-1/room/room-01.jpg" alt="img">
+                                    <span class="gt-post-box">
+                                        $269 / NIGHT
+                                    </span>
+                                </div>
+                                <div class="gt-content">
+                                <a href="room.html" class="gt-post-cat">Luxury Room</a>
+                                <h3><a href="room-details.html">Idustry Experience</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        1500 SQ.FT/Rooms
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        02 Guests
+                                    </li>
+                                </ul>
+                                <a href="room-details.html" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-6 col-md-6">
+                            <div class="gt-room-box-items">
+                                <div class="gt-thumb">
+                                    <img src="assets/img/home-1/room/room-02.jpg" alt="img">
+                                    <img src="assets/img/home-1/room/room-02.jpg" alt="img">
+                                    <span class="gt-post-box">
+                                        $269 / NIGHT
+                                    </span>
+                                </div>
+                                <div class="gt-content">
+                                <a href="room.html" class="gt-post-cat">Luxury Room</a>
+                                <h3><a href="room-details.html">Oceanview Deluxe Room</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        1500 SQ.FT/Rooms
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        02 Guests
+                                    </li>
+                                </ul>
+                                <a href="room-details.html" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-6 col-md-6">
+                            <div class="gt-room-box-items">
+                                <div class="gt-thumb">
+                                    <img src="assets/img/home-1/room/room-03.jpg" alt="img">
+                                    <img src="assets/img/home-1/room/room-03.jpg" alt="img">
+                                    <span class="gt-post-box">
+                                        $269 / NIGHT
+                                    </span>
+                                </div>
+                                <div class="gt-content">
+                                <a href="room.html" class="gt-post-cat">Luxury Room</a>
+                                <h3><a href="room-details.html">Look Our Luxury Rooms</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        1500 SQ.FT/Rooms
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        02 Guests
+                                    </li>
+                                </ul>
+                                <a href="room-details.html" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-6 col-md-6">
+                            <div class="gt-room-box-items">
+                                <div class="gt-thumb">
+                                    <img src="assets/img/home-1/room/room-04.jpg" alt="img">
+                                    <img src="assets/img/home-1/room/room-04.jpg" alt="img">
+                                    <span class="gt-post-box">
+                                        $269 / NIGHT
+                                    </span>
+                                </div>
+                                <div class="gt-content">
+                                <a href="room.html" class="gt-post-cat">Luxury Room</a>
+                                <h3><a href="room-details.html">Luxury Signature Suites</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        1500 SQ.FT/Rooms
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        02 Guests
+                                    </li>
+                                </ul>
+                                <a href="room-details.html" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-6 col-md-6">
+                            <div class="gt-room-box-items">
+                                <div class="gt-thumb">
+                                    <img src="assets/img/home-1/room/room-05.jpg" alt="img">
+                                    <img src="assets/img/home-1/room/room-05.jpg" alt="img">
+                                    <span class="gt-post-box">
+                                        $269 / NIGHT
+                                    </span>
+                                </div>
+                                <div class="gt-content">
+                                <a href="room.html" class="gt-post-cat">Luxury Room</a>
+                                <h3><a href="room-details.html">Delux Family Room</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        1500 SQ.FT/Rooms
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        02 Guests
+                                    </li>
+                                </ul>
+                                <a href="room-details.html" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-6 col-md-6">
+                            <div class="gt-room-box-items">
+                                <div class="gt-thumb">
+                                    <img src="assets/img/home-1/room/room-01.jpg" alt="img">
+                                    <img src="assets/img/home-1/room/room-01.jpg" alt="img">
+                                    <span class="gt-post-box">
+                                        $269 / NIGHT
+                                    </span>
+                                </div>
+                                <div class="gt-content">
+                                <a href="room.html" class="gt-post-cat">Luxury Room</a>
+                                <h3><a href="room-details.html">Idustry Experience</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        1500 SQ.FT/Rooms
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        02 Guests
+                                    </li>
+                                </ul>
+                                <a href="room-details.html" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
+                </div>
+            </div>
+        </section>
+
+        <!-- GT Hotel Facilities Section Start -->
+        <section class="gt-hotel-facilities-section-2 section-padding fix">
+            <div class="gt-hotel-facilities-shape">
+                <img src="assets/img/home-2/hotel-facilites/Vector-01.png" alt="img">
+            </div>
+            <div class="container">
+                <div class="gt-hotel-facilities-wrapper-2">
+                    <div class="row g-4">
+                        <div class="col-lg-6 wow fadeInUp" data-wow-delay=".3s">
+                            <div class="gt-hotel-left-images">
+                                  <img src="assets/img/home-2/hotel-facilites/01.jpg" alt="img">
+                                <a href="https://www.youtube.com/watch?v=Cn4G2lZ_g2I" class="video-btn ripple video-popup">
+                                    <i class="fa-solid fa-play"></i>
+                                </a>
+                                <div class="gt-counter">
+                                    <h2><span class="gt-count">21</span>+</h2>
+                                    <p>
+                                        Years Of <br> Experience
+                                    </p>
+                                </div>
+                                <div class="gt-hotel-img wow fadeInUp" data-wow-delay=".5s">
+                                    <img src="assets/img/home-2/hotel-facilites/02.jpg" alt="img">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="gt-hotel-right-content">
+                                <div class="gt-section-title mb-0">
+                                    <h6 class="wow fadeInUp">
+                                           Hotel Facilities
+                                    </h6>
+                                    <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                                        The Framework
+                                    </h2>
+                                </div>
+                                <p class="gt-hotel-text wow fadeInUp" data-wow-delay=".4s">
+                                    The Framework blends modern luxury with timeless design, offering sophisticated spaces, elegant details, and a serene atmosphere crafted for unforgettable beachfront living and elevated guest experiences.
+                                </p>
+                                <div class="gt-skill-feature-items">
+                                    <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".3s">
+                                        <h3 class="gt-box-title">Room Service</h3>
+                                        <div class="gt-progress">
+                                            <div class="gt-progress-bar" style="width: 90%; animation: 2.6s ease 0s 1 normal none running animate-positive; opacity: 1;">
+                                                <div class="gt-progress-value"><span class="counter-number2">90</span>%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".4s">
+                                        <h3 class="gt-box-title">Breakfast Included</h3>
+                                        <div class="gt-progress">
+                                            <div class="gt-progress-bar" style="width: 55%; animation: 2.6s ease 0s 1 normal none running animate-positive; opacity: 1;">
+                                                <div class="gt-progress-value"><span class="counter-number2">55</span>%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".4s">
+                                        <h3 class="gt-box-title">Laundry & Ironing</h3>
+                                        <div class="gt-progress">
+                                            <div class="gt-progress-bar" style="width: 79%; animation: 2.6s ease 0s 1 normal none running animate-positive; opacity: 1;">
+                                                <div class="gt-progress-value"><span class="counter-number2">79</span>%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="about.html" class="gt-theme-btn wow fadeInUp" data-wow-delay=".6s">VIEW All DETAILS</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GT Hotel Feature Section Start -->
+        <section class="gt-hotel-feature-section-2 section-padding fix pt-0">
+            <div class="container">
+                <div class="gt-hotel-feature-area">
+                    <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".2s">
+                        <div class="icon">
+                            <i class="flaticon-fitness-center"></i>
+                        </div>
+                        <div class="content">
+                            <h3>Fitness Center</h3>
+                            <p>Lorem ipsum dolor</p>
+                        </div>
+                    </div>
+                    <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".4s">
+                        <div class="icon">
+                            <i class="flaticon-disinfect"></i>
+                        </div>
+                        <div class="content">
+                            <h3>Disinfection</h3>
+                            <p>Lorem ipsum dolor</p>
+                        </div>
+                    </div>
+                    <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".6s">
+                        <div class="icon">
+                            <i class="flaticon-suite"></i>
+                        </div>
+                        <div class="content">
+                            <h3>Rooms and Suites</h3>
+                            <p>Lorem ipsum dolor</p>
+                        </div>
+                    </div>
+                    <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".8s">
+                        <div class="icon">
+                            <i class="flaticon-luggage"></i>
+                        </div>
+                        <div class="content">
+                            <h3>Store Luggage</h3>
+                            <p>Lorem ipsum dolor</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GT Instagram Section Start -->
+        <div class="gt-instagram-section section-padding pb-0 fix section-bg">
+            <div class="container">
+                <div class="gt-section-title text-center">
+                    <h6 class="justify-content-center wow fadeInUp">
+                        OUR INSTAGRAM
+                    </h6>
+                    <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                        Laxary Hotel Theme
+                    </h2>
+                </div>
+            </div>
+             <div class="swiper gt-instagram-slider">
+                    <div class="swiper-wrapper">
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image">
+                                <img src="assets/img/home-1/instagram/01.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image">
+                                <img src="assets/img/home-1/instagram/02.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image">
+                                <img src="assets/img/home-1/instagram/03.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image">
+                                <img src="assets/img/home-1/instagram/04.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image">
+                                <img src="assets/img/home-1/instagram/05.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="swiper-slide">
+                            <div class="gt-instagram-image">
+                                <img src="assets/img/home-1/instagram/06.jpg" alt="img">
+                                <a href="index.html" class="gt-icon">
+                                    <i class="fa-brands fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+        <!-- GT Footer Section Start -->
+        <footer class="gt-footer-section fix bg-cover" style="background-image: url('assets/img/home-1/footer/footer-img.jpg');">
+            <div class="container">
+                <div class="footer-newsletter-items">
+                    <h2>Join Our Newsletter</h2>
+                    <form action="#">
+                        <div class="form-clt">
+                            <input type="text" placeholder="Enter your email">
+                        </div>
+                        <button class="gt-theme-btn">Subscribe</button>
+                    </form>
+                </div>
+                <div class="footer-widget-wrapper">
+                    <div class="row">
+                        <div class="col-xl-4 col-lg-5 col-md-7">
+                            <div class="footer-single-widget">
+                                <div class="widget-head">
+                                    <a href="index.html" class="footer-logo">
+                                        <img src="assets/img/logo/white-logo.svg" alt="img">
+                                    </a>
+                                </div>
+                                <div class="footer-content">
+                                    <p>
+                                        The purpose of a FAQ is generally provide information on Perfect for Small Teams, Startups, and Growing.
+                                    </p>
+                                    <div class="social-icon d-flex align-items-center">
+                                            <a href="#"><i class="fab fa-facebook-f"></i></a>
+                                            <a href="#"><i class="fab fa-twitter"></i></a>
+                                            <a href="#"><i class="fab fa-vimeo-v"></i></a>
+                                            <a href="#"><i class="fab fa-pinterest-p"></i></a>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-2 col-lg-3 col-md-5 col-sm-6 col-6">
+                             <div class="footer-single-widget">
+                                <div class="widget-head">
+                                    <h3>Quick Links</h3>
+                                </div>
+                                <ul class="gt-list-area">
+                                    <li>
+                                        <a href="index.html">
+                                           Home
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="about.html">
+                                        About us
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="room.html">
+                                            Hotel
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="contact.html">
+                                        Contact
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="news.html">
+                                        Blogs
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 ps-xl-5 col-lg-4 col-md-6 col-sm-6 col-6">
+                             <div class="footer-single-widget">
+                                <div class="widget-head">
+                                    <h3>Guest Services</h3>
+                                </div>
+                                <ul class="gt-list-area">
+                                    <li>
+                                        <a href="service-details.html">
+                                           24/7 Front Desk
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="service-details.html">
+                                           Parking
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="service-details.html">
+                                          Room Service
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="service-details.html">
+                                           Free Wi-Fi
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="service-details.html">
+                                           Concierge Service
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-4 col-md-6">
+                             <div class="footer-single-widget">
+                                <div class="widget-head">
+                                    <h3>Contact Us</h3>
+                                </div>
+                                <ul class="contact-list">
+                                    <li>
+                                        United States — <br>
+                                        350 Fifth Avenue, 21st Floor New York, NY 10118
+                                    </li>
+                                    <li>
+                                        <a href="tel:+86661233562">+8 (666) 123-3562</a>
+                                    </li>
+                                    <li>
+                                        Mon-Fri 9:00am - 5:00pm
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <div class="footer-bottom-wrapper">
+                        <p class="wow fadeInUp" data-wow-delay=".3s">
+                            © 2025 <b>Laxary.</b> All rights reserved.
+                        </p>
+                        <ul class="footer-list wow fadeInUp" data-wow-delay=".7s">
+                            <li>
+                                <a href="contact.html">Privacy policy</a>
+                            </li>
+                            <li>।</li>
+                            <li>
+                                <a href="contact.html">Terms &amp; conditions</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        
+        <!--<< All JS Plugins >>-->
+        <script src="assets/js/jquery-3.7.1.min.js"></script>
+        <!--<< Viewport Js >>-->
+        <script src="assets/js/viewport.jquery.js"></script>
+        <!--<< Bootstrap Js >>-->
+        <script src="assets/js/bootstrap.bundle.min.js"></script>
+        <!--<< nice-selec Js >>-->
+        <script src="assets/js/jquery.nice-select.min.js"></script>
+        <!--<< Waypoints Js >>-->
+        <script src="assets/js/jquery.waypoints.js"></script>
+        <!--<< Counterup Js >>-->
+        <script src="assets/js/jquery.counterup.min.js"></script>
+        <!--<< Swiper Slider Js >>-->
+        <script src="assets/js/swiper-bundle.min.js"></script>
+        <!--<< MeanMenu Js >>-->
+        <script src="assets/js/jquery.meanmenu.min.js"></script>
+        <!--<< Parallaxie Js >>-->
+        <script src="assets/js/parallaxie.js"></script>
+        <!--<< Magnific Popup Js >>-->
+        <script src="assets/js/jquery.magnific-popup.min.js"></script>
+        <!--<< Wow Animation Js >>-->
+        <script src="assets/js/wow.min.js"></script>
+        <!--<< Main.js >>-->
+        <script src="assets/js/main.js"></script>
+    </body>
+</html>

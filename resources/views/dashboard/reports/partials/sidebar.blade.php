@@ -62,6 +62,7 @@
   </li>
 
   {{-- Financial Reports --}}
+  @php $isManager = Auth::guard('staff')->check() && strtolower(trim(Auth::guard('staff')->user()->role ?? '')) === 'manager'; @endphp
   <li class="nav-item">
     <a class="nav-link {{ str_contains($activePage, 'admin/reports') && (str_contains($activePage, 'revenue') || str_contains($activePage, 'profitability') || str_contains($activePage, 'cash-flow')) ? 'active' : '' }}" 
        href="#" data-toggle="collapse" data-target="#financialReports">
@@ -75,12 +76,14 @@
           <i class="fa fa-line-chart"></i> Revenue Breakdown
         </a>
       </li>
+      @if(!$isManager)
       <li class="nav-item">
         <a class="nav-link {{ str_contains($activePage, 'admin/reports/profitability') ? 'active' : '' }}" 
            href="{{ route('admin.reports.profitability') }}">
           <i class="fa fa-calculator"></i> Profitability
         </a>
       </li>
+      @endif
       <li class="nav-item">
         <a class="nav-link {{ str_contains($activePage, 'admin/reports/cash-flow') ? 'active' : '' }}" 
            href="{{ route('admin.reports.cash-flow') }}">

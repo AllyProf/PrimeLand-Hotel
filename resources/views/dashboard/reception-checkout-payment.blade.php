@@ -48,14 +48,12 @@
         </table>
       </div>
 
-      <!-- Additional Charges Summary -->
+      <!-- Outstanding Balance Summary -->
       <div class="mb-4">
-        <div class="alert alert-info">
-          <i class="fa fa-info-circle"></i> <strong>Note:</strong> Room booking charges were already paid via PayPal during booking. This payment is for additional charges only.
-        </div>
-        <h5 style="color: #e07632; border-bottom: 2px solid #e07632; padding-bottom: 10px; margin-bottom: 15px;">Additional Charges Summary</h5>
+        <h5 style="color: #e07632; border-bottom: 2px solid #e07632; padding-bottom: 10px; margin-bottom: 15px;">Outstanding Balance Summary</h5>
         <div class="table-responsive">
           <table class="table table-bordered">
+
             <thead>
               <tr style="background-color: #f8f9fa;">
                 <th>Description</th>
@@ -63,36 +61,43 @@
               </tr>
             </thead>
             <tbody>
-              @if($transportationChargesTsh > 0)
+              @if(isset($roomBalanceTsh) && $roomBalanceTsh > 0)
+              <tr>
+                <td>Room Accommodation Balance (Unpaid Portion)</td>
+                <td class="text-right">{{ number_format($roomBalanceTsh, 2) }}</td>
+              </tr>
+              @endif
+              @if(isset($transportationChargesTsh) && $transportationChargesTsh > 0)
               <tr>
                 <td>Transportation (Airport Pickup)</td>
                 <td class="text-right">{{ number_format($transportationChargesTsh, 2) }}</td>
               </tr>
               @endif
-              @if($otherServiceChargesTsh > 0)
+              @if(isset($otherServiceChargesTsh) && $otherServiceChargesTsh > 0)
               <tr>
                 <td>Service Charges (Room Service, etc.)</td>
                 <td class="text-right">{{ number_format($otherServiceChargesTsh, 2) }}</td>
               </tr>
               @endif
-              @if($extensionCostTsh > 0)
+              @if(isset($extensionCostTsh) && $extensionCostTsh > 0 && !$booking->is_corporate_booking)
               <tr>
                 <td>Extension Charges ({{ $extensionNights }} night(s))</td>
                 <td class="text-right">{{ number_format($extensionCostTsh, 2) }}</td>
               </tr>
               @endif
-              @if($totalAdditionalChargesTsh == 0)
+              
+              @if($totalAdditionalChargesTsh <= 50)
               <tr>
-                <td colspan="2" class="text-center text-muted">
-                  <i class="fa fa-check-circle"></i> No additional charges
+                <td colspan="2" class="text-center text-success">
+                  <i class="fa fa-check-circle"></i> No outstanding balance
                 </td>
               </tr>
-              @else
+
               <tr style="background-color: #f8f9fa; font-size: 18px;">
-                <td><strong>TOTAL ADDITIONAL CHARGES</strong></td>
+                <td><strong>TOTAL OUTSTANDING BALANCE</strong></td>
                 <td class="text-right"><strong style="color: #e07632;">{{ number_format($totalAdditionalChargesTsh, 2) }} TZS</strong></td>
               </tr>
-              @endif
+
             </tbody>
           </table>
         </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DayService;
 use App\Models\Staff;
 use App\Services\CurrencyExchangeService;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -218,6 +219,7 @@ class DayServiceController extends Controller
             'service_time' => 'required',
             'items_ordered' => 'nullable|string',
             'package_items' => 'nullable|string', // Can be JSON string or array
+            'package_items_paid' => 'nullable|string', // Can be JSON string or array
             'amount' => 'required|numeric|min:0',
             'payment_status' => 'required|in:pending,paid',
             'payment_method' => 'nullable|in:cash,card,mobile,bank,online,other',
@@ -280,17 +282,23 @@ class DayServiceController extends Controller
 
         // Handle package_items for ceremony services
         $packageItems = null;
+        $packageItemsPaid = null;
         if ($request->has('package_items')) {
             $packageItemsData = $request->input('package_items');
-            
-            // If package_items is a JSON string, decode it
             if (is_string($packageItemsData)) {
                 $packageItemsData = json_decode($packageItemsData, true);
             }
-            
-            // Ensure it's an array
             if (is_array($packageItemsData)) {
                 $packageItems = $packageItemsData;
+            }
+        }
+        if ($request->has('package_items_paid')) {
+            $packageItemsPaidData = $request->input('package_items_paid');
+            if (is_string($packageItemsPaidData)) {
+                $packageItemsPaidData = json_decode($packageItemsPaidData, true);
+            }
+            if (is_array($packageItemsPaidData)) {
+                $packageItemsPaid = $packageItemsPaidData;
             }
         }
         
@@ -299,7 +307,13 @@ class DayServiceController extends Controller
             'service_reference' => $serviceReference,
             'service_type' => $validated['service_type'],
             'guest_name' => $validated['guest_name'],
-            'guest_phone' => !empty($validated['guest_phone']) ? (str_starts_with($validated['guest_phone'], '+255') ? $validated['guest_phone'] : '+255' . ltrim($validated['guest_phone'], '0')) : null,
+            'guest_phone' => !empty($validated['guest_phone']) ? 
+                (str_starts_with($validated['guest_phone'], '+255') ? 
+                    $validated['guest_phone'] : 
+                    (str_starts_with($validated['guest_phone'], '255') ? 
+                        '+' . $validated['guest_phone'] : 
+                        '+255' . ltrim($validated['guest_phone'], '0'))) : 
+                null,
             'guest_email' => $validated['guest_email'] ?? null,
             'number_of_people' => $validated['number_of_people'],
             'adult_quantity' => $validated['adult_quantity'] ?? null,
@@ -308,6 +322,7 @@ class DayServiceController extends Controller
             'service_time' => $validated['service_time'],
             'items_ordered' => $validated['items_ordered'] ?? null,
             'package_items' => $packageItems ?? $validated['package_items'] ?? null,
+            'package_items_paid' => $packageItemsPaid ?? $validated['package_items_paid'] ?? null,
             'amount' => $validated['amount'],
             'payment_status' => $validated['payment_status'],
             'payment_method' => $validated['payment_method'] ?? null,
@@ -353,6 +368,31 @@ class DayServiceController extends Controller
             } catch (\Exception $e) {
                 // Log error but don't fail the registration
                 \Log::error('Failed to send day service confirmation email: ' . $e->getMessage());
+            }
+        }
+
+        // Send SMS notification if phone is provided
+        if (!empty($validated['guest_phone'])) {
+            try {
+                $smsService = new SmsService();
+                if ($isSwimmingService) {
+                    $smsService->sendSwimmingConfirmation(
+                        $validated['guest_phone'],
+                        $validated['guest_name'],
+                        $dayService->service_reference,
+                        number_format($dayService->amount, 0)
+                    );
+                } elseif ($isCeremonyService) {
+                    $smsService->sendCeremonyConfirmation(
+                        $validated['guest_phone'],
+                        $validated['guest_name'],
+                        $dayService->service_reference,
+                        ucfirst($validated['service_type'])
+                    );
+                }
+            } catch (\Exception $e) {
+                // Log error but don't fail the registration
+                \Log::error('Failed to send day service confirmation SMS: ' . $e->getMessage());
             }
         }
 
@@ -527,8 +567,10 @@ class DayServiceController extends Controller
             }
             $totalRevenue += $amountPaid;
 
-            // 2. Add paid bar/restaurant usage
-            $barPaid = $service->serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
+            // 2. Add paid bar/restaurant usage (exclude cancelled and billed)
+            $barPaid = $service->serviceRequests->filter(function($req) {
+                return $req->payment_status === 'paid' && !in_array(strtolower($req->status), ['cancelled', 'billed']);
+            })->sum('total_price_tsh');
             $totalRevenue += $barPaid;
         }
         
@@ -547,9 +589,11 @@ class DayServiceController extends Controller
             
             $pendingRegistration = max(0, $totalAmount - $amountPaid);
             $pendingAmount += $pendingRegistration;
-
-            // 2. Add unpaid bar/restaurant usage
-            $barUnpaid = $service->serviceRequests->where('payment_status', 'pending')->sum('total_price_tsh');
+ 
+            // 2. Add unpaid bar/restaurant usage (exclude cancelled and billed)
+            $barUnpaid = $service->serviceRequests->filter(function($req) {
+                return $req->payment_status === 'pending' && !in_array(strtolower($req->status), ['cancelled', 'billed']);
+            })->sum('total_price_tsh');
             $pendingAmount += $barUnpaid;
         }
 
@@ -593,7 +637,7 @@ class DayServiceController extends Controller
      */
     public function show(DayService $dayService)
     {
-        $dayService->load(['registeredBy', 'serviceRequests.service']);
+        $dayService->load(['registeredBy', 'serviceRequests.service', 'serviceRequests.approvedBy']);
         return response()->json([
             'success' => true,
             'day_service' => $dayService,
@@ -680,6 +724,11 @@ class DayServiceController extends Controller
 
         // Decode additional items
         $additionalItemsData = json_decode($validated['additional_items'], true);
+        $additionalPaidData = $request->input('additional_items_paid', []); // Expecting key-value like additional_items
+        if (is_string($additionalPaidData)) {
+            $additionalPaidData = json_decode($additionalPaidData, true);
+        }
+
         if (!is_array($additionalItemsData)) {
             return response()->json([
                 'success' => false,
@@ -689,12 +738,14 @@ class DayServiceController extends Controller
 
         // Get existing package items
         $existingPackageItems = $dayService->package_items ?? [];
-        if (!is_array($existingPackageItems)) {
-            $existingPackageItems = [];
-        }
+        $existingPaidItems = $dayService->package_items_paid ?? [];
+        
+        if (!is_array($existingPackageItems)) $existingPackageItems = [];
+        if (!is_array($existingPaidItems)) $existingPaidItems = [];
 
         // Merge additional items with existing items
         $updatedPackageItems = array_merge($existingPackageItems, $additionalItemsData);
+        $updatedPaidItems = array_merge($existingPaidItems, $additionalPaidData);
 
         // Calculate new total amount
         $newTotalAmount = $dayService->amount + $validated['additional_amount'];
@@ -703,6 +754,7 @@ class DayServiceController extends Controller
         // Update the day service
         $dayService->update([
             'package_items' => $updatedPackageItems,
+            'package_items_paid' => $updatedPaidItems,
             'amount' => $newTotalAmount,
             'amount_paid' => $newAmountPaid,
             'payment_status' => $newAmountPaid >= $newTotalAmount ? 'paid' : 'partial',
@@ -738,74 +790,97 @@ class DayServiceController extends Controller
             ], 400);
         }
 
-        $validated = $request->validate([
-            'package_items' => 'required|array',
-            'additional_items' => 'nullable|array',
-            'total_amount' => 'required|numeric|min:0',
-            'payment_method' => 'nullable|in:cash,card,mobile,bank,online,other',
-            'payment_provider' => 'nullable|string|max:100',
-            'payment_reference' => 'nullable|string|max:100',
-            'amount_paid' => 'nullable|numeric|min:0',
-        ]);
+    $validated = $request->validate([
+        'package_items' => 'required|array',
+        'package_items_paid' => 'nullable|array',
+        'additional_items' => 'nullable|array',
+        'merged_request_ids' => 'nullable|array',
+        'total_amount' => 'required|numeric|min:0',
+        'payment_method' => 'nullable|in:cash,card,mobile,bank,online,other',
+        'payment_provider' => 'nullable|string|max:100',
+        'payment_reference' => 'nullable|string|max:100',
+        'amount_paid' => 'nullable|numeric|min:0',
+    ]);
 
-        // Merge package and additional items
-        $allItems = array_merge(
-            $validated['package_items'] ?? [],
-            $validated['additional_items'] ?? []
-        );
-
-        // Calculate payment status based on amount_paid and total_amount
-        $amountPaid = $dayService->amount_paid ?? 0;
-        
-        if (isset($validated['amount_paid']) && $validated['amount_paid'] !== null) {
-            $amountPaid = $validated['amount_paid'];
-        }
-
-        // Recalculate payment status based on amount_paid vs total_amount
-        if ($amountPaid >= $validated['total_amount']) {
-            $paymentStatus = 'paid';
-        } elseif ($amountPaid > 0) {
-            $paymentStatus = 'partial';
-        } else {
-            $paymentStatus = 'pending';
-        }
-
-        // Update the day service
-        $updateData = [
-            'package_items' => $allItems,
-            'amount' => $validated['total_amount'],
-            'payment_status' => $paymentStatus,
-        ];
-
-        if (isset($validated['amount_paid']) && $validated['amount_paid'] !== null) {
-            $updateData['amount_paid'] = $amountPaid;
-        }
-
-        if ($validated['payment_method']) {
-            $updateData['payment_method'] = $validated['payment_method'];
-        }
-
-        if ($validated['payment_provider']) {
-            $updateData['payment_provider'] = $validated['payment_provider'];
-        }
-
-        if ($validated['payment_reference']) {
-            $updateData['payment_reference'] = $validated['payment_reference'];
-        }
-
-        // If marking as paid, set paid_at
-        if ($paymentStatus === 'paid' && !$dayService->paid_at) {
-            $updateData['paid_at'] = now();
-        }
-
-        $dayService->update($updateData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Service items and prices updated successfully!',
-            'day_service' => $dayService->fresh(),
-        ]);
+    // Construct the actual package_items array for the database (associative array: name => price)
+    $dbPackageItems = [];
+    foreach ($validated['package_items'] as $name => $price) {
+        $dbPackageItems[$name] = $price;
     }
+
+    // Merge additional items if they exist
+    if (!empty($validated['additional_items'])) {
+        foreach ($validated['additional_items'] as $name => $price) {
+            $dbPackageItems[$name] = $price;
+        }
+    }
+
+    // Construct package_items_paid array
+    $dbPackageItemsPaid = $validated['package_items_paid'] ?? [];
+
+    // Calculate payment status based on amount_paid and total_amount
+    $amountPaid = $dayService->amount_paid ?? 0;
+    
+    if (isset($validated['amount_paid']) && $validated['amount_paid'] !== null) {
+        $amountPaid = $validated['amount_paid'];
+    }
+
+    // Recalculate payment status based on amount_paid vs total_amount
+    if ($amountPaid >= $validated['total_amount']) {
+        $paymentStatus = 'paid';
+    } elseif ($amountPaid > 0) {
+        $paymentStatus = 'partial';
+    } else {
+        $paymentStatus = 'pending';
+    }
+
+    // Update the day service
+    $updateData = [
+        'package_items' => $dbPackageItems,
+        'package_items_paid' => $dbPackageItemsPaid,
+        'amount' => $validated['total_amount'],
+        'payment_status' => $paymentStatus,
+    ];
+
+    if (isset($validated['amount_paid']) && $validated['amount_paid'] !== null) {
+        $updateData['amount_paid'] = $amountPaid;
+    }
+
+    if ($validated['payment_method']) {
+        $updateData['payment_method'] = $validated['payment_method'];
+    }
+
+    if ($validated['payment_provider']) {
+        $updateData['payment_provider'] = $validated['payment_provider'];
+    }
+
+    if ($validated['payment_reference']) {
+        $updateData['payment_reference'] = $validated['payment_reference'];
+    }
+
+    // If marking as paid, set paid_at
+    if ($paymentStatus === 'paid' && !$dayService->paid_at) {
+        $updateData['paid_at'] = now();
+    }
+
+    $dayService->update($updateData);
+
+    // Handle merged service requests
+    if (!empty($validated['merged_request_ids'])) {
+        \App\Models\ServiceRequest::whereIn('id', $validated['merged_request_ids'])
+            ->where('day_service_id', $dayService->id)
+            ->update([
+                'status' => 'billed',
+                'payment_status' => ($paymentStatus === 'paid') ? 'paid' : 'pending'
+            ]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Service items and prices updated successfully!',
+        'day_service' => $dayService->fresh(),
+    ]);
+}
 
     /**
      * Download receipt
@@ -912,7 +987,7 @@ class DayServiceController extends Controller
             // Get exchange rate for display
             $exchangeRate = $this->currencyService->getUsdToTshRate();
 
-            return view('dashboard.day-services-reports', compact(
+            return view('dashboard.day-services-reports', array_merge(compact(
                 'role',
                 'reportType',
                 'reportDate',
@@ -923,11 +998,14 @@ class DayServiceController extends Controller
                 'dayServices',
                 'statistics',
                 'exchangeRate'
-            ));
+            ), ['activePage' => 'day-services/reports']));
         }
 
         // Initial page load - just show the form
-        return view('dashboard.day-services-reports', compact('role'));
+        return view('dashboard.day-services-reports', [
+            'role' => $role,
+            'activePage' => 'day-services/reports'
+        ]);
     }
 
     /**

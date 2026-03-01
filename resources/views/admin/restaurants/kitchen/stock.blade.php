@@ -29,7 +29,7 @@
                 </div>
                 <h1 class="mb-1" style="color: #e07632; font-weight: 800; letter-spacing: 2px;">PRIMELAND HOTEL</h1>
                 <p class="mb-0 text-dark">Location: Sokoine Road - Moshi, Kilimanjaro - Tanzania</p>
-                <p class="mb-2 text-dark font-weight-bold">Mobile/WhatsApp: 0677-155-156 / +255 677-155-157</p>
+                <p class="mb-2 text-dark font-weight-bold">Mobile/WhatsApp: 0677-155-156</p>
                 <div style="height: 4px; background: #e07632; width: 100px; margin: 15px auto;"></div>
                 <h3 class="text-uppercase font-weight-bold mt-3">KITCHEN INVENTORY STOCK SHEET</h3>
                 <p class="text-muted">Generated on: {{ now()->format('d/m/Y H:i') }}</p>

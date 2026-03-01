@@ -314,7 +314,7 @@
           <div class="form-group">
             <label>Minimum Stock Threshold <span class="text-danger">*</span></label>
             <input type="number" step="1" class="form-control" id="minimum_stock" name="minimum_stock" required min="0">
-            <small class="text-muted text-capitalize">You will see a "LOW STOCK" alert once the balance hits this number.</small>
+            <small class="text-muted text-capitalize">A <strong>Low Stock SMS Alert</strong> will be sent to the Manager once the balance hits this number.</small>
           </div>
         </div>
         <div class="modal-footer">

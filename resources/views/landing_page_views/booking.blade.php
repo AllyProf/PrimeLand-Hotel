@@ -4834,7 +4834,7 @@
                 <p><strong>PrimeLand Hotel</strong><br>
                 Sokoine Road, Moshi, Kilimanjaro, Tanzania<br>
                 Phone: +255 677-155-156 / +255 677-155-157<br>
-                Email: info@primelandhotel.co.tz</p>
+                Email: info@primelandhotel.com / infoprimelandhotel@gmail.com</p>
             </div>
             <div class="terms-modal-footer">
                 <button type="button" class="btn btn-primary" onclick="closeTermsModal()">I Understand</button>

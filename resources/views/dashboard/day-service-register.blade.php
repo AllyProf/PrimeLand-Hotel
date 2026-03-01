@@ -72,7 +72,7 @@
           <div class="col-md-6">
             <div class="form-group">
               <label for="guest_phone">Phone Number</label>
-              <input class="form-control" type="text" id="guest_phone" name="guest_phone" placeholder="Enter phone number">
+              <input class="form-control" type="text" id="guest_phone" name="guest_phone" placeholder="Enter phone number" value="255">
             </div>
           </div>
         </div>

@@ -22,6 +22,8 @@ class ServiceRequest extends Model
         'status',
         'reception_notes',
         'approved_by',
+        'paid_to',
+        'cancelled_by',
         'is_walk_in',
         'walk_in_name',
         'payment_status',
@@ -74,5 +76,21 @@ class ServiceRequest extends Model
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'approved_by');
+    }
+
+    /**
+     * Get the staff member who received the payment
+     */
+    public function paidBy(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'paid_to');
+    }
+
+    /**
+     * Get the staff member who cancelled this request
+     */
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'cancelled_by');
     }
 }

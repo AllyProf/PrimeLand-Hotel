@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\SmsService;
 
 class BookingController extends Controller
 {
@@ -93,6 +94,49 @@ class BookingController extends Controller
     }
 
     /**
+     * Check if a specific room is available for a period, excluding one booking
+     */
+    private function isRoomAvailableForPeriod($roomId, $checkIn, $checkOut, $excludeBookingId = null)
+    {
+        return !Booking::where('room_id', $roomId)
+            ->when($excludeBookingId, function ($query) use ($excludeBookingId) {
+                $query->where('id', '!=', $excludeBookingId);
+            })
+            ->whereIn('status', ['pending', 'confirmed'])
+            ->where(function ($query) use ($checkIn, $checkOut) {
+                // Period overlap logic: (StartA < EndB) AND (EndA > StartB)
+                $query->where('check_in', '<', $checkOut)
+                      ->where('check_out', '>', $checkIn);
+            })
+            ->where(function ($q) {
+                // Same logic as assignAvailableRoom for valid bookings
+                $q->where(function ($statusQ) {
+                    // Confirmed bookings
+                    $statusQ->where('status', 'confirmed')
+                            ->where(function ($paymentQ) {
+                                $paymentQ->whereIn('payment_status', ['paid', 'partial'])
+                                        ->orWhere(function ($subQ) {
+                                            $subQ->where('payment_status', 'pending')
+                                                 ->where(function ($deadlineQ) {
+                                                     $deadlineQ->whereNull('payment_deadline')
+                                                              ->orWhere('payment_deadline', '>', Carbon::now());
+                                                 });
+                                        });
+                            });
+                })
+                ->orWhere(function ($pendingQ) {
+                    // Pending bookings that haven't expired
+                    $pendingQ->where('status', 'pending')
+                            ->where(function ($expireQ) {
+                                $expireQ->whereNull('expires_at')
+                                       ->orWhere('expires_at', '>', Carbon::now());
+                            });
+                });
+            })
+            ->exists();
+    }
+
+    /**
      * Store a new booking
      * TEMPORARILY DISABLED - Online booking coming soon
      */
@@ -102,6 +146,36 @@ class BookingController extends Controller
             'success' => false,
             'message' => 'Online booking is temporarily unavailable. Please contact us directly to make a reservation.',
         ], 503);
+    }
+
+    /**
+     * Check if a specific room is available for a given period (AJAX)
+     */
+    public function checkRoomAvailability(Request $request)
+    {
+        $validated = $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'check_in' => 'required|date',
+            'check_out' => 'required|date|after:check_in',
+            'exclude_booking_id' => 'nullable|integer',
+        ]);
+
+        $checkIn = Carbon::parse($validated['check_in']);
+        $checkOut = Carbon::parse($validated['check_out']);
+
+        // Use the existing private helper
+        $isAvailable = $this->isRoomAvailableForPeriod(
+            $validated['room_id'],
+            $checkIn,
+            $checkOut,
+            $validated['exclude_booking_id']
+        );
+
+        return response()->json([
+            'success' => true,
+            'available' => $isAvailable,
+            'message' => $isAvailable ? 'Room is available.' : 'Room is already booked by another guest for the selected period.'
+        ]);
     }
 
     /**
@@ -626,6 +700,7 @@ class BookingController extends Controller
             'filters' => $request->only(['status', 'payment_status', 'check_in_status', 'search', 'type']),
             'stats' => $stats,
             'bookingType' => $bookingType,
+            'activePage' => 'admin/bookings',
         ]);
     }
 
@@ -658,7 +733,7 @@ class BookingController extends Controller
                 ],
                 'bookings' => $bookings->map(function($booking) {
                     $serviceRequests = $booking->serviceRequests()
-                        ->whereIn('status', ['approved', 'completed'])
+                        ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
                         ->get();
                     
                     $totalServiceChargesTsh = $serviceRequests->sum('total_price_tsh');
@@ -700,6 +775,12 @@ class BookingController extends Controller
                         'checked_out_at' => $booking->checked_out_at,
                         'special_requests' => $booking->special_requests,
                         'admin_notes' => $booking->admin_notes,
+                        'id_document_type' => $booking->id_document_type,
+                        'id_document_number' => $booking->id_document_number,
+                        'id_scan_path' => $booking->id_scan_path,
+                        'id_scan_back_path' => $booking->id_scan_back_path,
+                        'guest_signature_path' => $booking->guest_signature_path,
+                        'checkout_signature_path' => $booking->checkout_signature_path,
                         'locked_exchange_rate' => $booking->locked_exchange_rate,
                         'created_at' => $booking->created_at,
                         'updated_at' => $booking->updated_at,
@@ -765,7 +846,7 @@ class BookingController extends Controller
             }
             
             // Calculate service charges and paid services
-            $serviceRequests = $booking->serviceRequests()->whereIn('status', ['approved', 'completed'])->get();
+            $serviceRequests = $booking->serviceRequests()->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])->get();
             $totalServiceChargesTsh = $serviceRequests->sum('total_price_tsh');
             $paidServiceChargesTsh = $serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
             
@@ -981,6 +1062,28 @@ class BookingController extends Controller
             } catch (\Exception $e) {
                 \Log::error('Failed to send check-in emails to managers/admins: ' . $e->getMessage());
             }
+
+            // Send SMS notification to housekeepers for check-in
+            try {
+                $housekeepers = \App\Models\Staff::where('role', 'housekeeper')
+                    ->where('is_active', true)
+                    ->whereNotNull('phone')
+                    ->get();
+                
+                if ($housekeepers->isNotEmpty()) {
+                    $smsService = new SmsService();
+                    foreach ($housekeepers as $housekeeper) {
+                        $smsService->notifyHousekeeperCheckIn(
+                            $housekeeper->phone,
+                            $housekeeper->name,
+                            $booking->room->room_number ?? 'N/A',
+                            $booking->guest_name
+                        );
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to send check-in SMS to housekeepers: ' . $e->getMessage());
+            }
         } elseif ($request->check_in_status === 'checked_out') {
             // Check if there's outstanding balance before allowing checkout
             $currencyService = new CurrencyExchangeService();
@@ -988,7 +1091,7 @@ class BookingController extends Controller
             
             // Calculate total bill
             $serviceRequests = $booking->serviceRequests()
-                ->whereIn('status', ['approved', 'completed'])
+                ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
                 ->with('service')
                 ->get();
             
@@ -1073,6 +1176,19 @@ class BookingController extends Controller
                             \Log::error('Failed to send room cleaning notification: ' . $e->getMessage());
                         }
                     }
+
+                    // Send SMS notification for cleaning
+                    if ($housekeeper->phone) {
+                        try {
+                            (new SmsService())->notifyHousekeeperCheckout(
+                                $housekeeper->phone,
+                                $housekeeper->name,
+                                $booking->room->room_number ?? 'N/A'
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to send checkout SMS to housekeeper: ' . $e->getMessage());
+                        }
+                    }
                 }
             }
         }
@@ -1110,7 +1226,7 @@ class BookingController extends Controller
             } catch (\Exception $e) {
                 \Log::error('Failed to send check-out emails to managers/admins: ' . $e->getMessage());
             }
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Guest checked out successfully. Room status changed to "Needs Cleaning".',
@@ -1177,7 +1293,7 @@ class BookingController extends Controller
         // Recalculate total service charges for each active booking to ensure accuracy
         foreach ($activeBookings as $booking) {
             $calculatedTotal = $booking->serviceRequests()
-                ->whereIn('status', ['approved', 'completed'])
+                ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
                 ->sum('total_price_tsh');
             
             // Update if different (fixes any existing data inconsistencies)
@@ -1233,6 +1349,15 @@ class BookingController extends Controller
             $checkInDate = \Carbon\Carbon::parse($booking->check_in);
             $checkOutDate = \Carbon\Carbon::parse($booking->check_out);
             
+            // Calculate when the room becomes unavailable for extension
+            $nextBooking = Booking::where('room_id', $booking->room_id)
+                ->where('id', '!=', $booking->id)
+                ->where('check_in', '>=', $booking->check_out)
+                ->whereIn('status', ['confirmed', 'pending'])
+                ->orderBy('check_in', 'asc')
+                ->first();
+            $booking->available_until = $nextBooking ? $nextBooking->check_in : null;
+
             // Set check-in time (default 2:00 PM if arrival_time not specified)
             if ($booking->arrival_time) {
                 $timeParts = explode(':', $booking->arrival_time);
@@ -1515,7 +1640,7 @@ class BookingController extends Controller
                 if ($booking->payment_responsibility === 'self') {
                     // Check for self-paid services (including room_charge ones)
                     $allServiceRequests = $booking->serviceRequests()
-                        ->whereIn('status', ['approved', 'completed'])
+                        ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
                         ->get();
                     
                     $paidServiceRequests = $allServiceRequests->where('payment_status', 'paid');
@@ -1721,6 +1846,28 @@ class BookingController extends Controller
             Mail::to($booking->guest_email)->send(new \App\Mail\CheckInConfirmationMail($booking->fresh(), $wifiPassword, $wifiNetworkName));
         } catch (\Exception $e) {
             \Log::error('Failed to send check-in confirmation email: ' . $e->getMessage());
+        }
+
+        // Send SMS notification to housekeepers for guest self check-in
+        try {
+            $housekeepers = \App\Models\Staff::where('role', 'housekeeper')
+                ->where('is_active', true)
+                ->whereNotNull('phone')
+                ->get();
+            
+            if ($housekeepers->isNotEmpty()) {
+                $smsService = new SmsService();
+                foreach ($housekeepers as $housekeeper) {
+                    $smsService->notifyHousekeeperCheckIn(
+                        $housekeeper->phone,
+                        $housekeeper->name,
+                        $booking->room->room_number ?? 'N/A',
+                        $booking->guest_name
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to send check-in SMS to housekeepers (self check-in): ' . $e->getMessage());
         }
 
         return response()->json([
@@ -2170,7 +2317,7 @@ class BookingController extends Controller
         // Additional charges include: services, extensions, transportation
         
         $serviceRequests = $booking->serviceRequests()
-            ->whereIn('status', ['approved', 'completed'])
+            ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
             ->with('service')
             ->get();
 
@@ -2285,6 +2432,15 @@ class BookingController extends Controller
             'extension_reason' => 'nullable|string|max:500',
         ]);
 
+        // Check availability for the NEW period (check_in to new_check_out)
+        // We exclude the current booking from the check
+        if (!$this->isRoomAvailableForPeriod($booking->room_id, $booking->check_in, $validated['extension_requested_to'], $booking->id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The room is already booked by another guest for the requested extension period.',
+            ], 400);
+        }
+
         // Calculate additional nights
         $originalCheckOut = Carbon::parse($booking->check_out);
         $newCheckOut = Carbon::parse($validated['extension_requested_to']);
@@ -2349,25 +2505,22 @@ class BookingController extends Controller
             \Log::error('Failed to queue extension request submitted email: ' . $e->getMessage());
         }
 
-        // Send email notification to managers and super admins for extension request
+        // Notify reception via SMS (Instead of email for faster response)
         try {
-            $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
-                ->where('is_active', true)
-                ->get();
-            
-                foreach ($managersAndAdmins as $staff) {
-                    // Check if user has notifications enabled
-                    if ($staff->isNotificationEnabled('extension_request')) {
-                        try {
-                            \Illuminate\Support\Facades\Mail::to($staff->email)
-                                ->send(new \App\Mail\StaffExtensionRequestMail($booking->fresh()->load('room'), 'submitted'));
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send extension request email to staff: ' . $staff->email . ' - ' . $e->getMessage());
-                        }
-                    }
+            $smsService = new \App\Services\SmsService();
+            foreach ($receptionUsers as $staff) {
+                if ($staff->phone) {
+                    $smsService->sendExtensionRequestSms(
+                        $staff->phone,
+                        $currentUser->name ?? 'Guest',
+                        $booking->room->room_number ?? 'N/A',
+                        $newCheckOut->format('M d, Y'),
+                        'extension'
+                    );
                 }
+            }
         } catch (\Exception $e) {
-            \Log::error('Failed to send extension request emails to managers/admins: ' . $e->getMessage());
+            \Log::error('Failed to send extension request SMS to reception: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -2487,8 +2640,22 @@ class BookingController extends Controller
                     'link' => route('admin.bookings.show', $booking),
                 ]);
             }
+
+            // Notify reception via SMS
+            $smsService = new \App\Services\SmsService();
+            foreach ($receptionUsers as $staff) {
+                if ($staff->phone) {
+                    $smsService->sendExtensionRequestSms(
+                        $staff->phone,
+                        $currentUser->name ?? 'Guest',
+                        $booking->room->room_number ?? 'N/A',
+                        $newCheckOut->format('M d, Y'),
+                        'decrease'
+                    );
+                }
+            }
         } catch (\Exception $e) {
-            \Log::error('Failed to create decrease notification: ' . $e->getMessage());
+            \Log::error('Failed to create decrease notification or SMS: ' . $e->getMessage());
         }
 
         // Calculate nights difference for frontend display
@@ -2526,6 +2693,16 @@ class BookingController extends Controller
         $newCheckOut = Carbon::parse($validated['new_check_out']);
         $checkIn = Carbon::parse($booking->check_in);
 
+        // Check availability for the NEW period (check_in to new_check_out)
+        // We only need to check if we are extending or if it's a significant change
+        // But running it always is safer and it will correctly ignore the current booking
+        if (!$this->isRoomAvailableForPeriod($booking->room_id, $checkIn, $newCheckOut, $booking->id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The room is already booked by another guest for the selected period.',
+            ], 400);
+        }
+
         // Validate new check-out date
         if ($newCheckOut->lte($checkIn)) {
             return response()->json([
@@ -2539,18 +2716,21 @@ class BookingController extends Controller
             $booking->update(['original_check_out' => $booking->check_out]);
         }
 
-        // Calculate price difference
-        $room = $booking->room;
+        // Calculate stay difference
         $currentNights = $checkIn->diffInDays($currentCheckOut);
         $newNights = $checkIn->diffInDays($newCheckOut);
         $nightsDifference = $newNights - $currentNights;
-        $priceDifference = $room->price_per_night * $nightsDifference;
+        $priceDifference = ($booking->room->price_per_night ?? 0) * $nightsDifference;
 
         // Update booking
         $updateData = [
             'check_out' => $validated['new_check_out'],
-            'total_price' => max(0, $booking->total_price + $priceDifference),
         ];
+
+        // If extending, adjust price. If decreasing, NO price adjustment (as requested: "no refund").
+        if ($nightsDifference > 0) {
+            $updateData['total_price'] = $booking->total_price + $priceDifference;
+        }
 
         // If extending, set extension status to approved
         if ($nightsDifference > 0) {
@@ -2619,12 +2799,143 @@ class BookingController extends Controller
             }
         }
 
+        if ($newCheckOut->gt($currentCheckOut)) {
+            $message = "Booking extended by {$nightsDifference} night(s). Additional cost: $" . number_format($priceDifference, 2);
+        } elseif ($newCheckOut->lt($currentCheckOut)) {
+            $message = "Booking stay decreased. Note: No refund or price adjustment applied.";
+        } else {
+            $message = "Booking details updated successfully.";
+        }
+
         return response()->json([
             'success' => true,
-            'message' => $nightsDifference > 0 
-                ? "Booking extended by {$nightsDifference} night(s). Additional cost: $" . number_format($priceDifference, 2)
-                : "Booking decreased by " . abs($nightsDifference) . " night(s). Refund: $" . number_format(abs($priceDifference), 2),
+            'message' => $message,
             'booking' => $booking->fresh()->load('room'),
+        ]);
+    }
+
+    /**
+     * Bulk modify dates for all checked-in bookings of a company (Manager/Reception)
+     */
+    public function modifyCompanyGroupDates(Request $request, \App\Models\Company $company)
+    {
+        // Verify user is staff (manager or reception)
+        $user = auth()->guard('staff')->user();
+        if (!$user || !in_array(strtolower($user->role ?? ''), ['manager', 'reception', 'super_admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only staff can modify group dates.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'new_check_out' => 'required|date',
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $newCheckOutDate = \Carbon\Carbon::parse($validated['new_check_out']);
+        
+        // Find all checked-in bookings for this company
+        $bookings = \App\Models\Booking::where('company_id', $company->id)
+            ->where('is_corporate_booking', true)
+            ->where('check_in_status', 'checked_in')
+            ->with('room')
+            ->get();
+
+        if ($bookings->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No checked-in bookings found for this company group.',
+            ], 400);
+        }
+
+        // Validate that NEW check-out is after each booking's check-in
+        foreach ($bookings as $booking) {
+            if ($newCheckOutDate->lte(\Carbon\Carbon::parse($booking->check_in))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Check-out date must be after check-in date for guest: {$booking->guest_name}.",
+                ], 400);
+            }
+        }
+
+        // Check availability for all rooms in the group if extending
+        foreach ($bookings as $booking) {
+            $currentCheckOut = \Carbon\Carbon::parse($booking->check_out);
+            $checkIn = \Carbon\Carbon::parse($booking->check_in);
+            
+            if ($newCheckOutDate->gt($currentCheckOut)) {
+                if (!$this->isRoomAvailableForPeriod($booking->room_id, $checkIn, $newCheckOutDate, $booking->id)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Room {$booking->room->room_number} ({$booking->guest_name}) is already booked by another guest for the selected extension period.",
+                    ], 400);
+                }
+            }
+        }
+
+        $totalPriceDifference = 0;
+        $updatedCount = 0;
+        $nightsDifferenceSummary = 0;
+
+        // Capture original date for message before loop completes
+        $firstBooking = $bookings->first();
+        $originalCheckOutForMsg = \Carbon\Carbon::parse($firstBooking->getOriginal('check_out') ?? $firstBooking->check_out);
+
+        foreach ($bookings as $booking) {
+            $currentCheckOut = \Carbon\Carbon::parse($booking->check_out);
+            $checkIn = \Carbon\Carbon::parse($booking->check_in);
+            
+            // Store original checkout if not already stored
+            if (!$booking->original_check_out) {
+                $booking->original_check_out = $booking->check_out;
+            }
+
+            // Calculate price difference
+            $room = $booking->room;
+            $currentNights = $checkIn->diffInDays($currentCheckOut);
+            $newNights = $checkIn->diffInDays($newCheckOutDate);
+            $nightsDifference = $newNights - $currentNights;
+            $priceDifference = ($room->price_per_night ?? 0) * $nightsDifference;
+            
+            $totalPriceDifference += $priceDifference;
+            $nightsDifferenceSummary = $nightsDifference;
+
+            // Update booking
+            $updateData = [
+                'check_out' => $validated['new_check_out'],
+                'original_check_out' => $booking->original_check_out,
+                'extension_status' => $nightsDifference > 0 ? 'approved' : null,
+                'extension_requested_to' => $nightsDifference > 0 ? $validated['new_check_out'] : null,
+                'extension_approved_at' => $nightsDifference > 0 ? now() : null,
+            ];
+
+            // If extending, adjust price. If decreasing, NO price adjustment.
+            if ($nightsDifference > 0) {
+                $updateData['total_price'] = $booking->total_price + $priceDifference;
+            }
+
+            if ($nightsDifference > 0 && $validated['reason']) {
+                $updateData['extension_admin_notes'] = $validated['reason'];
+            }
+
+            $booking->update($updateData);
+            $updatedCount++;
+        }
+
+        if ($newCheckOutDate->gt($originalCheckOutForMsg)) {
+            $msg = "Group stay extended by " . abs($nightsDifferenceSummary) . " night(s) for {$updatedCount} guests. Total price adjustment: $" . number_format($totalPriceDifference, 2);
+        } elseif ($newCheckOutDate->lt($originalCheckOutForMsg)) {
+            $msg = "Group stay decreased for {$updatedCount} guests. Note: No refund or price adjustment applied.";
+        } else {
+            $msg = "Group stay updated. No changes to stay duration detected.";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $msg,
+            'updated_count' => $updatedCount,
+            'total_adjustment' => $newCheckOutDate->gt($originalCheckOutForMsg) ? $totalPriceDifference : 0
         ]);
     }
 
@@ -2653,6 +2964,14 @@ class BookingController extends Controller
                 ? Carbon::parse($booking->original_check_out) 
                 : Carbon::parse($booking->check_out);
             $newCheckOut = Carbon::parse($booking->extension_requested_to);
+
+            // Double check availability before final approval
+            if (!$this->isRoomAvailableForPeriod($booking->room_id, $booking->check_in, $newCheckOut, $booking->id)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot approve: The room is already booked by another guest for the requested period.',
+                ], 400);
+            }
             
             // Use signed difference to determine type
             $nightsDifference = $originalCheckOut->diffInDays($newCheckOut, false);
@@ -2739,7 +3058,7 @@ class BookingController extends Controller
                 \Log::error('Failed to create approval notification: ' . $e->getMessage());
             }
 
-            // Send email notification (queued for async processing)
+            // Send email notification to guest (Queued)
             try {
                 \Illuminate\Support\Facades\Mail::to($booking->guest_email)
                     ->queue(new \App\Mail\ExtensionRequestStatusMail($booking->fresh()->load('room'), 'approved'));
@@ -2747,26 +3066,23 @@ class BookingController extends Controller
                 \Log::error('Failed to queue extension approved email: ' . $e->getMessage());
             }
 
-            // Send email notification to managers and super admins for extension approval
+            // Send SMS notification to guest (Faster)
             try {
-                $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
-                    ->where('is_active', true)
-                    ->get();
-                
-                    foreach ($managersAndAdmins as $staff) {
-                        // Check if user has notifications enabled
-                        if ($staff->isNotificationEnabled('extension_request')) {
-                            try {
-                                \Illuminate\Support\Facades\Mail::to($staff->email)
-                                    ->send(new \App\Mail\StaffExtensionRequestMail($booking->fresh()->load('room'), 'approved'));
-                            } catch (\Exception $e) {
-                                \Log::error('Failed to send extension approval email to staff: ' . $staff->email . ' - ' . $e->getMessage());
-                            }
-                        }
-                    }
+                if ($booking->guest_phone) {
+                    $smsService = new \App\Services\SmsService();
+                    $smsService->sendExtensionStatusSms(
+                        $booking->guest_phone,
+                        $booking->guest_name,
+                        $newCheckOut->format('M d, Y'),
+                        'approved'
+                    );
+                }
             } catch (\Exception $e) {
-                \Log::error('Failed to send extension approval emails to managers/admins: ' . $e->getMessage());
+                \Log::error('Failed to send extension approval SMS: ' . $e->getMessage());
             }
+
+            // Note: Staff email notifications removed for faster response (O(n) SMTP delay eliminated).
+            // Staff can track this action via the dashboard system.
 
             return response()->json([
                 'success' => true,
@@ -2835,7 +3151,7 @@ class BookingController extends Controller
                 \Log::error('Failed to create rejection notification: ' . $e->getMessage());
             }
 
-            // Send email notification (queued for async processing)
+            // Send email notification to guest (Queued)
             try {
                 \Illuminate\Support\Facades\Mail::to($booking->guest_email)
                     ->queue(new \App\Mail\ExtensionRequestStatusMail($booking->fresh()->load('room'), 'rejected'));
@@ -2843,26 +3159,22 @@ class BookingController extends Controller
                 \Log::error('Failed to queue extension rejected email: ' . $e->getMessage());
             }
 
-            // Send email notification to managers and super admins for extension rejection
+            // Send SMS notification to guest (Faster)
             try {
-                $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
-                    ->where('is_active', true)
-                    ->get();
-                
-                foreach ($managersAndAdmins as $staff) {
-                    // Check if user has notifications enabled
-                    if ($staff->isNotificationEnabled('extension_request')) {
-                        try {
-                            \Illuminate\Support\Facades\Mail::to($staff->email)
-                                ->send(new \App\Mail\StaffExtensionRequestMail($booking->fresh()->load('room'), 'rejected'));
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send extension rejection email to staff: ' . $staff->email . ' - ' . $e->getMessage());
-                        }
-                    }
+                if ($booking->guest_phone) {
+                    $smsService = new \App\Services\SmsService();
+                    $smsService->sendExtensionStatusSms(
+                        $booking->guest_phone,
+                        $booking->guest_name,
+                        $newCheckOut->format('M d, Y'), // Use the requested date in the message context
+                        'rejected'
+                    );
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to send extension rejection emails to managers/admins: ' . $e->getMessage());
+                \Log::error('Failed to send extension rejection SMS: ' . $e->getMessage());
             }
+
+            // Note: Staff email notifications removed for faster response.
 
             return response()->json([
                 'success' => true,
@@ -2946,9 +3258,12 @@ class BookingController extends Controller
                 'payment_method' => 'required|in:online,cash,bank,mobile,card,other',
                 'payment_provider' => 'required_if:payment_method,mobile,bank,card,online|nullable|string|max:255',
                 'payment_reference' => 'required_if:payment_method,online,bank,mobile,card,other|nullable|string|max:255',
-                'amount_paid' => 'required|numeric|min:0',
-                'total_price' => 'required|numeric|min:0',
-                'recommended_price' => 'nullable|numeric|min:0',
+                'amount_paid'          => 'required|numeric|min:0',
+                'total_price'          => 'required|numeric|min:0',
+                'recommended_price'    => 'nullable|numeric|min:0',
+                'custom_exchange_rate' => 'nullable|numeric|min:100|max:10000000',
+                'rate_source'          => 'nullable|string|in:manual,booking.com,bank,paypal,agoda,expedia,airbnb,other',
+                'exchange_rate_note'   => 'nullable|string|max:500',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -2984,9 +3299,15 @@ class BookingController extends Controller
         $checkOut = Carbon::parse($validated['check_out']);
         $nights = $checkIn->diffInDays($checkOut);
 
-        // Get exchange rate
-        $currencyService = new CurrencyExchangeService();
-        $lockedExchangeRate = $currencyService->getUsdToTshRate();
+        // Get exchange rate — prefer staff override if provided
+        $currencyService    = new CurrencyExchangeService();
+        $systemRate         = $currencyService->getUsdToTshRate();
+        $customRate         = !empty($request->input('custom_exchange_rate'))
+                                ? (float) $request->input('custom_exchange_rate')
+                                : null;
+        $lockedExchangeRate = $customRate ?? $systemRate;
+        $rateSource         = $request->input('rate_source') ?? null;
+        $exchangeRateNote   = $request->input('exchange_rate_note') ?? null;
 
         // Create or find company
         $company = \App\Models\Company::firstOrCreate(
@@ -3134,8 +3455,13 @@ class BookingController extends Controller
                     'guest_id' => $guestId,
                     'company_id' => $company->id,
                     'payment_responsibility' => $paymentResponsibility,
-                    'is_corporate_booking' => true,
-                    'locked_exchange_rate' => $lockedExchangeRate,
+                    'is_corporate_booking'           => true,
+                    'locked_exchange_rate'            => $lockedExchangeRate,
+                    'rate_source'                     => $rateSource,
+                    'exchange_rate_note'              => $exchangeRateNote,
+                    'original_exchange_rate'          => $customRate ? $systemRate : null,
+                    'exchange_rate_overridden_by'      => $customRate ? (auth()->guard('staff')->user()->name ?? 'Staff') : null,
+                    'exchange_rate_overridden_at'      => $customRate ? now() : null,
                 ]);
 
                 $createdBookings[] = $booking;
@@ -3308,36 +3634,80 @@ class BookingController extends Controller
                 return $b->payment_responsibility === 'self';
             })->sum('amount_paid');
 
+            // Generate Corporate PDF Invoice
+            $corporatePdfData = null;
+            try {
+                $corporatePdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.pdf-company-invoice', [
+                    'company' => $company,
+                    'bookings' => $createdBookings,
+                    'companyCharges' => $totalCompanyCost,
+                    'selfPaidCharges' => $totalSelfPaidCost,
+                    'totalCompanyPaid' => $totalCompanyPaid,
+                    'checkIn' => $checkIn,
+                    'checkOut' => $checkOut,
+                    'nights' => $nights,
+                    'generalNotes' => $generalNotes
+                ]);
+                $corporatePdfData = $corporatePdf->output();
+            } catch (\Exception $e) {
+                \Log::error('Corporate PDF generation failed in storeCorporate: ' . $e->getMessage());
+            }
+
             // Send booking confirmation emails to all guests (with updated payment info)
+            $smsService = new \App\Services\SmsService();
             foreach ($createdBookings as $index => $booking) {
                 try {
-                    // Get guest password from createdGuests array
-                    $guestPassword = null;
-                    if (isset($createdGuests[$index])) {
-                        $nameParts = explode(' ', $booking->guest_name);
-                        $guestPassword = strtoupper($nameParts[0]);
-                    } else {
-                        // Fallback: generate from booking guest name
-                        $nameParts = explode(' ', $booking->guest_name);
-                        $guestPassword = strtoupper($nameParts[0]);
-                    }
+                    // Get guest password
+                    $nameParts = explode(' ', $booking->guest_name);
+                    $guestPassword = strtoupper($nameParts[0]);
                     
                     $bookingPaymentPercentage = $booking->payment_percentage ?? 0;
                     $bookingRemainingAmount = $booking->total_price - ($booking->amount_paid ?? 0);
                     
+                    // Generate individual PDF receipt for the guest
+                    $guestPdfData = null;
+                    try {
+                        $guestPdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.pdf-individual-invoice', [
+                            'booking' => $booking,
+                            'password' => $guestPassword,
+                            'paymentPercentage' => round($bookingPaymentPercentage, 1),
+                            'remainingAmount' => $bookingRemainingAmount
+                        ]);
+                        $guestPdfData = $guestPdf->output();
+                    } catch (\Exception $ge) {
+                        \Log::error('Guest PDF generation failed in storeCorporate: ' . $ge->getMessage());
+                    }
+
                     Mail::to($booking->guest_email)->send(new BookingConfirmationMail(
                         $booking,
                         $guestPassword,
                         $bookingPaymentPercentage,
-                        $bookingRemainingAmount
+                        $bookingRemainingAmount,
+                        $generalNotes,
+                        $guestPdfData
                     ));
                     
                     \Log::info('Corporate booking confirmation email sent to guest', [
                         'booking_reference' => $booking->booking_reference,
                         'guest_email' => $booking->guest_email
                     ]);
+
+                    // Send SMS to guest
+                    try {
+                        $smsService->sendBookingConfirmation(
+                            $booking->guest_phone,
+                            $booking->guest_name,
+                            $booking->booking_reference,
+                            $checkIn->format('Y-m-d'),
+                            $checkOut->format('Y-m-d'),
+                            $booking->room->room_number
+                        );
+                    } catch (\Exception $se) {
+                        \Log::error('Guest SMS failed in storeCorporate: ' . $se->getMessage());
+                    }
+
                 } catch (\Exception $e) {
-                    \Log::error('Failed to send booking confirmation email to guest', [
+                    \Log::error('Failed to process guest notification in storeCorporate', [
                         'booking_reference' => $booking->booking_reference,
                         'guest_email' => $booking->guest_email,
                         'error' => $e->getMessage()
@@ -3355,7 +3725,8 @@ class BookingController extends Controller
                     $totalCompanyPaid,
                     $checkIn,
                     $checkOut,
-                    $generalNotes
+                    $generalNotes,
+                    $corporatePdfData
                 ));
                 \Log::info('Company invoice email sent', [
                     'company_email' => $validated['company_email'],
@@ -3382,6 +3753,16 @@ class BookingController extends Controller
                     'guider_email' => $validated['guider_email'],
                     'guider_name' => $validated['guider_name']
                 ]);
+
+                // Send SMS to guider/leader
+                try {
+                    $smsMessage = "Dear {$validated['guider_name']}, the corporate booking for {$company->name} is CONFIRMED. "
+                        . count($createdBookings) . " guests, Check-in: " . $checkIn->format('Y-m-d') . ". Ref: " . $company->name;
+                    $smsService->sendSingle($validated['guider_phone'], $smsMessage);
+                } catch (\Exception $se) {
+                    \Log::error('Guider SMS failed in storeCorporate: ' . $se->getMessage());
+                }
+
             } catch (\Exception $e) {
                 \Log::error('Failed to send guider confirmation email', [
                     'guider_email' => $validated['guider_email'],
@@ -3764,7 +4145,10 @@ class BookingController extends Controller
             'amount_paid' => 'required|numeric|min:0',
             'payment_method' => 'required|in:online,cash,bank,mobile,card,other',
             'payment_provider' => 'required_if:payment_method,mobile,bank,card,online|nullable|string|max:255',
-            'payment_reference' => 'required_if:payment_method,online,bank,mobile,card,other|nullable|string|max:255',
+            'payment_reference'     => 'required_if:payment_method,online,bank,mobile,card,other|nullable|string|max:255',
+            'custom_exchange_rate'  => 'nullable|numeric|min:100|max:10000000',
+            'rate_source'           => 'nullable|string|in:manual,booking.com,bank,paypal,agoda,expedia,airbnb,other',
+            'exchange_rate_note'    => 'nullable|string|max:500',
         ]);
 
         // For Tanzanian guests, set nationality to Tanzania if not provided
@@ -3824,9 +4208,15 @@ class BookingController extends Controller
         // Generate unique guest ID
         $guestId = $this->generateGuestId();
 
-        // Get exchange rate
-        $currencyService = new CurrencyExchangeService();
-        $lockedExchangeRate = $currencyService->getUsdToTshRate();
+        // Get exchange rate — prefer staff override if provided
+        $currencyService    = new CurrencyExchangeService();
+        $systemRate         = $currencyService->getUsdToTshRate();
+        $customRate         = !empty($request->input('custom_exchange_rate'))
+                                ? (float) $request->input('custom_exchange_rate')
+                                : null;
+        $lockedExchangeRate = $customRate ?? $systemRate;
+        $rateSource         = $request->input('rate_source') ?? null;
+        $exchangeRateNote   = $request->input('exchange_rate_note') ?? null;
 
         // Calculate payment deadline based on new policy
         $daysUntilArrival = Carbon::now()->diffInDays($checkIn, false);
@@ -3876,9 +4266,6 @@ class BookingController extends Controller
         // Determine payment status
         $paymentStatus = $paymentPercentage >= 100 ? 'paid' : 'partial';
 
-        // Determine payment status
-        $paymentStatus = $paymentPercentage >= 100 ? 'paid' : 'partial';
-
         // Create the booking
         $booking = Booking::create([
             'room_id' => $room->id,
@@ -3908,8 +4295,28 @@ class BookingController extends Controller
             'booking_reference' => $bookingReference,
             'guest_id' => $guestId,
             'payment_deadline' => $paymentDeadline,
-            'locked_exchange_rate' => $lockedExchangeRate,
+            'locked_exchange_rate'          => $lockedExchangeRate,
+            'rate_source'                    => $rateSource,
+            'exchange_rate_note'             => $exchangeRateNote,
+            // Audit: record override details if staff used a custom rate
+            'original_exchange_rate'         => $customRate ? $systemRate : null,
+            'exchange_rate_overridden_by'     => $customRate ? (auth()->guard('staff')->user()->name ?? 'Staff') : null,
+            'exchange_rate_overridden_at'     => $customRate ? now() : null,
         ]);
+
+        // Generate PDF receipt for attachment
+        $pdfData = null;
+        try {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.pdf-individual-invoice', [
+                'booking' => $booking->load('room'),
+                'password' => $password,
+                'paymentPercentage' => round($paymentPercentage, 1),
+                'remainingAmount' => $remainingAmount
+            ]);
+            $pdfData = $pdf->output();
+        } catch (\Exception $e) {
+            \Log::error('PDF generation failed in storeManual: ' . $e->getMessage());
+        }
 
         // Send booking confirmation email
         $emailSent = false;
@@ -3919,12 +4326,14 @@ class BookingController extends Controller
             $booking->load('room');
             
             // Send email immediately (not queued) to ensure it's sent right away
-            Mail::to($validated['guest_email'])->send(new BookingConfirmationMail($booking, $password, $paymentPercentage, $remainingAmount));
+            // Added pdfData as the 6th argument
+            Mail::to($validated['guest_email'])->send(new BookingConfirmationMail($booking, $password, $paymentPercentage, $remainingAmount, null, $pdfData));
             $emailSent = true;
             \Log::info('Manual booking confirmation email sent successfully', [
                 'booking_reference' => $bookingReference,
                 'guest_email' => $validated['guest_email'],
-                'guest_name' => $fullName
+                'guest_name' => $fullName,
+                'has_pdf' => !empty($pdfData)
             ]);
         } catch (\Exception $e) {
             $emailError = $e->getMessage();
@@ -3947,6 +4356,22 @@ class BookingController extends Controller
             ]);
             
             $emailError = $userFriendlyError;
+        }
+
+        // Send SMS notification
+        try {
+            $smsService = new \App\Services\SmsService();
+            $smsService->sendBookingConfirmation(
+                $validated['guest_phone'],
+                $fullName,
+                $bookingReference,
+                $checkIn->format('Y-m-d'),
+                $checkOut->format('Y-m-d'),
+                $room->room_number
+            );
+            \Log::info('Manual booking SMS sent successfully', ['booking_reference' => $bookingReference]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send manual booking SMS: ' . $e->getMessage());
         }
 
 
@@ -3980,7 +4405,8 @@ class BookingController extends Controller
                     'trace' => $e->getTraceAsString()
                 ]);
             }
-        } else {
+        }
+ else {
             \Log::info('Welcome email skipped - guest already exists', [
                 'booking_reference' => $bookingReference,
                 'guest_email' => $validated['guest_email'],
@@ -4164,48 +4590,63 @@ class BookingController extends Controller
             ->orderBy('check_in', 'desc')
             ->first();
 
-        // 1. Get available drinks and calculate stock levels
-        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'wines', 'cocktails', 'hot_beverages'];
+        // 1. Get available drinks and calculate stock levels using robust logic
+        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'wine', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'hot_beverages', 'bar', 'restaurant'];
         
-        // Fetch all completed transfers to build historical stock
         $allTransfers = \App\Models\StockTransfer::where('status', 'completed')->get();
-        // Fetch all completed sales to deduct from stock
         $allSales = \App\Models\ServiceRequest::where('status', 'completed')
-            ->whereHas('service', function($q) use ($barCategories) {
-                $q->whereIn('category', $barCategories);
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($query) use ($barCategories) {
+                    $query->whereIn('category', $barCategories);
+                })->orWhereIn('service_id', [3, 4]);
             })->get();
 
-        // Build a stock mapping [variant_id => current_stock_in_pics]
+        $allVariants = \App\Models\ProductVariant::all();
         $stockLevels = [];
+        
+        // Initialize with Opening Stock
+        foreach ($allVariants as $variant) {
+            $stockLevels[$variant->id] = (float)($variant->opening_stock ?? 0);
+        }
+
+        // Add Completed Transfers
         foreach ($allTransfers as $t) {
             $vid = $t->product_variant_id;
-            if (!isset($stockLevels[$vid])) $stockLevels[$vid] = 0;
+            if (!isset($stockLevels[$vid])) continue;
             
             $itemsPerPkg = $t->productVariant->items_per_package ?? 1;
             $pics = ($t->quantity_unit === 'packages') ? ($t->quantity_transferred * $itemsPerPkg) : $t->quantity_transferred;
-            $stockLevels[$vid] += $pics;
+            $stockLevels[$vid] += (float)$pics;
         }
 
+        // Subtract Completed Sales
         foreach ($allSales as $s) {
             $meta = $s->service_specific_data;
-            $vid = $meta['product_variant_id'] ?? null;
-            if ($vid && isset($stockLevels[$vid])) {
+            if (!isset($meta['product_variant_id'])) continue;
+            
+            $vid = (int)$meta['product_variant_id']; // Fix: explicit cast to int
+            if (isset($stockLevels[$vid])) {
                 $variant = \App\Models\ProductVariant::find($vid);
                 if ($variant) {
-                    $unitPrice = (float)$s->unit_price_tsh;
-                    $isPicSale = abs($unitPrice - (float)$variant->selling_price_per_pic) < 100;
-                    if ($isPicSale) {
-                        $stockLevels[$vid] -= $s->quantity;
+                    $unitPrice = (float)($s->total_price_tsh);
+                    $actualQty = (float)($s->quantity ?? 1);
+                    $itemPrice = (float)($variant->selling_price_per_pic ?? 0);
+                    
+                    // Match the selling method if possible
+                    $method = $meta['selling_method'] ?? 'pic';
+                    if ($method === 'pic' || $method === 'bottle') {
+                        $stockLevels[$vid] -= $actualQty;
                     } else {
-                        $servingsPerPic = $variant->servings_per_pic > 0 ? $variant->servings_per_pic : 1;
-                        $stockLevels[$vid] -= ($s->quantity / $servingsPerPic);
+                        $ratio = $variant->servings_per_pic > 0 ? (float)$variant->servings_per_pic : 1;
+                        $stockLevels[$vid] -= ($actualQty / $ratio);
                     }
                 }
             }
         }
 
-        // Only show products that have at least one variant with stock > 0
+        // Only show products that aren't generic placeholders
         $products = \App\Models\Product::whereIn('category', $barCategories)
+            ->where('name', 'NOT LIKE', '%Generic%')
             ->with(['variants'])
             ->get();
 
@@ -4253,8 +4694,9 @@ class BookingController extends Controller
                     }
                 }
 
-                if (!empty($options)) {
-                    $currentStock = $stockLevels[$variant->id] ?? 0;
+                $currentStock = $stockLevels[$variant->id] ?? 0;
+
+                if (!empty($options) && $currentStock > 0.05) {  // Only show if visibly in stock
                     // Use variant name if available, otherwise product name
                     $displayName = $variant->variant_name ?: $product->name;
                     $displayName .= ($variant->measurement ? ' (' . $variant->measurement . ')' : '');
@@ -4263,11 +4705,11 @@ class BookingController extends Controller
                         'id' => $product->id,
                         'variant_id' => $variant->id,
                         'name' => $displayName,
-                        'is_product' => true, // Flag to distinguish
-                        'category' => $product->category,
-                        'image' => $variant->image ?: $product->image, // Also prioritize variant image
+                        'is_product' => true,
+                        'category' => $product->category_name, // Fixed: Using accessor for human-readable name
+                        'image' => $variant->image ?: $product->image,
                         'options' => $options,
-                        'in_stock' => $currentStock > 0,
+                        'in_stock' => true,
                         'current_stock' => $currentStock,
                         'servings_per_pic' => $variant->servings_per_pic > 0 ? (float)$variant->servings_per_pic : 1
                     ];
@@ -4281,6 +4723,9 @@ class BookingController extends Controller
             ->get();
 
         foreach ($serviceDrinks as $service) {
+            // Filter out generic orders and zero-priced items
+            if (str_contains(strtolower($service->name), 'generic') || $service->price_tsh <= 0) continue;
+
             $alreadyAdded = false;
             foreach ($drinks as $drink) {
                 // Determine if this service matches an existing product in the list (fuzzy match)
@@ -4289,21 +4734,18 @@ class BookingController extends Controller
                     break;
                 }
             }
-
+            
             if (!$alreadyAdded) {
-                // Ensure structured options for service-based drinks
-                $options = [[
-                    'type' => 'Unit',
-                    'method' => 'pic',
-                    'price' => (float)$service->price_tsh
-                ]];
+                // If it's a specific drink named 'Henes', check its stock even if it's in the Service table
+                $relatedProduct = \App\Models\Product::where('name', 'LIKE', '%' . $service->name . '%')->first();
+                if ($relatedProduct) {
+                    $variant = $relatedProduct->variants->first();
+                    if ($variant && ($stockLevels[$variant->id] ?? 0) <= 0.05) continue;
+                }
 
                 $drinks[] = (object)[
                     'id' => $service->id,
-                    'variant_id' => null, // Services don't have variants
                     'name' => $service->name,
-                    'is_product' => false,
-                    'item_type' => 'Unit',
                     'category' => $service->category,
                     'price_tsh' => (float)$service->price_tsh,
                     'image' => null,
@@ -4333,7 +4775,25 @@ class BookingController extends Controller
             ];
         }
 
-        return view('dashboard.customer-restaurant', compact('activeBooking', 'drinks', 'foodItems'));
+        // Real drink categories pulled from actual data
+        $realDrinkCategories = collect($drinks)
+            ->pluck('category')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+
+        // Real food categories pulled from actual recipes
+        $realFoodCategories = collect($foodItems)
+            ->pluck('category')
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values()
+            ->toArray();
+
+        return view('dashboard.customer-restaurant', compact('activeBooking', 'drinks', 'foodItems', 'realDrinkCategories', 'realFoodCategories'));
     }
 
     /**
@@ -4395,4 +4855,364 @@ class BookingController extends Controller
 
         return response()->json($companies);
     }
+
+    /**
+     * Show the form for creating a quick invoice
+     */
+    /**
+     * Show the list of created invoices (pending bookings with INV/CINV prefix)
+     */
+    public function invoicesList()
+    {
+        $baseQuery = Booking::where('status', 'pending')
+            ->where(function($query) {
+                $query->where('booking_reference', 'LIKE', 'INV%')
+                      ->orWhere('booking_reference', 'LIKE', 'CINV%');
+            });
+
+        $invoices = (clone $baseQuery)
+            ->with(['room', 'company'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(100); // Increased page size for easier tab filtering
+
+        $totalIndividual = (clone $baseQuery)->where('is_corporate_booking', false)->count();
+        $totalCorporate = (clone $baseQuery)->where('is_corporate_booking', true)->count();
+
+        $currencyService = new \App\Services\CurrencyExchangeService();
+        $exchangeRate = $currencyService->getUsdToTshRate();
+
+        return view('dashboard.reception.invoices-list', [
+            'invoices' => $invoices,
+            'exchangeRate' => $exchangeRate,
+            'totalIndividual' => $totalIndividual,
+            'totalCorporate' => $totalCorporate
+        ]);
+    }
+
+    public function createInvoice()
+    {
+        $roomTypes = Room::select('room_type')
+            ->distinct()
+            ->orderBy('room_type')
+            ->pluck('room_type');
+        
+        $currencyService = new \App\Services\CurrencyExchangeService();
+        $exchangeRate = $currencyService->getUsdToTshRate();
+        
+        // Determine role
+        $routeName = request()->route()->getName() ?? '';
+        $role = str_starts_with($routeName, 'reception.') ? 'reception' : 'admin';
+        
+        return view('dashboard.create-invoice', [
+            'roomTypes' => $roomTypes,
+            'role' => $role,
+            'exchangeRate' => $exchangeRate
+        ]);
+    }
+
+    /**
+     * Store and send a quick invoice
+     */
+    public function storeInvoice(Request $request)
+    {
+        $validated = $request->validate([
+            'invoice_type' => 'required|in:individual,corporate',
+            'guest_name' => 'required_if:invoice_type,individual|nullable|string|max:255',
+            'company_name' => 'required_if:invoice_type,corporate|nullable|string|max:255',
+            'company_id' => 'nullable|exists:companies,id',
+            'corporate_guest_name' => 'nullable|string|max:255',
+            'guest_email' => 'required|email|max:255',
+            'guest_phone' => 'required|string|max:255',
+            'check_in' => 'required|date|after_or_equal:today',
+            'check_out' => 'required|date|after:check_in',
+            'room_type' => 'required|string',
+            'room_id' => 'nullable|exists:rooms,id',
+            'number_of_rooms' => 'required|integer|min:1',
+            'total_price' => 'required|numeric|min:0',
+            'custom_exchange_rate' => 'nullable|numeric|min:100|max:10000000',
+            'exchange_rate_note' => 'nullable|string',
+            'notes' => 'nullable|string',
+        ]);
+
+        $isCorporate = $validated['invoice_type'] === 'corporate';
+        $fullName = $isCorporate ? ($validated['corporate_guest_name'] ?? $validated['company_name']) : $validated['guest_name'];
+        
+        // Handle Company Record if Corporate
+        $company = null;
+        if ($isCorporate) {
+            if ($validated['company_id']) {
+                $company = \App\Models\Company::find($validated['company_id']);
+            } else {
+                $company = \App\Models\Company::firstOrCreate(
+                    ['email' => $validated['guest_email']],
+                    [
+                        'name' => $validated['company_name'],
+                        'phone' => $validated['guest_phone'],
+                        'address' => 'N/A'
+                    ]
+                );
+            }
+        }
+
+        // Extract first name for password
+        $nameParts = explode(' ', $fullName);
+        $firstName = $nameParts[0]; 
+        $password = strtoupper($firstName);
+
+        // Guest logic
+        $guest = Guest::firstOrNew(['email' => $validated['guest_email']]);
+        if (!$guest->exists) {
+            $guest->name = $fullName;
+            $guest->email = $validated['guest_email'];
+            $guest->password = $password; 
+            $guest->phone = $validated['guest_phone'];
+            $guest->is_active = true;
+            $guest->save();
+        }
+
+        // Find a room for Reference
+        $room = null;
+        if (!empty($validated['room_id'])) {
+            $room = Room::find($validated['room_id']);
+        }
+
+        if (!$room) {
+            $room = Room::where('room_type', $validated['room_type'])
+                ->where('status', 'available')
+                ->first() ?? Room::where('room_type', $validated['room_type'])->first();
+        }
+
+        if (!$room) {
+            return response()->json(['success' => false, 'message' => 'Room type not found'], 422);
+        }
+
+        $bookingReference = ($isCorporate ? 'CINV' : 'INV') . strtoupper(Str::random(8));
+        $guestId = $this->generateGuestId();
+
+        $currencyService = new \App\Services\CurrencyExchangeService();
+        $systemRate = $currencyService->getUsdToTshRate();
+        $customRate = !empty($validated['custom_exchange_rate']) ? (float)$validated['custom_exchange_rate'] : null;
+        $lockedExchangeRate = $customRate ?? $systemRate;
+
+        // Create Provisional Booking
+        $booking = Booking::create([
+            'room_id' => $room->id,
+            'company_id' => $isCorporate ? $company->id : null,
+            'is_corporate_booking' => $isCorporate,
+            'guest_name' => $fullName,
+            'first_name' => $firstName,
+            'last_name' => count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '',
+            'guest_email' => $validated['guest_email'],
+            'guest_phone' => $validated['guest_phone'],
+            'check_in' => $validated['check_in'],
+            'check_out' => $validated['check_out'],
+            'total_price' => $validated['total_price'],
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'booking_reference' => $bookingReference,
+            'guest_id' => $guestId,
+            'special_requests' => $validated['notes'],
+            'payment_deadline' => Carbon::now()->addHours(48),
+            'payment_responsibility' => $isCorporate ? 'company' : null,
+            'locked_exchange_rate' => $lockedExchangeRate,
+            'original_exchange_rate' => $systemRate,
+            'exchange_rate_note' => $customRate ? ($validated['exchange_rate_note'] ?? 'Overridden during quick invoice generation') : null,
+            'exchange_rate_overridden_by' => $customRate ? (auth()->guard('staff')->user()->name ?? 'Staff') : null,
+            'exchange_rate_overridden_at' => $customRate ? now() : null,
+        ]);
+
+        // ---------------------------------------------------------
+        // Generate PDF based on type
+        // ---------------------------------------------------------
+        $pdfData = null;
+        try {
+            if ($isCorporate) {
+                // Corporate Template
+                $nights = Carbon::parse($validated['check_in'])->diffInDays(Carbon::parse($validated['check_out']));
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.pdf-company-invoice', [
+                    'company' => $company,
+                    'bookings' => [$booking->load('room')], // Just this inquiry item
+                    'companyCharges' => $validated['total_price'],
+                    'selfPaidCharges' => 0,
+                    'totalCompanyPaid' => 0,
+                    'checkIn' => Carbon::parse($validated['check_in']),
+                    'checkOut' => Carbon::parse($validated['check_out']),
+                    'nights' => $nights,
+                    'generalNotes' => "PROFORMA INVOICE: " . $validated['notes'],
+                ]);
+            } else {
+                // Individual Template
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.pdf-individual-invoice', [
+                    'booking' => $booking->load('room'),
+                    'password' => $password,
+                    'paymentPercentage' => 0,
+                    'remainingAmount' => $validated['total_price']
+                ]);
+            }
+            $pdfData = $pdf->output();
+        } catch (\Exception $e) {
+            \Log::error('PDF generation failed in storeInvoice: ' . $e->getMessage());
+        }
+
+        // ---------------------------------------------------------
+        // Send Email & SMS
+        // ---------------------------------------------------------
+        // Send booking confirmation email
+        $emailSent = false;
+        $emailError = null;
+        try {
+            // Reload booking with room relationship to ensure it's available
+            $booking->load('room');
+            
+            $mailable = $isCorporate 
+                ? new \App\Mail\CompanyInvoiceMail($company, [$booking], $validated['total_price'], 0, 0, $validated['check_in'], $validated['check_out'], "Proforma Invoice: Quotation for " . $validated['number_of_rooms'] . " rooms.", $pdfData)
+                : new BookingConfirmationMail($booking, $password, 0, $validated['total_price'], "Proforma Invoice: This is a quotation based on your inquiry.", $pdfData);
+            
+            Mail::to($validated['guest_email'])->send($mailable);
+            $emailSent = true;
+            \Log::info('Invoice email sent successfully', [
+                'booking_reference' => $bookingReference,
+                'guest_email' => $validated['guest_email'],
+                'has_pdf' => !empty($pdfData)
+            ]);
+        } catch (\Exception $e) {
+            $emailError = $e->getMessage();
+            \Log::error('Invoice email failed: ' . $e->getMessage());
+        }
+
+        try {
+            $smsService = new \App\Services\SmsService();
+            $label = $isCorporate ? "Company Inquiry ({$company->name})" : "Inquiry";
+            $smsMessage = "Dear {$firstName}, we've sent your PrimeLand Hotel {$label} invoice to {$validated['guest_email']}. Ref: {$bookingReference}. Valid for 48h.";
+            $smsService->sendSingle($validated['guest_phone'], $smsMessage);
+        } catch (\Exception $e) {
+            \Log::error('Invoice SMS failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => ($isCorporate ? 'Corporate ' : 'Individual ') . 'Invoice sent successfully to ' . $validated['guest_email'],
+            'booking_reference' => $bookingReference
+        ]);
+    }
+
+    /**
+     * Generate a check-in token for mobile bridge
+     */
+    public function generateCheckInToken(Booking $booking)
+    {
+        $token = Str::random(32);
+        $booking->update([
+            'checkin_token' => $token,
+            'checkin_token_expires_at' => now()->addHours(2),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'url' => route('checkin.mobile.show', ['token' => $token])
+        ]);
+    }
+
+    /**
+     * Generate a checkout token for mobile bridge
+     */
+    public function generateCheckoutToken(Booking $booking)
+    {
+        $token = Str::random(32);
+        $booking->update([
+            'checkout_token' => $token,
+            'checkout_token_expires_at' => now()->addHours(2),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'url' => route('checkout.mobile.show', ['token' => $token])
+        ]);
+    }
+
+    /**
+     * Clear mobile submissions for resubmission
+     */
+    public function requestResubmission(Booking $booking)
+    {
+        $booking->update([
+            'id_document_type' => null,
+            'id_document_number' => null,
+            'id_scan_path' => null,
+            'id_scan_back_path' => null,
+            'guest_signature_path' => null,
+            'mobile_checkin_submitted_at' => null,
+            'identity_captured_at' => null,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Records cleared. Guest can now re-submit via mobile bridge.'
+        ]);
+    }
+
+    /**
+     * Get recent mobile submissions for monitoring
+     */
+    public function getRecentSubmissions(Request $request)
+    {
+        $since = $request->query('since');
+        if (!$since) {
+            return response()->json(['success' => true, 'submissions' => []]);
+        }
+
+        $submissions = Booking::where('mobile_checkin_submitted_at', '>', $since)
+            ->where('check_in_status', 'pending')
+            ->orderBy('mobile_checkin_submitted_at', 'desc')
+            ->get(['id', 'guest_name', 'booking_reference', 'mobile_checkin_submitted_at']);
+
+        return response()->json([
+            'success' => true,
+            'submissions' => $submissions
+        ]);
+    }
+
+    /**
+     * Download Invoice/Quotation PDF
+     */
+    public function downloadInvoice(Booking $booking)
+    {
+        $isCorporate = (bool)$booking->is_corporate_booking;
+        $password = strtoupper($booking->first_name ?: explode(' ', $booking->guest_name)[0]);
+        
+        try {
+            if ($isCorporate) {
+                $company = $booking->company;
+                $checkIn = \Carbon\Carbon::parse($booking->check_in);
+                $checkOut = \Carbon\Carbon::parse($booking->check_out);
+                $nights = $checkIn->diffInDays($checkOut);
+                
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.pdf-company-invoice', [
+                    'company' => $company,
+                    'bookings' => [$booking->load('room')],
+                    'companyCharges' => $booking->total_price,
+                    'selfPaidCharges' => 0,
+                    'totalCompanyPaid' => 0,
+                    'checkIn' => $checkIn,
+                    'checkOut' => $checkOut,
+                    'nights' => $nights,
+                    'generalNotes' => "PROFORMA INVOICE: " . $booking->special_requests,
+                ]);
+            } else {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('emails.pdf-individual-invoice', [
+                    'booking' => $booking->load('room'),
+                    'password' => $password,
+                    'paymentPercentage' => round($booking->payment_percentage ?? 0, 1),
+                    'remainingAmount' => $booking->total_price - ($booking->amount_paid ?? 0)
+                ]);
+            }
+            return $pdf->download($booking->booking_reference . '.pdf');
+        } catch (\Exception $e) {
+            \Log::error('PDF download failed: ' . $e->getMessage());
+            return back()->with('error', 'Could not generate PDF: ' . $e->getMessage());
+        }
+    }
 }
+

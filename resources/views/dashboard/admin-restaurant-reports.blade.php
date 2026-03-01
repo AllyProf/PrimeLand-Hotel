@@ -457,10 +457,10 @@
                 <strong>Location:</strong> Sokoine Road-Moshi Kilimanjaro-Tanzania
             </p>
             <p style="margin: 5px 0; font-size: 13px; color: #555;">
-                <strong>Mobile/WhatsApp:</strong> 0677-155-156 / +255 677-155-157
+                <strong>Mobile/WhatsApp:</strong> 0677-155-156
             </p>
             <p style="margin: 5px 0; font-size: 13px; color: #555;">
-                <strong>Email:</strong> info@primelandhotel.co.tz / infoprimelandhotel@gmail.com
+                <strong>Email:</strong> info@primelandhotel.com / infoprimelandhotel@gmail.com
             </p>
         </div>
         <p style="margin-top: 15px; font-size: 16px; font-weight: bold; color: #e07632;">Kitchen & Food Management Report</p>
@@ -756,7 +756,7 @@
         <p>This report has been generated automatically by the PrimeLand Hotel Management System.</p>
         <p style="margin-top: 15px;">This is an official report. Please keep this for your records.</p>
         <p style="margin-top: 10px; font-size: 9px;">Generated on: {{ now()->format('F d, Y \a\t g:i A') }}</p>
-        <p class="powered-by">Powered By <strong>EmCa Techonologies</strong></p>
+        <p class="powered-by">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
     </div>
 </div>
 

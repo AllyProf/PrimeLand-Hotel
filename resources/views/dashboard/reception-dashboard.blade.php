@@ -56,19 +56,19 @@
 <!-- Quick Integration Links -->
 <div class="row mb-3">
     <div class="col-md-6 col-lg-3">
-        <a href="{{ route('reception.service-requests') }}" style="text-decoration: none;">
+        <a href="{{ route('reception.orders.monitor') }}" style="text-decoration: none;">
             <div class="tile shadow-sm border-0 d-flex align-items-center bg-primary text-white p-3" style="border-radius: 12px; position: relative;">
-                @if(($stats['pending_requests'] ?? 0) > 0)
+                @if(($stats['active_orders_count'] ?? 0) > 0)
                 <span class="badge badge-danger" style="position: absolute; top: -8px; right: -8px; font-size: 14px; padding: 6px 10px; border-radius: 50%; min-width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                    {{ $stats['pending_requests'] ?? 0 }}
+                    {{ $stats['active_orders_count'] ?? 0 }}
                 </span>
                 @endif
                 <div class="mr-3 bg-white text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                    <i class="fa fa-concierge-bell fa-2x"></i>
+                    <i class="fa fa-cutlery fa-2x"></i>
                 </div>
                 <div>
-                    <h5 class="mb-0">Service Requests</h5>
-                    <p class="mb-0 small opacity-75">@if(($stats['pending_requests'] ?? 0) > 0) {{ $stats['pending_requests'] }} pending @else No pending requests @endif</p>
+                    <h5 class="mb-0">Pending Orders</h5>
+                    <p class="mb-0 small opacity-75">@if(($stats['active_orders_count'] ?? 0) > 0) {{ $stats['active_orders_count'] }} active orders @else All orders cleared @endif</p>
                 </div>
             </div>
         </a>
@@ -125,19 +125,7 @@
             </div>
         </a>
     </div>
-    <div class="col-md-6 col-lg-3">
-        <a href="{{ route('reception.bookings.manual.create') }}" style="text-decoration: none;">
-            <div class="tile shadow-sm border-0 d-flex align-items-center bg-primary text-white p-3" style="border-radius: 12px;">
-                <div class="mr-3 bg-white text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
-                    <i class="fa fa-plus fa-2x"></i>
-                </div>
-                <div>
-                    <h5 class="mb-0">New Booking</h5>
-                    <p class="mb-0 small opacity-75">Manual walk-in</p>
-                </div>
-            </div>
-        </a>
-    </div>
+
 </div>
 
 <!-- All Statistics (Collapsible) -->
@@ -157,26 +145,26 @@
         <div class="tile-body">
             <div class="row">
                 <div class="col-md-3">
-                    <div class="widget-small info coloured-icon"><i class="icon fa fa-concierge-bell fa-2x"></i>
+                    <div class="widget-small info coloured-icon"><i class="icon fa fa-television fa-2x"></i>
                         <div class="info">
-                            <h4>Service Requests</h4>
-                            <p><b>{{ $stats['today_requests'] ?? 0 }} today</b></p>
+                            <h4>Active Orders</h4>
+                            <p><b>{{ $stats['active_orders_count'] ?? 0 }} orders</b></p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="widget-small warning coloured-icon"><i class="icon fa fa-hourglass-half fa-2x"></i>
                         <div class="info">
-                            <h4>Pending Approved</h4>
-                            <p><b>{{ $stats['approved_requests'] ?? 0 }} requests</b></p>
+                            <h4>In Progress</h4>
+                            <p><b>{{ $stats['preparing_ready_count'] ?? 0 }} orders</b></p>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="widget-small primary coloured-icon"><i class="icon fa fa-dollar fa-2x"></i>
+                    <div class="widget-small info coloured-icon"><i class="icon fa fa-shopping-cart fa-2x"></i>
                         <div class="info">
-                            <h4>Total Revenue</h4>
-                            <p><b>{{ number_format($stats['total_revenue'] ?? 0, 0) }} TSH</b></p>
+                            <h4>Today's Volume</h4>
+                            <p><b>{{ $stats['today_orders_count'] ?? 0 }} total</b></p>
                         </div>
                     </div>
                 </div>
@@ -217,43 +205,57 @@
 
 <!-- Live Requests Tables -->
 <div class="row">
-    <!-- Pending Service Requests -->
+    <!-- Pending Orders Overview -->
     <div class="col-md-6">
         <div class="tile shadow-sm" style="border-radius: 12px; height: 100%;">
             <div class="tile-title-w-btn">
-                <h3 class="title"><i class="fa fa-exclamation-triangle text-warning"></i> Pending Services</h3>
-                <a href="{{ route('reception.service-requests') }}" class="btn btn-sm btn-primary">View All</a>
+                <h3 class="title"><i class="fa fa-television text-warning"></i> Pending Orders</h3>
+                <a href="{{ route('reception.orders.monitor') }}" class="btn btn-sm btn-primary">Monitor All</a>
             </div>
             <div class="tile-body">
-                @if($pendingRequests->count() > 0)
+                @if($activeOrders != null && $activeOrders->count() > 0)
                 <div class="table-responsive">
                     <table class="table table-sm table-hover">
                         <thead>
                             <tr>
-                                <th>Room</th>
-                                <th>Service</th>
-                                <th>Amount</th>
-                                <th>Action</th>
+                                <th>Loc</th>
+                                <th>Item</th>
+                                <th>Status</th>
+                                <th class="text-right">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($pendingRequests as $req)
-                            <tr>
-                                <td><strong>{{ $req->booking->room->room_number ?? 'Walk-in' }}</strong></td>
-                                <td>{{ $req->service->name }}</td>
-                                <td>{{ number_format($req->total_price_tsh, 0) }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-success p-1" onclick="quickApprove({{ $req->id }})" title="Approve"><i class="fa fa-check"></i></button>
+                            @foreach($activeOrders as $order)
+                            @php
+                                $statusClass = [
+                                    'pending' => 'badge-danger',
+                                    'approved' => 'badge-primary',
+                                    'preparing' => 'badge-info',
+                                    'ready' => 'badge-warning',
+                                    'completed' => 'badge-success',
+                                    'cancelled' => 'badge-secondary'
+                                ][$order->status] ?? 'badge-secondary';
+                            @endphp
+                            <tr style="{{ $order->payment_status !== 'paid' && $order->status === 'completed' ? 'background-color: #fff9f0;' : '' }}">
+                                <td><strong>{{ ($order->booking && $order->booking->room) ? $order->booking->room->room_number : 'W-in' }}</strong></td>
+                                <td title="{{ $order->service_specific_data['item_name'] ?? $order->service->name }}">
+                                    <small>{{ \Illuminate\Support\Str::limit($order->service_specific_data['item_name'] ?? $order->service->name, 20) }}</small>
                                 </td>
+                                <td><span class="badge {{ $statusClass }}" style="font-size: 0.65rem;">{{ strtoupper($order->status) }}</span></td>
+                                <td class="text-right"><small>{{ number_format($order->total_price_tsh, 0) }}</small></td>
                             </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
+                <!-- Pagination -->
+                <div class="mt-2 d-flex justify-content-center">
+                    {!! $activeOrders->appends(request()->except('orders_page'))->links() !!}
+                </div>
                 @else
                 <div class="text-center py-4">
                     <i class="fa fa-check-circle fa-3x text-success mb-2"></i>
-                    <p class="text-muted">No pending requests</p>
+                    <p class="text-muted">No pending orders</p>
                 </div>
                 @endif
             </div>

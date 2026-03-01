@@ -55,10 +55,10 @@ Best regards,
 ---
 
 **PrimeLand Hotel**  
-Mobile/WhatsApp: 0677-155-156 / +255 677-155-157  
-Email: info@primelandhotel.co.tz / infoprimelandhotel@gmail.com
+Mobile/WhatsApp: 0677-155-156  
+Email: info@primelandhotel.com / infoprimelandhotel@gmail.com
 
-© {{ date('Y') }} PrimeLand Hotel. All rights reserved.
+Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a>© {{ date('Y') }} PrimeLand Hotel. All rights reserved.
 </x-mail::message>
 
 

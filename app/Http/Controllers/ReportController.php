@@ -32,11 +32,8 @@ class ReportController extends Controller
      */
     public function index()
     {
+        $this->checkAccess();
         $user = Auth::guard('staff')->user() ?? Auth::guard('guest')->user();
-        
-        if (!$user) {
-            abort(403, 'Unauthorized access');
-        }
 
         // Get quick stats for today
         $today = Carbon::today();
@@ -123,6 +120,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'admin/reports/index',
+            'activeStatus' => 'reports',
             'exchangeRate' => $this->exchangeRate,
             'todayBookings' => $todayBookings,
             'todayRevenueUSD' => $todayRevenueUSD,
@@ -149,8 +148,8 @@ class ReportController extends Controller
             abort(403, 'Unauthorized access');
         }
 
-        // Managers and Super Admins have full access
-        if ($user->role === 'manager' || $user->role === 'super_admin') {
+        // Managers, Owners and Super Admins have full access
+        if ($user->role === 'manager' || $user->role === 'super_admin' || $user->role === 'owner') {
             return true;
         }
 
@@ -371,6 +370,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'revenue-breakdown',
+            'activeStatus' => 'reports',
             'reportType' => $reportType,
             'reportDate' => $reportDate,
             'startDate' => $startDate,
@@ -462,6 +463,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'profitability',
+            'activeStatus' => 'reports',
             'reportType' => $reportType,
             'reportDate' => $reportDate,
             'startDate' => $startDate,
@@ -605,6 +608,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'cash-flow',
+            'activeStatus' => 'reports',
             'reportType' => $reportType,
             'reportDate' => $reportDate,
             'startDate' => $startDate,
@@ -707,6 +712,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'revenue-breakdown',
+            'activeStatus' => 'reports',
             'exchangeRate' => $this->exchangeRate,
             'historicalRevenue' => $historicalRevenue,
             'averageGrowthRate' => round($averageGrowthRate, 2),
@@ -828,6 +835,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'reports/general',
+            'activeStatus' => 'reports',
             'reportType' => $reportType,
             'reportDate' => $reportDate,
             'startDate' => $startDate,
@@ -957,6 +966,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'daily-operations',
+            'activeStatus' => 'reports',
             'selectedDate' => $selectedDate,
             'exchangeRate' => $this->exchangeRate,
             'todayNewBookings' => $todayNewBookings,
@@ -964,11 +975,11 @@ class ReportController extends Controller
             'todayCheckIns' => $todayCheckIns,
             'todayCheckOuts' => $todayCheckOuts,
             'todayRevenueTZS' => $todayRevenueTZS, // Booking Revenue
-        'grandTotalRevenueTZS' => $grandTotalRevenueTZS,
-        'barRevenueTZS' => $barRevenueTZS,
-        'kitchenRevenueTZS' => $kitchenRevenueTZS,
-        'otherServiceRevenueTZS' => $otherServiceRevenueTZS,
-        'todayServiceRequestsCount' => $todayServiceRequestsCount,
+            'grandTotalRevenueTZS' => $grandTotalRevenueTZS,
+            'barRevenueTZS' => $barRevenueTZS,
+            'kitchenRevenueTZS' => $kitchenRevenueTZS,
+            'otherServiceRevenueTZS' => $otherServiceRevenueTZS,
+            'todayServiceRequestsCount' => $todayServiceRequestsCount,
             'todayServiceRequestsCompleted' => $todayServiceRequestsCompleted,
             'todayServiceRevenueTZS' => $todayServiceRevenueTZS,
             'todayDayServicesCount' => $todayDayServicesCount,
@@ -1121,6 +1132,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'daily-operations',
+            'activeStatus' => 'reports',
             'weekStartDate' => $weekStartDate,
             'weekEndDate' => $weekEndDate,
             'exchangeRate' => $this->exchangeRate,
@@ -1244,6 +1257,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'room-occupancy',
+            'activeStatus' => 'reports',
             'period' => $period,
             'startDate' => $start->format('Y-m-d'),
             'endDate' => $end->format('Y-m-d'),
@@ -1344,6 +1359,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'bookings/performance',
+            'activeStatus' => 'reports',
             'period' => $period,
             'startDate' => $start->format('Y-m-d'),
             'endDate' => $end->format('Y-m-d'),
@@ -1472,6 +1489,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'reports/general',
+            'activeStatus' => 'reports',
             'period' => $period,
             'startDate' => $start->format('Y-m-d'),
             'endDate' => $end->format('Y-m-d'),
@@ -1582,6 +1601,140 @@ class ReportController extends Controller
     }
 
     /**
+     * Payment Platform Detailed Report
+     */
+    public function paymentPlatformReport(Request $request)
+    {
+        $this->checkAccess();
+        
+        $platform = strtolower($request->get('platform', 'mobile'));
+        $reportType = $request->get('report_type', 'monthly');
+        $reportDate = $request->get('date', today()->format('Y-m-d'));
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+
+        $dateRange = $this->calculateDateRange($reportType, $reportDate, $startDate, $endDate);
+        $start = $dateRange['start'];
+        $end = $dateRange['end'];
+
+        // Define platform mapping
+        $mapping = [
+            'mobile' => ['mobile', 'mpesa', 'halo', 'tigo', 'airtel', 'halopesa', 'mixx', 'yass', 'mobile_money'],
+            'bank' => ['bank', 'nmb', 'crdb', 'kcb', 'nbc', 'dtb'],
+            'card' => ['card', 'visa', 'mastercard', 'master card'],
+            'online' => ['online', 'expedia', 'booking', 'booking.com', 'agoda', 'airbnb'],
+            'cash' => ['cash']
+        ];
+
+        $targetMethods = $mapping[$platform] ?? [$platform];
+
+        // 1. Fetch Room Booking Transactions
+        $bookings = Booking::whereBetween('created_at', [$start, $end])
+            ->whereIn('payment_status', ['paid', 'partial'])
+            ->whereNotNull('amount_paid')
+            ->where(function($q) use ($targetMethods, $platform) {
+                foreach($targetMethods as $m) {
+                    $q->orWhere('payment_method', 'like', "%{$m}%");
+                }
+            })
+            ->get();
+
+        // 2. Fetch Service Request Transactions
+        $servicesQuery = ServiceRequest::whereBetween('completed_at', [$start, $end])
+            ->where('payment_status', 'paid');
+
+        if ($request->has('waiter')) {
+            $waiterName = $request->get('waiter');
+            $servicesQuery->where('reception_notes', 'like', "%Waiter: {$waiterName}%");
+        } else {
+            $servicesQuery->where(function($q) use ($targetMethods) {
+                foreach($targetMethods as $m) {
+                    $q->orWhere('payment_method', 'like', "%{$m}%");
+                }
+            });
+        }
+        $services = $servicesQuery->get();
+
+        // 3. Fetch Day Service Transactions
+        $dayServices = DayService::whereBetween('service_date', [$start, $end])
+            ->where('payment_status', 'paid')
+            ->where(function($q) use ($targetMethods) {
+                foreach($targetMethods as $m) {
+                    $q->orWhere('payment_method', 'like', "%{$m}%");
+                }
+            })
+            ->get();
+
+        // Combine into a generic "transaction" collection for the view
+        $transactions = collect();
+
+        foreach ($bookings as $b) {
+            $transactions->push([
+                'date' => $b->paid_at ?? $b->created_at,
+                'source' => 'Room Booking',
+                'description' => "Booking #{$b->booking_reference} - {$b->guest_name}",
+                'method' => $b->payment_method,
+                'amount_tsh' => ($b->amount_paid ?? 0) * ($b->locked_exchange_rate ?? $this->exchangeRate),
+                'amount_usd' => ($b->amount_paid ?? 0),
+                'link' => route('admin.bookings.show', $b->id)
+            ]);
+        }
+
+        foreach ($services as $s) {
+            $transactions->push([
+                'date' => $s->completed_at ?? $s->created_at,
+                'source' => $s->service_type === 'restaurant' ? 'Restaurant' : ($s->service_type === 'bar' ? 'Bar' : 'Service'),
+                'description' => "Order #{$s->id} - " . ($s->room_number ? "Room {$s->room_number}" : "Walk-in"),
+                'method' => $s->payment_method,
+                'amount_tsh' => $s->total_price_tsh,
+                'amount_usd' => $this->exchangeRate > 0 ? ($s->total_price_tsh / $this->exchangeRate) : 0,
+                'link' => route('reception.orders.monitor', ['search' => $s->id])
+            ]);
+        }
+
+        foreach ($dayServices as $ds) {
+            $transactions->push([
+                'date' => $ds->service_date,
+                'source' => 'Day Service',
+                'description' => "{$ds->service_name} - {$ds->guest_name}",
+                'method' => $ds->payment_method,
+                'amount_tsh' => $ds->exchange_rate ? ($ds->amount_paid * $ds->exchange_rate) : $ds->amount_paid,
+                'amount_usd' => $ds->exchange_rate ? $ds->amount_paid : ($this->exchangeRate > 0 ? $ds->amount_paid / $this->exchangeRate : 0),
+                'link' => '#'
+            ]);
+        }
+
+        $transactions = $transactions->sortByDesc('date');
+
+        $user = Auth::guard('staff')->user() ?? Auth::guard('guest')->user();
+        
+        $totalTZS = $transactions->sum('amount_tsh');
+        $totalUSD = $transactions->sum('amount_usd');
+
+        if ($request->ajax()) {
+            return view('dashboard.reports.partials.payment_platform_table', [
+                'platform' => $platform,
+                'transactions' => $transactions,
+                'totalTZS' => $totalTZS,
+                'totalUSD' => $totalUSD,
+                'dateRange' => $dateRange
+            ]);
+        }
+
+        return view('dashboard.reports.payment-platform-details', array_merge($this->getReportBaseData(), [
+            'platform' => $platform,
+            'transactions' => $transactions,
+            'reportType' => $reportType,
+            'reportDate' => $reportDate,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'dateRange' => $dateRange,
+            'totalTZS' => $totalTZS,
+            'totalUSD' => $totalUSD,
+        ]));
+    }
+
+    /**
      * Bar Sales Analysis Report
      */
     public function barSalesAnalysis(Request $request)
@@ -1618,6 +1771,8 @@ class ReportController extends Controller
             'role' => $user->role ?? 'manager',
             'userName' => $user->name ?? 'Manager',
             'userRole' => ucfirst($user->role ?? 'Manager'),
+            'activePage' => 'admin/reports/index',
+            'activeStatus' => 'reports',
             'exchangeRate' => $this->exchangeRate,
         ];
     }

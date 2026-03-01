@@ -82,54 +82,41 @@
             $cardBgColor = '';
             $cardBorderColor = '';
             
-            if ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning') {
-              $statusClass = 'needs-cleaning';
-              $statusBadge = 'warning';
-              $statusIcon = 'fa-exclamation-circle';
-              $statusText = 'Needs Cleaning';
-              $cardBgColor = '#fff3cd'; // Light yellow background
-              $cardBorderColor = '#ffc107'; // Yellow border
-            } elseif ($roomStatus === 'occupied' || $room->currentBooking) {
-              $statusClass = 'occupied';
-              $statusBadge = 'info';
-              $statusIcon = 'fa-user';
-              $statusText = 'Occupied';
-              $cardBgColor = '#d1ecf1'; // Light blue background
-              $cardBorderColor = '#17a2b8'; // Blue border
-            } elseif ($roomStatus === 'available') {
-              $statusClass = 'available';
-              $statusBadge = 'success';
-              $statusIcon = 'fa-check-circle';
-              $statusText = 'Available';
-              $cardBgColor = '#d4edda'; // Light green background
-              $cardBorderColor = '#28a745'; // Green border
-            } elseif ($roomStatus === 'maintenance') {
+            if ($roomStatus === 'maintenance') {
               $statusClass = 'maintenance';
               $statusBadge = 'danger';
               $statusIcon = 'fa-wrench';
               $statusText = 'Maintenance';
               $cardBgColor = '#f8d7da'; // Light red background
               $cardBorderColor = '#dc3545'; // Red border
+            } elseif ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning') {
+              $statusClass = 'needs-cleaning';
+              $statusBadge = 'warning';
+              $statusIcon = 'fa-exclamation-circle';
+              $statusText = 'Needs Cleaning';
+              $cardBgColor = '#fff3cd'; // Light yellow background
+              $cardBorderColor = '#ffc107'; // Yellow border
+            } elseif ($room->currentBooking) {
+              $statusClass = 'occupied';
+              $statusBadge = 'info';
+              $statusIcon = 'fa-user';
+              $statusText = 'Occupied';
+              $cardBgColor = '#d1ecf1'; // Light blue background
+              $cardBorderColor = '#17a2b8'; // Blue border
             } else {
-              $statusClass = 'other';
-              $statusBadge = 'secondary';
-              $statusIcon = 'fa-bed';
-              $statusText = ucfirst(str_replace('_', ' ', $roomStatus));
-              $cardBgColor = '#e9ecef'; // Light gray background
-              $cardBorderColor = '#6c757d'; // Gray border
+              $statusClass = 'available';
+              $statusBadge = 'success';
+              $statusIcon = 'fa-check-circle';
+              $statusText = 'Available';
+              $cardBgColor = '#d4edda'; // Light green background
+              $cardBorderColor = '#28a745'; // Green border
             }
             
-            // Get room image - try to find the first image that actually exists
             // Get room image - just take the first one and let browser handle 404 via onerror
             $roomImage = null;
             if ($room->images && is_array($room->images) && count($room->images) > 0) {
                 $firstImage = $room->images[0];
                 $roomImage = asset('storage/' . ltrim($firstImage, '/'));
-            }
-            
-            // Fallback to placeholder if no valid image found
-            if (!$roomImage) {
-                $roomImage = asset('dashboard_assets/images/room-placeholder.jpg');
             }
             
             // Get check-in/check-out info
@@ -160,7 +147,7 @@
                 $isAboutToCheckOut = $hoursUntilCheckout >= 0 && $hoursUntilCheckout <= 24;
               }
               $guestName = $room->currentBooking->guest_name;
-            } elseif ($room->lastCheckout && $roomStatus !== 'available') {
+            } elseif ($room->lastCheckout && ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning')) {
               // Only show last checkout info if the room is NOT yet available (i.e., it needs cleaning)
               if ($room->lastCheckout->checked_out_at) {
                 $checkOutDateTime = \Carbon\Carbon::parse($room->lastCheckout->checked_out_at);
@@ -198,10 +185,17 @@
             <div class="card room-status-card h-100" 
                  style="box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; background-color: {{ $cardBgColor }}; border: 3px solid {{ $cardBorderColor }} !important;">
               <!-- Room Image -->
-              <div class="room-image-container" style="height: 180px; overflow: hidden; position: relative; background: #f0f0f0;">
-                <img src="{{ $roomImage }}" alt="Room {{ $room->room_number }}" 
-                     style="width: 100%; height: 100%; object-fit: cover;"
-                     onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
+              <div class="room-image-container" style="height: 180px; overflow: hidden; position: relative; background: #f8f9fa;">
+                @if($roomImage)
+                  <img src="{{ $roomImage }}" alt="Room {{ $room->room_number }}" 
+                       style="width: 100%; height: 100%; object-fit: cover;"
+                       onerror="this.parentElement.innerHTML += '<div class=\'w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted\'><i class=\'fa fa-bed fa-4x mb-2\' style=\'opacity: 0.3;\'></i><span class=\'small\' style=\'font-size: 10px; letter-spacing: 1px; opacity: 0.5;\'>NO IMAGE</span></div>'; this.style.display=\'none\';">
+                @else
+                  <div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted">
+                    <i class="fa fa-bed fa-4x mb-2" style="opacity: 0.3;"></i>
+                    <span class="small" style="font-size: 10px; letter-spacing: 1px; opacity: 0.5;">NO IMAGE</span>
+                  </div>
+                @endif
                 <!-- Status Badge Overlay -->
                 <div class="room-status-badge" style="position: absolute; top: 10px; right: 10px;">
                   @if($isAboutToCheckOut)

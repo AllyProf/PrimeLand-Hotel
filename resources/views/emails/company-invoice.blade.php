@@ -17,32 +17,16 @@ Thank you for your corporate booking at PrimeLand Hotel. This email contains you
 
 **Check-in:** {{ \Carbon\Carbon::parse($checkIn)->format('F d, Y') }}  
 **Check-out:** {{ \Carbon\Carbon::parse($checkOut)->format('F d, Y') }}  
-**Number of Nights:** {{ \Carbon\Carbon::parse($checkIn)->diffInDays($checkOut) }} night(s)  
+**Number of Nights:** {{ $nights }} night(s)  
 **Total Guests:** {{ count($bookings) }} guest(s)
 
-## Cost Breakdown
+## Financial Summary
 
-**Company Charges:** ${{ number_format($companyCharges, 2) }}  
-**Self-Paid Charges:** ${{ number_format($selfPaidCharges, 2) }}  
-**Total Booking Value:** ${{ number_format($companyCharges + $selfPaidCharges, 2) }}  
-**Total Company Amount Paid:** ${{ number_format($totalCompanyPaid, 2) }}  
-**Company Balance Due:** ${{ number_format($companyCharges - $totalCompanyPaid, 2) }}
+**Total Group Value:** ${{ number_format($companyCharges + $selfPaidCharges, 2) }}  
+**Total Amount Paid:** ${{ number_format($totalCompanyPaid, 2) }}  
+**Overall Balance Due:** ${{ number_format(($companyCharges + $selfPaidCharges) - $totalCompanyPaid, 2) }}
 
-## Guest Details
-
-@foreach($bookings as $booking)
-**{{ $booking->guest_name }}**
-- Room: {{ $booking->room->room_number }} ({{ $booking->room->room_type }})
-- Email: {{ $booking->guest_email }}
-- Payment Responsibility: {{ $booking->payment_responsibility === 'company' ? 'Company Paid' : 'Self-Paid' }}
-- Amount: ${{ number_format($booking->total_price, 2) }}
-- Amount Paid: ${{ number_format($booking->amount_paid ?? 0, 2) }}
-- Booking Reference: {{ $booking->booking_reference }}
-@if($booking->special_requests)
-- Special Requests: {{ $booking->special_requests }}
-@endif
-
-@endforeach
+Please find the attached **Corporate Booking Invoice (PDF)** for the full detailed breakdown of guest rooms, individual costs, and payment responsibilities.
 
 @if($generalNotes)
 ## General Notes

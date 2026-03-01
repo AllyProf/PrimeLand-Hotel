@@ -15,13 +15,15 @@ class PaymentConfirmationMail extends Mailable
     use Queueable, SerializesModels;
 
     public $booking;
+    protected $pdfData;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(Booking $booking)
+    public function __construct(Booking $booking, $pdfData = null)
     {
         $this->booking = $booking->load('room');
+        $this->pdfData = $pdfData;
     }
 
     /**
@@ -51,6 +53,15 @@ class PaymentConfirmationMail extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        $attachments = [];
+
+        if ($this->pdfData) {
+            $attachments[] = \Illuminate\Mail\Mailables\Attachment::fromData(
+                fn () => $this->pdfData,
+                'Payment_Receipt_' . $this->booking->booking_reference . '.pdf'
+            )->withMime('application/pdf');
+        }
+
+        return $attachments;
     }
 }

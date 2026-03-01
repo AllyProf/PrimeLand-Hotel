@@ -306,7 +306,7 @@
         </div>
         
         <div class="footer" style="margin-top: 50px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; color: #777; font-size: 9px;">
-            <p style="margin-bottom: 5px;">Generated on {{ now()->format('d M Y H:i A') }} | Powered By <span style="color: #940000; font-weight: bold;">EmCa Technologies</span></p>
+            <p style="margin-bottom: 5px;">Generated on {{ now()->format('d M Y H:i A') }} | Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
         </div>
     </div>
     

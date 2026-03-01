@@ -90,6 +90,16 @@ Route::get('/gallery', function () {
     return view('landing_page_views.gallery', ['images' => $images]);
 })->name('gallery.index');
 
+// Mobile Bridge Check-In/Out
+Route::get('/check-in/m/{token}', [App\Http\Controllers\MobileCheckInController::class, 'show'])->name('checkin.mobile.show');
+Route::post('/check-in/m/{token}', [App\Http\Controllers\MobileCheckInController::class, 'submit'])->name('checkin.mobile.submit');
+
+Route::get('/check-out/m/{token}', [App\Http\Controllers\MobileCheckInController::class, 'showCheckout'])->name('checkout.mobile.show');
+Route::post('/check-out/m/{token}', [App\Http\Controllers\MobileCheckInController::class, 'submitCheckout'])->name('checkout.mobile.submit');
+
+Route::get('/check-in/status/{id}', [App\Http\Controllers\MobileCheckInController::class, 'checkStatus'])->name('checkin.mobile.status');
+Route::post('/check-in/status/{id}/clear', [App\Http\Controllers\MobileCheckInController::class, 'clearSignature'])->name('checkin.mobile.clear-signature');
+
 // Blog route removed - blog functionality disabled
 // Route::get('/blog', function () {
 //     $posts = \App\Models\BlogPost::published()
@@ -110,6 +120,9 @@ Route::get('/gallery', function () {
 Route::get('/contact', function () {
     return view('landing_page_views.contact');
 });
+
+// Public Guest Services Menu (QR code landing page — no auth required)
+Route::get('/hotel/services', [RoomController::class, 'guestServicesMenu'])->name('guest.services.menu');
 
 // Newsletter Subscription Route
 Route::post('/newsletter/subscribe', [\App\Http\Controllers\NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
@@ -157,6 +170,9 @@ Route::get('/login/resend-otp', [AuthController::class, 'resendOtp'])->name('log
 
 // Password Reset Routes
 Route::post('/forgot-password', [\App\Http\Controllers\PasswordResetController::class, 'forgotPassword'])->name('password.forgot');
+Route::post('/resend-otp', [\App\Http\Controllers\PasswordResetController::class, 'resendOtp'])->name('password.resend_otp');
+Route::post('/verify-otp', [\App\Http\Controllers\PasswordResetController::class, 'verifyOtp'])->name('password.verify_otp');
+Route::post('/reset-password', [\App\Http\Controllers\PasswordResetController::class, 'resetPassword'])->name('password.reset_final');
 
 // Manager Dashboard Routes (previously Admin)
 Route::prefix('manager')->group(function () {
@@ -170,15 +186,20 @@ Route::prefix('manager')->group(function () {
     
     // Protected routes (require authentication)
     // Use 'check.auth' instead of 'auth' to support custom guards (staff/guest)
-    Route::middleware(['check.auth', 'role:manager,super_admin'])->group(function () {
+    Route::middleware(['check.auth', 'role:manager,super_admin,owner'])->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\AdminController::class, 'dashboard'])->name('admin.dashboard');
+        
+        Route::get('/messaging', [\App\Http\Controllers\SmsDashboardController::class, 'index'])->name('manager.sms.index');
+        Route::post('/messaging/send', [\App\Http\Controllers\SmsDashboardController::class, 'send'])->name('manager.sms.send');
+        Route::post('/messaging/bulk-send', [\App\Http\Controllers\SmsDashboardController::class, 'bulkSend'])->name('manager.sms.bulk-send');
+
         
         // Users Management (Sensitive)
         Route::get('/users', [\App\Http\Controllers\AdminController::class, 'users'])->name('admin.users');
     });
 
     // Shared management routes (accessible by manager and reception)
-    Route::middleware(['check.auth', 'role:manager,reception,super_admin'])->group(function () {
+    Route::middleware(['check.auth', 'role:manager,reception,super_admin,owner'])->group(function () {
         // Payments (Common access)
         Route::get('/payments', [\App\Http\Controllers\AdminController::class, 'payments'])->name('admin.payments');
         Route::get('/payments/reports', [\App\Http\Controllers\AdminController::class, 'paymentReports'])->name('admin.payments.reports');
@@ -188,6 +209,7 @@ Route::prefix('manager')->group(function () {
         Route::get('/reports/index', [\App\Http\Controllers\ReportController::class, 'index'])->name('admin.reports.index');
         // General Hotel Reports
         Route::get('/reports/revenue-breakdown', [\App\Http\Controllers\ReportController::class, 'revenueBreakdown'])->name('admin.reports.revenue-breakdown');
+        Route::get('/reports/payment-platform-report', [\App\Http\Controllers\ReportController::class, 'paymentPlatformReport'])->name('admin.reports.payment-platform-report');
         Route::get('/reports/profitability', [\App\Http\Controllers\ReportController::class, 'profitability'])->name('admin.reports.profitability');
         Route::get('/reports/cash-flow', [\App\Http\Controllers\ReportController::class, 'cashFlow'])->name('admin.reports.cash-flow');
         Route::get('/reports/revenue-forecast', [\App\Http\Controllers\ReportController::class, 'revenueForecast'])->name('admin.reports.revenue-forecast');
@@ -231,6 +253,7 @@ Route::prefix('manager')->group(function () {
         Route::get('/rooms/{room}/edit', [RoomController::class, 'edit'])->name('admin.rooms.edit');
         Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('admin.rooms.update');
         Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('admin.rooms.destroy');
+        Route::get('/rooms/qr-generator', [RoomController::class, 'qrGenerator'])->name('admin.rooms.qr-generator');
         
         // Room Issues management
         Route::get('/room-issues', [\App\Http\Controllers\HousekeeperController::class, 'roomIssues'])->name('admin.rooms.issues');
@@ -278,13 +301,14 @@ Route::prefix('manager')->group(function () {
     });
 }); // end of manager prefix group
 
-// Kitchen & Food Management (Accessible by Manager & Head Chef)
+// Kitchen & Food Management (Accessible by Manager, Head Chef & Reception for MONITORING)
 // This group is at the top level (no /manager prefix)
-    Route::prefix('restaurant/food')->middleware(['check.auth', 'role:manager,head_chef,super_admin'])->group(function () {
+    Route::prefix('restaurant/food')->middleware(['check.auth', 'role:manager,head_chef,reception,bar_keeper,super_admin'])->group(function () {
     Route::get('/orders', [\App\Http\Controllers\KitchenOrderController::class, 'index'])->name('admin.restaurants.kitchen.orders');
     Route::get('/orders/history', [\App\Http\Controllers\KitchenOrderController::class, 'history'])->name('admin.restaurants.kitchen.orders.history');
     Route::post('/orders/{serviceRequest}/preparing', [\App\Http\Controllers\KitchenOrderController::class, 'startPreparation'])->name('admin.restaurants.kitchen.orders.preparing');
     Route::post('/orders/{serviceRequest}/complete', [\App\Http\Controllers\KitchenOrderController::class, 'complete'])->name('admin.restaurants.kitchen.orders.complete');
+    Route::post('/orders/complete-group', [\App\Http\Controllers\KitchenOrderController::class, 'completeGroup'])->name('admin.restaurants.kitchen.orders.complete-group');
     Route::get('/orders/{serviceRequest}/print-docket', [\App\Http\Controllers\KitchenOrderController::class, 'printDocket'])->name('admin.restaurants.kitchen.orders.print-docket');
     Route::get('/orders/print-group', [\App\Http\Controllers\KitchenOrderController::class, 'printGroupDocket'])->name('admin.restaurants.kitchen.orders.print-group');
     Route::post('/orders/{serviceRequest}/cancel', [\App\Http\Controllers\KitchenOrderController::class, 'cancelOrder'])->name('admin.restaurants.kitchen.orders.cancel');
@@ -382,9 +406,10 @@ Route::prefix('manager')->group(function () {
     });
 
     // Mirror Bookings and common operations for Reception and Manager
-    Route::middleware(['check.auth', 'role:manager,reception,super_admin'])->group(function () {
+    Route::middleware(['check.auth', 'role:manager,reception,super_admin,owner,head_chef'])->group(function () {
         // Search routes for returning guests and companies
         Route::get('/bookings/search/guests', [BookingController::class, 'searchGuests'])->name('admin.bookings.search.guests');
+        Route::get('/bookings/check-availability', [BookingController::class, 'checkRoomAvailability'])->name('admin.bookings.check-availability');
         Route::get('/bookings/search/companies', [BookingController::class, 'searchCompanies'])->name('admin.bookings.search.companies');
         
         Route::get('/bookings/manual/create', [BookingController::class, 'createManual'])->name('admin.bookings.manual.create');
@@ -394,12 +419,19 @@ Route::prefix('manager')->group(function () {
         Route::get('/bookings/corporate/available-rooms', [BookingController::class, 'getCorporateAvailableRooms'])->name('admin.bookings.corporate.available-rooms');
         Route::get('/bookings/company/{company}', [BookingController::class, 'getCompanyBookings'])->name('admin.bookings.company');
         Route::get('/bookings/available-rooms', [BookingController::class, 'getAvailableRooms'])->name('admin.bookings.available-rooms');
+        Route::get('/invoices/create', [BookingController::class, 'createInvoice'])->name('admin.invoices.create');
+        Route::post('/invoices/store', [BookingController::class, 'storeInvoice'])->name('admin.invoices.store');
         Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('admin.bookings.show');
         Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('admin.bookings.update-status');
         Route::put('/bookings/{booking}/notes', [BookingController::class, 'updateNotes'])->name('admin.bookings.update-notes');
         Route::post('/bookings/{booking}/extension', [BookingController::class, 'handleExtension'])->name('admin.bookings.extension');
         Route::put('/bookings/{booking}/modify-dates', [BookingController::class, 'modifyBookingDates'])->name('admin.bookings.modify-dates');
+        Route::put('/companies/{company}/modify-dates', [BookingController::class, 'modifyCompanyGroupDates'])->name('admin.companies.modify-dates');
         Route::delete('/bookings/{booking}', [BookingController::class, 'destroy'])->name('admin.bookings.destroy');
+        Route::post('/bookings/{booking}/generate-token', [BookingController::class, 'generateCheckInToken'])->name('admin.bookings.generate-token');
+        Route::post('/bookings/{booking}/generate-checkout-token', [BookingController::class, 'generateCheckoutToken'])->name('admin.bookings.generate-checkout-token');
+        Route::post('/bookings/{booking}/request-resubmission', [BookingController::class, 'requestResubmission'])->name('admin.bookings.request-resubmission');
+        Route::get('/bookings/monitoring/recent-submissions', [BookingController::class, 'getRecentSubmissions'])->name('admin.bookings.recent-submissions');
         
         Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('admin.profile');
         Route::post('/profile/update', [\App\Http\Controllers\ProfileController::class, 'updateProfile'])->name('admin.profile.update');
@@ -447,10 +479,28 @@ Route::prefix('manager')->group(function () {
         
         // Extension requests (Manager/Reception)
         Route::get('/extension-requests', [\App\Http\Controllers\AdminController::class, 'extensionRequests'])->name('admin.extension-requests');
+
+        // Check-in route accessible by both manager and reception
+        Route::put('/bookings/{booking}/check-in', [BookingController::class, 'updateCheckInStatus'])->name('admin.bookings.update-checkin');
+        
+        // Daily Reports
+        Route::get('/reports/daily', [\App\Http\Controllers\ReceptionController::class, 'reports'])->name('admin.reports.daily');
+
+        // --- Order Monitor & Shift Management (Reception Friendly) ---
+        Route::get('/orders/monitor', [\App\Http\Controllers\ReceptionController::class, 'allOrders'])->name('reception.orders.monitor');
+        Route::get('/orders/print-group', [\App\Http\Controllers\ReceptionController::class, 'printGroupBill'])->name('reception.orders.print-group');
+        Route::get('/shifts/history', [\App\Http\Controllers\ReceptionController::class, 'shiftHistory'])->name('reception.shift.history');
+        Route::get('/shift/open', [\App\Http\Controllers\ReceptionController::class, 'openShiftView'])->name('reception.shift.open');
+        Route::post('/shift/open', [\App\Http\Controllers\ReceptionController::class, 'startShift'])->name('reception.shift.start');
+        Route::get('/shift/close', [\App\Http\Controllers\ReceptionController::class, 'closeShiftView'])->name('reception.shift.close');
+        Route::post('/shift/close', [\App\Http\Controllers\ReceptionController::class, 'finalizeShift'])->name('reception.shift.finalize');
+
+        // Service Requests (Reception Operations)
+        Route::get('/service-requests', [\App\Http\Controllers\ServiceRequestController::class, 'receptionIndex'])->name('admin.service-requests');
     });
 
     // Strictly Manager Only Routes
-    Route::middleware(['check.auth', 'role:manager,super_admin'])->group(function () {
+    Route::middleware(['check.auth', 'role:manager,super_admin,owner'])->group(function () {
         // Hotel Settings
         Route::get('/settings/hotel', [\App\Http\Controllers\AdminController::class, 'hotelSettings'])->name('admin.settings.hotel');
         Route::post('/settings/hotel', [\App\Http\Controllers\AdminController::class, 'updateHotelSettings'])->name('admin.settings.hotel.update');
@@ -459,8 +509,6 @@ Route::prefix('manager')->group(function () {
         Route::get('/settings/rooms', [\App\Http\Controllers\AdminController::class, 'roomSettings'])->name('admin.settings.rooms');
         Route::post('/settings/rooms', [\App\Http\Controllers\AdminController::class, 'updateRoomSettings'])->name('admin.settings.rooms.update');
         
-        // Service Requests (Reception Operations) - Moved here as it was previously in the manager/reception/super_admin group
-        Route::get('/service-requests', [\App\Http\Controllers\ServiceRequestController::class, 'receptionIndex'])->name('admin.service-requests');
         Route::put('/service-requests/{serviceRequest}/status', [\App\Http\Controllers\ServiceRequestController::class, 'updateStatus'])->name('admin.service-requests.update');
         
         // Reservations (Reception Operations)
@@ -471,20 +519,13 @@ Route::prefix('manager')->group(function () {
         // Guests (Reception Operations)
         Route::get('/guests', [\App\Http\Controllers\ReceptionController::class, 'guests'])->name('admin.guests');
         
-        // Daily Reports (Reception Operations) - Allow both manager and reception
-        // Routes accessible by both manager and reception
-        Route::middleware(['check.auth', 'role:manager,reception'])->group(function () {
-            // Check-in route accessible by both manager and reception
-            Route::put('/bookings/{booking}/check-in', [BookingController::class, 'updateCheckInStatus'])->name('admin.bookings.update-checkin');
-            
-            Route::get('/reports/daily', [\App\Http\Controllers\ReceptionController::class, 'reports'])->name('admin.reports.daily');
-        });
-        
         // Checkout Payment (Reception Operations)
         Route::get('/checkout-payment/{booking}', [\App\Http\Controllers\ReceptionController::class, 'checkoutPayment'])->name('admin.checkout-payment');
         Route::post('/checkout-payment/{booking}/process', [\App\Http\Controllers\ReceptionController::class, 'processCheckoutPayment'])->name('admin.checkout-payment.process');
         Route::post('/checkout-payment/{booking}/cash', [\App\Http\Controllers\ReceptionController::class, 'processCashPayment'])->name('admin.checkout-payment.cash');
-        
+
+        // Exchange Rate Override (Admin + Reception)
+        Route::post('/bookings/{booking}/override-exchange-rate', [\App\Http\Controllers\AdminController::class, 'overrideExchangeRate'])->name('admin.bookings.override-exchange-rate');
         // Corporate Group Checkout
         Route::post('/bookings/checkout-company-group/{company}', [\App\Http\Controllers\ReceptionController::class, 'checkoutCompanyGroup'])->name('admin.bookings.checkout-company-group');
         Route::post('/bookings/checkout-company-payment/{company}', [\App\Http\Controllers\ReceptionController::class, 'processCompanyPayment'])->name('admin.bookings.checkout-company-payment');
@@ -594,6 +635,11 @@ Route::prefix('reception')->group(function () {
         Route::post('/profile/update-password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('reception.profile.update-password');
         Route::post('/profile/update-notifications', [\App\Http\Controllers\ProfileController::class, 'updateNotificationPreferences'])->name('reception.profile.update-notifications');
         
+        // SMS Messaging Center (Accessible by Reception)
+        Route::get('/messaging', [\App\Http\Controllers\SmsDashboardController::class, 'index'])->name('reception.sms.index');
+        Route::post('/messaging/send', [\App\Http\Controllers\SmsDashboardController::class, 'send'])->name('reception.sms.send');
+        Route::post('/messaging/bulk-send', [\App\Http\Controllers\SmsDashboardController::class, 'bulkSend'])->name('reception.sms.bulk-send');
+
         Route::post('/logout', [AuthController::class, 'logout'])->name('reception.logout');
         
         // Service Requests Routes
@@ -608,17 +654,29 @@ Route::prefix('reception')->group(function () {
         Route::get('/reservations/active', [\App\Http\Controllers\ReceptionController::class, 'activeReservations'])->name('reception.reservations.active');
         Route::get('/guests', [\App\Http\Controllers\ReceptionController::class, 'guests'])->name('reception.guests');
         Route::get('/rooms', [\App\Http\Controllers\ReceptionController::class, 'roomStatus'])->name('reception.rooms');
+        Route::get('/rooms/qr-generator', [RoomController::class, 'qrGenerator'])->name('reception.rooms.qr-generator');
         Route::get('/payments', [\App\Http\Controllers\ReceptionController::class, 'payments'])->name('reception.payments');
         Route::get('/reports', [\App\Http\Controllers\ReceptionController::class, 'reports'])->name('reception.reports');
+        Route::get('/reports/waiter-sales', [\App\Http\Controllers\ReceptionController::class, 'waiterSales'])->name('reception.reports.waiter-sales');
+        Route::get('/shifts/{shift}/print', [\App\Http\Controllers\ReceptionController::class, 'printShiftReport'])->name('reception.shift.print');
         
         // Reception Booking Operations
         Route::get('/bookings/manual/create', [\App\Http\Controllers\BookingController::class, 'createManual'])->name('reception.bookings.manual.create');
         Route::post('/bookings/manual/store', [\App\Http\Controllers\BookingController::class, 'storeManual'])->name('reception.bookings.manual.store');
         Route::get('/bookings/available-rooms', [\App\Http\Controllers\BookingController::class, 'getAvailableRooms'])->name('reception.bookings.available-rooms');
+        Route::get('/invoices', [\App\Http\Controllers\BookingController::class, 'invoicesList'])->name('reception.invoices.index');
+        Route::get('/invoices/create', [\App\Http\Controllers\BookingController::class, 'createInvoice'])->name('reception.invoices.create');
+        Route::post('/invoices/store', [\App\Http\Controllers\BookingController::class, 'storeInvoice'])->name('reception.invoices.store');
+        Route::get('/invoices/{booking}/download', [\App\Http\Controllers\BookingController::class, 'downloadInvoice'])->name('reception.invoices.download');
         Route::get('/bookings/{booking}', [\App\Http\Controllers\BookingController::class, 'show'])->name('reception.bookings.show');
         Route::put('/bookings/{booking}/check-in', [\App\Http\Controllers\BookingController::class, 'updateCheckInStatus'])->name('reception.bookings.update-checkin');
+        Route::post('/bookings/{booking}/generate-token', [\App\Http\Controllers\BookingController::class, 'generateCheckInToken'])->name('reception.bookings.generate-token');
+        Route::post('/bookings/{booking}/generate-checkout-token', [\App\Http\Controllers\BookingController::class, 'generateCheckoutToken'])->name('reception.bookings.generate-checkout-token');
         Route::post('/bookings/{booking}/extension', [\App\Http\Controllers\BookingController::class, 'handleExtension'])->name('reception.bookings.extension');
         Route::put('/bookings/{booking}/modify-dates', [\App\Http\Controllers\BookingController::class, 'modifyBookingDates'])->name('reception.bookings.modify-dates');
+        Route::put('/companies/{company}/modify-dates', [\App\Http\Controllers\BookingController::class, 'modifyCompanyGroupDates'])->name('reception.companies.modify-dates');
+        Route::post('/bookings/{booking}/request-resubmission', [\App\Http\Controllers\BookingController::class, 'requestResubmission'])->name('reception.bookings.request-resubmission');
+        Route::get('/bookings/monitoring/recent-submissions', [\App\Http\Controllers\BookingController::class, 'getRecentSubmissions'])->name('reception.bookings.recent-submissions');
         
         // Day Services Routes
         Route::get('/day-services', [\App\Http\Controllers\DayServiceController::class, 'index'])->name('reception.day-services.index');
@@ -669,11 +727,15 @@ Route::prefix('reception')->group(function () {
         Route::get('/checkout-payment/{booking}', [\App\Http\Controllers\ReceptionController::class, 'checkoutPayment'])->name('reception.checkout-payment');
         Route::post('/checkout-payment/{booking}/process', [\App\Http\Controllers\ReceptionController::class, 'processCheckoutPayment'])->name('reception.checkout-payment.process');
         Route::post('/checkout-payment/{booking}/cash', [\App\Http\Controllers\ReceptionController::class, 'processCashPayment'])->name('reception.checkout-payment.cash');
-        
+
+        // Exchange Rate Override (Reception)
+        Route::post('/bookings/{booking}/override-exchange-rate', [\App\Http\Controllers\AdminController::class, 'overrideExchangeRate'])->name('reception.bookings.override-exchange-rate');
+
         // Corporate Group Checkout
         Route::post('/bookings/checkout-company-group/{company}', [\App\Http\Controllers\ReceptionController::class, 'checkoutCompanyGroup'])->name('reception.bookings.checkout-company-group');
         Route::post('/bookings/checkout-company-payment/{company}', [\App\Http\Controllers\ReceptionController::class, 'processCompanyPayment'])->name('reception.bookings.checkout-company-payment');
     });
+
 
     // Checkout Bill (Reception Operations)
     Route::get('/bookings/{booking}/checkout-bill', [\App\Http\Controllers\ServiceRequestController::class, 'generateCheckoutBill'])->name('reception.bookings.checkout-bill');
@@ -758,9 +820,6 @@ Route::prefix('bar-keeper')->group(function () {
         
         Route::post('/logout', [AuthController::class, 'logout'])->name('bar-keeper.logout');
         
-        // Stock Transfers
-        Route::get('/transfers', [\App\Http\Controllers\BarKeeperController::class, 'transfers'])->name('bar-keeper.transfers.index');
-        Route::put('/transfers/{stockTransfer}/receive', [\App\Http\Controllers\BarKeeperController::class, 'receiveTransfer'])->name('bar-keeper.transfers.receive');
         
         // Stock Overview
         Route::get('/my-stock', [\App\Http\Controllers\BarKeeperController::class, 'stock'])->name('bar-keeper.stock.index');
@@ -847,8 +906,12 @@ Route::prefix('customer')->group(function () {
         Route::post('/profile/update-notifications', [\App\Http\Controllers\ProfileController::class, 'updateNotificationPreferences'])->name('customer.profile.update-notifications');
     });
 
-    // Public/Shared Service Request Routes (accessible by guests and staff)
-    Route::middleware(['check.auth', 'role:customer,waiter,bar_keeper,manager,reception,head_chef'])->group(function () {
+    // Publicly accessible Feedback Routes (for QR code scanning)
+    Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('customer.feedback');
+    Route::post('/feedback/submit', [\App\Http\Controllers\FeedbackController::class, 'submit'])->name('customer.feedback.submit');
+
+    // Shared Service Request submission (authentication required)
+    Route::middleware(['check.auth', 'role:customer,waiter,bar_keeper,manager,reception,head_chef,super_admin,owner'])->group(function () {
         Route::get('/services/available', [\App\Http\Controllers\ServiceRequestController::class, 'getAvailableServices'])->name('customer.services.available');
         Route::post('/services/request', [\App\Http\Controllers\ServiceRequestController::class, 'requestService'])->name('customer.services.request');
         Route::post('/ceremonies/settle-usage', [\App\Http\Controllers\ServiceRequestController::class, 'settleCeremonyUsage'])->name('ceremonies.settle-usage');
@@ -876,8 +939,6 @@ Route::prefix('customer')->group(function () {
         Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('customer.notifications');
         Route::get('/calendar', [BookingController::class, 'bookingCalendar'])->name('customer.calendar');
         Route::get('/room-information', [BookingController::class, 'roomInformation'])->name('customer.room-information');
-        Route::get('/feedback', [\App\Http\Controllers\FeedbackController::class, 'index'])->name('customer.feedback');
-        Route::post('/feedback/submit', [\App\Http\Controllers\FeedbackController::class, 'submit'])->name('customer.feedback.submit');
         Route::get('/local-info', [\App\Http\Controllers\LocalInfoController::class, 'index'])->name('customer.local-info');
         Route::get('/support', [BookingController::class, 'customerSupport'])->name('customer.support');
         
@@ -944,6 +1005,9 @@ Route::prefix('chef-master')->group(function () {
         Route::put('/day-services/{dayService}/update-items', [\App\Http\Controllers\DayServiceController::class, 'updateItems'])->name('chef-master.day-services.update-items');
         Route::post('/day-services/{dayService}/payment', [\App\Http\Controllers\DayServiceController::class, 'processPayment'])->name('chef-master.day-services.payment');
 
+        // Dedicated KDS Monitor
+        Route::get('/kds', [\App\Http\Controllers\KitchenController::class, 'kds'])->name('chef-master.kds');
+
 
     });
 });
@@ -961,6 +1025,7 @@ Route::prefix('waiter')->group(function () {
         Route::get('/active-bookings', [\App\Http\Controllers\WaiterController::class, 'getActiveBookings'])->name('waiter.active-bookings');
         Route::post('/order/store', [\App\Http\Controllers\WaiterController::class, 'storeOrder'])->name('waiter.order.store');
         Route::get('/orders', [\App\Http\Controllers\WaiterController::class, 'orders'])->name('waiter.orders');
+        Route::post('/orders/register-payment', [\App\Http\Controllers\WaiterController::class, 'registerPayment'])->name('waiter.orders.register-payment');
         Route::get('/orders/{serviceRequest}/print-docket', [\App\Http\Controllers\WaiterController::class, 'printDocket'])->name('waiter.orders.print-docket');
         Route::get('/orders/print-group', [\App\Http\Controllers\WaiterController::class, 'printGroupDocket'])->name('waiter.orders.print-group');
         Route::post('/orders/{serviceRequest}/cancel', [\App\Http\Controllers\WaiterController::class, 'cancelOrder'])->name('waiter.orders.cancel');
@@ -971,6 +1036,36 @@ Route::prefix('waiter')->group(function () {
         Route::post('/profile/update-photo', [\App\Http\Controllers\ProfileController::class, 'updatePhoto'])->name('waiter.profile.update-photo');
         Route::post('/profile/update-password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('waiter.profile.update-password');
         Route::post('/profile/update-notifications', [\App\Http\Controllers\ProfileController::class, 'updateNotificationPreferences'])->name('waiter.profile.update-notifications');
+        
+        // Day Service Usage Tracking
+        Route::get('/day-services/{dayService}', [\App\Http\Controllers\DayServiceController::class, 'show'])->name('waiter.day-services.show');
+        
         Route::post('/logout', [AuthController::class, 'logout'])->name('waiter.logout');
     });
+});
+
+// Owner Control Routes
+Route::prefix('owner')->middleware(['check.auth', 'role:owner,super_admin'])->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\OwnerController::class, 'dashboard'])->name('owner.dashboard');
+
+    // SMS Messaging Center
+    Route::get('/messaging', [\App\Http\Controllers\SmsDashboardController::class, 'index'])->name('owner.sms.index');
+    Route::post('/messaging/send', [\App\Http\Controllers\SmsDashboardController::class, 'send'])->name('owner.sms.send');
+    Route::post('/messaging/bulk-send', [\App\Http\Controllers\SmsDashboardController::class, 'bulkSend'])->name('owner.sms.bulk-send');
+
+
+    
+    // Profile & Logout
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'show'])->name('owner.profile');
+    Route::post('/profile/update', [\App\Http\Controllers\ProfileController::class, 'updateProfile'])->name('owner.profile.update');
+    Route::post('/profile/update-password', [\App\Http\Controllers\ProfileController::class, 'updatePassword'])->name('owner.profile.update-password');
+    Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])->name('owner.logout');
+
+    // Staff Performance
+    Route::get('/performance', [\App\Http\Controllers\StaffPerformanceController::class, 'index'])->name('owner.performance.index');
+    Route::get('/performance/{staff}', [\App\Http\Controllers\StaffPerformanceController::class, 'show'])->name('owner.performance.show');
+
+    // Shift History Monitoring
+    Route::get('/shifts/history', [\App\Http\Controllers\ReceptionController::class, 'shiftHistory'])->name('owner.shift.history');
+    Route::get('/shifts/{shift}/print', [\App\Http\Controllers\ReceptionController::class, 'printShiftReport'])->name('owner.shift.print');
 });

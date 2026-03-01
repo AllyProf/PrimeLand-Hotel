@@ -10,6 +10,7 @@ use App\Services\CurrencyExchangeService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\WhatsappService;
 use Carbon\Carbon;
 
 class ServiceRequestController extends Controller
@@ -406,6 +407,20 @@ class ServiceRequestController extends Controller
                 \Log::error('Failed to send service request emails to managers/admins: ' . $e->getMessage());
             }
 
+            // Send WhatsApp service request confirmation
+            if (!$isWalkIn && isset($booking->guest_phone)) {
+                try {
+                    $whatsappService = new WhatsappService();
+                    $whatsappService->sendServiceRequest(
+                        $booking->guest_phone,
+                        $booking->guest_name,
+                        $itemName . ($quantity > 1 ? " (x{$quantity})" : "")
+                    );
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send WhatsApp service request notification: ' . $e->getMessage());
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Service request submitted! Call to confirm: 0677155156 - Reception, 0677155157 - Manager.',
@@ -486,9 +501,12 @@ class ServiceRequestController extends Controller
                 'total_active_guests' => Booking::where('check_in_status', 'checked_in')
                     ->where('check_out', '>=', $today)
                     ->sum('number_of_guests') ?: Booking::where('check_in_status', 'checked_in')->count(),
-                'pending_requests' => ServiceRequest::where('status', 'pending')->count(),
-                'approved_requests' => ServiceRequest::where('status', 'approved')->count(),
-                'today_requests' => ServiceRequest::whereDate('requested_at', $today)->count(),
+                'active_orders_count' => ServiceRequest::whereIn('status', ['pending', 'approved', 'preparing', 'ready'])
+                    ->orWhere(function($q) {
+                        $q->where('status', 'completed')->whereIn('payment_status', ['pending', 'unpaid']);
+                    })->count(),
+                'preparing_ready_count' => ServiceRequest::whereIn('status', ['approved', 'preparing', 'ready'])->count(),
+                'today_orders_count' => ServiceRequest::whereDate('requested_at', $today)->count(),
                 'pending_extensions' => Booking::where('extension_status', 'pending')->count(),
                 'room_issues' => \App\Models\IssueReport::where('status', '!=', 'resolved')->count(),
             ];
@@ -499,12 +517,17 @@ class ServiceRequestController extends Controller
                 ->limit(10)
                 ->get();
             
-            // Pending Requests
-            $pendingRequests = ServiceRequest::with(['booking.room', 'service'])
-                ->where('status', 'pending')
-                ->orderBy('requested_at', 'asc')
-                ->limit(5)
-                ->get();
+            // Active Orders (Monitor Style Overview) - Paginated for Dashboard
+            $activeOrders = ServiceRequest::with(['booking.room', 'service', 'approvedBy'])
+                ->where(function($q) {
+                    $q->whereIn('status', ['pending', 'approved', 'preparing', 'ready'])
+                      ->orWhere(function($q2) {
+                          $q2->where('status', 'completed')
+                             ->whereIn('payment_status', ['pending', 'unpaid']);
+                      });
+                })
+                ->orderBy('requested_at', 'desc')
+                ->paginate(5, ['*'], 'orders_page');
             
             // Today's Requests
             $todayRequests = ServiceRequest::with(['booking.room', 'service'])
@@ -560,7 +583,7 @@ class ServiceRequestController extends Controller
                 'userRole' => $role === 'manager' ? 'Manager' : 'Reception',
                 'stats' => $stats,
                 'recentBookings' => $recentBookings,
-                'pendingRequests' => $pendingRequests,
+                'activeOrders' => $activeOrders,
                 'todayRequests' => $todayRequests,
                 'pendingExtensions' => $pendingExtensions,
                 'revenueData' => $revenueData,
@@ -592,6 +615,11 @@ class ServiceRequestController extends Controller
             $query->where('booking_id', $request->booking_id);
         }
 
+        // Filter by specific ID (from Order Monitor)
+        if ($request->has('id') && $request->id) {
+            $query->where('id', $request->id);
+        }
+
         $serviceRequests = $query->paginate(20);
 
         $stats = [
@@ -608,11 +636,28 @@ class ServiceRequestController extends Controller
         // Prepare service requests data for JavaScript
         $serviceRequestsData = $serviceRequests->map(function($req) use ($currencyService) {
             $requestedBy = 'Guest';
-            if ($req->reception_notes && str_contains($req->reception_notes, 'Recorded by: ')) {
-                $parts = explode('Recorded by: ', $req->reception_notes);
-                $requestedBy = trim($parts[1] ?? 'Staff');
+            $notes = $req->reception_notes ?? '';
+            
+            $prefixes = [
+                'POS Order by Waiter: ',
+                'Order by Waiter: ',
+                'Recorded by: ',
+                'Payment recorded by Waiter: ',
+                'Payment recorded by: ',
+                'Served by '
+            ];
+            
+            foreach ($prefixes as $prefix) {
+                if (str_contains($notes, $prefix)) {
+                    $parts = explode($prefix, $notes);
+                    $afterPrefix = $parts[1] ?? '';
+                    // Clean up: take only name before secondary markers
+                    $requestedBy = trim(explode('|', explode('[', explode('(', $afterPrefix)[0])[0])[0] ?? 'Staff');
+                    break;
+                }
             }
-            // Fallback to approvedBy name if notes are empty but we have an ID
+
+            // Fallback to approvedBy name if Guest and we have an approver
             if ($requestedBy === 'Guest' && $req->approvedBy) {
                 $requestedBy = $req->approvedBy->name;
             }
@@ -636,6 +681,9 @@ class ServiceRequestController extends Controller
                 'item_name' => $req->service_specific_data['item_name'] ?? $req->service->name,
                 'service_specific_data' => $req->service_specific_data,
                 'reception_notes' => $req->reception_notes,
+                'payment_status' => $req->payment_status,
+                'payment_method' => $req->payment_method,
+                'payment_reference' => $req->payment_reference,
                 'requested_at' => $req->requested_at->format('F d, Y \a\t g:i A'),
                 'approved_at' => $req->approved_at ? $req->approved_at->format('F d, Y \a\t g:i A') : null,
                 'completed_at' => $req->completed_at ? $req->completed_at->format('F d, Y \a\t g:i A') : null,
@@ -674,11 +722,22 @@ class ServiceRequestController extends Controller
 
         if ($request->status === 'approved' && $serviceRequest->status !== 'approved') {
             $updateData['approved_at'] = now();
-            $updateData['approved_by'] = Auth::id();
+            $updateData['approved_by'] = Auth::guard('staff')->id();
         }
 
-        if ($request->status === 'completed' && !$serviceRequest->completed_at) {
-            $updateData['completed_at'] = now();
+        $user = Auth::guard('staff')->user();
+        if ($request->status === 'completed') {
+            if (!$serviceRequest->completed_at) {
+                $updateData['completed_at'] = now();
+            }
+            // If it's being marked as completed (and presumably paid), record who did it
+            if ($serviceRequest->payment_status === 'paid' || $request->payment_status === 'paid') {
+                $updateData['paid_to'] = $user->id ?? null;
+            }
+        }
+
+        if ($request->status === 'cancelled') {
+            $updateData['cancelled_by'] = $user->id ?? null;
         }
 
         // Update the service request first
@@ -701,10 +760,10 @@ class ServiceRequestController extends Controller
         }
         
         // Now recalculate booking total service charges after status update
-        // Only include approved and completed service requests
+        // Include pending, preparing, approved and completed service requests
         $booking = $serviceRequest->booking->fresh();
         $totalServiceCharges = $booking->serviceRequests()
-            ->whereIn('status', ['approved', 'completed'])
+            ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
             ->sum('total_price_tsh');
         
         $booking->update([
@@ -806,7 +865,7 @@ class ServiceRequestController extends Controller
         $itemsToSettle = [$serviceRequest];
         $totalCollected = $serviceRequest->total_price_tsh;
 
-        // If walk-in, find all other pending items for this name
+        // If walk-in, find all other pending items for this same walk-in session (same name)
         if ($serviceRequest->is_walk_in && $serviceRequest->walk_in_name) {
             $others = ServiceRequest::where('is_walk_in', true)
                 ->where('walk_in_name', $serviceRequest->walk_in_name)
@@ -819,26 +878,65 @@ class ServiceRequestController extends Controller
                 $totalCollected += $other->total_price_tsh;
             }
         } elseif ($serviceRequest->booking_id) {
-            // Also settle all other pending items for this room booking
-            $others = ServiceRequest::where('booking_id', $serviceRequest->booking_id)
-                ->where('payment_status', 'pending')
-                ->where('id', '!=', $serviceRequest->id)
-                ->get();
+            // For room guests, we settle all other pending items ONLY IF they belong to the same department
+            // Define Bar categories (anything else is considered Kitchen/Food)
+            $barCats = [
+                'drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 
+                'energy_drinks', 'bar', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 
+                'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages'
+            ];
             
+            $cat = $serviceRequest->service ? $serviceRequest->service->category : 'other';
+            $isBarItem = in_array(strtolower($cat), $barCats) || $serviceRequest->service_id == 3;
+            
+            $othersQuery = ServiceRequest::where('booking_id', $serviceRequest->booking_id)
+                ->where('payment_status', 'pending')
+                ->where('id', '!=', $serviceRequest->id);
+
+            // Filter by department
+            if ($isBarItem) {
+                $othersQuery->where(function($q) use ($barCats) {
+                    $q->whereHas('service', function($sq) use ($barCats) {
+                        $sq->whereIn('category', $barCats);
+                    })->orWhere('service_id', 3);
+                });
+            } else {
+                $othersQuery->where(function($q) use ($barCats) {
+                    $q->whereHas('service', function($sq) use ($barCats) {
+                        $sq->whereNotIn('category', $barCats);
+                    })->where('service_id', '!=', 3);
+                });
+            }
+
+            $others = $othersQuery->get();
             foreach ($others as $other) {
                 $itemsToSettle[] = $other;
                 $totalCollected += $other->total_price_tsh;
             }
         }
 
+
+        $user = Auth::guard('staff')->user();
+    
         // Apply settlement to all identified items
         foreach ($itemsToSettle as $item) {
+            $notes = $item->reception_notes;
+            // Clean up previous "Pending Payment" markers if they exist
+            $cleanNotes = str_replace('(Pending Payment)', '(Paid)', $notes);
+            
+            // Add record log if not already present
+            if ($user && !str_contains($cleanNotes, 'Payment recorded')) {
+                $cleanNotes .= ' | Payment recorded by: ' . $user->name;
+            }
+
             $item->update([
                 'payment_status' => $isRoomCharge ? 'room_charge' : 'paid',
                 'payment_method' => $request->payment_method,
                 'payment_reference' => $request->payment_reference,
+                'paid_to' => $user->id ?? null,
                 'status' => 'completed',
                 'completed_at' => now(),
+                'reception_notes' => $cleanNotes
             ]);
         }
 
@@ -925,7 +1023,7 @@ class ServiceRequestController extends Controller
         $isStaffViewingCompanyPaid = $isStaffViewingCorporate && $paymentResponsibility === 'company';
 
         $serviceRequests = $booking->serviceRequests()
-            ->whereIn('status', ['approved', 'completed'])
+            ->whereIn('status', ['pending', 'approved', 'preparing', 'completed'])
             ->with('service')
             ->get();
 
@@ -1033,6 +1131,11 @@ class ServiceRequestController extends Controller
                     return $paymentMethod !== 'room_charge' && $paymentStatus !== 'paid';
                 });
                 $totalServiceChargesTsh = $unpaidServiceRequests->sum('total_price_tsh');
+                
+                // For corporate self-paid, the "Room Balance" for the guest is 0
+                $roomBalanceTsh = 0;
+                $serviceBalanceTsh = $totalServiceChargesTsh;
+
                 $totalBillTsh = $totalServiceChargesTsh;
                 $amountPaidUsd = 0;
                 $amountPaidTsh = 0;
@@ -1046,6 +1149,8 @@ class ServiceRequestController extends Controller
                 $extensionNights = 0;
                 $originalNights = $booking->check_in->diffInDays($booking->check_out);
                 $totalServiceChargesTsh = 0;
+                $roomBalanceTsh = 0;
+                $serviceBalanceTsh = 0;
                 $totalBillTsh = 0;
                 $amountPaidUsd = 0;
                 $amountPaidTsh = 0;
@@ -1090,23 +1195,31 @@ class ServiceRequestController extends Controller
             // Calculate total bill (room + extension + services)
             $totalBillTsh = $roomPriceTsh + $extensionCostTsh + $totalServiceChargesTsh;
             
-            // Calculate amount paid (Booking deposit/payment + any settled service payments)
-            $amountPaidUsd = $booking->amount_paid ?? 0;
-            $amountPaidTsh = $amountPaidUsd * $exchangeRate;
+            // Calculate Room portion vs Service portion
+            $totalRoomCostTsh = $roomPriceTsh + $extensionCostTsh;
+            $bookingPaidUsd = $booking->amount_paid ?? 0;
+            $bookingPaidTsh = $bookingPaidUsd * $exchangeRate;
             
-            // Add payments for completed/paid services
+            // Room Balance is (Room + Extension) - Booking level payment
+            $roomBalanceTsh = max(0, $totalRoomCostTsh - $bookingPaidTsh);
+            
+            // Service Balance is Total Services - Paid Services
+            $paidServicesTsh = 0;
             foreach ($serviceRequests as $sr) {
                 if ($sr->payment_status === 'paid') {
-                    $amountPaidTsh += $sr->total_price_tsh;
+                    $paidServicesTsh += $sr->total_price_tsh;
                 }
             }
-            
-            // Update USD for display consistency
+            $serviceBalanceTsh = max(0, $totalServiceChargesTsh - $paidServicesTsh);
+
+            // Total Amount Paid (USD payment converted + any settled services)
+            $amountPaidTsh = $bookingPaidTsh + $paidServicesTsh;
             $amountPaidUsd = $amountPaidTsh / $exchangeRate;
             
-            // Calculate outstanding balance
+            // Final Outstanding Balance
             $outstandingBalanceTsh = max(0, $totalBillTsh - $amountPaidTsh);
         }
+
 
         // Update booking with total bill
         $booking->update([
@@ -1163,11 +1276,14 @@ class ServiceRequestController extends Controller
             'extensionNights' => $extensionNights,
             'originalNights' => $originalNights ?? 0,
             'totalServiceChargesTsh' => $totalServiceChargesTsh,
+            'roomBalanceTsh' => $roomBalanceTsh ?? 0,
+            'serviceBalanceTsh' => $serviceBalanceTsh ?? 0,
             'totalBillTsh' => $totalBillTsh,
             'amountPaidTsh' => $amountPaidTsh,
             'amountPaidUsd' => $amountPaidUsd,
             'outstandingBalanceTsh' => $outstandingBalanceTsh,
             'exchangeRate' => $exchangeRate,
+            'isCorporateBooking' => $isCorporateBooking,
             'isGuestViewingCorporate' => $isGuestViewingCorporate,
             'isGuestWithSelfPaidServices' => $isGuestWithSelfPaidServices,
             'isGuestWithCompanyPaidServices' => $isGuestWithCompanyPaidServices,
@@ -1294,6 +1410,7 @@ class ServiceRequestController extends Controller
                 'status' => 'completed',
                 'payment_method' => $paymentMethod,
                 'payment_reference' => $paymentReference,
+                'paid_to' => $user->id ?? null,
                 'completed_at' => now(),
             ]);
         }

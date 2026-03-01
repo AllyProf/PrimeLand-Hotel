@@ -243,8 +243,8 @@
             </div>
             <h1>PRIMELAND HOTEL</h1>
             <p>Sokoine Road - Moshi Kilimanjaro - Tanzania</p>
-            <p>Phone: 0677-155-156 / +255 677-155-157</p>
-            <p>Email: info@primelandhotel.co.tz | infoprimelandhotel@gmail.com</p>
+            <p>Phone: 0677-155-156</p>
+            <p>Email: info@primelandhotel.com / infoprimelandhotel@gmail.com | infoprimelandhotel@gmail.com</p>
         </div>
         
         <div class="receipt-info">
@@ -318,11 +318,20 @@
                     ];
                 @endphp
                 @if(!empty($packageItems))
+                    @php 
+                        $packagePaid = $dayService->package_items_paid ?? [];
+                    @endphp
                     {{-- Show package items breakdown for ceremony packages --}}
                     @foreach($packageItems as $itemKey => $itemPrice)
                         @if(is_numeric($itemPrice) && $itemPrice > 0)
+                            @php $isItemPaid = isset($packagePaid[$itemKey]) && $packagePaid[$itemKey] == 1; @endphp
                             <tr>
-                                <td>{{ $packageItemLabels[$itemKey] ?? ucfirst(str_replace('_', ' ', $itemKey)) }}</td>
+                                <td>
+                                    {{ $packageItemLabels[$itemKey] ?? ucfirst(str_replace('_', ' ', $itemKey)) }}
+                                    <span style="color: {{ $isItemPaid ? '#388e3c' : '#d32f2f' }}; font-size: 9px; font-weight: bold;">
+                                        [{{ $isItemPaid ? 'PAID' : 'UNPAID' }}]
+                                    </span>
+                                </td>
                                 <td style="text-align: right;">
                                     @if($dayService->guest_type === 'tanzanian')
                                         {{ number_format($itemPrice, 2) }} TZS
@@ -364,6 +373,8 @@
         {{-- Bar & Restaurant Consumption Section --}}
         @php
             $barConsumption = $dayService->serviceRequests ?? collect();
+            // Exclude items that have been merged/billed into the main day service bill or cancelled
+            $barConsumption = $barConsumption->filter(fn($item) => !in_array(strtolower($item->status ?? ''), ['cancelled', 'billed']));
             $totalConsumption = $barConsumption->sum('total_price_tsh');
             $paidConsumption = $barConsumption->where('payment_status', 'paid')->sum('total_price_tsh');
             $unpaidConsumption = $barConsumption->where('payment_status', 'pending')->sum('total_price_tsh');
@@ -552,7 +563,7 @@
         <div class="footer">
             <p>Thank you for choosing PrimeLand Hotel!</p>
             <p>For inquiries, please contact us at the information above.</p>
-            <p class="powered-by">Powered By EmCa Techonologies</p>
+            <p class="powered-by">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
         </div>
     </div>
     

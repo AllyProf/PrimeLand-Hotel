@@ -100,12 +100,18 @@
             </button>
           </div>
         </form>
-        <form class="forget-form" action="{{ route('password.forgot') }}" method="POST">
+        @php
+          $isOtpStep = session('show_otp_form') || $errors->has('otp');
+          $isResetStep = session('show_reset_form') || $errors->has('password');
+          $isForgetStep = session('show_forgot_password') || ($errors->has('email') && !auth()->check() && !isset($role));
+        @endphp
+
+        <form class="forget-form" action="{{ route('password.forgot') }}" method="POST" style="{{ $isOtpStep || $isResetStep ? 'display: none;' : 'display: block;' }}">
           @csrf
           <h3 class="login-head"><i class="fa fa-lg fa-fw fa-lock"></i>Forgot Password ?</h3>
           <div class="form-group">
             <label class="control-label">EMAIL</label>
-            <input class="form-control @error('email') is-invalid @enderror" type="email" name="email" placeholder="Email" value="{{ old('email') }}" required autofocus>
+            <input class="form-control @error('email') is-invalid @enderror" type="email" name="email" placeholder="Email" value="{{ old('email', session('email_for_otp')) }}" required autofocus>
             @error('email')
               <span class="invalid-feedback" role="alert">
                 <strong>{{ $message }}</strong>
@@ -114,7 +120,7 @@
           </div>
           <div class="form-group btn-container">
             <button type="submit" id="reset-btn" class="btn btn-primary btn-block">
-              <span id="reset-btn-text"><i class="fa fa-unlock fa-lg fa-fw"></i>RESET PASSWORD</span>
+              <span id="reset-btn-text"><i class="fa fa-unlock fa-lg fa-fw"></i>SEND OTP</span>
               <span id="reset-btn-spinner" style="display: none;">
                 <i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> SENDING...
               </span>
@@ -124,12 +130,84 @@
             <p class="semibold-text mb-0"><a href="#" data-toggle="flip"><i class="fa fa-angle-left fa-fw"></i> Back to Login</a></p>
           </div>
         </form>
+
+        <!-- OTP Verification Form -->
+        <form class="otp-verification-form" action="{{ route('password.verify_otp') }}" method="POST" style="{{ $isOtpStep ? 'display: block;' : 'display: none;' }}">
+          @csrf
+          <h3 class="login-head"><i class="fa fa-lg fa-fw fa-shield"></i>Verify Identity</h3>
+          <input type="hidden" name="email" value="{{ old('email', session('email_for_otp')) }}">
+          
+          <div class="form-group mb-2">
+            <label class="control-label">ENTER 6-DIGIT OTP</label>
+            <input class="form-control @error('otp') is-invalid @enderror" type="text" name="otp" placeholder="......" maxlength="6" 
+                   style="text-align: center; font-size: 20px; letter-spacing: 5px; font-weight: bold;" required autofocus>
+            @error('otp')
+              <span class="invalid-feedback text-center" role="alert">
+                <strong>{{ $message }}</strong>
+              </span>
+            @enderror
+          </div>
+
+          <div class="utility mb-3">
+            <p class="small text-muted mb-0">Code sent to your email/phone.</p>
+            <p class="semibold-text mb-0">
+               <a href="javascript:void(0)" onclick="document.getElementById('resend-form').submit();">Resend?</a>
+            </p>
+          </div>
+
+          <div class="form-group btn-container">
+            <button type="submit" class="btn btn-primary btn-block">
+              <i class="fa fa-check-circle fa-lg fa-fw"></i> VERIFY CODE
+            </button>
+          </div>
+          <div class="form-group mt-3 text-center">
+            <p class="semibold-text mb-0"><a href="#" data-toggle="flip"><i class="fa fa-angle-left fa-fw"></i> Back to Login</a></p>
+          </div>
+        </form>
+
+        <!-- Hidden Resend Form -->
+        <form id="resend-form" action="{{ route('password.resend_otp') }}" method="POST" style="display: none;">
+          @csrf
+          <input type="hidden" name="email" value="{{ old('email', session('email_for_otp')) }}">
+        </form>
+
+        <!-- New Password Form -->
+        <form class="new-password-form" action="{{ route('password.reset_final') }}" method="POST" style="{{ $isResetStep ? 'display: block;' : 'display: none;' }}">
+          @csrf
+          <h3 class="login-head"><i class="fa fa-lg fa-fw fa-key"></i>New Password</h3>
+          <input type="hidden" name="email" value="{{ old('email', session('password_reset_email')) }}">
+          <input type="hidden" name="token" value="{{ old('token', session('reset_token')) }}">
+          
+          <div class="form-group">
+            <label class="control-label">NEW PASSWORD</label>
+            <input class="form-control @error('password') is-invalid @enderror" type="password" name="password" placeholder="Min 8 characters" required autofocus>
+            @error('password')
+              <span class="invalid-feedback" role="alert">
+                <strong>{{ $message }}</strong>
+              </span>
+            @enderror
+          </div>
+          
+          <div class="form-group">
+            <label class="control-label">CONFIRM PASSWORD</label>
+            <input class="form-control" type="password" name="password_confirmation" placeholder="Confirm new password" required>
+          </div>
+          
+          <div class="form-group btn-container">
+            <button type="submit" class="btn btn-primary btn-block">
+              <i class="fa fa-save fa-lg fa-fw"></i>RESET PASSWORD
+            </button>
+          </div>
+          <div class="form-group mt-3">
+            <p class="semibold-text mb-0"><a href="#" data-toggle="flip"><i class="fa fa-angle-left fa-fw"></i> Cancel</a></p>
+          </div>
+        </form>
       </div>
       
       <!-- Powered By Footer -->
       <div class="login-footer" style="text-align: center; margin-top: 30px; padding: 20px 0; color: rgba(0,0,0,0.6); font-size: 14px;">
         <p style="margin: 0;">
-          Powered By <a href="https://emca.tech/#" target="_blank" style="color: #ff0000; font-weight: 600; text-decoration: none;">EmCa Techonologies</a>
+          Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a>
         </p>
       </div>
     </section>
@@ -156,6 +234,22 @@
         background: transparent !important;
         height: 100vh !important;
         width: 100% !important;
+      }
+      
+      .login-box .forget-form,
+      .login-box .otp-verification-form,
+      .login-box .new-password-form {
+        display: none;
+      }
+      
+      .login-box.flipped .login-form {
+        display: none;
+      }
+      
+      .login-box.flipped .forget-form,
+      .login-box.flipped .otp-verification-form,
+      .login-box.flipped .new-password-form {
+        /* JS handles specific display */
       }
       
       /* Return to Home Arrow */
@@ -303,15 +397,30 @@
       }
     </style>
     <script type="text/javascript">
+      // Helper to show Forget Password form (step 1)
+      function showForgetForm() {
+        $('.otp-verification-form, .new-password-form').hide();
+        $('.forget-form').show();
+        $('.login-box').addClass('flipped');
+      }
+
       // Login Page Flipbox control
       $('.login-content [data-toggle="flip"]').click(function() {
       	$('.login-box').toggleClass('flipped');
+        
+        // When coming back to default (not flipped), ensure forget-form is main back view
+        if(!$('.login-box').hasClass('flipped')) {
+           setTimeout(function() {
+              $('.otp-verification-form, .new-password-form').hide();
+              $('.forget-form').show();
+           }, 300);
+        }
       	return false;
       });
       
       // Auto-flip to forgot password form if there are errors or flag is set
       $(document).ready(function() {
-        @if(session('show_forgot_password') || ($errors->has('email') && old('email')))
+        @if(session('show_forgot_password') || session('show_otp_form') || session('show_reset_form') || $errors->has('otp') || $errors->has('password') || ($errors->has('email') && !auth()->check() && !isset($role)))
           $('.login-box').addClass('flipped');
         @endif
         

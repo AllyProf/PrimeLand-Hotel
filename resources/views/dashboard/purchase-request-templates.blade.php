@@ -185,25 +185,39 @@
               @foreach($products as $product)
                 @foreach($product->variants as $variant)
                 @php
-                    $vName = $variant->variant_name;
-                    $pName = $product->name;
-                    $generics = ['small', 'large', 'medium', 'standard', 'regular', 'box', 'carton'];
+                    $vName = trim($variant->variant_name ?? '');
+                    $pName = trim($product->name ?? '');
+                    $brand = trim($product->brand_or_type ?? '');
+                    $measurement = trim($variant->measurement ?? '');
                     
-                    if ($vName && in_array(strtolower($vName), $generics)) {
-                        $displayName = $pName . ' ' . $vName;
-                    } else {
-                        $displayName = $vName ?: $pName;
+                    // Start with the product name
+                    $fullDisplayName = $pName;
+                    
+                    // If there's a brand/type that isn't already in the name, add it parenthetically or as a prefix
+                    // For beverages, Brand (Flavor) or Flavor (Brand) is common.
+                    // We'll use Brand (Flavor) if both present and different.
+                    if ($brand && stripos($pName, $brand) === false) {
+                        $fullDisplayName = $brand . ' (' . $pName . ')';
+                    }
+                    
+                    // Add variant if it's not just a duplicate of the name/brand/measurement
+                    $cleanVName = strtolower($vName);
+                    if ($vName && 
+                        stripos($fullDisplayName, $vName) === false && 
+                        stripos($measurement, $vName) === false &&
+                        !in_array($cleanVName, ['standard', 'regular', 'default', 'unit', 'pic', 'bottle'])) {
+                        $fullDisplayName .= ' - ' . $vName;
                     }
                 @endphp
-                <tr class="inventory-row" data-name="{{ strtolower($displayName . ' ' . $product->name) }}" data-category="{{ strtolower($product->category) }}">
+                <tr class="inventory-row" data-name="{{ strtolower($fullDisplayName . ' ' . $brand . ' ' . $pName . ' ' . $vName) }}" data-category="{{ strtolower($product->category) }}">
                   <td>
-                    <div class="font-weight-bold">{{ $displayName }}</div>
-                    <div class="small text-muted">{{ $variant->measurement }}</div>
+                    <div class="font-weight-bold">{{ $fullDisplayName }}</div>
+                    <div class="small text-muted">{{ $measurement }}</div>
                   </td>
                   <td><span class="badge badge-light border">{{ ucfirst(str_replace('_', ' ', $product->category)) }}</span></td>
                   <td class="text-center">
                     <button type="button" class="btn btn-sm btn-primary" 
-                            onclick="selectFromInventory('{{ addslashes($displayName) }}', '{{ $product->category }}', '{{ $variant->measurement }}', this)">
+                            onclick="selectFromInventory('{{ addslashes($fullDisplayName) }}', '{{ $product->category }}', '{{ $measurement }}', this)">
                       <i class="fa fa-plus"></i> Add
                     </button>
                   </td>
@@ -300,18 +314,22 @@ function addTemplateItem(itemData = null) {
                     <div class="form-group">
                         <label>Unit <span class="text-danger">*</span></label>
                         <select class="form-control template-item-unit" name="items[${index}][unit]" required onchange="toggleTemplateCustomUnit(${index}, this.value)">
-                            <option value="pcs" ${itemData && itemData.unit === 'pcs' ? 'selected' : ''}>Pieces (pcs)</option>
-                            <option value="liters" ${itemData && itemData.unit === 'liters' ? 'selected' : ''}>Liters (L)</option>
-                            <option value="ml" ${itemData && itemData.unit === 'ml' ? 'selected' : ''}>Milliliters (ml)</option>
-                            <option value="kg" ${itemData && itemData.unit === 'kg' ? 'selected' : ''}>Kilograms (kg)</option>
-                            <option value="g" ${itemData && itemData.unit === 'g' ? 'selected' : ''}>Grams (g)</option>
-                            <option value="boxes" ${itemData && itemData.unit === 'boxes' ? 'selected' : ''}>Boxes</option>
-                            <option value="bottles" ${itemData && itemData.unit === 'bottles' ? 'selected' : ''}>PIC (Bottle)</option>
-                            <option value="rolls" ${itemData && itemData.unit === 'rolls' ? 'selected' : ''}>Rolls</option>
-                            <option value="packs" ${itemData && itemData.unit === 'packs' ? 'selected' : ''}>Packs</option>
-                            <option value="cartons" ${itemData && itemData.unit === 'cartons' ? 'selected' : ''}>Cartons</option>
-                            <option value="bags" ${itemData && itemData.unit === 'bags' ? 'selected' : ''}>Bags</option>
-                            <option value="custom" ${itemData && itemData.unit && !['pcs','liters','ml','kg','g','boxes','bottles','rolls','packs','cartons','bags'].includes(itemData.unit) ? 'selected' : ''}>Custom Unit</option>
+                            @if($routePrefix === 'bar-keeper')
+                                <option value="bottles" selected>Bottles / PIC</option>
+                            @else
+                                <option value="pcs" ${itemData && itemData.unit === 'pcs' ? 'selected' : ''}>Pieces (pcs)</option>
+                                <option value="liters" ${itemData && itemData.unit === 'liters' ? 'selected' : ''}>Liters (L)</option>
+                                <option value="ml" ${itemData && itemData.unit === 'ml' ? 'selected' : ''}>Milliliters (ml)</option>
+                                <option value="kg" ${itemData && itemData.unit === 'kg' ? 'selected' : ''}>Kilograms (kg)</option>
+                                <option value="g" ${itemData && itemData.unit === 'g' ? 'selected' : ''}>Grams (g)</option>
+                                <option value="boxes" ${itemData && itemData.unit === 'boxes' ? 'selected' : ''}>Boxes</option>
+                                <option value="bottles" ${itemData && itemData.unit === 'bottles' ? 'selected' : ''}>PIC (Bottle)</option>
+                                <option value="rolls" ${itemData && itemData.unit === 'rolls' ? 'selected' : ''}>Rolls</option>
+                                <option value="packs" ${itemData && itemData.unit === 'packs' ? 'selected' : ''}>Packs</option>
+                                <option value="cartons" ${itemData && itemData.unit === 'cartons' ? 'selected' : ''}>Cartons</option>
+                                <option value="bags" ${itemData && itemData.unit === 'bags' ? 'selected' : ''}>Bags</option>
+                                <option value="custom" ${itemData && itemData.unit && !['pcs','liters','ml','kg','g','boxes','bottles','rolls','packs','cartons','bags'].includes(itemData.unit) ? 'selected' : ''}>Custom Unit</option>
+                            @endif
                         </select>
                     </div>
                 </div>
@@ -624,8 +642,10 @@ function selectFromInventory(name, category, measurement, btn) {
     
     // Choose sensible default unit based on category/name
     let defaultUnit = 'bottles'; // Still stored as 'bottles' in DB for consistency, but shown as PIC
-    if (category === 'water') defaultUnit = 'pcs';
-    if (finalName.toLowerCase().includes('can')) defaultUnit = 'pcs';
+    @if($routePrefix !== 'bar-keeper')
+        if (category === 'water') defaultUnit = 'pcs';
+        if (finalName.toLowerCase().includes('can')) defaultUnit = 'pcs';
+    @endif
     
     // Auto-detect water size
     let waterSize = null;

@@ -15,6 +15,9 @@ use App\Models\StockTransfer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Models\Staff;
+use App\Services\SmsService;
 use Carbon\Carbon;
 
 class PurchaseRequestController extends Controller
@@ -50,8 +53,25 @@ class PurchaseRequestController extends Controller
             $variants = \App\Models\ProductVariant::with('product')->whereIn('id', $ids)->get();
             
             foreach ($variants as $variant) {
+                $vName = trim($variant->variant_name ?? '');
+                $pName = trim($variant->product->name ?? '');
+                $measurement = trim($variant->measurement ?? '');
+                
+                // Define generic variant names that shouldn't stand alone without a product name
+                $generics = ['small', 'large', 'medium', 'standard', 'regular', 'unit', 'pic', 'bottle', 'box', 'carton', 'packet', 'kg', 'ltr', 'liters', 'ml'];
+                $isGeneric = in_array(strtolower($vName), $generics);
+
+                // If variant name exists and isn't just a generic size, use it as the primary name
+                // If it's a Bar Keeper choosing Fanta Orange from Cocacola product, naming it "Fanta Orange" is enough
+                if ($vName && !$isGeneric && strcasecmp($vName, $pName) !== 0) {
+                    $itemName = $vName;
+                } else {
+                    $itemName = $pName;
+                    // If vName is not a duplicate and is generic but helpful context, maybe don't include it if measurement is there
+                }
+                
                 $preFilledItems[] = [
-                    'item_name' => ($variant->product->name ?? '') . ($variant->measurement ? " ({$variant->measurement})" : ""),
+                    'item_name' => $itemName . ($measurement ? " ({$measurement})" : ""),
                     'category' => $variant->product->category ?? '',
                     'unit' => $variant->selling_unit ?? 'bottles',
                     'quantity' => 1,
@@ -156,6 +176,13 @@ class PurchaseRequestController extends Controller
                 ? 'Purchase request submitted successfully.' 
                 : "{$itemCount} purchase requests submitted successfully.";
             
+            // Determine highest priority among submitted items
+            $priorityRank = ['urgent' => 4, 'high' => 3, 'medium' => 2, 'low' => 1];
+            $topPriority = collect($request->items)->sortByDesc(fn($i) => $priorityRank[$i['priority']] ?? 0)->first()['priority'] ?? 'medium';
+            
+            // Notify all active managers/super-admins via SMS
+            $this->notifyManagersViaSms($staff, $itemCount, $topPriority);
+            
             return response()->json([
                 'success' => true,
                 'message' => $message,
@@ -186,6 +213,9 @@ class PurchaseRequestController extends Controller
                 'status' => 'pending',
             ]);
             
+            // Notify all active managers/super-admins via SMS
+            $this->notifyManagersViaSms($staff, 1, $request->priority);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Purchase request submitted successfully.',
@@ -193,6 +223,49 @@ class PurchaseRequestController extends Controller
             ]);
         }
     }
+
+    /**
+     * Send SMS notification to all active managers and super admins.
+     */
+    private function notifyManagersViaSms(Staff $requester, int $itemCount, string $priority): void
+    {
+        try {
+            $managers = Staff::whereIn('role', ['manager', 'super_admin', 'Super Admin'])
+                ->where('is_active', true)
+                ->whereNotNull('phone')
+                ->where('phone', '!=', '')
+                ->get();
+
+            if ($managers->isEmpty()) {
+                Log::info('[PurchaseRequest] No active managers with phone numbers found for SMS notification.');
+                return;
+            }
+
+            $smsService = new SmsService();
+            $department  = $requester->getDepartmentName();
+            $requesterName = $requester->name ?? 'Staff';
+
+            foreach ($managers as $manager) {
+                try {
+                    $smsService->sendPurchaseRequestNotification(
+                        $manager->phone,
+                        $manager->name ?? 'Manager',
+                        $requesterName,
+                        $department,
+                        $itemCount,
+                        $priority
+                    );
+                } catch (\Throwable $e) {
+                    Log::error('[PurchaseRequest] Failed to send SMS to manager: ' . ($manager->name ?? $manager->id), [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::error('[PurchaseRequest] Error in notifyManagersViaSms: ' . $e->getMessage());
+        }
+    }
+
 
     /**
      * Show my purchase requests
@@ -463,7 +536,7 @@ class PurchaseRequestController extends Controller
             'status' => 'completed',
             'transfer_date' => now(),
             'received_at' => now(),
-            'notes' => 'Directly received from purchase: ' . $shoppingListItem->product_name,
+            'notes' => 'Directly received from purchase: ' . $shoppingListItem->product_name . (($variant->variant_name && stripos($shoppingListItem->product_name, $variant->variant_name) === false) ? ' as ' . $variant->variant_name : ''),
             'unit_cost' => $shoppingListItem->unit_price,
             'total_cost' => $shoppingListItem->purchased_cost,
             'selling_price_per_pic' => $variant->selling_price_per_pic,
@@ -708,7 +781,26 @@ class PurchaseRequestController extends Controller
         $updateData['last_changes'] = !empty($changes) ? $changes : null;
         
         $purchaseRequest->update($updateData);
-        
+
+        // Notify the requester via SMS if they have a phone number and changes were made
+        if (!empty($changes)) {
+            try {
+                $purchaseRequest->load('requestedBy');
+                $requester = $purchaseRequest->requestedBy;
+                if ($requester && !empty($requester->phone)) {
+                    (new SmsService())->sendPurchaseEditedNotification(
+                        $requester->phone,
+                        $requester->name ?? 'Staff',
+                        $purchaseRequest->item_name,
+                        $manager->name ?? 'Manager',
+                        $changes
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::error('[PurchaseRequest] Failed to send edit SMS to requester: ' . $e->getMessage());
+            }
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Purchase request updated successfully.',
@@ -762,7 +854,23 @@ class PurchaseRequestController extends Controller
             'approved_by' => $manager->id,
             'approved_at' => now(),
         ]);
-        
+
+        // Notify the requester via SMS
+        try {
+            $purchaseRequest->load('requestedBy');
+            $requester = $purchaseRequest->requestedBy;
+            if ($requester && !empty($requester->phone)) {
+                (new SmsService())->sendPurchaseApprovedNotification(
+                    $requester->phone,
+                    $requester->name ?? 'Staff',
+                    $purchaseRequest->item_name,
+                    $manager->name ?? 'Manager'
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::error('[PurchaseRequest] Failed to send approval SMS to requester: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Purchase request approved successfully.',
@@ -802,6 +910,23 @@ class PurchaseRequestController extends Controller
                     'approved_at' => now(),
                 ]);
                 $approvedCount++;
+
+                // Notify the requester via SMS
+                try {
+                    $purchaseRequest->load('requestedBy');
+                    $requester = $purchaseRequest->requestedBy;
+                    if ($requester && !empty($requester->phone)) {
+                        (new SmsService())->sendPurchaseApprovedNotification(
+                            $requester->phone,
+                            $requester->name ?? 'Staff',
+                            $purchaseRequest->item_name,
+                            $manager->name ?? 'Manager'
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    Log::error('[PurchaseRequest] Failed to send bulk-approval SMS: ' . $e->getMessage());
+                }
+
             } elseif ($purchaseRequest && $purchaseRequest->status === 'approved') {
                 $alreadyApprovedCount++;
             }
@@ -845,7 +970,24 @@ class PurchaseRequestController extends Controller
             'status' => 'rejected',
             'rejection_reason' => $request->rejection_reason,
         ]);
-        
+
+        // Notify the requester via SMS
+        try {
+            $purchaseRequest->load('requestedBy');
+            $requester = $purchaseRequest->requestedBy;
+            if ($requester && !empty($requester->phone)) {
+                (new SmsService())->sendPurchaseRejectedNotification(
+                    $requester->phone,
+                    $requester->name ?? 'Staff',
+                    $purchaseRequest->item_name,
+                    $manager->name ?? 'Manager',
+                    $request->rejection_reason
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::error('[PurchaseRequest] Failed to send rejection SMS to requester: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Purchase request rejected.',

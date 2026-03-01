@@ -164,8 +164,8 @@
         <div class="header">
             <h1>PRIMELAND HOTEL</h1>
             <p>Sokoine Road - Moshi, Kilimanjaro - Tanzania</p>
-            <p>Mobile/WhatsApp: 0677-155-156 / +255 677-155-157</p>
-            <p>Email: info@primelandhotel.co.tz</p>
+            <p>Mobile/WhatsApp: 0677-155-156</p>
+            <p>Email: info@primelandhotel.com / infoprimelandhotel@gmail.com</p>
         </div>
 
         <!-- Docket Info -->
@@ -233,7 +233,7 @@
             <p><strong>Thank you for your patronage!</strong></p>
             <p>This is a computer-generated docket. No signature required.</p>
             <p style="margin-top: 10px;">For inquiries, please contact us at the numbers above.</p>
-            <p class="emca-credit">Powered By EmCa Technologies</p>
+            <p class="emca-credit">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
         </div>
     </div>
 

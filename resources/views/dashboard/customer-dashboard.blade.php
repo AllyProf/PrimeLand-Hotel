@@ -624,12 +624,6 @@
               <strong>Restaurant Service</strong>
             </a>
           </div>
-          <div class="col-md-3 col-sm-6 col-6 mb-2">
-            <button onclick="openServiceRequestForFirstBooking()" class="btn btn-light btn-block" style="min-height: 60px;">
-              <i class="fa fa-plus-circle fa-2x mb-1"></i><br>
-              <strong>Other Services</strong>
-            </button>
-          </div>
           @endif
           @if($hasActiveStay)
           <div class="col-md-3 col-sm-6 col-6 mb-2">
@@ -3802,7 +3796,8 @@ let bookingsData = {};
         bookingsData[{{ $booking->id }}] = {
             id: {{ $booking->id }},
             roomPrice: {{ $booking->room->price_per_night ?? 0 }},
-            currentCheckOut: '{{ $booking->check_out->format('Y-m-d') }}'
+            currentCheckOut: '{{ $booking->check_out->format('Y-m-d') }}',
+            availableUntil: '{{ $booking->available_until ? $booking->available_until->format('Y-m-d') : '' }}'
         };
     @endforeach
 @endif
@@ -3820,9 +3815,26 @@ function openExtensionModal(bookingId, currentCheckOut) {
     const dateInput = document.getElementById('extension_requested_to');
     dateInput.value = '';
     dateInput.min = currentCheckOut;
+    
+    // Set max date if there's a future guest
+    if (currentBookingData.availableUntil) {
+        dateInput.max = currentBookingData.availableUntil;
+    } else {
+        dateInput.removeAttribute('max');
+    }
+
     document.getElementById('extension_reason').value = '';
     document.getElementById('extensionCostPreview').style.display = 'none';
-    document.getElementById('extensionAlert').innerHTML = '';
+    const alertDiv = document.getElementById('extensionAlert');
+    alertDiv.innerHTML = '';
+    
+    // Show availability info if there's a conflict coming up
+    if (currentBookingData.availableUntil) {
+        alertDiv.innerHTML = '<div class="alert alert-info py-2" style="font-size: 13px;">' +
+            '<i class="fa fa-info-circle"></i> This room is available for extension until <strong>' + 
+            new Date(currentBookingData.availableUntil).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'}) + 
+            '</strong>, as it is booked for another guest after that.</div>';
+    }
     
     // Remove existing event listener and add new one
     dateInput.removeEventListener('change', calculateExtensionCost);
@@ -3846,10 +3858,32 @@ function calculateExtensionCost() {
     
     const currentCheckOut = new Date(currentBookingData.currentCheckOut);
     const requestedDate = new Date(newDate);
+    const alertDiv = document.getElementById('extensionAlert');
+
+    // Reset alert div if it previously had a conflict (keep info alert if present)
+    const existingInfoAlert = alertDiv.querySelector('.alert-info');
+    if (!existingInfoAlert) {
+        alertDiv.innerHTML = '';
+    } else {
+        // Clear conflict danger alert only
+        const conflictAlert = alertDiv.querySelector('.alert-danger.conflict-warning');
+        if (conflictAlert) conflictAlert.remove();
+    }
     
     if (requestedDate <= currentCheckOut) {
         document.getElementById('extensionCostPreview').style.display = 'none';
         return;
+    }
+
+    // Check availability limit
+    if (currentBookingData.availableUntil) {
+        const limitDate = new Date(currentBookingData.availableUntil);
+        if (requestedDate > limitDate) {
+            alertDiv.innerHTML += '<div class="alert alert-danger py-2 conflict-warning" style="font-size: 13px;">' +
+                '<i class="fa fa-exclamation-triangle"></i> Sorry, the room is already booked by another guest on the requested date.</div>';
+            document.getElementById('extensionCostPreview').style.display = 'none';
+            return;
+        }
     }
     
     const diffTime = requestedDate - currentCheckOut;

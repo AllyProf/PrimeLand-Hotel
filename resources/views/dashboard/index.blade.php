@@ -17,7 +17,9 @@
   $recentBookings = $recentBookings ?? collect();
   $revenueData = $revenueData ?? [];
   $bookingStatusData = $bookingStatusData ?? [];
+  $smsStats = $smsStats ?? ['balance' => '0.00', 'recent_logs' => []];
 @endphp
+
 
 <!-- Main Statistics Cards (4 Cards Only) -->
 <div class="row mb-3">
@@ -313,7 +315,8 @@
   </div>
 </div>
 
-<!-- Charts and Recent Bookings -->
+
+
 <div class="row">
   <div class="col-md-6">
     <div class="tile">

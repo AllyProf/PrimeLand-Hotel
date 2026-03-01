@@ -375,8 +375,8 @@
         <h1>PRIMELAND HOTEL</h1>
         <div style="line-height: 1.6;">
             <p><strong>Location:</strong> Sokoine Road - Moshi, Kilimanjaro - Tanzania</p>
-            <p><strong>Mobile/WhatsApp:</strong> 0677-155-156 / +255 677-155-157</p>
-            <p><strong>Email:</strong> info@primelandhotel.co.tz / infoprimelandhotel@gmail.com</p>
+            <p><strong>Mobile/WhatsApp:</strong> 0677-155-156</p>
+            <p><strong>Email:</strong> info@primelandhotel.com / infoprimelandhotel@gmail.com</p>
         </div>
         <p style="margin-top: 15px; font-size: 18px; font-weight: bold; color: #e07632;">Bar Operations Report</p>
     </div>
@@ -440,7 +440,7 @@
                 @endphp
                 <div class="receipt-info-row">
                     <span class="receipt-info-label">Bottles Sold:</span>
-                    <span class="receipt-info-value" style="color: #28a745;"><strong>{{ number_format($totalSoldQty + $eventQty) }} Units</strong></span>
+                    <span class="receipt-info-value" style="color: #28a745;"><strong>{{ number_format(collect($salesData)->sum('pic_equivalent') + $eventQty, 1) }} Units</strong></span>
                 </div>
                 <div class="receipt-info-row">
                     <span class="receipt-info-label">Sales Variants:</span>
@@ -464,18 +464,14 @@
         <table class="receipt-details-table">
             <thead>
                 <tr>
-                    <th style="width: 40px;">Img</th>
-                    <th style="text-align: left;">Drink Item / Variant</th>
-                    <th>Expire</th>
+                    <th style="width: 40px;">#</th>
+                    <th style="text-align: left;">Drink Item</th>
                     <th>Opening</th>
-                    <th>Inn</th>
+                    <th>New (In)</th>
                     <th>Sold</th>
-                    <th>Rev. (Bottle)</th>
-                    <th>Rev. (Actual)</th>
-                    <th>Potential (All)</th>
-                    <th>Stock Value</th>
-                    <th>Profit Potential</th>
-                    <th style="text-align: right;">Balance</th>
+                    <th>Sales (TZS)</th>
+                    <th style="text-align: right;">Closing Bal</th>
+                    <th>Expire</th>
                 </tr>
             </thead>
             <tbody>
@@ -498,50 +494,53 @@
 
                 @foreach($groupedReport as $category => $items)
                 <tr class="category-row">
-                    <td colspan="11"><strong>{{ $category }}</strong></td>
-                    <td style="text-align: right;"><small>{{ $items->count() }} items</small></td>
+                    <td colspan="6" style="background-color: #fcece2;"><strong>{{ $category }}</strong></td>
+                    <td style="text-align: right; background-color: #fcece2;"><small>{{ $items->count() }} items</small></td>
+                    <td style="background-color: #fcece2;"></td>
                 </tr>
-                @foreach($items as $item)
+                @foreach($items as $index => $item)
                 <tr>
-                    <td style="text-align: center; padding: 2px;">
-                        @if($item->image)
-                            <img src="{{ asset('storage/' . ltrim($item->image, '/')) }}" class="rounded shadow-sm" style="width: 30px; height: 30px; object-fit: cover; border: 1px solid #ddd;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
-                        @else
-                            <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 30px; height: 30px; border: 1px solid #eee;">
-                                <i class="fa fa-glass text-muted" style="font-size: 10px;"></i>
-                            </div>
-                        @endif
-                    </td>
+                    <td style="text-align: center; color: #999;">{{ $index + 1 }}</td>
                     <td style="padding-left: 10px;">
-                        {{ $item->name }}
+                        <strong>{{ $item->name }}</strong>
                         @if($item->closing_stock <= 0)
-                            <span class="status-badge" style="color: #dc3545;">[OUT]</span>
+                            <span class="status-badge" style="color: #dc3545; border: 1px solid #dc3545; font-size: 8px;">OUT</span>
                         @elseif($item->closing_stock < 5)
-                            <span class="status-badge" style="color: #ffc107;">[LOW]</span>
+                            <span class="status-badge" style="color: #ffc107; border: 1px solid #ffc107; font-size: 8px;">LOW</span>
                         @endif
                     </td>
-                    <td style="text-align: center; color: #666;">{{ $item->expiry_date }}</td>
                     <td style="text-align: center;">{{ number_format($item->opening_stock, 1) }}</td>
-                    <td style="text-align: center; color: #007bff;">{{ number_format($item->received, 1) }}</td>
+                    <td style="text-align: center; color: #007bff;">+{{ number_format($item->received, 1) }}</td>
                     <td style="text-align: center; color: #dc3545;">
                         @php
-                            $soldVal = $item->sold;
-                            $ratio = $item->servings_per_pic ?? 1;
-                            $totalGlasses = round($soldVal * $ratio);
+                            $soldVal = (float)$item->sold;
+                            $ratio = (float)($item->servings_per_pic ?? 1);
                         @endphp
-                        @if($ratio > 1 && $soldVal > 0)
-                            {{ $totalGlasses }} gls
-                            <br><small class="text-muted">({{ number_format($soldVal, 1) }} Pic)</small>
+                        @if($ratio > 1)
+                            @php 
+                                $sFull = floor($soldVal + 0.001);
+                                $sGls = round(($soldVal - $sFull) * $ratio);
+                            @endphp
+                            {{ $sFull }}B {{ $sGls }}G
                         @else
                             {{ number_format($soldVal, 1) }}
                         @endif
                     </td>
-                    <td style="text-align: center;">{{ number_format($item->expected_revenue) }}</td>
                     <td style="text-align: center; font-weight: bold; color: #28a745;">{{ number_format($item->actual_revenue) }}</td>
-                    <td style="text-align: center; color: #e07632;">{{ number_format($item->max_potential_revenue) }}</td>
-                    <td style="text-align: center; color: #666;">{{ number_format($item->stock_value) }}</td>
-                    <td style="text-align: center; font-weight: bold; color: #17a2b8;">{{ number_format($item->profit_potential) }}</td>
-                    <td style="text-align: right; background-color: #f8f9fa;"><strong>{{ number_format($item->closing_stock, 1) }}</strong></td>
+                    <td style="text-align: right; background-color: #f8f9fa;">
+                        <strong>
+                            @if($ratio > 1)
+                                @php 
+                                    $cFull = floor((float)$item->closing_stock + 0.001);
+                                    $cGls = round(((float)$item->closing_stock - $cFull) * $ratio);
+                                @endphp
+                                {{ $cFull }}B {{ $cGls }}G
+                            @else
+                                {{ number_format($item->closing_stock, 1) }}
+                            @endif
+                        </strong>
+                    </td>
+                    <td style="text-align: center; color: #666; font-size: 10px;">{{ $item->expiry_date }}</td>
                 </tr>
                 @endforeach
                 @endforeach
@@ -595,7 +594,14 @@
                     @foreach($orders as $item)
                     <tr>
                         <td>{{ $item->item_name }}</td>
-                        <td style="text-align: center;">{{ $item->total_qty }}</td>
+                        <td style="text-align: center;">
+                            @php
+                                $isGlass = (int)$item->servings_per_pic > 1 && ($item->total_qty / $item->servings_per_pic) < 1;
+                                // Or check price vs bottle price logic if we had it, but simplified:
+                                // If Qty is clearly a glass qty (e.g. 2 glasses) show G
+                            @endphp
+                            <strong>{{ $item->total_qty }}</strong><small>{{ (int)$item->servings_per_pic > 1 ? ($item->pic_equivalent < $item->total_qty ? 'G' : 'B') : '' }}</small>
+                        </td>
                         <td style="text-align: right;">{{ number_format($item->total_revenue) }}</td>
                     </tr>
                     @endforeach
@@ -740,24 +746,10 @@
                 <span style="font-size: 11px; color: #666; text-transform: uppercase;">Events Usage</span><br>
                 <strong style="font-size: 16px; color: #17a2b8;">{{ isset($ceremonyUsage) ? number_format($ceremonyUsage->sum('total_price_tsh')) : '0' }} TZS</strong>
             </div>
-            <div style="font-size: 20px; color: #999;">=</div>
-            <div style="text-align: center; border: 2px solid #28a745; padding: 10px 15px; background: #fff; border-radius: 5px; min-width: 180px;">
-                <span style="font-size: 11px; color: #28a745; text-transform: uppercase; font-weight: bold;">TOTAL REVENUE</span><br>
-                <strong style="font-size: 20px; color: #28a745;">{{ number_format($totalActual) }} TZS</strong>
+            <div style="text-align: center; border: 2px solid #28a745; padding: 15px 30px; background: #fff; border-radius: 8px; min-width: 250px;">
+                <span style="font-size: 14px; color: #28a745; text-transform: uppercase; font-weight: bold;">TOTAL REVENUE</span><br>
+                <strong style="font-size: 28px; color: #28a745;">{{ number_format($totalActual) }} TZS</strong>
             </div>
-            <div style="font-size: 20px; color: #999;">/</div>
-            <div style="text-align: center; border: 2px solid #e07632; padding: 10px 15px; background: #fff; border-radius: 5px; min-width: 180px;">
-                <span style="font-size: 11px; color: #e07632; text-transform: uppercase; font-weight: bold;">POTENTIAL (FULL STOCK)</span><br>
-                <strong style="font-size: 20px; color: #e07632;">{{ number_format($totalMaxPotential) }} TZS</strong>
-            </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 20px;">
-            <small class="text-muted">
-                Revenue Achievement: 
-                <strong>{{ $totalMaxPotential > 0 ? number_format(($totalActual / $totalMaxPotential) * 100, 1) : 0 }}%</strong> 
-                of total stock value
-            </small>
         </div>
     </div>
     
@@ -779,7 +771,7 @@
     <div class="receipt-footer">
         <p><strong>PrimeLand Hotel Management System</strong></p>
         <p>This is an official bar production and stock report generated for auditing purposes.</p>
-        <p class="powered-by" style="color: #940000; margin-top: 15px; font-weight: bold;">Powered By EmCa Technologies</p>
+        <p class="powered-by" style="color: #940000; margin-top: 15px; font-weight: bold;">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
     </div>
 </div>
 

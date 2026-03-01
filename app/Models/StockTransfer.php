@@ -125,9 +125,10 @@ class StockTransfer extends Model
     public function getQuantityUnitNameAttribute()
     {
         return match($this->quantity_unit) {
-            'packages' => $this->productVariant->packaging_name ?? 'Packages',
-            'bottles' => 'Bottles',
-            default => 'Packages',
+            'packages' => ($this->productVariant->packaging_name ?? 'Packages'),
+            'bottles', 'bottle' => 'Bottles',
+            'pic', 'pcs' => 'Pcs',
+            default => ucfirst($this->quantity_unit ?? 'Packages'),
         };
     }
 

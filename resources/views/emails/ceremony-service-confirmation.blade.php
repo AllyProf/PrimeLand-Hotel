@@ -79,9 +79,9 @@ Thank you for choosing PrimeLand Hotel for your ceremony/birthday celebration! W
 
 If you have any questions or need to make changes to your ceremony service, please contact us:
 
-**Phone:** 0677-155-156 / +255 677-155-157
+**Phone:** 0677-155-156
 
-**Email:** info@primelandhotel.co.tz | infoprimelandhotel@gmail.com
+**Email:** info@primelandhotel.com / infoprimelandhotel@gmail.com | infoprimelandhotel@gmail.com
 
 **Location:** Sokoine Road - Moshi Kilimanjaro - Tanzania
 

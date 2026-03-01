@@ -146,11 +146,17 @@
                 {{-- Consumption --}}
                 @php
                     $barConsumption = $dayService->serviceRequests ?? collect();
+                    // Exclude cancelled items
+                    $barConsumption = $barConsumption->filter(fn($item) => strtolower($item->status ?? "") !== 'cancelled');
+                    
                     if(isset($filterCategories) && !empty($filterCategories)) {
                         $barConsumption = $barConsumption->filter(function($item) use ($filterCategories) {
                             return $item->service && in_array($item->service->category, $filterCategories);
                         });
                     }
+                    
+                    // Exclude items that have been merged/billed into the main day service bill
+                    $barConsumption = $barConsumption->filter(fn($item) => strtolower($item->status ?? '') !== 'billed');
                     $totalConsumption = $barConsumption->sum('total_price_tsh');
                 @endphp
                 @if($barConsumption->isNotEmpty())
@@ -173,11 +179,17 @@
                 
                 // Ensure we use filtered list for totals
                 $calcConsumption = $dayService->serviceRequests ?? collect();
+                // Exclude cancelled items
+                $calcConsumption = $calcConsumption->filter(fn($item) => strtolower($item->status ?? "") !== 'cancelled');
+
                 if(isset($filterCategories) && !empty($filterCategories)) {
                     $calcConsumption = $calcConsumption->filter(function($item) use ($filterCategories) {
                         return $item->service && in_array($item->service->category, $filterCategories);
                     });
                 }
+                
+                // Exclude items that have been merged/billed into the main day service bill
+                $calcConsumption = $calcConsumption->filter(fn($item) => strtolower($item->status ?? '') !== 'billed');
                 
                 $totalConsumption = $calcConsumption->sum('total_price_tsh');
                 $totalBill = $mainAmount + $totalConsumption;
@@ -217,7 +229,7 @@
             <div class="signature-line" style="margin-top: 30px; border-color: #e77a3a;"></div>
             
             <p style="font-size: 10px; margin-top: 15px;">Thank you for visiting PrimeLand Hotel!</p>
-            <p style="font-size: 10px; margin-top: 5px; color: #940000;">Powered By EmCa Technologies</p>
+            <p style="font-size: 10px; margin-top: 5px; color: #940000;">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
         </div>
     </div>
     <script>

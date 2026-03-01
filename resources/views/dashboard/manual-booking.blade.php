@@ -40,7 +40,7 @@
         </div>
       </div>
       
-      <form id="manualBookingForm" method="POST" action="{{ $role === 'reception' ? route('reception.bookings.manual.store') : route('admin.bookings.manual.store') }}">
+      <form id="manualBookingForm" method="POST" action="{{ $role === 'reception' ? route('reception.bookings.manual.store') : route('admin.bookings.manual.store') }}" novalidate>
         @csrf
         
         <!-- Step 1: Guest Information -->
@@ -352,13 +352,90 @@
 
         <div class="row mb-3" id="exchange_rate_display" style="display: none;">
           <div class="col-md-12">
-            <div style="padding: 8px; background-color: #f8f9fa; border-radius: 4px; border-left: 3px solid #e77a3a;">
-              <small style="color: #495057; font-weight: 500;">
-                <i class="fa fa-exchange-alt"></i> Exchange Rate: <strong>1 USD = <span id="exchange_rate_value">{{ number_format($exchangeRate ?? 0, 2) }}</span> TZS</strong> (will be locked at booking creation)
+            <div style="padding: 8px 12px; background-color: #fff8e1; border-radius: 6px; border-left: 3px solid #e77a3a; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <small style="color: #495057; font-weight: 500; flex:1; min-width:180px;">
+                <i class="fa fa-exchange-alt"></i> Exchange Rate:
+                <strong>1 USD = <span id="exchange_rate_value">{{ number_format($exchangeRate ?? 0, 2) }}</span> TZS</strong>
+                <span id="rate_override_badge" style="display:none;" class="badge badge-warning ml-1"><i class="fa fa-pencil"></i> Custom</span>
               </small>
+              <button type="button" class="btn btn-outline-warning btn-sm" id="toggleRateOverrideBtn"
+                      onclick="toggleManualRatePanel()" style="white-space:nowrap;">
+                <i class="fa fa-pencil-square-o"></i> Override Rate
+              </button>
             </div>
           </div>
         </div>
+
+        {{-- Exchange Rate Override Panel --}}
+        <div class="row mb-3" id="rateOverridePanelWrapper" style="display:none;">
+          <div class="col-md-12">
+            <div class="card border-warning shadow-sm">
+              <div class="card-header py-2" style="background:#fff3cd; border-bottom:1px solid #ffc107;">
+                <strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> Custom Exchange Rate Override</strong>
+                <small class="text-muted ml-2">— Use when the guest paid via Booking.com, PayPal, or with a bank rate different from the system rate.</small>
+                <button type="button" class="close" onclick="toggleManualRatePanel()" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="card-body pb-3 pt-3">
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="form-group mb-2">
+                      <label class="small font-weight-bold">Custom Rate (TZS per 1 USD) <span class="text-danger">*</span></label>
+                      <div class="input-group input-group-sm">
+                        <div class="input-group-prepend"><span class="input-group-text">1 USD =</span></div>
+                        <input type="number" class="form-control" id="custom_exchange_rate_input"
+                               placeholder="{{ number_format($exchangeRate ?? 2500, 0) }}"
+                               min="100" max="10000000" step="1"
+                               oninput="applyCustomRate()">
+                        <div class="input-group-append"><span class="input-group-text">TZS</span></div>
+                      </div>
+                      <small class="text-muted">System rate: <strong>{{ number_format($exchangeRate ?? 2500, 2) }} TZS</strong></small>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group mb-2">
+                      <label class="small font-weight-bold">Rate Source <span class="text-danger">*</span></label>
+                      <select class="form-control form-control-sm" id="custom_rate_source_input" onchange="applyCustomRate()">
+                        <option value="">— Select platform —</option>
+                        <option value="booking.com">Booking.com</option>
+                        <option value="agoda">Agoda</option>
+                        <option value="expedia">Expedia</option>
+                        <option value="airbnb">Airbnb</option>
+                        <option value="paypal">PayPal</option>
+                        <option value="bank">Bank Transfer Rate</option>
+                        <option value="manual">Manual (Staff Override)</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="form-group mb-2">
+                      <label class="small font-weight-bold">Note <span class="text-muted">(optional)</span></label>
+                      <input type="text" class="form-control form-control-sm" id="custom_rate_note_input"
+                             placeholder="e.g. Guest paid via Booking.com at 2,650 TZS/USD"
+                             maxlength="500">
+                    </div>
+                  </div>
+                </div>
+                <div class="row mt-1" id="ratePreviewRow" style="display:none;">
+                  <div class="col-md-12">
+                    <div class="alert alert-info py-2 mb-0 small">
+                      <i class="fa fa-info-circle"></i>
+                      Using custom rate: <strong id="ratePreviewDisplay">—</strong> &mdash;
+                      Recommended price becomes <strong id="ratePreviewRecommended">—</strong> TZS
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{-- Hidden fields passed to backend --}}
+        <input type="hidden" name="custom_exchange_rate" id="custom_exchange_rate_hidden" value="">
+        <input type="hidden" name="rate_source"          id="rate_source_hidden"          value="">
+        <input type="hidden" name="exchange_rate_note"   id="exchange_rate_note_hidden"   value="">
 
         <div class="row">
           <div class="col-md-6">
@@ -644,9 +721,27 @@
 @endsection
 
 @section('scripts')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 <script src="{{ asset('dashboard_assets/js/plugins/sweetalert.min.js') }}"></script>
 <script src="{{ asset('dashboard_assets/js/plugins/select2.min.js') }}"></script>
 <style>
+/* Select2 Overrides */
+.select2-container { width: 100% !important; }
+.select2-container--default .select2-selection--single {
+  height: 38px; border: 1px solid #ced4da; border-radius: 4px; padding: 0;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 36px; padding-left: 12px; padding-right: 36px; color: #495057; font-size: 14px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; right: 6px; }
+.select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: #e77a3a; box-shadow: 0 0 0 0.2rem rgba(231,122,58,0.25); outline: 0;
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: #e77a3a; }
+.select2-container--default .select2-search--dropdown .select2-search__field {
+  border: 1px solid #ced4da; border-radius: 4px; padding: 6px 10px;
+}
+.select2-dropdown { border: 1px solid #ced4da; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 /* Wizard Styles */
 .wizard-steps {
   display: flex;
@@ -853,65 +948,63 @@
   }
 }
 
-/* Room Card Styles */
+/* Room Card Styles — Compact */
 .room-card {
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
 }
 
 .room-card-inner {
   background: #fff;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
 }
 
 .room-card:hover .room-card-inner {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
   border-color: #e77a3a;
 }
 
 .room-card.selected .room-card-inner {
   border-color: #e77a3a;
-  border-width: 3px;
-  box-shadow: 0 8px 25px rgba(231, 122, 58, 0.3);
-  transform: translateY(-5px);
+  border-width: 2px;
+  box-shadow: 0 4px 14px rgba(231, 122, 58, 0.25);
 }
 
 .room-image-container {
   position: relative;
-  width: 100%;
-  height: 140px;
+  width: 70px;
+  min-width: 70px;
+  height: 70px;
   overflow: hidden;
-  background: #f5f5f5;
+  background: #f0f0f0;
+  flex-shrink: 0;
 }
 
 .room-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.room-card:hover .room-image {
-  transform: scale(1.05);
 }
 
 .room-availability-badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 4px;
+  right: 4px;
   color: white;
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 9px;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   z-index: 2;
+  line-height: 1.4;
 }
 
 .room-availability-badge.available-now {
@@ -929,33 +1022,32 @@
 
 .room-card.unselectable {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .room-card.unselectable:hover .room-card-inner {
-  transform: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
   border-color: #e0e0e0;
 }
 
 .room-card.unselectable .room-image-container::after {
-  content: 'NOT SELECTABLE';
+  content: 'N/A';
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) rotate(-15deg);
-  background: rgba(220, 53, 69, 0.9);
+  transform: translate(-50%, -50%);
+  background: rgba(220, 53, 69, 0.85);
   color: white;
-  padding: 5px 15px;
+  padding: 2px 6px;
   font-weight: bold;
-  font-size: 10px;
-  border-radius: 4px;
+  font-size: 9px;
+  border-radius: 3px;
   z-index: 4;
   pointer-events: none;
 }
 
 .room-availability-badge i {
-  margin-right: 4px;
+  margin-right: 2px;
 }
 
 .room-selected-overlay {
@@ -971,7 +1063,6 @@
   justify-content: center;
   flex-direction: column;
   z-index: 3;
-  animation: fadeIn 0.3s ease;
 }
 
 .room-card.selected .room-selected-overlay {
@@ -979,92 +1070,96 @@
 }
 
 .room-selected-overlay i {
-  margin-bottom: 5px;
-  animation: scaleIn 0.3s ease;
+  font-size: 16px;
+  margin-bottom: 2px;
 }
 
 .room-selected-overlay p {
-  font-size: 14px;
+  font-size: 9px;
   font-weight: bold;
   margin: 0;
-}
-
-.room-card-body {
-  padding: 15px;
-}
-
-.room-number {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.room-number i {
-  color: #e77a3a;
-  font-size: 18px;
-}
-
-.room-type-badge {
-  display: inline-block;
-  background: linear-gradient(135deg, #e77a3a 0%, #d66a2a 100%);
-  color: white;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 15px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
+.room-card-body {
+  padding: 8px 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.room-number {
+  font-size: 13px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-number i {
+  color: #e77a3a;
+  font-size: 12px;
+}
+
+.room-type-badge {
+  display: inline-block;
+  background: #e77a3a;
+  color: white;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
 .room-details {
-  margin: 10px 0;
-  padding: 10px 0;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 2px 0;
 }
 
 .room-detail-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #666;
-}
-
-.room-detail-item:last-child {
-  margin-bottom: 0;
+  gap: 4px;
+  font-size: 11px;
+  color: #888;
 }
 
 .room-detail-item i {
-  width: 20px;
-  text-align: center;
+  font-size: 10px;
 }
 
 .room-price {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 2px solid #f0f0f0;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .price-label {
-  font-size: 11px;
-  color: #999;
+  font-size: 10px;
+  color: #aaa;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .price-amount {
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 700;
   color: #e77a3a;
 }
 
@@ -1111,6 +1206,11 @@
 // Wizard state
 let currentWizardStep = 1;
 const totalWizardSteps = 4;
+
+// Active rate — starts as system rate, updated when staff overrides
+// Active rate — starts as system rate, updated when staff overrides
+window.systemExchangeRate = {{ $exchangeRate ?? 0 }};
+window.activeExchangeRate = window.systemExchangeRate;
 
 // Update wizard step indicator
 function updateWizardStepIndicator() {
@@ -1345,11 +1445,12 @@ function updateReviewSummary() {
     }
   }
   
-  // Exchange rate
-  const exchangeRate = {{ $exchangeRate ?? 0 }};
+  // Exchange rate - use activeExchangeRate if defined, otherwise system rate
+  // Exchange rate - use window.activeExchangeRate
+  const reviewRate = window.activeExchangeRate || window.systemExchangeRate;
   const exchangeRateEl = document.getElementById('review_exchange_rate');
   if (exchangeRateEl) {
-    exchangeRateEl.textContent = '1 USD = ' + (exchangeRate > 0 ? exchangeRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00') + ' TZS';
+    exchangeRateEl.textContent = '1 USD = ' + (reviewRate > 0 ? reviewRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '0.00') + ' TZS';
   }
   
   // Nights
@@ -1722,10 +1823,11 @@ document.addEventListener('DOMContentLoaded', function() {
       if (el) el.textContent = currencySymbol;
     });
     
-    // Show/hide exchange rate display (only for International)
+    // Always show exchange rate bar — override must be accessible for all guest types
+    // (e.g. Tanzanian guest arriving via Booking.com with a different platform rate)
     const exchangeRateDisplay = document.getElementById('exchange_rate_display');
     if (exchangeRateDisplay) {
-      exchangeRateDisplay.style.display = isTanzanian ? 'none' : 'block';
+      exchangeRateDisplay.style.display = 'block';
     }
     
     // For Tanzanian: Show USD conversion below, hide TZS conversion
@@ -2037,18 +2139,109 @@ document.addEventListener('DOMContentLoaded', function() {
   // const showOtherRoomsBtn = document.getElementById('show_other_rooms_btn'); // Button removed
   const roomSelectHint = document.getElementById('room_select_hint');
   
-  // Exchange rate from server
-  const exchangeRate = {{ $exchangeRate ?? 0 }};
-  
+  // Active rate is now declared globally above
+
   // Update exchange rate display value
-  if (exchangeRate > 0) {
+  if (window.systemExchangeRate > 0) {
     const exchangeRateValueEl = document.getElementById('exchange_rate_value');
     if (exchangeRateValueEl) {
-      exchangeRateValueEl.textContent = exchangeRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      exchangeRateValueEl.textContent = window.systemExchangeRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
     }
   }
-  
+
+  // ── Custom Exchange Rate Override helpers ────────────────────────────────
+
+  window.toggleManualRatePanel = function() {
+    const panel   = document.getElementById('rateOverridePanelWrapper');
+    const btnIcon = document.querySelector('#toggleRateOverrideBtn i');
+    if (!panel) return;
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : 'block';
+    if (btnIcon) btnIcon.className = open ? 'fa fa-pencil-square-o' : 'fa fa-times';
+    document.getElementById('toggleRateOverrideBtn').classList.toggle('btn-outline-warning', open);
+    document.getElementById('toggleRateOverrideBtn').classList.toggle('btn-warning', !open);
+  };
+
+  window.applyCustomRate = function() {
+    const rateInput   = document.getElementById('custom_exchange_rate_input');
+    const srcSelect   = document.getElementById('custom_rate_source_input');
+    const noteInput   = document.getElementById('custom_rate_note_input');
+    const rateHidden  = document.getElementById('custom_exchange_rate_hidden');
+    const srcHidden   = document.getElementById('rate_source_hidden');
+    const noteHidden  = document.getElementById('exchange_rate_note_hidden');
+    const badge       = document.getElementById('rate_override_badge');
+    const previewRow  = document.getElementById('ratePreviewRow');
+    const previewDisp = document.getElementById('ratePreviewDisplay');
+    const previewRec  = document.getElementById('ratePreviewRecommended');
+    const rateValEl   = document.getElementById('exchange_rate_value');
+
+    const rawRate = parseFloat(rateInput ? rateInput.value : 0);
+    const src     = srcSelect  ? srcSelect.value  : '';
+    const note    = noteInput  ? noteInput.value  : '';
+
+    if (rawRate && rawRate >= 100 && src) {
+      // ── Valid custom rate ─────────────────────────────────────────────────
+      window.activeExchangeRate = rawRate;
+
+      // Update the rate display badge
+      if (rateValEl) {
+        rateValEl.textContent = rawRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      }
+      if (badge) badge.style.display = 'inline-block';
+
+      // Sync hidden fields
+      if (rateHidden) rateHidden.value = rawRate;
+      if (srcHidden)  srcHidden.value  = src;
+      if (noteHidden) noteHidden.value = note;
+
+      // Recalculate recommended + total price using the new rate
+      // (calculateRecommendedPrice now reads activeExchangeRate)
+      if (typeof calculateRecommendedPrice === 'function') {
+        calculateRecommendedPrice();
+      }
+
+      // Refresh all TZS conversion hints
+      updateCurrencyValues();
+
+      // Show preview bar — read the (now-correct) recommended price field
+      if (previewRow) previewRow.style.display = 'block';
+      if (previewDisp) previewDisp.textContent = '1 USD = ' + rawRate.toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS (' + src + ')';
+
+      const isTanzanian = guestTypeSelect && guestTypeSelect.value === 'tanzanian';
+      const recField    = document.getElementById('recommended_price');
+      const recVal      = parseFloat(recField ? recField.value : 0);
+      if (previewRec) {
+        // IMPORTANT: If isTanzanian is true, calculateRecommendedPrice() already multiplied USD by the rate.
+        // So we DON'T multiply again otherwise we get the 64 million bug.
+        const tzs = isTanzanian ? recVal : recVal * rawRate;
+        previewRec.textContent = tzs.toLocaleString('en-US', {maximumFractionDigits: 0});
+      }
+    } else {
+      // ── Revert to system rate ─────────────────────────────────────────────
+      window.activeExchangeRate = window.systemExchangeRate;
+
+      if (rateValEl && window.systemExchangeRate > 0) {
+        rateValEl.textContent = window.systemExchangeRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      }
+      if (badge)      badge.style.display      = 'none';
+      if (previewRow) previewRow.style.display = 'none';
+      if (rateHidden) rateHidden.value = '';
+      if (srcHidden)  srcHidden.value  = '';
+      if (noteHidden) noteHidden.value = '';
+
+      // Recalculate with system rate
+      if (typeof calculateRecommendedPrice === 'function') {
+        calculateRecommendedPrice();
+      }
+      updateCurrencyValues();
+    }
+  };
+
+
+  // ────────────────────────────────────────────────────────────────────────
+
   let otherAvailableRooms = [];
+
 
   // Set minimum date to today
   const today = new Date().toISOString().split('T')[0];
@@ -2057,51 +2250,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Recalculate and convert all prices when guest type changes
   function recalculateOnGuestTypeChange() {
-    if (!guestTypeSelect || !exchangeRate || exchangeRate <= 0) return;
-    
-    const isTanzanian = guestTypeSelect.value === 'tanzanian';
+    const rateToUse = window.activeExchangeRate || window.systemExchangeRate;
+    if (!guestTypeSelect || !rateToUse || rateToUse <= 0) return;
+
+    const isTanzanian   = guestTypeSelect.value === 'tanzanian';
     const previousValue = guestTypeSelect.dataset.previousValue || '';
-    const wasTanzanian = previousValue === 'tanzanian';
-    
+    const wasTanzanian  = previousValue === 'tanzanian';
+
     // Only convert if there was a previous value (not initial load)
     if (previousValue && previousValue !== guestTypeSelect.value) {
       // Convert Recommended Price
       const recommendedPrice = parseFloat(recommendedPriceInput.value) || 0;
       if (recommendedPrice > 0) {
         if (isTanzanian && !wasTanzanian) {
-          // Converting from USD to TZS
-          recommendedPriceInput.value = (recommendedPrice * exchangeRate).toFixed(2);
+          recommendedPriceInput.value = (recommendedPrice * rateToUse).toFixed(2);
         } else if (!isTanzanian && wasTanzanian) {
-          // Converting from TZS to USD
-          recommendedPriceInput.value = (recommendedPrice / exchangeRate).toFixed(2);
+          recommendedPriceInput.value = (recommendedPrice / rateToUse).toFixed(2);
         }
       }
-      
+
       // Convert Total Price
       const totalPrice = parseFloat(totalPriceInput.value) || 0;
       if (totalPrice > 0) {
         if (isTanzanian && !wasTanzanian) {
-          // Converting from USD to TZS
-          totalPriceInput.value = (totalPrice * exchangeRate).toFixed(2);
+          totalPriceInput.value = (totalPrice * rateToUse).toFixed(2);
         } else if (!isTanzanian && wasTanzanian) {
-          // Converting from TZS to USD
-          totalPriceInput.value = (totalPrice / exchangeRate).toFixed(2);
+          totalPriceInput.value = (totalPrice / rateToUse).toFixed(2);
         }
       }
-      
+
       // Convert Amount Paid
       const amountPaid = parseFloat(amountPaidInput.value) || 0;
       if (amountPaid > 0) {
         if (isTanzanian && !wasTanzanian) {
-          // Converting from USD to TZS
-          amountPaidInput.value = (amountPaid * exchangeRate).toFixed(2);
+          amountPaidInput.value = (amountPaid * rateToUse).toFixed(2);
         } else if (!isTanzanian && wasTanzanian) {
-          // Converting from TZS to USD
-          amountPaidInput.value = (amountPaid / exchangeRate).toFixed(2);
+          amountPaidInput.value = (amountPaid / rateToUse).toFixed(2);
         }
       }
-      
-      // Recalculate Remaining Amount based on converted values
+
+      // Recalculate Remaining Amount
       const newTotalPrice = parseFloat(totalPriceInput.value) || 0;
       const newAmountPaid = parseFloat(amountPaidInput.value) || 0;
       if (newTotalPrice > 0 && newAmountPaid > 0) {
@@ -2112,22 +2300,22 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         remainingAmountInput.value = '';
       }
-      
+
       // Recalculate payment percentage
       if (newTotalPrice > 0 && newAmountPaid > 0) {
         const percentage = (newAmountPaid / newTotalPrice) * 100;
         paymentPercentageInput.value = percentage.toFixed(2);
       }
     }
-    
+
     // Store current guest type for next change
     guestTypeSelect.dataset.previousValue = guestTypeSelect.value;
-    
+
     // If room is already selected, recalculate recommended price with new currency
     if (roomSelect.value && checkInInput.value && checkOutInput.value) {
       calculateRecommendedPrice();
     }
-    
+
     // Update currency conversions for display
     updateCurrencyValues();
   }
@@ -2346,10 +2534,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const col = document.createElement('div');
     col.className = 'col-md-4 col-sm-6 mb-4';
     
-    // Get room image URL - use pre-defined asset paths
-    const defaultImage = '{{ asset("royal-master/image/rooms/room1.jpg") }}';
+    // Get room image URL
     const storageBase = '{{ asset("storage") }}';
-    let imageUrl = defaultImage;
+    let imageUrl = null;
     
     if (room.image) {
       let imgPath = room.image;
@@ -2397,8 +2584,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Build HTML using string concatenation to avoid template literal issues
     let cardHtml = '<div class="room-card-inner">';
-    cardHtml += '<div class="room-image-container">';
-    cardHtml += '<img src="' + imageUrl + '" alt="Room ' + room.room_number + '" class="room-image" onerror="this.src=\'' + defaultImage + '\'">';
+    cardHtml += '<div class="room-image-container" style="background: #f8f9fa;">';
+    if (imageUrl) {
+      cardHtml += '<img src="' + imageUrl + '" alt="Room ' + room.room_number + '" class="room-image" onerror="this.parentElement.innerHTML += \'<div class=\\\'w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted\\\' style=\\\'background: #f8f9fa;\\\'><i class=\\\'fa fa-bed fa-4x mb-2\\\' style=\\\'opacity: 0.3;\\\'></i><span class=\\\'small\\\' style=\\\'font-size: 10px; letter-spacing: 1px; opacity: 0.5;\\\'>NO IMAGE</span></div>\'; this.style.display=\'none\';">';
+    } else {
+      cardHtml += '<div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted" style="background: #f8f9fa;"><i class="fa fa-bed fa-4x mb-2" style="opacity: 0.3;"></i><span class="small" style="font-size: 10px; letter-spacing: 1px; opacity: 0.5;">NO IMAGE</span></div>';
+    }
     cardHtml += availabilityBadge;
     cardHtml += '<div class="room-selected-overlay"><i class="fa fa-check-circle fa-2x"></i><p>Selected</p></div>';
     cardHtml += '</div>';
@@ -2507,8 +2698,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="modal-body">
             <div class="row" id="other_rooms_grid">
               ${otherAvailableRooms.map(room => {
-                const defaultImage = '{{ asset("royal-master/image/rooms/room1.jpg") }}';
-                let imageUrl = defaultImage;
+                let imageUrl = null;
                 if (room.image) {
                   let imgPath = room.image;
                   if (imgPath.startsWith('storage/')) {
@@ -2531,12 +2721,18 @@ document.addEventListener('DOMContentLoaded', function() {
                   availabilityBadge = '<div class="room-availability-badge soon-available"><i class="fa fa-clock-o"></i> Available ' + checkoutDate + '</div>';
                 }
                 
-                return '<div class="col-md-6 mb-3">' +
+                let cardHtml = '<div class="col-md-6 mb-3">' +
                   '<div class="room-card" data-room-id="' + room.id + '" data-room-price="' + room.price_per_night + '" data-room-capacity="' + (room.capacity || 1) + '" style="cursor: pointer;">' +
                   '<div class="room-card-inner">' +
-                  '<div class="room-image-container">' +
-                  '<img src="' + imageUrl + '" alt="Room ' + room.room_number + '" class="room-image" style="height: 120px; object-fit: cover;" onerror="this.src=\'' + defaultImage + '\'">' +
-                  availabilityBadge +
+                  '<div class="room-image-container" style="background: #f8f9fa;">';
+                
+                if (imageUrl) {
+                  cardHtml += '<img src="' + imageUrl + '" alt="Room ' + room.room_number + '" class="room-image" style="height: 120px; width: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML += \'<div class=\\\'w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted\\\' style=\\\'background: #f8f9fa; min-height: 120px;\\\'><i class=\\\'fa fa-bed fa-3x mb-2\\\' style=\\\'opacity: 0.3;\\\'></i><span class=\\\'small\\\' style=\\\'font-size: 8px; letter-spacing: 1px; opacity: 0.5;\\\'>NO IMAGE</span></div>\'; this.style.display=\'none\';">';
+                } else {
+                  cardHtml += '<div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted" style="background: #f8f9fa; min-height: 120px;"><i class="fa fa-bed fa-3x mb-2" style="opacity: 0.3;"></i><span class="small" style="font-size: 8px; letter-spacing: 1px; opacity: 0.5;">NO IMAGE</span></div>';
+                }
+
+                cardHtml += availabilityBadge +
                   '<div class="room-selected-overlay"><i class="fa fa-check-circle fa-2x"></i><p>Selected</p></div>' +
                   '</div>' +
                   '<div class="room-card-body">' +
@@ -2549,6 +2745,8 @@ document.addEventListener('DOMContentLoaded', function() {
                   '</div>' +
                   '</div>' +
                   '</div>';
+                
+                return cardHtml;
               }).join('')}
             </div>
           </div>
@@ -2637,28 +2835,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (nights > 0 && pricePerNight > 0) {
       const recommendedUSD = pricePerNight * nights;
-      const isTanzanian = guestTypeSelect && guestTypeSelect.value === 'tanzanian';
-      
+      const isTanzanian    = guestTypeSelect && guestTypeSelect.value === 'tanzanian';
+      // Always use window.activeExchangeRate so custom override is reflected immediately
+      const rateToUse = window.activeExchangeRate || window.systemExchangeRate;
+
       if (isTanzanian) {
-        // Convert to TZS for Tanzanian guests
-        const recommendedTZS = recommendedUSD * exchangeRate;
+        // Convert to TZS for Tanzanian guests using the active (possibly overridden) rate
+        const recommendedTZS = recommendedUSD * rateToUse;
         recommendedPriceInput.value = recommendedTZS.toFixed(2);
-        
-        // Show USD conversion
+
+        // Show USD equivalent
         const usdConversion = document.getElementById('recommended_price_usd');
         if (usdConversion) {
           document.getElementById('recommended_price_usd_value').textContent = recommendedUSD.toFixed(2);
         }
-        
-        // Auto-fill total price from recommended price (in TZS) - always set to recommended
+
+        // Auto-fill total price (in TZS)
         totalPriceInput.value = recommendedTZS.toFixed(2);
       } else {
         // Keep in USD for International guests
         recommendedPriceInput.value = recommendedUSD.toFixed(2);
-        
-        // Auto-fill total price from recommended price (in USD) - always set to recommended
+
+        // Auto-fill total price (in USD)
         totalPriceInput.value = recommendedUSD.toFixed(2);
       }
+
       
       // Recalculate payment percentage and remaining amount if amount paid is already entered
       const amountPaidInput = document.getElementById('amount_paid');
@@ -2717,57 +2918,56 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Update currency conversion values
   function updateCurrencyValues() {
-    if (!guestTypeSelect || !exchangeRate || exchangeRate <= 0) return;
-    
+    // Use window.activeExchangeRate so custom rate overrides are reflected live
+    const rateToUse = window.activeExchangeRate || window.systemExchangeRate;
+    if (!guestTypeSelect || !rateToUse || rateToUse <= 0) return;
+
     const isTanzanian = guestTypeSelect.value === 'tanzanian';
-    const totalPrice = parseFloat(totalPriceInput.value) || 0;
-    const amountPaid = parseFloat(amountPaidInput.value) || 0;
-    const remaining = parseFloat(remainingAmountInput.value) || 0;
+    const totalPrice      = parseFloat(totalPriceInput.value) || 0;
+    const amountPaid      = parseFloat(amountPaidInput.value) || 0;
+    const remaining       = parseFloat(remainingAmountInput.value) || 0;
     const recommendedPrice = parseFloat(recommendedPriceInput.value) || 0;
-    
+
     if (isTanzanian) {
-      // For Tanzanian: Values are in TZS, show USD conversion
-      if (amountPaid > 0) {
-        const amountPaidUSD = amountPaid / exchangeRate;
-        // Don't show USD conversion for amount paid (it's already in TZS)
-      }
-      
-      if (remaining > 0) {
-        const remainingUSD = remaining / exchangeRate;
-        // Don't show USD conversion for remaining (it's already in TZS)
-      }
-      
+      // Values are in TZS — show USD equivalent
       if (recommendedPrice > 0) {
-        const recommendedUSD = recommendedPrice / exchangeRate;
+        const recommendedUSD = recommendedPrice / rateToUse;
         const usdValueEl = document.getElementById('recommended_price_usd_value');
-        if (usdValueEl) {
-          usdValueEl.textContent = recommendedUSD.toFixed(2);
-        }
+        if (usdValueEl) usdValueEl.textContent = recommendedUSD.toFixed(2);
       }
     } else {
-      // For International: Values are in USD, show TZS conversion
+      // Values are in USD — show TZS equivalent
       if (totalPrice > 0) {
-        const totalPriceTZS = totalPrice * exchangeRate;
+        const totalPriceTZS = totalPrice * rateToUse;
         const tzsValueEl = document.getElementById('total_price_tzs_value');
-        if (tzsValueEl) {
-          tzsValueEl.textContent = totalPriceTZS.toFixed(2);
-        }
+        if (tzsValueEl) tzsValueEl.textContent = totalPriceTZS.toLocaleString('en-US', {maximumFractionDigits: 0});
+        const tzsWrap = document.getElementById('total_price_tzs');
+        if (tzsWrap) tzsWrap.style.display = 'block';
+      } else {
+        const tzsWrap = document.getElementById('total_price_tzs');
+        if (tzsWrap) tzsWrap.style.display = 'none';
       }
-      
+
       if (amountPaid > 0) {
-        const amountPaidTZS = amountPaid * exchangeRate;
+        const amountPaidTZS = amountPaid * rateToUse;
         const tzsValueEl = document.getElementById('amount_paid_tzs_value');
-        if (tzsValueEl) {
-          tzsValueEl.textContent = amountPaidTZS.toFixed(2);
-        }
+        if (tzsValueEl) tzsValueEl.textContent = amountPaidTZS.toLocaleString('en-US', {maximumFractionDigits: 0});
+        const tzsWrap = document.getElementById('amount_paid_tzs');
+        if (tzsWrap) tzsWrap.style.display = 'block';
+      } else {
+        const tzsWrap = document.getElementById('amount_paid_tzs');
+        if (tzsWrap) tzsWrap.style.display = 'none';
       }
-      
+
       if (remaining > 0) {
-        const remainingTZS = remaining * exchangeRate;
+        const remainingTZS = remaining * rateToUse;
         const tzsValueEl = document.getElementById('remaining_amount_tzs_value');
-        if (tzsValueEl) {
-          tzsValueEl.textContent = remainingTZS.toFixed(2);
-        }
+        if (tzsValueEl) tzsValueEl.textContent = remainingTZS.toLocaleString('en-US', {maximumFractionDigits: 0});
+        const tzsWrap = document.getElementById('remaining_amount_tzs');
+        if (tzsWrap) tzsWrap.style.display = 'block';
+      } else {
+        const tzsWrap = document.getElementById('remaining_amount_tzs');
+        if (tzsWrap) tzsWrap.style.display = 'none';
       }
     }
   }
@@ -2901,28 +3101,39 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       // Convert TZS prices back to USD for backend (backend stores in USD)
-      const exchangeRate = {{ $exchangeRate ?? 0 }};
-      if (exchangeRate > 0) {
-        const totalPriceTZS = parseFloat(totalPriceInput.value) || 0;
-        const amountPaidTZS = parseFloat(amountPaidInput.value) || 0;
-        const remainingAmountTZS = parseFloat(remainingAmountInput.value) || 0;
-        
+      // Use window.activeExchangeRate so any custom override is respected
+      const submitRate = window.activeExchangeRate || window.systemExchangeRate;
+      if (submitRate > 0) {
+        const totalPriceTZS       = parseFloat(totalPriceInput.value) || 0;
+        const amountPaidTZS       = parseFloat(amountPaidInput.value) || 0;
+        const remainingAmountTZS  = parseFloat(remainingAmountInput.value) || 0;
+
         if (totalPriceTZS > 0) {
-          const totalPriceUSD = totalPriceTZS / exchangeRate;
-          formData.set('total_price', totalPriceUSD.toFixed(2));
+          formData.set('total_price', (totalPriceTZS / submitRate).toFixed(2));
         }
-        
         if (amountPaidTZS > 0) {
-          const amountPaidUSD = amountPaidTZS / exchangeRate;
-          formData.set('amount_paid', amountPaidUSD.toFixed(2));
+          formData.set('amount_paid', (amountPaidTZS / submitRate).toFixed(2));
         }
-        
         if (remainingAmountTZS > 0) {
-          const remainingAmountUSD = remainingAmountTZS / exchangeRate;
-          formData.set('remaining_amount', remainingAmountUSD.toFixed(2));
+          formData.set('remaining_amount', (remainingAmountTZS / submitRate).toFixed(2));
         }
       }
     }
+
+    // Sync custom rate override hidden fields (note may not have triggered oninput)
+    const noteInput2 = document.getElementById('custom_rate_note_input');
+    const noteHidden2 = document.getElementById('exchange_rate_note_hidden');
+    if (noteInput2 && noteHidden2 && noteInput2.value) {
+      noteHidden2.value = noteInput2.value;
+    }
+    // Explicitly put override fields into formData so backend always receives them
+    const rateOverrideVal = document.getElementById('custom_exchange_rate_hidden')?.value;
+    const rateSrcVal      = document.getElementById('rate_source_hidden')?.value;
+    const rateNoteVal     = document.getElementById('exchange_rate_note_hidden')?.value;
+    if (rateOverrideVal) formData.set('custom_exchange_rate', rateOverrideVal);
+    if (rateSrcVal)      formData.set('rate_source',          rateSrcVal);
+    if (rateNoteVal)     formData.set('exchange_rate_note',   rateNoteVal);
+
     
     // Ensure total_price is set from recommended_price if not already set
     if (!totalPriceInput.value && recommendedPriceInput.value) {

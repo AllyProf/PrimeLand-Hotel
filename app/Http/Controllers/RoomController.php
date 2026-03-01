@@ -911,5 +911,138 @@ class RoomController extends Controller
         
         return true;
     }
+
+    /**
+     * QR Code Generator page (for reception/admin dashboard)
+     */
+    public function qrGenerator()
+    {
+        $rooms = Room::orderBy('room_number')->get();
+
+        $user     = auth()->user();
+        $userRole = $user->role ?? 'admin';
+        $role     = in_array($userRole, ['reception', 'receptionist']) ? 'reception' : 'admin';
+
+        return view('dashboard.room-qr-generator', [
+            'rooms'    => $rooms,
+            'role'     => $role,
+            'userName' => $user->name ?? 'Staff',
+        ]);
+    }
+
+    /**
+     * Public Guest Services Menu (no auth required — accessed via QR code scan)
+     */
+    public function guestServicesMenu(\Illuminate\Http\Request $request)
+    {
+        $roomNumber = $request->query('room');
+
+        // ── Drinks: same logic as customer restaurant page ──────────────
+        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'wines', 'cocktails', 'hot_beverages'];
+
+        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'wine', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'hot_beverages', 'bar', 'restaurant'];
+        
+        $allTransfers = \App\Models\StockTransfer::where('status', 'completed')->get();
+        $allSales = \App\Models\ServiceRequest::where('status', 'completed')
+            ->where(function($q) use ($barCategories) {
+                $q->whereHas('service', function($query) use ($barCategories) {
+                    $query->whereIn('category', $barCategories);
+                })->orWhereIn('service_id', [3, 4]);
+            })->get();
+
+        $allVariants = \App\Models\ProductVariant::all();
+        $stockLevels = [];
+        
+        // 1. Start with Opening Stock
+        foreach ($allVariants as $variant) {
+            $stockLevels[$variant->id] = (float)($variant->opening_stock ?? 0);
+        }
+
+        // 2. Add Completed Transfers
+        foreach ($allTransfers as $t) {
+            $vid = $t->product_variant_id;
+            if (!isset($stockLevels[$vid])) continue;
+            
+            $itemsPerPkg = $t->productVariant->items_per_package ?? 1;
+            $pics = ($t->quantity_unit === 'packages') ? ($t->quantity_transferred * $itemsPerPkg) : $t->quantity_transferred;
+            $stockLevels[$vid] += (float)$pics;
+        }
+
+        // 3. Subtract Completed Sales
+        foreach ($allSales as $s) {
+            $meta = $s->service_specific_data;
+            if (!isset($meta['product_variant_id'])) continue;
+            
+            $vid = (int)$meta['product_variant_id']; // Fix: Explicitly cast to integer
+            if (isset($stockLevels[$vid])) {
+                $variant = \App\Models\ProductVariant::find($vid);
+                if ($variant) {
+                    $actualQty = (float)($s->quantity ?? 1);
+                    $method    = $meta['selling_method'] ?? 'pic';
+                    if ($method === 'pic' || $method === 'bottle') {
+                        $stockLevels[$vid] -= $actualQty;
+                    } else {
+                        $ratio = $variant->servings_per_pic > 0 ? (float)$variant->servings_per_pic : 1;
+                        $stockLevels[$vid] -= ($actualQty / $ratio);
+                    }
+                }
+            }
+        }
+
+        $drinkProducts = \App\Models\Product::whereIn('category', $barCategories)
+            ->where('name', 'NOT LIKE', '%Generic%')
+            ->with(['variants'])
+            ->get();
+        $drinks = [];
+        foreach ($drinkProducts as $product) {
+            foreach ($product->variants as $variant) {
+                $options = [];
+                if ($variant->can_sell_as_pic && $variant->selling_price_per_pic > 0)
+                    $options[] = ['type' => 'Bottle', 'method' => 'pic', 'price' => (float)$variant->selling_price_per_pic];
+                if ($variant->can_sell_as_serving && $variant->selling_price_per_serving > 0)
+                    $options[] = ['type' => $variant->selling_unit_name ?? 'Glass', 'method' => 'serving', 'price' => (float)$variant->selling_price_per_serving];
+
+                if (empty($options)) {
+                    $price = optional(\App\Models\StockReceipt::where('product_variant_id', $variant->id)->latest('received_date')->first())->selling_price_per_bottle ?? 0;
+                    if ($price > 0) $options[] = ['type' => 'Bottle', 'method' => 'pic', 'price' => (float)$price];
+                }
+
+                $currentStock = $stockLevels[$variant->id] ?? 0;
+
+                if (!empty($options) && $currentStock > 0.01) {  // Only show if visibly in stock (handling decimals)
+                    $displayName  = ($variant->variant_name ?: $product->name) . ($variant->measurement ? ' (' . $variant->measurement . ')' : '');
+                    $drinks[] = (object)[
+                        'id'              => $product->id,
+                        'variant_id'      => $variant->id,
+                        'name'            => $displayName,
+                        'category'        => $product->category_name, // Fixed: Use human-readable accessor
+                        'image'           => $variant->image ?: $product->image,
+                        'options'         => $options,
+                        'in_stock'        => true,
+                        'current_stock'   => $currentStock,
+                        'servings_per_pic'=> $variant->servings_per_pic > 0 ? (float)$variant->servings_per_pic : 1,
+                    ];
+                }
+            }
+        }
+
+        $drinkCategories = collect($drinks)->pluck('category')->filter()->unique()->sort()->values()->toArray();
+
+        // ── Food Recipes ────────────────────────────────────────────────
+        $recipes = \App\Models\Recipe::where('is_available', true)->orderBy('category')->orderBy('name')->get();
+        $foodCategories = $recipes->pluck('category')->filter()->unique()->sort()->values()->toArray();
+
+        // ── Hotel Services ───────────────────────────────────────────────
+        $services = \App\Models\ServiceCatalog::where('is_active', true)->orderBy('display_order')->get();
+
+        return view('guest-services-menu', [
+            'roomNumber'      => $roomNumber,
+            'drinks'          => $drinks,
+            'drinkCategories' => $drinkCategories,
+            'recipes'         => $recipes,
+            'foodCategories'  => $foodCategories,
+            'services'        => $services,
+        ]);
+    }
 }
 

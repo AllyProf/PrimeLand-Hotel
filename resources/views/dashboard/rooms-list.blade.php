@@ -308,21 +308,27 @@
               <td>
                 @if($room->images && is_array($room->images) && count($room->images) > 0)
                   @php
-                    // Get the first image path
                     $firstImage = is_array($room->images) ? ($room->images[0] ?? null) : $room->images;
-                    $imageUrl = $firstImage ? asset('storage/' . ltrim($firstImage, '/')) : asset('dashboard_assets/images/room-placeholder.jpg');
+                    $imageUrl = $firstImage ? asset('storage/' . ltrim($firstImage, '/')) : null;
                   @endphp
-                  <div class="room-images-preview">
-                    <img src="{{ $imageUrl }}" alt="Room Image" class="room-thumbnail" 
-                         onclick="viewRoom({{ $room->id }})" 
-                         onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
-
+                  <div class="room-images-preview" style="background: #f8f9fa; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; border: 1px solid #ddd; width: 60px; height: 45px;">
+                    @if($imageUrl)
+                      <img src="{{ $imageUrl }}" alt="Room Image" class="room-thumbnail" 
+                           onclick="viewRoom({{ $room->id }})" 
+                           style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;"
+                           onerror="this.parentElement.innerHTML = '<i class=\'fa fa-bed text-muted\' style=\'opacity: 0.5;\'></i>';">
+                    @else
+                      <i class="fa fa-bed text-muted" style="opacity: 0.5;"></i>
+                    @endif
                     @if(count($room->images) > 1)
                       <span class="image-count">+{{ count($room->images) - 1 }}</span>
                     @endif
                   </div>
                 @else
-                  <span class="text-muted">No images</span>
+                  <div class="text-center p-2 border rounded bg-light" style="border-style: dashed !important; width: 60px; height: 50px; cursor: pointer;" onclick="viewRoom({{ $room->id }})">
+                    <i class="fa fa-bed text-muted"></i>
+                    <div style="font-size: 8px; color: #999;">NO IMAGE</div>
+                  </div>
                 @endif
               </td>
               <td>
@@ -984,7 +990,12 @@ window.viewRoom = function(roomId) {
           return `<img src="${imageUrl}" class="img-thumbnail m-1" style="max-width: 150px;" alt="Room Image" onerror="this.onerror=null; this.style.display='none';">`;
         }).join('');
       } else {
-        imagesHtml = '<p class="text-muted">No images available</p>';
+        imagesHtml = `
+          <div class="text-center p-3 border rounded bg-light" style="border-style: dashed !important; width: 100%;">
+            <i class="fa fa-bed fa-2x text-muted mb-2"></i>
+            <p class="text-muted small mb-0">No images available for this room</p>
+          </div>
+        `;
       }
       
       // Helper function to check if a value is valid (not null, not empty, not 'N/A')
@@ -1333,9 +1344,7 @@ function displayCurrentImages(images) {
       img.style.maxHeight = '100px';
       img.style.objectFit = 'cover';
       img.onerror = function() {
-        this.onerror = null;
-        this.src = '{{ asset("dashboard_assets/images/room-placeholder.jpg") }}';
-        this.style.opacity = '0.5';
+        this.parentElement.innerHTML = '<div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted"><i class="fa fa-bed fa-4x mb-2" style="opacity: 0.3;"></i><span class="small" style="font-size: 10px; letter-spacing: 1px; opacity: 0.5;">NO IMAGE</span></div>';
       };
       previewDiv.appendChild(img);
     });

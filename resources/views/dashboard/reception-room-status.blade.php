@@ -128,7 +128,7 @@
                         $isUpcomingCheckin = in_array($room->id, $roomsWithUpcomingCheckin ?? []);
                         
                         // Image Handling - find the first image that actually exists
-                        $bgImage = asset('dashboard_assets/images/room-placeholder.jpg'); // Default local placeholder
+                        $bgImage = null;
                         if($room->images) {
                             $images = is_string($room->images) ? json_decode($room->images, true) : $room->images;
                             if(is_array($images) && count($images) > 0) {
@@ -199,8 +199,15 @@
                            </div>
 
                             <!-- Room Image Section -->
-                            <div class="position-relative" style="height: 160px; overflow: hidden;">
-                                <img src="{{ $bgImage }}" alt="Room {{ $room->room_number }}" class="w-100 h-100" style="object-fit: cover; transition: transform 0.5s;">
+                            <div class="position-relative" style="height: 160px; overflow: hidden; background-color: #f8f9fa;">
+                                @if($bgImage)
+                                    <img src="{{ $bgImage }}" alt="Room {{ $room->room_number }}" class="w-100 h-100" style="object-fit: cover; transition: transform 0.5s;">
+                                @else
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted">
+                                        <i class="fa fa-bed fa-4x mb-2" style="opacity: 0.3;"></i>
+                                        <span class="small" style="font-size: 10px; letter-spacing: 1px; opacity: 0.5;">NO IMAGE</span>
+                                    </div>
+                                @endif
                                 <div class="position-absolute" style="top: 10px; right: 10px;">
                                     <span class="badge {{ $statusBadge }} p-2 shadow-sm">
                                         <i class="fa {{ $statusIcon }}"></i> {{ $statusText }}

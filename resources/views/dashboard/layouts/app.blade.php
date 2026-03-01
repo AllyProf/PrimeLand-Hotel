@@ -277,9 +277,12 @@
         PrimeLand Hotel
       </a>
       <!-- Sidebar toggle button-->
+      @if(!isset($hideSidebar) || !$hideSidebar)
       <a class="app-sidebar__toggle" href="#" data-toggle="sidebar" aria-label="Hide Sidebar"></a>
+      @endif
       <!-- Navbar Right Menu-->
       <ul class="app-nav">
+        @if(!isset($hideSidebar) || !$hideSidebar)
         <li class="app-search">
           <input class="app-search__input" type="search" placeholder="Search">
           <button class="app-search__button"><i class="fa fa-search"></i></button>
@@ -394,6 +397,9 @@
               } elseif ($headerRole === 'waiter') {
                 $profileRoute = route('waiter.profile');
                 $logoutRoute = route('waiter.logout');
+              } elseif ($headerRole === 'owner') {
+                $profileRoute = route('owner.profile');
+                $logoutRoute = route('owner.logout');
               } else {
                 $profileRoute = route('customer.profile');
                 $logoutRoute = route('customer.logout');
@@ -413,9 +419,11 @@
             </li>
           </ul>
         </li>
+        @endif
       </ul>
     </header>
     <!-- Sidebar menu-->
+    @if(!isset($hideSidebar) || !$hideSidebar)
     <div class="app-sidebar__overlay" data-toggle="sidebar"></div>
     <aside class="app-sidebar">
       @php
@@ -526,7 +534,10 @@
                 $sessionRole = 'housekeeper';
               } elseif ($normalizedRole === 'waiter' || $rawRole === 'waiter') {
                 $sessionRole = 'waiter';
+              } elseif ($normalizedRole === 'owner' || $rawRole === 'owner') {
+                $sessionRole = 'owner';
               }
+
             } elseif ($currentAuthUser instanceof \App\Models\Guest) {
               $sessionRole = 'customer';
             }
@@ -542,6 +553,9 @@
           if ($sidebarUserRole === 'super_admin') {
             $sidebarRole = 'super_admin';
             $sidebarFile = 'dashboard.partials.sidebar-super-admin';
+          } elseif ($sidebarUserRole === 'owner') {
+            $sidebarRole = 'owner';
+            $sidebarFile = 'dashboard.partials.sidebar-owner';
           } elseif ($sidebarUserRole === 'manager') {
             $sidebarRole = 'manager';
             $sidebarFile = 'dashboard.partials.sidebar-admin';
@@ -601,8 +615,9 @@
         @endif
       </ul>
     </aside>
+    @endif
     
-    <main class="app-content">
+    <main class="app-content" @if(isset($hideSidebar) && $hideSidebar) style="margin-left: 0; padding-top: 50px;" @endif>
       @yield('content')
     </main>
     <!-- Essential javascripts for application to work-->
@@ -1079,7 +1094,7 @@
       
       // Show actionable notifications after 2 seconds (one at a time, rotating every 5 seconds)
       // Only unread actionable notifications will be shown (already filtered by backend)
-      @if(isset($notifications) && $notifications->count() > 0)
+      @if(isset($notifications) && $notifications instanceof \Illuminate\Support\Collection && $notifications->count() > 0)
         @php
           // Backend already filters to only actionable notifications, so we just need unread ones
           $actionableNotifications = $notifications->filter(function($n) {

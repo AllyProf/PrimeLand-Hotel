@@ -110,7 +110,7 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label for="company_phone">Company Phone</label>
-                <input type="text" class="form-control" id="company_phone" name="company_phone">
+                <input type="text" class="form-control" id="company_phone" name="company_phone" value="255">
                 <small class="form-text text-muted">Contact phone number (optional)</small>
               </div>
             </div>
@@ -149,7 +149,7 @@
             <div class="col-md-6">
               <div class="form-group">
                 <label for="guider_phone">Phone Number <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="guider_phone" name="guider_phone" data-required="true">
+                <input type="text" class="form-control" id="guider_phone" name="guider_phone" data-required="true" value="255">
                 <small class="form-text text-muted">Contact phone number</small>
               </div>
             </div>
@@ -337,10 +337,79 @@
               <li><strong>Self-Paid Charges (Services Only):</strong> $<span id="payment_self_total">0.00</span> USD (<span id="payment_self_total_tzs">0.00</span> TZS)</li>
               <li><strong>Total Amount:</strong> $<span id="payment_total_amount">0.00</span> USD (<span id="payment_total_amount_tzs">0.00</span> TZS)</li>
             </ul>
-            <div class="mt-2">
-              <i class="fa fa-exchange-alt"></i> Exchange Rate: <strong>1 USD = <span id="exchange_rate_display">{{ number_format($exchangeRate ?? 0, 2) }}</span> TZS</strong> (will be locked at booking creation)
+            <div class="mt-2 d-flex align-items-center flex-wrap" style="gap:10px;">
+              <span>
+                <i class="fa fa-exchange-alt"></i> Exchange Rate: 
+                <strong>1 USD = <span id="exchange_rate_display_val">{{ number_format($exchangeRate ?? 0, 2) }}</span> TZS</strong>
+                <span id="corp_rate_badge" style="display:none;" class="badge badge-warning ml-1"><i class="fa fa-pencil"></i> Custom</span>
+              </span>
+              <button type="button" class="btn btn-outline-warning btn-sm" id="corpToggleRateBtn" 
+                      onclick="corpToggleRatePanel()" style="white-space:nowrap;">
+                <i class="fa fa-pencil-square-o"></i> Override Rate
+              </button>
             </div>
           </div>
+
+          {{-- Corporate Exchange Rate Override Panel --}}
+          <div class="row mb-3" id="corpRateOverridePanel" style="display:none;">
+            <div class="col-md-12">
+              <div class="card border-warning shadow-sm">
+                <div class="card-header py-2" style="background:#fff3cd; border-bottom:1px solid #ffc107;">
+                  <strong class="text-warning"><i class="fa fa-exclamation-triangle"></i> Custom Exchange Rate Override</strong>
+                  <button type="button" class="close" onclick="corpToggleRatePanel()"><span>&times;</span></button>
+                </div>
+                <div class="card-body pt-3 pb-3">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="form-group mb-2">
+                        <label class="small font-weight-bold">Custom Rate (TZS per 1 USD) <span class="text-danger">*</span></label>
+                        <div class="input-group input-group-sm">
+                          <div class="input-group-prepend"><span class="input-group-text">1 USD =</span></div>
+                          <input type="number" class="form-control" id="corp_custom_rate_input" 
+                                 placeholder="{{ number_format($exchangeRate ?? 2500, 0) }}" 
+                                 min="100" max="10000000" step="1" oninput="corpApplyRate()">
+                          <div class="input-group-append"><span class="input-group-text">TZS</span></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group mb-2">
+                        <label class="small font-weight-bold">Rate Source <span class="text-danger">*</span></label>
+                        <select class="form-control form-control-sm" id="corp_rate_source_input" onchange="corpApplyRate()">
+                          <option value="">— Select platform —</option>
+                          <option value="booking.com">Booking.com</option>
+                          <option value="agoda">Agoda</option>
+                          <option value="expedia">Expedia</option>
+                          <option value="paypal">PayPal</option>
+                          <option value="bank">Bank Transfer Rate</option>
+                          <option value="manual">Manual (Staff Override)</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-group mb-2">
+                        <label class="small font-weight-bold">Note <span class="text-muted">(optional)</span></label>
+                        <input type="text" class="form-control form-control-sm" id="corp_rate_note_input" 
+                               placeholder="e.g. Fixed rate for this company" maxlength="500">
+                      </div>
+                    </div>
+                  </div>
+                  <div id="corpRatePreviewRow" style="display:none;" class="alert alert-info py-2 mb-0 small mt-1">
+                    <i class="fa fa-info-circle"></i> 
+                    Using custom rate: <strong id="corpRatePreviewDisplay">—</strong> 
+                    — Total Budget becomes <strong id="corpRatePreviewTotal">—</strong> TZS
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {{-- Hidden fields for form submission --}}
+          <input type="hidden" name="custom_exchange_rate" id="corp_rate_hidden" value="">
+          <input type="hidden" name="rate_source"          id="corp_src_hidden"  value="">
+          <input type="hidden" name="exchange_rate_note"   id="corp_note_hidden" value="">
+
 
           <div class="row">
             <div class="col-md-6">
@@ -402,8 +471,8 @@
 
           <div class="row">
             <div class="col-md-6">
-              <div class="form-group">
-                <label for="payment_reference">Payment Reference/Transaction ID</label>
+              <div class="form-group" id="payment_reference_group" style="display: none;">
+                <label for="payment_reference">Payment Reference/Transaction ID <span class="text-danger">*</span></label>
                 <input type="text" class="form-control" id="payment_reference" name="payment_reference" placeholder="Transaction ID, Receipt Number, etc.">
                 <small class="form-text text-muted">Required for bank, mobile, card, and online payments</small>
               </div>
@@ -691,64 +760,63 @@
   justify-content: space-between;
 }
 
-/* Room Cards Styles (matching manual booking) */
+/* Room Cards Styles — Compact */
 .room-card {
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-bottom: 20px;
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
 }
 
 .room-card-inner {
   background: #fff;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   overflow: hidden;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
 }
 
 .room-card:hover .room-card-inner {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
   border-color: #e77a3a;
 }
 
 .room-card.has-guest .room-card-inner {
   border-color: #28a745;
-  border-width: 3px;
-  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+  border-width: 2px;
+  box-shadow: 0 4px 14px rgba(40, 167, 69, 0.2);
 }
 
 .room-image-container {
   position: relative;
-  width: 100%;
-  height: 120px;
+  width: 70px;
+  min-width: 70px;
+  height: 70px;
   overflow: hidden;
-  background: #f5f5f5;
+  background: #f0f0f0;
+  flex-shrink: 0;
 }
 
 .room-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-.room-card:hover .room-image {
-  transform: scale(1.05);
 }
 
 .room-availability-badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 4px;
+  right: 4px;
   color: white;
-  padding: 5px 10px;
-  border-radius: 15px;
-  font-size: 11px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  font-size: 9px;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   z-index: 2;
+  line-height: 1.4;
 }
 
 .room-availability-badge.available-now {
@@ -766,41 +834,41 @@
 
 .room-card.unselectable {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .room-card.unselectable .room-image-container::after {
-  content: 'NOT SELECTABLE';
+  content: 'N/A';
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%) rotate(-15deg);
-  background: rgba(220, 53, 69, 0.9);
+  transform: translate(-50%, -50%);
+  background: rgba(220, 53, 69, 0.85);
   color: white;
-  padding: 5px 15px;
+  padding: 2px 6px;
   font-weight: bold;
-  font-size: 10px;
-  border-radius: 4px;
+  font-size: 9px;
+  border-radius: 3px;
   z-index: 4;
   pointer-events: none;
 }
 
 .room-availability-badge i {
-  margin-right: 4px;
+  margin-right: 2px;
 }
 
 .room-guest-list {
-  padding: 8px 0;
+  padding: 4px 0;
   border-top: 1px dashed #eee;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .room-guest-item {
-  font-size: 12px;
+  font-size: 11px;
   background: #f8f9fa;
   border-radius: 4px;
-  padding: 4px 8px;
-  margin-bottom: 4px;
+  padding: 3px 6px;
+  margin-bottom: 3px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -809,100 +877,102 @@
 .remove-guest-btn {
   color: #dc3545;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 0 3px;
 }
 
 .room-card-body {
-  padding: 12px 15px;
+  padding: 7px 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
 }
 
 .room-number {
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 700;
   color: #333;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .room-number i {
   color: #e77a3a;
-  font-size: 18px;
+  font-size: 12px;
 }
 
 .room-type-badge {
   display: inline-block;
-  background: linear-gradient(135deg, #e77a3a 0%, #d66a2a 100%);
+  background: #e77a3a;
   color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 10px;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 3px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .room-details {
-  margin: 8px 0;
-  padding: 8px 0;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 2px 0;
 }
 
 .room-detail-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: #666;
-}
-
-.room-detail-item:last-child {
-  margin-bottom: 0;
+  gap: 4px;
+  font-size: 11px;
+  color: #888;
 }
 
 .room-detail-item i {
-  width: 20px;
-  text-align: center;
+  font-size: 10px;
 }
 
 .room-price {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 2px solid #f0f0f0;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .price-label {
-  font-size: 11px;
-  color: #999;
+  font-size: 10px;
+  color: #aaa;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .price-amount {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 700;
   color: #e77a3a;
 }
 
 .room-guest-info {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #e0e0f0;
+  margin-top: 4px;
+  padding: 5px 7px;
+  border-top: 1px solid #e8e8f0;
   background: #f8f9fa;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: 4px;
+  font-size: 11px;
 }
 
 .room-guest-info .badge {
-  margin-right: 5px;
+  margin-right: 3px;
+  font-size: 9px;
 }
 
 @keyframes scaleIn {
@@ -1058,7 +1128,78 @@ let bookingData = {
   guests: []
 };
 
-let exchangeRate = {{ $exchangeRate ?? 2300 }};
+// Exchange rate management
+const systemExchangeRate = {{ $exchangeRate ?? 2500 }};
+let exchangeRate = systemExchangeRate;
+
+window.corpToggleRatePanel = function() {
+  const panel = document.getElementById('corpRateOverridePanel');
+  const btnIcon = document.querySelector('#corpToggleRateBtn i');
+  if (!panel) return;
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  if (btnIcon) btnIcon.className = isHidden ? 'fa fa-times' : 'fa fa-pencil-square-o';
+  document.getElementById('corpToggleRateBtn').classList.toggle('btn-outline-warning', !isHidden);
+  document.getElementById('corpToggleRateBtn').classList.toggle('btn-warning', isHidden);
+};
+
+window.corpApplyRate = function() {
+  const rateInput = document.getElementById('corp_custom_rate_input');
+  const srcSelect = document.getElementById('corp_rate_source_input');
+  const noteInput = document.getElementById('corp_rate_note_input');
+  const rateHidden = document.getElementById('corp_rate_hidden');
+  const srcHidden = document.getElementById('corp_src_hidden');
+  const noteHidden = document.getElementById('corp_note_hidden');
+  const rateDisplay = document.getElementById('exchange_rate_display_val');
+  const badge = document.getElementById('corp_rate_badge');
+
+  const rawRate = parseFloat(rateInput.value);
+  const source = srcSelect.value;
+  const note = noteInput.value;
+
+  if (rawRate && rawRate >= 100 && source) {
+    // Apply custom rate
+    exchangeRate = rawRate;
+    if (rateDisplay) rateDisplay.textContent = rawRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (badge) badge.style.display = 'inline-block';
+
+    // Sync hidden fields
+    if (rateHidden) rateHidden.value = rawRate;
+    if (srcHidden) srcHidden.value = source;
+    if (noteHidden) noteHidden.value = note;
+
+    // Update preview alert
+    const previewRow = document.getElementById('corpRatePreviewRow');
+    const previewDisp = document.getElementById('corpRatePreviewDisplay');
+    const previewTotal = document.getElementById('corpRatePreviewTotal');
+    const recPriceInput = document.getElementById('recommended_price');
+    const recPriceUSD = parseFloat(recPriceInput ? recPriceInput.value : 0) || 0;
+
+    if (previewRow && previewDisp && previewTotal) {
+      previewRow.style.display = 'block';
+      previewDisp.textContent = '1 USD = ' + rawRate.toLocaleString('en-US') + ' TZS (' + source + ')';
+      previewTotal.textContent = (recPriceUSD * rawRate).toLocaleString('en-US', {maximumFractionDigits: 0});
+    }
+  } else {
+    // Revert to system rate
+    exchangeRate = systemExchangeRate;
+    if (rateDisplay) rateDisplay.textContent = systemExchangeRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    if (badge) badge.style.display = 'none';
+
+    const previewRow = document.getElementById('corpRatePreviewRow');
+    if (previewRow) previewRow.style.display = 'none';
+
+    // Clear hidden fields
+    if (rateHidden) rateHidden.value = '';
+    if (srcHidden) srcHidden.value = '';
+    if (noteHidden) noteHidden.value = '';
+  }
+
+  // Refresh all calculations on the page with the new rate
+  if (typeof updatePaymentSummary === 'function') updatePaymentSummary();
+  if (typeof calculatePaymentDetails === 'function') calculatePaymentDetails();
+};
+
 const defaultImage = '{{ asset("royal-master/image/rooms/room1.jpg") }}';
 const storageBase = '{{ asset("storage") }}';
 
@@ -1253,6 +1394,7 @@ function validateStep(currentStep) {
     const paymentMethod = document.getElementById('payment_method').value.trim();
     const amountPaid = document.getElementById('amount_paid').value.trim();
     const paymentReference = document.getElementById('payment_reference').value.trim();
+    const paymentProvider = document.getElementById('payment_provider').value.trim();
     
     if (!totalPrice || parseFloat(totalPrice) <= 0) {
       isValid = false;
@@ -1265,6 +1407,16 @@ function validateStep(currentStep) {
       document.getElementById('payment_method').classList.add('is-invalid');
     }
     
+    // Payment provider is required for specific methods
+    const providerMethods = ['online', 'bank', 'mobile', 'card'];
+    if (providerMethods.includes(paymentMethod) && !paymentProvider) {
+      isValid = false;
+      errorMessages.push('Payment Provider is required for ' + paymentMethod);
+      document.getElementById('payment_provider').classList.add('is-invalid');
+    } else {
+      document.getElementById('payment_provider').classList.remove('is-invalid');
+    }
+
     // Payment reference is required ONLY for non-cash methods
     const nonCashMethods = ['online', 'bank', 'mobile', 'card', 'other'];
     if (nonCashMethods.includes(paymentMethod) && !paymentReference) {
@@ -1695,7 +1847,7 @@ function createRoomCard(room) {
   col.style.flex = '0 0 auto';
   
   // Get room image URL
-  let imageUrl = defaultImage;
+  let imageUrl = null;
   if (room.image) {
     let imgPath = room.image;
     if (imgPath.startsWith('storage/')) {
@@ -1747,8 +1899,12 @@ function createRoomCard(room) {
   
   // Build HTML (matching manual booking structure)
   let cardHtml = '<div class="room-card-inner">';
-  cardHtml += '<div class="room-image-container">';
-  cardHtml += '<img src="' + imageUrl + '" alt="Room ' + room.room_number + '" class="room-image" onerror="this.src=\'' + defaultImage + '\'">';
+  cardHtml += '<div class="room-image-container" style="background: #f8f9fa;">';
+  if (imageUrl) {
+    cardHtml += '<img src="' + imageUrl + '" alt="Room ' + room.room_number + '" class="room-image" onerror="this.parentElement.innerHTML += \'<div class=\\\'w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted\\\' style=\\\'background: #f8f9fa;\\\'><i class=\\\'fa fa-bed fa-4x mb-2\\\' style=\\\'opacity: 0.3;\\\'></i><span class=\\\'small\\\' style=\\\'font-size: 10px; letter-spacing: 1px; opacity: 0.5;\\\'>NO IMAGE</span></div>\'; this.style.display=\'none\';">';
+  } else {
+    cardHtml += '<div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted" style="background: #f8f9fa;"><i class="fa fa-bed fa-4x mb-2" style="opacity: 0.3;"></i><span class="small" style="font-size: 10px; letter-spacing: 1px; opacity: 0.5;">NO IMAGE</span></div>';
+  }
   cardHtml += availabilityBadge;
   cardHtml += '</div>';
   cardHtml += '<div class="room-card-body">';
@@ -2197,6 +2353,17 @@ function processSubmission() {
   formData.append('amount_paid', amountPaid);
   formData.append('total_price', totalPrice);
   formData.append('recommended_price', recommendedPrice);
+
+  // Add exchange rate override information
+  const customRateVal = document.getElementById('corp_rate_hidden').value;
+  const rateSourceVal = document.getElementById('corp_src_hidden').value;
+  const rateNoteVal   = document.getElementById('corp_note_hidden').value;
+  
+  if (customRateVal) {
+    formData.append('custom_exchange_rate', customRateVal);
+    formData.append('rate_source', rateSourceVal);
+    formData.append('exchange_rate_note', rateNoteVal);
+  }
   
   // Show loading
   const submitBtn = form.querySelector('button[type="submit"]');
@@ -2702,28 +2869,52 @@ document.addEventListener('DOMContentLoaded', function() {
   const paymentProviderSelect = document.getElementById('payment_provider');
   
   if (paymentMethodEl && paymentProviderGroup && paymentProviderSelect) {
+    const paymentReferenceGroup = document.getElementById('payment_reference_group');
+    const paymentReferenceInput = document.getElementById('payment_reference');
+
     paymentMethodEl.addEventListener('change', function() {
       const method = this.value;
       
       // Clear existing options
       paymentProviderSelect.innerHTML = '<option value="">Select Provider</option>';
       
+      const nonCashMethods = ['online', 'bank', 'mobile', 'card', 'other'];
+      const requiresReference = nonCashMethods.includes(method);
+
       if (paymentProviders[method]) {
         paymentProviderGroup.style.display = 'block';
         paymentProviderSelect.required = true;
         
-        // Populate providers
+        // Populate options
         paymentProviders[method].forEach(provider => {
           const option = document.createElement('option');
           option.value = provider;
-          option.textContent = provider;
+          option.textContent = provider.charAt(0).toUpperCase() + provider.slice(1);
           paymentProviderSelect.appendChild(option);
         });
       } else {
         paymentProviderGroup.style.display = 'none';
         paymentProviderSelect.required = false;
+        paymentProviderSelect.value = '';
+      }
+
+      // Handle payment reference visibility and required status
+      if (paymentReferenceGroup) {
+        if (requiresReference) {
+          paymentReferenceGroup.style.display = 'block';
+          paymentReferenceInput.required = true;
+        } else {
+          paymentReferenceGroup.style.display = 'none';
+          paymentReferenceInput.required = false;
+          paymentReferenceInput.value = '';
+        }
       }
     });
+
+    // Initialize state
+    if (paymentMethodEl.value) {
+      paymentMethodEl.dispatchEvent(new Event('change'));
+    }
   }
 
   // Company Search Functionality

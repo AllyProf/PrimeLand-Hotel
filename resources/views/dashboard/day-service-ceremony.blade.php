@@ -605,10 +605,13 @@ $(document).ready(function() {
     
     // Collect package items as an object (key: price pairs) - only included items
     const packageItemsData = {};
+    const packageItemsPaidData = {};
     const packageItemInputs = document.querySelectorAll('.package-item-price');
     packageItemInputs.forEach(input => {
-      const itemKey = input.closest('.package-item-row').dataset.itemKey;
+      const row = input.closest('.package-item-row');
+      const itemKey = row.dataset.itemKey;
       const includeCheckbox = document.getElementById('package_item_include_' + itemKey);
+      const paidCheckbox = row.querySelector('.package-item-paid-checkbox');
       
       // Only include if checkbox is checked and item is not disabled
       if (includeCheckbox && includeCheckbox.checked && !input.disabled) {
@@ -616,6 +619,7 @@ $(document).ready(function() {
         // Only include items with price > 0
         if (price > 0) {
           packageItemsData[itemKey] = price;
+          packageItemsPaidData[itemKey] = (paidCheckbox && paidCheckbox.checked) ? 1 : 0;
         }
       }
     });
@@ -626,11 +630,13 @@ $(document).ready(function() {
     additionalItemRows.forEach(row => {
       const nameInput = row.querySelector('.additional-item-name');
       const priceInput = row.querySelector('.additional-item-price');
+      const paidCheckbox = row.querySelector('.additional-item-paid-checkbox');
       if (nameInput && priceInput) {
         const name = nameInput.value.trim();
         const price = parseFloat(priceInput.value) || 0;
         if (name && price > 0) {
           additionalItemsData[name] = price;
+          packageItemsPaidData[name] = (paidCheckbox && paidCheckbox.checked) ? 1 : 0;
         }
       }
     });
@@ -651,9 +657,11 @@ $(document).ready(function() {
     // Add package items as JSON string
     if (Object.keys(allPackageItems).length > 0) {
       formData.append('package_items', JSON.stringify(allPackageItems));
+      formData.append('package_items_paid', JSON.stringify(packageItemsPaidData));
     } else {
       // Send empty object as JSON if no items
       formData.append('package_items', JSON.stringify({}));
+      formData.append('package_items_paid', JSON.stringify({}));
     }
     
     // Show loading

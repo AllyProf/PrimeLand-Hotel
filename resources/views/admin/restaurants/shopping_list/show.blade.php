@@ -142,8 +142,7 @@
                 
                 <div class="row mt-2 border-top pt-1">
                     <div class="col-12 text-center small text-muted" style="font-size: 8px;">
-                        Generated on {{ date('d M Y H:i A') }} | Powered By EmCa Technologies
-                    </div>
+                        Generated on {{ date('d M Y H:i A') }} | Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></div>
                 </div>
             </div>
         </div>

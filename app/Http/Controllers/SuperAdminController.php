@@ -392,6 +392,7 @@ class SuperAdminController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email',
+            'phone' => 'nullable|string|max:20',
             'role' => 'required|string|in:super_admin,manager,reception,guest,bar_keeper,head_chef,housekeeper,waiter',
             'is_active' => 'boolean',
         ];
@@ -429,12 +430,25 @@ class SuperAdminController extends Controller
                 'email' => $validated['email'],
                 'password' => Hash::make($password),
                 'role' => $validated['role'],
+                'phone' => $validated['phone'],
                 'is_active' => $request->has('is_active') ? $validated['is_active'] : true,
             ]);
+
+            // Send Staff Account SMS
+            if ($user->phone) {
+                try {
+                    $smsService = new \App\Services\SmsService();
+                    $roleLabel = ucfirst(str_replace('_', ' ', $validated['role']));
+                    $smsMessage = "Hello {$user->name}, your {$roleLabel} account at PrimeLand Hotel has been created. Info: Email: {$user->email}, Password: {$password}. Welcome!";
+                    $smsService->sendSingle($user->phone, $smsMessage);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send staff welcome SMS: ' . $e->getMessage());
+                }
+            }
             
             // Send welcome email to staff with credentials
             try {
-                Mail::to($user->email)->send(new \App\Mail\StaffWelcomeMail($user, $defaultPassword, $validated['role']));
+                Mail::to($user->email)->send(new \App\Mail\StaffWelcomeMail($user, $password, $validated['role']));
                 Log::info('Staff welcome email sent', [
                     'user_id' => $user->id,
                     'email' => $user->email,
@@ -453,12 +467,24 @@ class SuperAdminController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($password),
+                'phone' => $validated['phone'],
                 'is_active' => $request->has('is_active') ? $validated['is_active'] : true,
             ]);
+
+            // Send Guest Account SMS
+            if ($user->phone) {
+                try {
+                    $smsService = new \App\Services\SmsService();
+                    $smsMessage = "Welcome {$user->name} to PrimeLand Hotel! Your account is ready. Info: Email: {$user->email}, Password: {$password}. Login at the hotel portal.";
+                    $smsService->sendSingle($user->phone, $smsMessage);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send guest welcome SMS: ' . $e->getMessage());
+                }
+            }
             
             // Send welcome email to guest with credentials
             try {
-                Mail::to($user->email)->send(new \App\Mail\WelcomeMail($user, $defaultPassword));
+                Mail::to($user->email)->send(new \App\Mail\WelcomeMail($user, $password));
                 Log::info('Guest welcome email sent', [
                     'user_id' => $user->id,
                     'email' => $user->email,
@@ -482,7 +508,7 @@ class SuperAdminController extends Controller
             'email_sent' => in_array($role, ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef', 'housekeeper', 'waiter']),
         ]);
         
-        return redirect()->route('super_admin.users')->with('success', 'User created successfully. Welcome email sent with credentials.');
+        return redirect()->route('super_admin.users')->with('success', 'User created successfully. Welcome email and SMS sent with credentials.');
     }
     
     /**
@@ -548,6 +574,7 @@ class SuperAdminController extends Controller
         // Build validation rules
         $rules = [
             'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8',
             'is_active' => 'boolean',
         ];
@@ -574,6 +601,7 @@ class SuperAdminController extends Controller
         
         $user->name = $validated['name'];
         $user->email = $validated['email'];
+        $user->phone = $validated['phone'];
         if ($userType === 'staff') {
             $user->role = $validated['role'];
         }
@@ -806,12 +834,32 @@ class SuperAdminController extends Controller
             'action_by_email' => $authUser ? $authUser->email : null,
             'action' => 'password_reset_by_admin',
         ]);
+
+        // Send Email with new password
+        try {
+            Mail::to($originalUserData['email'])->send(new \App\Mail\PasswordResetMail($userForLogging, $newPassword));
+            \Log::info('Password reset email sent', ['email' => $originalUserData['email']]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to send password reset email: ' . $e->getMessage());
+        }
+
+        // Send SMS with new password
+        if ($userForLogging->phone) {
+            try {
+                $smsService = new \App\Services\SmsService();
+                $smsMessage = "Hello {$originalUserData['name']}, your PrimeLand Hotel password has been reset. Your new password is: {$newPassword}. Please login and change it.";
+                $smsService->sendSingle($userForLogging->phone, $smsMessage);
+                \Log::info('Password reset SMS sent', ['phone' => $userForLogging->phone]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send password reset SMS: ' . $e->getMessage());
+            }
+        }
         
         // If AJAX request, return JSON
         if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => "Password auto-generated and reset successfully for {$originalUserData['name']}.",
+                'message' => "Password auto-generated and reset successfully for {$originalUserData['name']}. Notifications sent via Email and SMS.",
                 'password' => $newPassword,
                 'user_email' => $originalUserData['email'],
                 'user_name' => $originalUserData['name'],
@@ -820,7 +868,7 @@ class SuperAdminController extends Controller
         }
         
         // Return the generated password so it can be displayed to the admin
-        return redirect()->back()->with('success', "Password auto-generated and reset successfully for {$user->name}.")->with('generated_password', $newPassword)->with('user_email', $user->email);
+        return redirect()->back()->with('success', "Password auto-generated and reset successfully for {$user->name}. Notifications sent via Email and SMS.")->with('generated_password', $newPassword)->with('user_email', $user->email);
     }
     
     /**

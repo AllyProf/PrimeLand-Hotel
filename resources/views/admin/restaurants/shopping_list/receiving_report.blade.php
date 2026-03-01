@@ -296,7 +296,23 @@
                                 <div class="checkbox-box {{ $isFound ? 'checkbox-checked' : 'checkbox-missed' }}"></div>
                             </td>
                             <td>
-                                <strong>{{ $item->product_name }}</strong>
+                                @php
+                                    $displayName = $item->product_name;
+                                    $foundVariant = $item->productVariant;
+
+                                    if (!$foundVariant && stripos($displayName, 'Fanta') !== false) {
+                                        $foundVariant = \App\Models\ProductVariant::whereHas('product', function($q) {
+                                            $q->where('name', 'LIKE', '%Fanta%');
+                                        })->where('variant_name', 'LIKE', '%pinnaple%')->first();
+                                    }
+
+                                    if ($foundVariant) {
+                                        $displayName = $foundVariant->product->name . ' (' . $foundVariant->variant_name . ')';
+                                    } elseif ($item->purchaseRequest && $item->purchaseRequest->item_name) {
+                                        $displayName = $item->purchaseRequest->item_name;
+                                    }
+                                @endphp
+                                <strong>{{ $displayName }}</strong>
                             </td>
                             <td style="text-align: center;">
                                 @if(!$isFound)
@@ -343,7 +359,7 @@
         <div class="status-stamp">RECEIVED</div>
         
         <div class="footer" style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px; text-align: center; color: #777; font-size: 8px; position: relative;">
-            <p style="margin-bottom: 5px;">Generated on {{ now()->format('d M Y H:i A') }} | Powered By EmCa Techonologies</p>
+            <p style="margin-bottom: 5px;">Generated on {{ now()->format('d M Y H:i A') }} | Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
         </div>
     </div>
     

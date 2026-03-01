@@ -345,7 +345,7 @@
                               {{ number_format($request->quantity, 0) }}
                             </span> 
                             <span class="editable-unit" data-request-id="{{ $request->id }}" data-field="unit">
-                              {{ $request->unit === 'bottles' ? 'PIC' : $request->unit }}
+                              {{ $request->unit === 'bottles' || $dept === 'Bar' ? 'PIC' : $request->unit }}
                             </span>
                           </td>
                           <td data-label="Priority">
@@ -412,9 +412,11 @@
                                   <i class="fa fa-times"></i>
                                 </button>
                               @endif
-                              <button class="btn btn-sm btn-info edit-btn" data-request-id="{{ $request->id }}" title="Edit">
-                                <i class="fa fa-edit"></i>
-                              </button>
+                              @if($request->status === 'pending')
+                                <button class="btn btn-sm btn-info edit-btn" data-request-id="{{ $request->id }}" title="Edit">
+                                  <i class="fa fa-edit"></i>
+                                </button>
+                              @endif
                             </div>
                           </td>
                         </tr>
@@ -487,7 +489,7 @@
                               {{ number_format($request->quantity, 0) }}
                             </span> 
                             <span class="editable-unit" data-request-id="{{ $request->id }}" data-field="unit">
-                              {{ $request->unit === 'bottles' ? 'PIC' : $request->unit }}
+                              {{ $request->unit === 'bottles' || $dept === 'Bar' ? 'PIC' : $request->unit }}
                             </span>
                           </td>
                           <td>
@@ -554,9 +556,11 @@
                                   <i class="fa fa-times"></i>
                                 </button>
                               @endif
-                              <button class="btn btn-sm btn-info edit-btn" data-request-id="{{ $request->id }}" title="Edit">
-                                <i class="fa fa-edit"></i>
-                              </button>
+                              @if($request->status === 'pending')
+                                <button class="btn btn-sm btn-info edit-btn" data-request-id="{{ $request->id }}" title="Edit">
+                                  <i class="fa fa-edit"></i>
+                                </button>
+                              @endif
                             </div>
                           </td>
                         </tr>
@@ -604,7 +608,7 @@
                 </td>
                 <td><strong>{{ $request->item_name }}</strong></td>
                 <td>{{ $request->category ? ucfirst(str_replace('_', ' ', $request->category)) : 'N/A' }}</td>
-                <td>{{ number_format($request->quantity, 0) }} {{ $request->unit === 'bottles' ? 'PIC' : $request->unit }}</td>
+                <td>{{ number_format($request->quantity, 0) }} {{ $request->unit === 'bottles' || ($request->requestedBy && strpos(strtolower($request->requestedBy->getDepartmentName() ?? ''), 'bar') !== false) ? 'PIC' : $request->unit }}</td>
                 <td>
                   @if($request->priority === 'urgent')
                     <span class="badge badge-danger">Urgent</span>
@@ -668,9 +672,11 @@
                       <i class="fa fa-times"></i> Reject
                     </button>
                   @endif
-                  <button class="btn btn-sm btn-info edit-btn" data-request-id="{{ $request->id }}">
-                    <i class="fa fa-edit"></i>
-                  </button>
+                  @if($request->status === 'pending')
+                    <button class="btn btn-sm btn-info edit-btn" data-request-id="{{ $request->id }}">
+                      <i class="fa fa-edit"></i>
+                    </button>
+                  @endif
                 </td>
               </tr>
               @endforeach

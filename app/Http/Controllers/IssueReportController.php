@@ -190,83 +190,42 @@ class IssueReportController extends Controller
         }
         
         $issue->update($updateData);
-        
-        // Prepare response data first (before slow operations)
+
+        // Prepare response data first (to return as quickly as possible)
         $responseData = [
             'success' => true,
             'message' => 'Issue updated successfully.',
             'issue' => $issue->fresh(['user', 'guest', 'booking.room', 'room']),
         ];
-        
-        // Send email notification if status changed (queue it to avoid blocking)
+
+        // Only proceed with notifications if the status actually changed
         if ($oldStatus !== $newStatus) {
+            // 1. Queue email notifications to guest/reporter
             try {
                 $reporter = $issue->getReporter();
                 if ($reporter && $reporter->email) {
-                    // Send email immediately
-                    // Check if reporter has notifications enabled
-                    if ($reporter instanceof \App\Models\Guest && $reporter->isNotificationEnabled('issue_report')) {
-                        \Illuminate\Support\Facades\Mail::to($reporter->email)->send(
-                            new \App\Mail\IssueStatusUpdateMail($issue->fresh(), $newStatus, $validated['admin_notes'] ?? null)
-                        );
-                    } elseif (!($reporter instanceof \App\Models\Guest)) {
-                        // For non-guest users, send if they have notifications enabled
-                        \Illuminate\Support\Facades\Mail::to($reporter->email)->send(
-                            new \App\Mail\IssueStatusUpdateMail($issue->fresh(), $newStatus, $validated['admin_notes'] ?? null)
-                        );
+                    $shouldSend = true;
+                    if ($reporter instanceof \App\Models\Guest) {
+                        $shouldSend = $reporter->isNotificationEnabled('issue_report');
+                    }
+                    
+                    if ($shouldSend) {
+                        \Illuminate\Support\Facades\Mail::to($reporter->email)
+                            ->queue(new \App\Mail\IssueStatusUpdateMail($issue->fresh(), $newStatus, $validated['admin_notes'] ?? null));
                     }
                 }
             } catch (\Exception $e) {
-                // If queue fails, try sending synchronously but don't block
-                try {
-                    $reporter = $issue->getReporter();
-                    if ($reporter && $reporter->email) {
-                        // Check if reporter has notifications enabled
-                        if ($reporter instanceof \App\Models\Guest && $reporter->isNotificationEnabled('issue_report')) {
-                            \Illuminate\Support\Facades\Mail::to($reporter->email)->send(
-                                new \App\Mail\IssueStatusUpdateMail($issue->fresh(), $newStatus, $validated['admin_notes'] ?? null)
-                            );
-                        } elseif (!($reporter instanceof \App\Models\Guest)) {
-                            \Illuminate\Support\Facades\Mail::to($reporter->email)->send(
-                                new \App\Mail\IssueStatusUpdateMail($issue->fresh(), $newStatus, $validated['admin_notes'] ?? null)
-                            );
-                        }
-                    }
-                } catch (\Exception $e2) {
-                    Log::error('Failed to send issue status update email: ' . $e2->getMessage());
-                }
+                \Log::error('Failed to queue issue status update email to reporter: ' . $e->getMessage());
             }
 
-            // Send email notification to managers and super admins when status changes
+            // Note: Staff email notifications removed for faster performance.
+
+            // 3. Create or update in-app notification for guest
             try {
-                $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
-                    ->where('is_active', true)
-                    ->get();
+                $notificationType = 'issue_' . $newStatus;
+                $notificationTitle = 'Issue ' . ucfirst(str_replace('_', ' ', $newStatus));
+                $notificationMessage = 'Your issue "' . $issue->subject . '" status has been updated to ' . ucfirst(str_replace('_', ' ', $newStatus)) . '.';
                 
-                foreach ($managersAndAdmins as $staff) {
-                    // Check if user has notifications enabled
-                    if ($staff->isNotificationEnabled('issue_report')) {
-                        try {
-                            \Illuminate\Support\Facades\Mail::to($staff->email)
-                                ->send(new \App\Mail\StaffIssueStatusUpdateMail($issue->fresh(), $newStatus, $validated['admin_notes'] ?? null));
-                        } catch (\Exception $e) {
-                            Log::error('Failed to send issue status update email to staff: ' . $staff->email . ' - ' . $e->getMessage());
-                        }
-                    }
-                }
-            } catch (\Exception $e) {
-                Log::error('Failed to send issue status update emails to managers/admins: ' . $e->getMessage());
-            }
-        }
-        
-        // Create in-app notification for guest (do this after response if possible, but keep for now)
-        try {
-            $notificationType = 'issue_' . $newStatus;
-            $notificationTitle = 'Issue ' . ucfirst(str_replace('_', ' ', $newStatus));
-            $notificationMessage = 'Your issue "' . $issue->subject . '" status has been updated to ' . ucfirst(str_replace('_', ' ', $newStatus)) . '.';
-            
-            // Only create notification if status changed
-            if ($oldStatus !== $newStatus) {
                 \App\Models\Notification::updateOrCreate(
                     [
                         'user_id' => $issue->user_id,
@@ -284,21 +243,20 @@ class IssueReportController extends Controller
                         'is_read' => false,
                     ]
                 );
+                
+                // Mark associated staff notifications as read if resolved (moved here for consistency)
+                if ($newStatus === 'resolved') {
+                    \App\Models\Notification::where('notifiable_type', IssueReport::class)
+                        ->where('notifiable_id', $issue->id)
+                        ->where('type', 'issue_report')
+                        ->whereIn('role', ['reception', 'manager'])
+                        ->update(['is_read' => true]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to create/update issue status notification: ' . $e->getMessage());
             }
-            
-            // If issue is resolved, mark all related notifications for reception/admin as read
-            if ($newStatus === 'resolved') {
-                \App\Models\Notification::where('notifiable_type', IssueReport::class)
-                    ->where('notifiable_id', $issue->id)
-                    ->where('type', 'issue_report')
-                    ->whereIn('role', ['reception', 'manager'])
-                    ->update(['is_read' => true]);
-            }
-        } catch (\Exception $e) {
-            Log::error('Failed to create issue status notification: ' . $e->getMessage());
         }
         
-        // Return response immediately
         return response()->json($responseData);
     }
     
@@ -385,37 +343,69 @@ class IssueReportController extends Controller
             'admin_notes' => 'nullable|string',
         ]);
         
+        $oldStatus = $issue->status;
+        $newStatus = $validated['status'];
+        
         $updateData = [
-            'status' => $validated['status'],
+            'status' => $newStatus,
         ];
         
         if (isset($validated['admin_notes'])) {
             $updateData['admin_notes'] = $validated['admin_notes'];
         }
         
-        if ($validated['status'] === 'resolved' && !$issue->resolved_at) {
+        if ($newStatus === 'resolved' && !$issue->resolved_at) {
             $updateData['resolved_at'] = now();
-            
-            // Notify the guest
-            try {
-                \App\Models\Notification::create([
-                    'user_id' => $issue->user_id,
-                    'type' => 'issue_resolved',
-                    'title' => 'Issue Resolved',
-                    'message' => 'Your issue "' . $issue->subject . '" has been resolved.',
-                    'icon' => 'fa-check-circle',
-                    'color' => 'success',
-                    'role' => 'customer',
-                    'notifiable_id' => $issue->id,
-                    'notifiable_type' => IssueReport::class,
-                    'link' => route('customer.issues.show', $issue),
-                ]);
-            } catch (\Exception $e) {
-                Log::error('Failed to create resolution notification: ' . $e->getMessage());
-            }
         }
         
         $issue->update($updateData);
+
+        // Notify guest and manage notifications if status changed
+        if ($oldStatus !== $newStatus) {
+            // 1. Queue email to guest/reporter
+            try {
+                $reporter = $issue->getReporter();
+                if ($reporter && $reporter->email) {
+                    $shouldSend = true;
+                    if ($reporter instanceof \App\Models\Guest) {
+                        $shouldSend = $reporter->isNotificationEnabled('issue_report');
+                    }
+                    
+                    if ($shouldSend) {
+                        \Illuminate\Support\Facades\Mail::to($reporter->email)
+                            ->queue(new \App\Mail\IssueStatusUpdateMail($issue->fresh(), $newStatus, $validated['admin_notes'] ?? null));
+                    }
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to queue admin-initiated issue update email: ' . $e->getMessage());
+            }
+
+            // 2. Manage in-app notification
+            try {
+                if ($newStatus === 'resolved') {
+                    \App\Models\Notification::create([
+                        'user_id' => $issue->user_id,
+                        'type' => 'issue_resolved',
+                        'title' => 'Issue Resolved',
+                        'message' => 'Your issue "' . $issue->subject . '" has been resolved.',
+                        'icon' => 'fa-check-circle',
+                        'color' => 'success',
+                        'role' => 'customer',
+                        'notifiable_id' => $issue->id,
+                        'notifiable_type' => IssueReport::class,
+                        'link' => route('customer.issues.show', $issue),
+                    ]);
+                    
+                    // Mark housekeeping/reception notifications as read
+                    \App\Models\Notification::where('notifiable_type', IssueReport::class)
+                        ->where('notifiable_id', $issue->id)
+                        ->where('type', 'issue_report')
+                        ->update(['is_read' => true]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Failed to create admin-initiated resolution notification: ' . $e->getMessage());
+            }
+        }
         
         return response()->json([
             'success' => true,
@@ -518,25 +508,23 @@ class IssueReportController extends Controller
                 Log::error('Failed to create issue report notification: ' . $e->getMessage());
             }
 
-            // Send email notification to managers and super admins
+            // Notify reception via SMS (Instead of email for faster response)
             try {
-                $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
-                    ->where('is_active', true)
-                    ->get();
-                
-                foreach ($managersAndAdmins as $staff) {
-                    // Check if user has notifications enabled
-                    if ($staff->isNotificationEnabled('issue_report')) {
-                        try {
-                            \Illuminate\Support\Facades\Mail::to($staff->email)
-                                ->send(new \App\Mail\StaffNewIssueReportMail($issueReport->fresh()->load(['booking.room', 'room', 'user'])));
-                        } catch (\Exception $e) {
-                            Log::error('Failed to send new issue report email to staff: ' . $staff->email . ' - ' . $e->getMessage());
-                        }
+                $receptionUsers = \App\Models\Staff::where('role', 'reception')->get();
+                $smsService = new \App\Services\SmsService();
+                foreach ($receptionUsers as $staff) {
+                    if ($staff->phone) {
+                        $smsService->sendIssueReportSms(
+                            $staff->phone,
+                            $user->name ?? 'Guest',
+                            $room->room_number ?? 'N/A',
+                            $validated['subject'],
+                            $validated['priority']
+                        );
                     }
                 }
             } catch (\Exception $e) {
-                Log::error('Failed to send new issue report emails to managers/admins: ' . $e->getMessage());
+                Log::error('Failed to send issue report SMS to reception: ' . $e->getMessage());
             }
 
             return response()->json([

@@ -497,8 +497,7 @@
                                         <div>
                                             <h4 style="color: #222; font-size: 18px; font-weight: 600; margin-bottom: 8px;">Phone</h4>
                                             <p style="color: #666; margin: 0; line-height: 1.8;">
-                                                <a href="tel:+255677155156" style="color: #666; text-decoration: none; transition: color 0.3s;">+255 677-155-156</a><br>
-                                                <a href="tel:+255677155157" style="color: #666; text-decoration: none; transition: color 0.3s;">+255 677-155-157</a>
+                                                <a href="tel:+255677155156" style="color: #666; text-decoration: none; transition: color 0.3s;">+255 677-155-156</a>
                                             </p>
                                         </div>
                                     </div>
@@ -526,7 +525,8 @@
                                         <div>
                                             <h4 style="color: #222; font-size: 18px; font-weight: 600; margin-bottom: 8px;">Email</h4>
                                             <p style="color: #666; margin: 0; line-height: 1.8;">
-                                                <a href="mailto:info@primelandhotel.co.tz" style="color: #666; text-decoration: none; transition: color 0.3s;">info@primelandhotel.co.tz</a>
+                                                <a href="mailto:info@primelandhotel.com" style="color: #666; text-decoration: none; transition: color 0.3s;">info@primelandhotel.com</a><br>
+                                                <a href="mailto:infoprimelandhotel@gmail.com" style="color: #666; text-decoration: none; transition: color 0.3s;">infoprimelandhotel@gmail.com</a>
                                             </p>
                                         </div>
                                     </div>

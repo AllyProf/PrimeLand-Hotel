@@ -144,7 +144,7 @@
             }
           }
           // Get actual service charges from service requests (for display purposes)
-          $displayServiceRequests = $serviceRequests->whereIn('status', ['approved', 'completed']);
+          $displayServiceRequests = $serviceRequests->whereIn('status', ['pending', 'approved', 'preparing', 'completed']);
           $displayTotalServiceTsh = $displayServiceRequests->sum('total_price_tsh');
           $displayTotalBillTsh = $displayRoomPriceTsh + $displayExtensionTsh + $displayTotalServiceTsh;
           $displayTotalBillUsd = $displayTotalBillTsh / $exchangeRate;
@@ -434,6 +434,10 @@
                       <span class="badge badge-success">Completed</span>
                     @elseif($request->status === 'approved')
                       <span class="badge badge-info">Approved</span>
+                    @elseif($request->status === 'preparing')
+                      <span class="badge badge-primary">Preparing</span>
+                    @elseif($request->status === 'pending')
+                      <span class="badge badge-warning">Pending</span>
                     @endif
                   </td>
                 </tr>
@@ -537,6 +541,22 @@
                     <small class="text-muted">≈ ${{ number_format($outstandingBalanceTsh / $exchangeRate, 2) }}</small>
                   </td>
                 </tr>
+                @if(!$isCorporateBooking && isset($roomBalanceTsh) && isset($serviceBalanceTsh) && ($roomBalanceTsh > 0 || $serviceBalanceTsh > 0))
+                <tr>
+                  <td colspan="2" class="p-0">
+                    <div class="mt-2 p-2" style="background: #fff5f0; border-radius: 6px; border: 1px dashed #e07632;">
+                      <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">Room Balance:</small>
+                        <small><strong>{{ number_format($roomBalanceTsh, 2) }} TZS</strong> (≈ ${{ number_format($roomBalanceTsh / $exchangeRate, 2) }})</small>
+                      </div>
+                      <div class="d-flex justify-content-between">
+                        <small class="text-muted">Service Balance:</small>
+                        <small><strong>{{ number_format($serviceBalanceTsh, 2) }} TZS</strong> (≈ ${{ number_format($serviceBalanceTsh / $exchangeRate, 2) }})</small>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                @endif
                 @elseif(isset($outstandingBalanceTsh) && $outstandingBalanceTsh <= 50)
                 <tr style="border-top: 2px solid #e07632; font-size: 18px;">
                   <td><strong>Status:</strong></td>

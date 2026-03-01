@@ -8,6 +8,8 @@ use App\Models\HousekeepingInventoryItem;
 use App\Models\RoomIssue;
 use App\Models\InventoryStockMovement;
 use App\Models\ShoppingListItem;
+use App\Models\Staff;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -153,6 +155,29 @@ class HousekeeperController extends Controller
             }
             
             DB::commit();
+
+            // ── Send SMS to reception staff ────────────────────────────────────────
+            try {
+                $receptionStaff = Staff::where('role', 'reception')
+                    ->where('is_active', true)
+                    ->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+                    ->get();
+
+                if ($receptionStaff->isNotEmpty()) {
+                    $smsService = app(SmsService::class);
+                    $cleanerName = $housekeeper->name ?? 'Housekeeper';
+                    $smsText = "✅ Room {$room->room_number} ({$room->room_type}) is now CLEAN & AVAILABLE. Marked by {$cleanerName} at " . now()->format('H:i') . ". Ready for new check-ins!";
+
+                    foreach ($receptionStaff as $staff) {
+                        $smsService->sendSingle($staff->phone, $smsText);
+                    }
+                }
+            } catch (\Exception $smsEx) {
+                \Log::error('Failed to send room-cleaned SMS to reception: ' . $smsEx->getMessage());
+                // SMS failure must NOT roll back the cleaning record
+            }
+            // ────────────────────────────────────────────────────────────────────────
             
             return response()->json([
                 'success' => true,
@@ -505,6 +530,7 @@ class HousekeeperController extends Controller
                 ];
             });
         
+        $activePage = 'housekeeper/reports';
         return view('dashboard.housekeeper-reports', compact(
             'dateType',
             'customDate',
@@ -522,7 +548,8 @@ class HousekeeperController extends Controller
             'inventoryItems',
             'lowStockItems',
             'criticalStockItems',
-            'movementsByRoom'
+            'movementsByRoom',
+            'activePage'
         ));
     }
 
@@ -532,15 +559,17 @@ class HousekeeperController extends Controller
     private function sendLowStockNotification(HousekeepingInventoryItem $item)
     {
         try {
+            $smsService = app(SmsService::class);
             // Get managers and housekeeping staff
             $recipients = \App\Models\Staff::where(function($query) {
-                $query->whereIn('role', ['manager', 'super_admin'])
-                      ->orWhereRaw('LOWER(TRIM(role)) = ?', ['housekeeper']);
+                $query->whereIn('role', ['manager', 'owner', 'super_admin']);
             })
             ->where('is_active', true)
+            ->whereNotNull('phone')
             ->get();
             
             foreach ($recipients as $staff) {
+                // Send Email if enabled
                 if ($staff->isNotificationEnabled('inventory')) {
                     try {
                         \Illuminate\Support\Facades\Mail::to($staff->email)
@@ -548,6 +577,20 @@ class HousekeeperController extends Controller
                     } catch (\Exception $e) {
                         \Log::error('Failed to send low stock email to staff: ' . $staff->email . ' - ' . $e->getMessage());
                     }
+                }
+
+                // Send SMS to Managers/Owners
+                try {
+                    $smsService->sendLowStockAlert(
+                        $staff->phone,
+                        $staff->name,
+                        $item->name,
+                        (float)$item->current_stock,
+                        (float)$item->minimum_stock,
+                        'Housekeeping'
+                    );
+                } catch (\Exception $smsEx) {
+                    \Log::error('[LowStockSMS] Housekeeping error: ' . $smsEx->getMessage());
                 }
             }
         } catch (\Exception $e) {

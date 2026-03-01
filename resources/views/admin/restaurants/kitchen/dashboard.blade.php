@@ -72,7 +72,12 @@
     <div class="tile">
       <div class="tile-title-w-btn">
         <h3 class="title">Live Food Orders</h3>
-        <button class="btn btn-primary" onclick="openWalkInModal()"><i class="fa fa-plus"></i> New Walk-in Order</button>
+        <div class="btn-group">
+            <a href="{{ route('chef-master.kds') }}" class="btn btn-dark mr-2"><i class="fa fa-desktop"></i> KDS MONITOR</a>
+            @if(!$isChef)
+            <button class="btn btn-primary" onclick="openWalkInModal()"><i class="fa fa-plus"></i> New Walk-in Order</button>
+            @endif
+        </div>
       </div>
       
       @if($pendingOrders->count() > 0)
@@ -88,7 +93,10 @@
               <th>Qty</th>
               <th>Notes</th>
               <th>Status</th>
+              @if(!$isChef)
               <th>Action</th>
+              <th>Billing</th>
+              @endif
             </tr>
           </thead>
           <tbody>
@@ -165,7 +173,7 @@
                       <small>{{ $first->booking->guest_name }}</small>
                   @endif
                 </td>
-                <td colspan="5" class="p-0">
+                <td colspan="{{ $isChef ? 4 : 5 }}" class="p-0">
                   <table class="table table-sm mb-0 no-border" style="background: transparent;">
                     @foreach($orders as $order)
                     <tr style="background: transparent;">
@@ -196,6 +204,7 @@
                             <span class="badge badge-secondary">{{ ucfirst($order->status) }}</span>
                         @endif
                       </td>
+                      @if(!$isChef)
                       <td style="width: 20%; border-top: none; text-align: right;">
                         <div class="btn-group">
                           @if($order->status === 'pending')
@@ -213,11 +222,13 @@
                           @endif
                         </div>
                       </td>
+                      @endif
                     </tr>
                     @endforeach
                   </table>
                 </td>
                 <td style="vertical-align: top;">
+                  @if(!$isChef)
                   <div class="btn-group-vertical btn-group-sm w-100">
                     @php
                       $printUrl = route('admin.restaurants.kitchen.orders.print-group', [
@@ -256,6 +267,7 @@
                         </span>
                     @endif
                   </div>
+                  @endif
                 </td>
               </tr>
             @endforeach
@@ -273,76 +285,7 @@
   </div>
 </div>
 
-{{-- Active Ceremonies Section --}}
-<div class="row mt-4">
-  <div class="col-md-12">
-    <div class="tile shadow-sm border-0 mb-4">
-        <div class="tile-title-w-btn">
-            <h3 class="title"><i class="fa fa-birthday-cake mr-2 text-primary"></i> Active Ceremonies</h3>
-            <div class="btn-group">
-                <a href="{{ route('chef-master.day-services.index', ['tab' => 'ceremony']) }}" class="btn btn-outline-primary btn-sm rounded-pill mr-2">
-                    <i class="fa fa-history mr-1"></i> View History
-                </a>
-                <span class="badge badge-info p-2 d-flex align-items-center" style="border-radius: 20px;">{{ $activeCeremonies->count() }} ACTIVE TODAY</span>
-            </div>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Reference</th>
-                        <th>Guest Name</th>
-                        <th>Ceremony Type</th>
-                        <th>Pax</th>
-                        <th>Notes</th>
-                        <th class="text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($activeCeremonies as $ceremony)
-                        <tr>
-                            <td><span class="badge badge-light border">{{ $ceremony->service_reference }}</span></td>
-                            <td><strong>{{ $ceremony->guest_name }}</strong></td>
-                            <td>{{ $ceremony->service_type_name }}</td>
-                            <td>{{ $ceremony->number_of_people }}</td>
-                            <td><small class="text-muted">{{ Str::limit($ceremony->notes, 40) }}</small></td>
-                            <td class="text-center">
-                                @php
-                                    $unpaidUsage = $ceremony->serviceRequests
-                                        ->where('payment_status', 'pending')
-                                        ->filter(function($req) {
-                                            return $req->service && in_array($req->service->category, ['food', 'restaurant', 'kitchen']);
-                                        })
-                                        ->sum('total_price_tsh');
-                                @endphp
-                                <div class="btn-group">
-                                    <button class="btn btn-primary btn-sm rounded-pill px-3" onclick="openWalkInModal(null, '{{ $ceremony->guest_name }}', {{ $ceremony->id }})">
-                                        <i class="fa fa-plus-circle mr-1"></i> Add Usage
-                                    </button>
-                                    <a href="{{ route('chef-master.day-services.docket', $ceremony->id) }}" target="_blank" class="btn btn-secondary btn-sm rounded-pill px-3 ml-2" title="Print Docket">
-                                        <i class="fa fa-print mr-1"></i> Print Docket
-                                    </a>
-                                    @if($unpaidUsage > 0)
-                                        <button class="btn btn-success btn-sm rounded-pill px-3 ml-2" onclick="openCeremonyPaymentModal({{ $ceremony->id }}, '{{ $ceremony->guest_name }}', {{ $unpaidUsage }})">
-                                            <i class="fa fa-money mr-1"></i> Settle Bill ({{ number_format($unpaidUsage) }} TZS)
-                                        </button>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted italic">
-                                <i class="fa fa-info-circle mr-1"></i> No active ceremonies registered for today.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-  </div>
-</div>
+
 
 <div class="row">
 @if(!$isChef)
@@ -580,47 +523,6 @@
     </div>
 </div>
 
-<!-- Ceremony Payment Modal HTML -->
-<div class="modal fade" id="ceremonyPaymentModal" tabindex="-1" role="dialog" aria-labelledby="ceremonyPaymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="ceremonyPaymentModalLabel">Settle Ceremony Usage</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="ceremonyDayServiceId">
-                <p class="h5 text-center mb-2">Guest: <span id="ceremonyGuestName" class="font-weight-bold text-info"></span></p>
-                <p class="h4 text-center mb-4">Unpaid Amount: <span id="ceremonyUnpaidAmount" class="font-weight-bold text-danger"></span></p>
-                
-                <div class="form-group">
-                    <label for="ceremonyPaymentMethod">Payment Method</label>
-                    <select class="form-control" id="ceremonyPaymentMethod" onchange="toggleCeremonyRefField()">
-                        <option value="cash">Cash</option>
-                        <option value="room_charge">Room Charge</option>
-                        <option value="mpesa">M-Pesa</option>
-                        <option value="halopesa">Halopesa</option>
-                        <option value="airtel_money">Airtel Money</option>
-                        <option value="mixx_by_yass">Mixx by Yass</option>
-                        <option value="nmb">NMB Bank</option>
-                        <option value="crdb">CRDB Bank</option>
-                        <option value="kcb">KCB Bank</option>
-                    </select>
-                </div>
-                <div class="form-group" id="ceremonyRefFieldContainer" style="display: none;">
-                    <label for="ceremonyPaymentReference">Reference Number</label>
-                    <input type="text" class="form-control" id="ceremonyPaymentReference" placeholder="Enter reference number">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitCeremonyPayment()">Settle Payment</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 @endsection
 
@@ -1191,82 +1093,8 @@ function settlePOSPayment(orderId, method, reference) {
     });
 }
 
-function openCeremonyPaymentModal(dayServiceId, guestName, unpaidAmount) {
-    document.getElementById('ceremonyDayServiceId').value = dayServiceId;
-    document.getElementById('ceremonyGuestName').innerText = guestName;
-    document.getElementById('ceremonyUnpaidAmount').innerText = unpaidAmount.toLocaleString() + ' TZS';
-    
-    const methodSelect = document.getElementById('ceremonyPaymentMethod');
-    const roomChargeOption = methodSelect.querySelector('option[value="room_charge"]');
-    if (roomChargeOption) roomChargeOption.style.display = 'none'; // Ceremonies are walk-ins
-    
-    document.getElementById('ceremonyPaymentMethod').value = 'cash';
-    document.getElementById('ceremonyPaymentReference').value = '';
-    toggleCeremonyRefField();
-    $('#ceremonyPaymentModal').modal('show');
-}
 
-function toggleCeremonyRefField() {
-    const method = document.getElementById('ceremonyPaymentMethod').value;
-    const container = document.getElementById('ceremonyRefFieldContainer');
-    if (method === 'cash' || method === 'room_charge') {
-        container.style.display = 'none';
-    } else {
-        container.style.display = 'block';
-    }
-}
 
-function submitCeremonyPayment() {
-    const dayServiceId = document.getElementById('ceremonyDayServiceId').value;
-    const method = document.getElementById('ceremonyPaymentMethod').value;
-    const reference = document.getElementById('ceremonyPaymentReference').value.trim();
-    
-    if (method !== 'cash' && method !== 'room_charge' && !reference) {
-        Swal.fire("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
-        return;
-    }
-
-    Swal.fire({
-        title: "Confirm Settlement",
-        text: "Mark all unpaid consumption for this ceremony as paid?",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonColor: "#28a745",
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Yes, Settle!",
-        cancelButtonText: "Cancel"
-    }).then(function(result) {
-        if (result.isConfirmed) {
-            var url = '/customer/ceremonies/settle-usage';
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    day_service_id: dayServiceId,
-                    payment_method: method,
-                    payment_reference: reference
-                })
-            })
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                if (data.success) {
-                    showSuccessToast(data.message + " (" + data.count + " items settled)");
-                    setTimeout(function() { location.reload(); }, 1500);
-                } else {
-                    Swal.fire("Error!", data.message, "error");
-                }
-            })
-            .catch(function(error) {
-                console.error('Error:', error);
-                Swal.fire("Error!", "Failed to settle payment. Please try again.", "error");
-            });
-        }
-    });
-}
     function printDocket(orderId) {
         var url = '/restaurant/food/orders/' + orderId + '/print-docket';
         window.open(url, 'KitchenDocketPrint', 'width=400,height=600');

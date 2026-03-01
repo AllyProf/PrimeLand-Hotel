@@ -186,6 +186,13 @@
                     if($status === 'ROOM_CHARGE') $status = 'CHARGED TO ROOM';
                 @endphp
                 ORDER STATUS: {{ $status }}
+                
+                @if(in_array($order->payment_status, ['paid', 'room_charge']))
+                    <div style="font-size: 11px; margin-top: 8px; font-weight: normal; color: #333; border-top: 1px solid #ccc; padding-top: 5px;">
+                        METHOD: <strong>{{ strtoupper(str_replace('_', ' ', $order->payment_method ?? 'N/A')) }}</strong><br>
+                        REF #: <strong>{{ $order->payment_reference ?: 'N/A' }}</strong>
+                    </div>
+                @endif
             </div>
             <div class="total-pay">
                 TOTAL BILL: {{ number_format($order->total_price_tsh) }} TZS
@@ -197,7 +204,7 @@
             <p style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Thank you for dining with us!</p>
             <p>Please keep this receipt for your records.</p>
             <p>Visit again soon!</p>
-            <div class="emca-credit">Powered By EmCa Technologies</div>
+            <div class="emca-credit">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></div>
         </div>
     </div>
 

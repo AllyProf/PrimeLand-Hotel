@@ -28,7 +28,6 @@
                   <option value="daily" {{ $reportType == 'daily' ? 'selected' : '' }}>Daily</option>
                   <option value="weekly" {{ $reportType == 'weekly' ? 'selected' : '' }}>Weekly</option>
                   <option value="monthly" {{ $reportType == 'monthly' ? 'selected' : '' }}>Monthly</option>
-                  <option value="yearly" {{ $reportType == 'yearly' ? 'selected' : '' }}>Yearly</option>
                   <option value="custom" {{ $reportType == 'custom' ? 'selected' : '' }}>Custom Date Range</option>
                 </select>
               </div>
@@ -165,16 +164,22 @@
                 $totalTransactions = $revenueByPaymentMethod->sum('count');
               @endphp
               @foreach($revenueByPaymentMethod as $method => $data)
+              @php
+                $platform = 'mobile';
+                $meth_lower = strtolower($method);
+                if (str_contains($meth_lower, 'bank') || in_array($meth_lower, ['nmb', 'crdb', 'kcb'])) $platform = 'bank';
+                elseif (str_contains($meth_lower, 'card') || str_contains($meth_lower, 'visa') || str_contains($meth_lower, 'master')) $platform = 'card';
+                elseif (in_array($meth_lower, ['online', 'expedia', 'booking'])) $platform = 'online';
+                elseif (str_contains($meth_lower, 'cash')) $platform = 'cash';
+              @endphp
               <tr>
                 <td><strong>{{ ucfirst($method ?? 'Unknown') }}</strong></td>
                 <td>{{ $data['count'] }}</td>
                 <td>{{ number_format($data['revenue_tzs'], 0) }}</td>
-                <td>
-                  @if($totalRevenueTZS > 0)
-                    {{ number_format(($data['revenue_tzs'] / $totalRevenueTZS) * 100, 1) }}%
-                  @else
-                    0%
-                  @endif
+                <td class="text-center">
+                    <a href="{{ route('admin.reports.payment-platform-report', ['platform' => $platform, 'report_type' => $reportType, 'date' => $reportDate, 'start_date' => $startDate, 'end_date' => $endDate]) }}" class="btn btn-sm btn-info">
+                        <i class="fa fa-list"></i> Details
+                    </a>
                 </td>
               </tr>
               @endforeach

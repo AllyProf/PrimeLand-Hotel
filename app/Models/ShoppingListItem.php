@@ -93,12 +93,7 @@ class ShoppingListItem extends Model
             return ProductVariant::find($this->getAttribute('product_variant_id'));
         }
 
-        // 2. Standard product link
-        if ($this->product_id) {
-            return ProductVariant::where('product_id', $this->product_id)->orderBy('id')->first();
-        }
-
-        // 3. Smart name & size search (fallback for manually typed items)
+        // Parse name and size
         $name = $this->product_name;
         $size = null;
         if (preg_match('/\((.*?)\)/', $name, $matches)) {
@@ -110,36 +105,59 @@ class ShoppingListItem extends Model
 
         // --- MATCHING STRATEGY ---
         
-        // A. Match by Variant Name directly (Top Priority for Spirits/Drinks)
-        // Many records use "Konyagi" as Variant Name and "Vodka" as Product name
-        $variant = ProductVariant::where('variant_name', $baseName)->first()
-                 ?? ProductVariant::where('variant_name', 'LIKE', $baseName . '%')->first()
-                 ?? ProductVariant::where('variant_name', 'LIKE', '%' . $baseName . '%')->first();
+        // A. Direct Match by Variant Name
+        $variant = ProductVariant::where('variant_name', 'LIKE', '%' . $baseName . '%')
+                 ->orWhere('measurement', 'LIKE', '%' . $baseName . '%')
+                 ->first();
 
-        // B. Match by Product Name
-        if (!$variant) {
-            $product = Product::where('name', $baseName)->first()
-                     ?? Product::where('name', 'LIKE', $baseName . '%')->first()
-                     ?? Product::where('name', 'LIKE', '%' . $baseName . '%')->first()
-                     // Reverse search: e.g. baseName is "Kilimanjaro Water Small", product name is "Kilimanjaro Water"
-                     ?? Product::whereRaw('? LIKE CONCAT("%", name, "%")', [$baseName])->first();
-
-            if ($product) {
-                // If we found a product, try to see if the baseName also contains a variant name
-                // e.g. "Kilimanjaro Water Small" -> check if any variant of product 6 is named "Small"
-                $remainingPart = trim(str_ireplace($product->name, '', $baseName));
-                $variantQuery = ProductVariant::where('product_id', $product->id);
-                
-                if ($remainingPart) {
-                    $specificVariant = (clone $variantQuery)->where('variant_name', 'LIKE', '%' . $remainingPart . '%')->first();
-                    if ($specificVariant) $variant = $specificVariant;
-                }
-                
-                if (!$variant) $variant = $variantQuery->orderBy('id')->first();
+        // B. If product_id exists, look for a variant within THAT product that matches the baseName
+        if (!$variant && $this->product_id) {
+            $variant = ProductVariant::where('product_id', $this->product_id)
+                ->where(function($q) use ($baseName) {
+                    $q->where('variant_name', 'LIKE', '%' . $baseName . '%')
+                      ->orWhere('measurement', 'LIKE', '%' . $baseName . '%');
+                })->first();
+            
+            // C. Fallback to first variant ONLY if still no specific match
+            if (!$variant) {
+                $variant = ProductVariant::where('product_id', $this->product_id)->orderBy('id')->first();
             }
         }
 
-        // C. Refine by Size if multiple variants exist
+        // D. Fallback: Search for any variant by name if no product link yet
+        if (!$variant) {
+            // Extra fuzzy check for common typos (e.g. Pineapple vs Pineaple)
+            if (stripos($baseName, 'Pineapple') !== false) {
+                $fuzzyName = str_ireplace('Pineapple', 'Pineaple', $baseName);
+                $variant = ProductVariant::where('variant_name', 'LIKE', '%' . $fuzzyName . '%')->first();
+            }
+
+            // E. Match by Product Name
+            if (!$variant) {
+                $product = Product::where('name', $baseName)->first()
+                         ?? Product::where('name', 'LIKE', $baseName . '%')->first()
+                         ?? Product::where('name', 'LIKE', '%' . $baseName . '%')->first()
+                         ?? Product::whereRaw('? LIKE CONCAT("%", name, "%")', [$baseName])->first();
+
+                if ($product) {
+                    $remainingPart = trim(str_ireplace($product->name, '', $baseName));
+                    $variantQuery = ProductVariant::where('product_id', $product->id);
+                    
+                    if ($remainingPart) {
+                        $specificVariant = (clone $variantQuery)->where('variant_name', 'LIKE', '%' . $remainingPart . '%')->first();
+                        if ($specificVariant) {
+                            $variant = $specificVariant;
+                        }
+                    }
+                    
+                    if (!$variant && $variantQuery->count() === 1) {
+                        $variant = $variantQuery->first();
+                    }
+                }
+            }
+        }
+
+        // F. Final Refinement by Size if multiple variants exist
         if ($variant && $size) {
             $sizedVariant = ProductVariant::where('product_id', $variant->product_id)
                 ->where(function($q) use ($size) {

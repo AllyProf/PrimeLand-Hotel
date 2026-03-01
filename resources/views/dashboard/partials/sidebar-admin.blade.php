@@ -43,9 +43,9 @@
     </li>
 
     <li>
-        <a class="app-menu__item {{ str_contains($activePage, 'orders') ? 'active' : '' }}" href="{{ route('admin.restaurants.kitchen.orders') }}">
-            <i class="app-menu__icon fa fa-bell"></i>
-            <span class="app-menu__label">Live Orders</span>
+        <a class="app-menu__item {{ str_contains($activePage, 'orders/monitor') ? 'active' : '' }}" href="{{ route('reception.orders.monitor') }}">
+            <i class="app-menu__icon fa fa-television"></i>
+            <span class="app-menu__label">Live Order Monitor</span>
         </a>
     </li>
 
@@ -94,8 +94,6 @@
         <ul class="treeview-menu">
             <li><a class="treeview-item" href="{{ route('admin.recipes.index') }}"><i class="icon fa fa-book"></i> Menu Recipes</a></li>
             <li><a class="treeview-item" href="{{ route('chef-master.inventory') }}"><i class="icon fa fa-cubes"></i> Kitchen Inventory</a></li>
-            <li><a class="treeview-item" href="{{ route('admin.restaurants.kitchen.orders') }}"><i class="icon fa fa-bell"></i> Live Orders</a></li>
-            <li class="treeview-divider"></li>
             <li><a class="treeview-item" href="{{ route('admin.restaurants.shopping-list.index') }}"><i class="icon fa fa-shopping-basket"></i> Shopping Lists</a></li>
             <li class="treeview-divider"></li>
             <li><a class="treeview-item" href="{{ route('admin.restaurants.reports') }}"><i class="icon fa fa-bar-chart"></i> Restaurant Sales</a></li>
@@ -112,13 +110,30 @@
         </ul>
     </li>
 
-    {{-- 4. FRONT OFFICE --}}
+    {{-- 4. Operations & Shifts --}}
+    <li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Operations & Shifts</li>
+    
+    <li><a class="app-menu__item {{ str_contains($activePage, 'orders/monitor') ? 'active' : '' }}" href="{{ route('reception.orders.monitor') }}"><i class="app-menu__icon fa fa-television"></i><span class="app-menu__label">Live Order Monitor</span></a></li>
+
+    <li class="treeview {{ str_contains($activePage, 'shift/') || str_contains($activePage, 'shifts/') ? 'is-expanded' : '' }}">
+        <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-lock"></i><span class="app-menu__label">Shift Management</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+        <ul class="treeview-menu">
+            <li><a class="treeview-item {{ str_contains($activePage, 'shifts/history') ? 'active' : '' }}" href="{{ route('reception.shift.history') }}"><i class="icon fa fa-history"></i> Shift History</a></li>
+            @if(!$hasRole('manager') || $isSuperAdmin())
+                <li><a class="treeview-item" href="{{ route('reception.shift.open') }}"><i class="icon fa fa-key"></i> Open New Shift</a></li>
+                <li><a class="treeview-item" href="{{ route('reception.shift.close') }}"><i class="icon fa fa-sign-out"></i> Close & Reconcile</a></li>
+            @endif
+        </ul>
+    </li>
+
+    {{-- 5. FRONT OFFICE --}}
     <li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Front Office</li>
     <li class="treeview {{ str_contains($activePage, 'admin/bookings') || str_contains($activePage, 'admin/reservations') || str_contains($activePage, 'admin/extension-requests') ? 'is-expanded' : '' }}">
         <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-calendar-check-o"></i><span class="app-menu__label">Bookings</span><i class="treeview-indicator fa fa-angle-right"></i></a>
         <ul class="treeview-menu">
             <li><a class="treeview-item" href="{{ route('admin.bookings.index') }}"><i class="icon fa fa-list"></i> All Bookings</a></li>
             <li><a class="treeview-item" href="{{ route('admin.bookings.manual.create') }}"><i class="icon fa fa-plus-circle"></i> Individual Booking</a></li>
+            <li><a class="treeview-item" href="{{ route('admin.invoices.create') }}"><i class="icon fa fa-file-text-o"></i> Create Invoice</a></li>
             <li><a class="treeview-item" href="{{ route('admin.bookings.corporate.create') }}"><i class="icon fa fa-building"></i> Corporate Booking</a></li>
             <li><a class="treeview-item" href="{{ route('admin.bookings.calendar') }}"><i class="icon fa fa-calendar"></i> Calendar View</a></li>
             <li class="treeview-divider"></li>
@@ -151,6 +166,7 @@
             <li><a class="treeview-item" href="{{ route('admin.rooms.status') }}"><i class="icon fa fa-info-circle"></i> View Occupancy</a></li>
             <li><a class="treeview-item" href="{{ route('admin.rooms.index') }}"><i class="icon fa fa-list"></i> Manage Rooms</a></li>
             <li><a class="treeview-item" href="{{ route('admin.rooms.create') }}"><i class="icon fa fa-plus-circle"></i> Add New Room</a></li>
+            <li><a class="treeview-item" href="{{ route('admin.rooms.qr-generator') }}"><i class="icon fa fa-qrcode"></i> Generate QR Codes</a></li>
             <li><a class="treeview-item" href="{{ route('admin.rooms.cleaning') }}"><i class="icon fa fa-broom"></i> Cleaning Schedule</a></li>
         </ul>
     </li>
@@ -200,9 +216,18 @@
             <li><a class="treeview-item" href="{{ route('admin.settings.rooms') }}"><i class="icon fa fa-bed"></i> Room Settings</a></li>
         </ul>
     </li>
+    {{-- 8. COMMUNICATIONS --}}
+    <li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Communications</li>
+    <li>
+        <a class="app-menu__item {{ str_contains($activePage, 'messaging') ? 'active' : '' }}" href="{{ route('manager.sms.index') }}">
+            <i class="app-menu__icon fa fa-envelope"></i>
+            <span class="app-menu__label">Messaging Center</span>
+        </a>
+    </li>
 @endif
 
 {{-- 5. Utilities (Always show) --}}
+
 <li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Utilities</li>
 @if($hasPermission('manage_exchange_rates') || $isSuperAdmin())
 <li><a class="app-menu__item {{ str_contains($activePage, 'exchange-rates') ? 'active' : '' }}" href="{{ route('exchange-rates') }}"><i class="app-menu__icon fa fa-exchange"></i><span class="app-menu__label">Exchange Rates</span></a></li>

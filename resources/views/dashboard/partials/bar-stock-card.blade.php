@@ -30,186 +30,136 @@
     }
 @endphp
 
-<div class="col-md-4 col-sm-6 mb-3 inventory-card" 
+<div class="col-xl-3 col-md-4 col-sm-6 mb-3 inventory-card" 
      data-name="{{ strtolower($item['product_name']) }}" 
      data-variant="{{ strtolower($item['variant_name']) }}"
      data-brand="{{ strtolower($item['brand_name'] ?? '') }}"
      data-category="{{ strtolower($item['product_category']) }}">
     
-    <div class="card h-100 {{ $borderClass }}" style="box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-width: 2px !important; {{ $isExpiringSoon && $daysToExpiry > 0 ? 'background-color: #fff9f0;' : '' }}">
-        <div class="card-header {{ $headerClass }} py-2">
+    <div class="card h-100 shadow-sm {{ $borderClass }}" style="border-width: 1px !important; {{ $isExpiringSoon && $daysToExpiry > 0 ? 'background-color: #fffaf5;' : '' }}">
+        <!-- Compact Header -->
+        <div class="card-header {{ $headerClass }} p-2">
             <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex align-items-center">
-                    <div class="custom-control custom-checkbox mr-2">
+                <div class="d-flex align-items-center overflow-hidden">
+                    <div class="custom-control custom-checkbox mr-1">
                         <input type="checkbox" class="custom-control-input stock-checkbox" id="check-{{ $item['variant_id'] }}" value="{{ $item['variant_id'] }}">
                         <label class="custom-control-label" for="check-{{ $item['variant_id'] }}"></label>
                     </div>
-                    <div class="d-flex flex-column">
-                        <h6 class="card-title mb-0 text-truncate font-weight-bold" title="{{ $item['product_name'] }}" style="max-width: 151px; font-size: 13px;">
-                            <i class="fa fa-wine-bottle"></i> {{ $item['product_name'] }}
+                    <div class="text-truncate mr-2">
+                        <h6 class="card-title mb-0 font-weight-bold text-truncate" title="{{ $item['product_name'] }}" style="font-size: 11.5px;">
+                            {{ $item['product_name'] }}
                         </h6>
-                        @if(($item['brand_name'] ?? '') !== $item['product_name'])
-                        <small class="font-italic" style="font-size: 10px; line-height: 1; opacity: 0.75;">{{ $item['brand_name'] }}</small>
-                        @endif
                     </div>
                 </div>
-                <div class="btn-group">
-                    <button class="btn btn-sm btn-info view-track-btn" 
+                <!-- Action Buttons (Smaller) -->
+                <div class="d-flex" style="gap: 2px;">
+                    <button class="btn btn-xs btn-info view-track-btn p-1" 
                             data-variant-id="{{ $item['variant_id'] }}" 
-                            data-product-id="{{ $item['product_id'] }}"
-                            data-item-name="{{ $item['product_name'] }} ({{ $item['variant_name'] }})"
-                            title="Track History & Price Changes"
-                            style="background: #17a2b8; border-color: #17a2b8; color: white;">
+                            data-item-name="{{ $item['product_name'] }}"
+                            style="width: 22px; height: 22px; font-size: 10px;">
                         <i class="fa fa-history"></i>
                     </button>
-                    <button class="btn btn-sm btn-light settings-stock-btn" 
+                    <button class="btn btn-xs btn-light settings-stock-btn p-1 border" 
                             data-variant-id="{{ $item['variant_id'] }}" 
-                            data-item-name="{{ $item['product_name'] }} ({{ $item['variant_name'] }})" 
+                            data-item-name="{{ $item['product_name'] }}" 
                             data-minimum-stock="{{ $item['minimum_stock'] ?? 0 }}"
                             data-price-pic="{{ $item['selling_price_per_pic'] }}"
                             data-price-glass="{{ $item['selling_price_per_serving'] }}"
-                            title="Update Prices & Thresholds">
+                            style="width: 22px; height: 22px; font-size: 10px;">
                         <i class="fa fa-cog"></i>
                     </button>
-                    <a href="{{ route('bar-keeper.purchase-requests.create', ['ids' => $item['variant_id']]) }}" 
-                       class="btn btn-sm btn-warning" 
-                       title="Request Restock"
-                       style="background: #e77a31; border-color: #e77a31; color: white;">
-                        <i class="fa fa-plus-circle"></i>
-                    </a>
                 </div>
             </div>
         </div>
         
         <div class="card-body p-0">
-            <!-- Product Image Header -->
-            <div class="position-relative" style="height: 150px; background: #f0f2f5; overflow: hidden; border-bottom: 1px solid #eee;">
-                @if($item['product_image'])
-                    <img src="{{ asset('storage/' . ltrim($item['product_image'], '/')) }}" alt="{{ $item['product_name'] }}" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
-                @else
-                    <div class="d-flex align-items-center justify-content-center h-100" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
-                        <i class="fa fa-wine-glass fa-4x text-white opacity-50"></i>
-                    </div>
-                @endif
-                
-                <!-- Measurement Badge -->
-                <div class="position-absolute" style="bottom: 10px; right: 10px;">
-                    <span class="badge badge-primary shadow-sm px-2 py-1" style="font-size: 11px;">
-                        {{ $item['variant_name'] }}
-                    </span>
-                </div>
-
-                <!-- Category Bubble -->
-                <div class="position-absolute" style="top: 10px; left: 10px;">
-                    <span class="badge badge-light shadow-sm px-2 py-1" style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #555; background: rgba(255,255,255,0.9);">
-                        {{ substr($item['category_name'], 0, 15) }}
-                    </span>
-                </div>
-            </div>
-
-            <div class="p-3">
-                <!-- Stats Grid -->
-                <div class="mb-3 p-2 bg-light rounded border shadow-sm">
-                    <div class="row text-center" style="font-size: 11px;">
-                        <div class="col-4 border-right">
-                            <div class="text-info font-weight-bold" style="font-size: 14px;">{{ number_format($receivedPics, 1) }}</div>
-                            <div class="text-muted" style="font-size: 10px;">Total Recv.</div>
-                        </div>
-                        <div class="col-4 border-right">
-                            <div class="text-danger font-weight-bold" style="font-size: 14px;">
-                                @if(($item['sold_servings'] ?? 0) > 0)
-                                    {{ number_format($item['sold_full_bottles'], 0) }} <small class="text-muted" style="font-size: 10px;">+ {{ $item['sold_servings'] }} gls</small>
-                                @else
-                                    {{ number_format($item['total_sold_pics'], 1) }}
-                                @endif
-                            </div>
-                            <div class="text-muted" style="font-size: 10px;">Sold</div>
-                        </div>
-                        <div class="col-4">
-                            <div class="text-{{ $statusColor }} font-weight-bold" style="font-size: 14px;">
-                                @if(($item['open_servings'] ?? 0) > 0)
-                                    {{ number_format($item['full_bottles'], 0) }} <small class="text-muted" style="font-size: 10px;">+ {{ $item['open_servings'] }} gls</small>
-                                @else
-                                    {{ number_format($item['current_stock_pics'], 1) }}
-                                @endif
-                            </div>
-                            <div class="text-muted" style="font-size: 10px;">In Stock</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Unit Conversion & Total Servings Info -->
-                @if(($item['servings_per_pic'] ?? 1) > 1)
-                <div class="mb-3 px-2 py-1 bg-white border rounded" style="font-size: 10.5px; color: #444; border-style: dashed !important; border-color: #dee2e6 !important;">
-                        <div class="d-flex justify-content-between mb-1">
-                        <span><i class="fa fa-exchange text-info"></i> Ratio:</span>
-                        <strong>1 Bot = {{ $item['servings_per_pic'] }} gls</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                        <span><i class="fa fa-glass-whiskey text-warning"></i> Total Gls:</span>
-                        <strong class="text-primary">{{ number_format($item['total_servings_available']) }} Glasses</strong>
-                        </div>
-                        <div class="d-flex justify-content-between pt-1 border-top" style="border-top-style: dotted !important;">
-                        <span class="text-success"><i class="fa fa-money-bill-wave"></i> Profit/Gls:</span>
-                        <strong class="text-success">{{ number_format($item['profit_per_serving'] ?? 0) }} <small>TSH</small></strong>
-                        </div>
-                </div>
-                @endif
-                
-                <!-- Financial Stats -->
-                <div class="mb-1 p-2 bg-light rounded shadow-sm border">
-                    <div class="d-flex justify-content-between align-items-center p-1 rounded mb-1" style="font-size: 11px; background: #e3f2fd; border: 1px dashed #2196f3;">
-                        <span class="font-weight-bold text-primary">Amount Generated:</span>
-                        <strong class="text-primary" style="font-size: 12px;">{{ number_format($item['revenue_generated'], 0) }} <small>TSH</small></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center" style="font-size: 11px;">
-                        <span class="text-muted">Stock Value:</span>
-                        <strong class="text-warning" style="color: #e77a31 !important;">{{ number_format($item['revenue_serving'], 0) }} <small>TSH</small></strong>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center border-top mt-1 pt-1" style="font-size: 11px;">
-                        <span class="text-muted">Profit Generated:</span>
-                        <strong class="text-info">{{ number_format($item['profit_generated'] ?? 0, 0) }} <small>TSH</small></strong>
-                    </div>
-
-                </div>
-            
-            <!-- Expiry & Status Badges -->
-            <div class="mt-2">
-                @if($expiryDate)
-                    @if($daysToExpiry < 0)
-                        <div class="badge badge-dark w-100 py-1 mb-1" style="font-size: 10px;">
-                            <i class="fa fa-times-circle"></i> EXPIRED: {{ $expiryDate->format('d M Y') }}
-                        </div>
-                    @elseif($daysToExpiry <= 10)
-                        <div class="badge badge-warning w-100 py-1 mb-1 text-dark" style="font-size: 10px; background-color: #ffc107;">
-                            <i class="fa fa-clock-o"></i> EXPIRING: {{ $daysToExpiry }} Days Left ({{ $expiryDate->format('d M') }})
-                        </div>
+            <!-- Very Compact Image/Info Row -->
+            <div class="d-flex" style="height: 70px; background: #fdfdfd; border-bottom: 1px solid #f0f0f0;">
+                <div style="width: 70px; height: 70px; flex-shrink: 0; background: #eee;">
+                    @if(!empty($item['product_image']))
+                        <img src="{{ asset('storage/' . ltrim($item['product_image'], '/')) }}" class="w-100 h-100" style="object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
                     @else
-                        <div class="badge badge-light border w-100 py-1 mb-1 text-muted" style="font-size: 10px;">
-                            <i class="fa fa-calendar"></i> Expiry: {{ $expiryDate->format('d M Y') }}
+                        @php
+                            $cat = strtolower($item['product_category'] ?? '');
+                            $icon = 'fa-glass';
+                            $grad = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
+                            if (str_contains($cat, 'beer')) { $icon='fa-beer'; $grad='linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'; }
+                            elseif (str_contains($cat, 'spirit') || str_contains($cat, 'whiskey')) { $icon='fa-glass'; $grad='linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'; }
+                            elseif (str_contains($cat, 'water')) { $icon='fa-tint'; $grad='linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)'; }
+                        @endphp
+                        <div class="d-flex align-items-center justify-content-center h-100" style="background: {!! $grad !!};">
+                            <i class="fa {!! $icon !!} fa-2x text-white opacity-50"></i>
                         </div>
                     @endif
+                </div>
+                <div class="p-2 flex-grow-1 overflow-hidden">
+                    <div style="font-size: 9px; text-transform: uppercase; color: #888; font-weight: 700;" class="text-truncate">{{ $item['category_name'] }}</div>
+                    <div class="font-weight-bold text-primary mt-1" style="font-size: 11px;">{{ $item['variant_name'] }}</div>
+                    @if($daysToExpiry !== null)
+                        <div class="mt-1 {{ $daysToExpiry <= 10 ? 'text-danger font-weight-bold' : 'text-muted' }}" style="font-size: 9px;">
+                            Exp: {{ \Carbon\Carbon::parse($expiryDate)->format('d M y') }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Condensed Stock Stats -->
+            <div class="p-2">
+                <div class="d-flex justify-content-between mb-1" style="font-size: 11px;">
+                    <div class="text-center bg-light border-right flex-fill rounded-left p-1">
+                        <div class="text-muted small">Total</div>
+                        <div class="font-weight-bold">{{ number_format($receivedPics, 1) }}</div>
+                    </div>
+                    <div class="text-center bg-light border-right flex-fill p-1">
+                        <div class="text-muted small">Sold</div>
+                        <div class="font-weight-bold text-danger" style="font-size: 11px;">
+                            @if($item['servings_per_pic'] > 1)
+                                {{ $item['sold_full_bottles'] }}B {{ $item['sold_servings'] }}G
+                            @else
+                                {{ number_format($item['total_sold_pics'], 1) }}
+                            @endif
+                        </div>
+                    </div>
+                    <div class="text-center bg-{{ $statusColor }} text-{{ ($statusColor === 'warning' ? 'dark' : 'white') }} flex-fill rounded-right p-1 shadow-sm">
+                        <div class="small opacity-75">In Stock</div>
+                        <div class="font-weight-bold" style="font-size: 12px;">
+                            @if($item['servings_per_pic'] > 1)
+                                {{ $item['full_bottles'] }}B {{ $item['open_servings'] }}G
+                            @else
+                                {{ number_format($currentPics, 1) }}
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Glass Breakdown (If ratio > 1) -->
+                @if($item['servings_per_pic'] > 1)
+                <div class="d-flex justify-content-between p-1 px-2 mb-1 bg-white border border-primary rounded" style="font-size: 10px; border-style: dashed !important;">
+                    <span class="text-muted"><i class="fa fa-glass"></i> Tot: <strong class="text-primary">{{ number_format($item['total_servings_available']) }} gls</strong></span>
+                    <span class="text-muted"><i class="fa fa-money-bill-wave"></i> {{ number_format($item['profit_per_serving']) }} Profit</span>
+                </div>
                 @endif
 
-                @if($stockStatus === 'critical')
-                    <span class="badge badge-danger w-100 py-1" style="font-size: 11px;"><i class="fa fa-exclamation-circle"></i> Out of Stock</span>
-                @elseif($stockStatus === 'low')
-                    <span class="badge badge-warning w-100 py-1" style="font-size: 11px;"><i class="fa fa-warning"></i> Low Stock - Reorder Soon</span>
-                @else
-                    <span class="badge badge-success w-100 py-1" style="font-size: 11px;"><i class="fa fa-check-circle"></i> In Stock</span>
-                @endif
+                <!-- Compact Finance Row -->
+                <div class="bg-light p-1 rounded border overflow-hidden" style="font-size: 10px;">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span title="Total revenue collected from sales so far">Collected:</span>
+                        <strong class="text-primary">{{ number_format($item['revenue_generated'], 0) }} TSH</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span title="Expected revenue if all remaining stock is sold as servings">Potent. Sales:</span>
+                        <strong class="text-{{ $statusColor === 'success' ? 'dark' : $statusColor }}">{{ number_format($item['revenue_serving'], 0) }} TSH</strong>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-        
-    <div class="card-footer bg-white p-2" style="font-size: 10px;">
-            <div class="d-flex justify-content-between text-muted">
-                <span><i class="fa fa-wine-bottle"></i> Pic: <strong>{{ number_format($item['selling_price_per_pic'], 0) }} Tsh Price</strong></span>
-                
+
+        <!-- Footer Pricing (Smallest possible) -->
+        <div class="card-footer bg-white p-1 px-2 border-top" style="font-size: 9px;">
+            <div class="d-flex justify-content-between">
+                <span>Pic: <strong>{{ number_format($item['selling_price_per_pic'], 0) }}</strong></span>
                 @if($item['selling_price_per_serving'] > 0)
-                <span><i class="fa fa-glass-martini"></i> Glass: <strong>{{ number_format($item['selling_price_per_serving'], 0) }} Tsh Price</strong></span>
-                @else
-                <span><i class="fa fa-ban text-light-gray"></i> No Glass</span>
+                <span>Glass: <strong>{{ number_format($item['selling_price_per_serving'], 0) }}</strong></span>
                 @endif
             </div>
         </div>

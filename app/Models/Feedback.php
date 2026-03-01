@@ -16,6 +16,8 @@ class Feedback extends Model
         'booking_id',
         'guest_name',
         'guest_email',
+        'guest_phone',
+        'country',
         'rating',
         'comment',
         'categories',

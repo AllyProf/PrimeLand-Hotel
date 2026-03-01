@@ -76,7 +76,7 @@
                                             <span class="badge badge-secondary mb-1">WALK-IN</span><br>
                                             <strong>{{ $order->walk_in_name ?? 'General Walk-in' }}</strong>
                                         @else
-                                            <strong>Room {{ $order->booking->room->room_number ?? 'N/A' }}</strong><br>
+                                            <strong>Room {{ ($order->booking && $order->booking->room) ? $order->booking->room->room_number : 'N/A' }}</strong><br>
                                             <small>{{ $order->booking->guest_name ?? 'Unknown Guest' }}</small>
                                         @endif
                                     </td>

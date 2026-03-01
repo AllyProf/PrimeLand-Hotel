@@ -147,7 +147,7 @@
         <div class="row footer-bottom d-flex justify-content-between align-items-center">
             <p class="col-lg-6 col-sm-12 footer-text m-0" style="color: rgba(255,255,255,0.9);">Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | PrimeLand Hotel</p>
             <p class="col-lg-6 col-sm-12 footer-text m-0 text-right" style="color: rgba(255,255,255,0.9);">
-                Powered By <a href="https://emca.tech/#" target="_blank" style="color: #ff0000; font-weight: 600; text-decoration: none;">EmCa Techonologies</a>
+                Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a>
             </p>
         </div>
     </div>

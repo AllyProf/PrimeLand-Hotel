@@ -81,10 +81,46 @@
                                         @foreach($items as $item)
                                         @if($item->is_found && $item->purchased_quantity > 0)
                                         <tr class="item-row" data-department="{{ $department }}">
-                                            <td class="vertical-align-middle"><strong>{{ $item->product_name }}</strong></td>
+                                            <td class="vertical-align-middle">
+                                                @php
+                                                    $displayName = $item->product_name;
+                                                    $foundVariant = $item->productVariant;
+
+                                                    // Priority 1: Synced Variant – show variant name if it's meaningful
+                                                    if ($foundVariant) {
+                                                        $vName = trim($foundVariant->variant_name ?? '');
+                                                        $pName = trim($foundVariant->product->name ?? '');
+                                                        $generics = ['small','large','medium','standard','regular','unit','pic','bottle','box','carton','packet','kg','ltr','liters','ml'];
+                                                        // Use variant name if it's specific (not just a generic size)
+                                                        if ($vName && !in_array(strtolower($vName), $generics) && strcasecmp($vName, $pName) !== 0) {
+                                                            $displayName = $vName;
+                                                        } else {
+                                                            $displayName = $pName;
+                                                        }
+                                                    }
+                                                    // Priority 2: Purchase Request Name (Manager/Staff edit)
+                                                    elseif ($item->purchaseRequest && $item->purchaseRequest->item_name) {
+                                                        $displayName = $item->purchaseRequest->item_name;
+                                                    }
+                                                    // Add measurement if available
+                                                    if ($foundVariant && $foundVariant->measurement) {
+                                                        $displayName .= ' (' . $foundVariant->measurement . ')';
+                                                    }
+                                                @endphp
+                                                <div class="d-flex flex-column">
+                                                    <span style="font-weight: 700; color: #2d3436; font-size: 14px;">
+                                                        {{ $displayName }}
+                                                    </span>
+                                                    @if($foundVariant)
+                                                        <small class="text-success" style="font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                            <i class="fa fa-check-circle"></i> Verified
+                                                        </small>
+                                                    @endif
+                                                </div>
+                                            </td>
                                             <td class="vertical-align-middle"><span class="badge badge-light border">{{ $item->category_name }}</span></td>
                                             <td class="text-center vertical-align-middle">{{ number_format($item->purchased_quantity, 0) }}</td>
-                                            <td class="text-center vertical-align-middle">{{ $item->unit == 'bottles' ? 'PIC' : $item->unit }}</td>
+                                            <td class="text-center vertical-align-middle">{{ in_array(strtolower($item->unit), ['bottles', 'pic', 'pcs']) ? 'Bottle' : $item->unit }}</td>
                                             <td class="text-right vertical-align-middle">{{ number_format(round($item->unit_price ?? 0), 0) }} <small class="text-muted">TZS</small></td>
                                             <td class="text-right vertical-align-middle">{{ number_format(round($item->purchased_cost ?? 0), 0) }} <small class="text-muted">TZS</small></td>
                                             <td class="p-1 vertical-align-middle">
@@ -93,23 +129,42 @@
                                                     <div class="card-body p-2 {{ $item->productVariant ? 'bg-light' : 'bg-white' }}">
                                                         <input type="hidden" class="unit-cost" value="{{ $item->unit_price ?? 0 }}">
                                                         
-                                                        @if($item->productVariant && ($item->productVariant->selling_price_per_pic > 0 || $item->productVariant->selling_price_per_serving > 0))
-                                                            <div class="mb-2 p-1 bg-white border border-success rounded d-flex align-items-center" style="font-size: 10px; color: #155724;">
-                                                                <i class="fa fa-check-circle mr-1"></i> 
-                                                                <span><strong>Synced:</strong> {{ $item->productVariant->servings_per_pic }} {{ $item->productVariant->selling_unit_name }}s/Bottle</span>
+                                                        @if($foundVariant && ($foundVariant->selling_price_per_pic > 0 || $foundVariant->selling_price_per_serving > 0))
+                                                            @php $currentBarStock = $variantStockMap[$foundVariant->id] ?? null; @endphp
+                                                            <div class="mb-2 p-1 px-2 d-flex align-items-center shadow-sm" style="font-size: 10px; color: #1b5e20; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px;">
+                                                                <i class="fa fa-check-circle mr-2" style="opacity: 0.8;"></i> 
+                                                                <span><strong>Inventory Linked</strong> &mdash;
+                                                                    @php
+                                                                        $unit = $foundVariant->selling_unit_name;
+                                                                        $servingsCount = (int)($foundVariant->servings_per_pic ?? 1);
+                                                                        if ($servingsCount > 1) {
+                                                                            if (strtolower($unit) == 'glass') $unit = 'Glasses';
+                                                                            elseif (strtolower($unit) == 'tot/shot' || strtolower($unit) == 'shot' || strtolower($unit) == 'tot') $unit = 'Tots/Shots';
+                                                                            else $unit = Str::plural($unit);
+                                                                        }
+                                                                    @endphp
+                                                                    @if($servingsCount > 1)
+                                                                        Sells as {{ $servingsCount }} {{ $unit }}/Bottle
+                                                                    @else
+                                                                        Sells per Bottle
+                                                                    @endif
+                                                                    @if($currentBarStock !== null)
+                                                                        &nbsp;<span class="badge badge-{{ $currentBarStock > 0 ? 'success' : 'danger' }}" style="font-size: 9px;">Bar Stock: {{ number_format($currentBarStock, 1) }}</span>
+                                                                    @endif
+                                                                </span>
                                                             </div>
                                                         @else
-                                                            <div class="mb-2 p-1 bg-warning-light border border-warning rounded" style="font-size: 10px; background: #fff3cd; color: #856404;">
-                                                                <i class="fa fa-warning mr-1"></i> <strong>New Item:</strong> Please configure
+                                                            <div class="mb-2 p-1 px-2 border border-warning rounded shadow-sm" style="font-size: 10px; background: #fff3cd; color: #856404;">
+                                                                <i class="fa fa-warning mr-1"></i> <strong>New:</strong> Not configured
                                                             </div>
                                                         @endif
 
                                                         <div class="mb-2">
-                                                            <label class="small text-muted mb-0 font-weight-bold">Selling Method</label>
-                                                            <select class="form-control form-control-sm selling-method" name="transfers[{{ $item->id }}][selling_method]" style="border-radius: 4px; font-size: 11px; height: 30px;">
-                                                                <option value="pic" {{ ($item->productVariant?->can_sell_as_pic && !$item->productVariant?->can_sell_as_serving) ? 'selected' : '' }}>Bottle Only</option>
-                                                                <option value="serving" {{ (!$item->productVariant?->can_sell_as_pic && $item->productVariant?->can_sell_as_serving) ? 'selected' : '' }}>Glass/Tot Only</option>
-                                                                <option value="mixed" {{ ($item->productVariant?->can_sell_as_pic && $item->productVariant?->can_sell_as_serving) ? 'selected' : ($item->product_variant_id ? '' : 'selected') }}>Bottle & Glass (Mixed)</option>
+                                                            <label class="small text-muted mb-0 font-weight-bold" style="font-size: 10px;">Selling Method</label>
+                                                            <select class="form-control form-control-sm selling-method" name="transfers[{{ $item->id }}][selling_method]" style="border-radius: 4px; font-size: 11px; height: 30px; border-color: #d1d8e0;">
+                                                                 <option value="pic" {{ ($foundVariant?->can_sell_as_pic && !$foundVariant?->can_sell_as_serving) ? 'selected' : '' }}>Bottle Only</option>
+                                                                <option value="serving" {{ (!$foundVariant?->can_sell_as_pic && $foundVariant?->can_sell_as_serving) ? 'selected' : '' }}>Glass/Tot Only</option>
+                                                                <option value="mixed" {{ ($foundVariant?->can_sell_as_pic && $foundVariant?->can_sell_as_serving) ? 'selected' : ($foundVariant ? '' : 'selected') }}>Bottle & Glass (Mixed)</option>
                                                             </select>
                                                         </div>
 
@@ -117,16 +172,16 @@
                                                             <div class="row no-gutters mb-1">
                                                                 <div class="col-6 pr-1">
                                                                     <label class="small text-muted mb-0">Qty/Bottle</label>
-                                                                    <input type="number" class="form-control form-control-sm servings-per-pic" name="transfers[{{ $item->id }}][servings_per_pic]" value="{{ $item->productVariant?->servings_per_pic ?? 12 }}" min="1">
+                                                                    <input type="number" class="form-control form-control-sm servings-per-pic" name="transfers[{{ $item->id }}][servings_per_pic]" value="{{ $foundVariant?->servings_per_pic ?? 12 }}" min="1">
                                                                 </div>
                                                                 <div class="col-6">
                                                                     <label class="small text-muted mb-0">Unit</label>
                                                                     <select class="form-control form-control-sm selling-unit" name="transfers[{{ $item->id }}][selling_unit]">
-                                                                        <option value="pic" {{ ($item->productVariant?->selling_unit ?? '') == 'pic' ? 'selected' : '' }}>PIC</option>
-                                                                        <option value="glass" {{ ($item->productVariant?->selling_unit ?? '') == 'glass' ? 'selected' : 'selected' }}>Glass</option>
-                                                                        <option value="tot" {{ ($item->productVariant?->selling_unit ?? '') == 'tot' ? 'selected' : '' }}>Tot</option>
-                                                                        <option value="shot" {{ ($item->productVariant?->selling_unit ?? '') == 'shot' ? 'selected' : '' }}>Shot</option>
-                                                                        <option value="cocktail" {{ ($item->productVariant?->selling_unit ?? '') == 'cocktail' ? 'selected' : '' }}>Cocktail</option>
+                                                                        <option value="pic" {{ ($foundVariant?->selling_unit ?? '') == 'pic' ? 'selected' : '' }}>Bottle</option>
+                                                                        <option value="glass" {{ ($foundVariant?->selling_unit ?? '') == 'glass' ? 'selected' : 'selected' }}>Glass</option>
+                                                                        <option value="tot" {{ ($foundVariant?->selling_unit ?? '') == 'tot' ? 'selected' : '' }}>Tot</option>
+                                                                        <option value="shot" {{ ($foundVariant?->selling_unit ?? '') == 'shot' ? 'selected' : '' }}>Shot</option>
+                                                                        <option value="cocktail" {{ ($foundVariant?->selling_unit ?? '') == 'cocktail' ? 'selected' : '' }}>Cocktail</option>
                                                                     </select>
                                                                 </div>
                                                             </div>
@@ -134,12 +189,12 @@
                                                         
                                                         <div class="row no-gutters">
                                                             <div class="col-6 pr-1 config-fields-pic">
-                                                                <label class="small text-muted mb-0">Price/Bottle</label>
-                                                                <input type="number" step="1" class="form-control form-control-sm selling-price-pic" name="transfers[{{ $item->id }}][selling_price_per_pic]" value="{{ $item->productVariant && $item->productVariant->selling_price_per_pic > 0 ? round($item->productVariant->selling_price_per_pic) : '' }}" placeholder="Price">
+                                                                <label class="small text-muted mb-0" style="font-size: 10px;">Price/Bottle</label>
+                                                                <input type="number" step="1" class="form-control form-control-sm selling-price-pic" name="transfers[{{ $item->id }}][selling_price_per_pic]" value="{{ $foundVariant && $foundVariant->selling_price_per_pic > 0 ? round($foundVariant->selling_price_per_pic) : '' }}" placeholder="Price" style="border-radius: 4px;">
                                                             </div>
                                                             <div class="col-6 text-right config-fields-serving" style="display: none;">
-                                                                <label class="small text-muted mb-0">Price/Glass</label>
-                                                                <input type="number" step="1" class="form-control form-control-sm selling-price-serving" name="transfers[{{ $item->id }}][selling_price_per_serving]" value="{{ $item->productVariant && $item->productVariant->selling_price_per_serving > 0 ? round($item->productVariant->selling_price_per_serving) : '' }}" placeholder="Price">
+                                                                <label class="small text-muted mb-0" style="font-size: 10px;">Price/Glass</label>
+                                                                <input type="number" step="1" class="form-control form-control-sm selling-price-serving" name="transfers[{{ $item->id }}][selling_price_per_serving]" value="{{ $foundVariant && $foundVariant->selling_price_per_serving > 0 ? round($foundVariant->selling_price_per_serving) : '' }}" placeholder="Price" style="border-radius: 4px;">
                                                             </div>
                                                         </div>
 
@@ -258,7 +313,7 @@
 </div>
 <div class="transfer-note-footer d-print-block" style="display: none;">
     <p>Generated on {{ date('d M Y H:i') }} | PrimeLand Hotel - Kitchen Management System</p>
-    <p>Powered By EmCa Technologies</p>
+    <p>Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
 </div>
 @endsection
 
@@ -308,8 +363,8 @@ $(document).ready(function() {
                 var profitPerPic = pricePic - unitCost;
                 var totalProfitPic = profitPerPic * transferQty;
                 
-                html += '<div class="d-flex justify-content-between"><span><strong>PIC Sales</strong> (Total):</span> <strong>' + Math.round(pricePic * transferQty).toLocaleString() + '</strong></div>';
-                html += '<div class="d-flex justify-content-between text-muted" style="font-size: 9px;"><span>Profit per PC:</span> <span>' + Math.round(profitPerPic).toLocaleString() + '</span></div>';
+                html += '<div class="d-flex justify-content-between"><span><strong>Bottle Sales</strong> (Total):</span> <strong>' + Math.round(pricePic * transferQty).toLocaleString() + '</strong></div>';
+                html += '<div class="d-flex justify-content-between text-muted" style="font-size: 9px;"><span>Profit per Bottle:</span> <span>' + Math.round(profitPerPic).toLocaleString() + '</span></div>';
                 html += '<div class="d-flex justify-content-between text-info" style="font-size: 9px;"><span>Total Profit:</span> <span>' + Math.round(totalProfitPic).toLocaleString() + '</span></div>';
                 hasOutput = true;
             }
@@ -322,8 +377,15 @@ $(document).ready(function() {
                 var profitPerServing = priceServing - costPerServing;
                 var totalProfitServing = profitPerServing * totalServings;
                 
-                html += '<div class="d-flex justify-content-between"><span><strong>' + sellUnit + ' Sales</strong> (Total):</span> <strong>' + Math.round(priceServing * totalServings).toLocaleString() + '</strong></div>';
-                html += '<div class="d-flex justify-content-between text-muted" style="font-size: 9px;"><span>Pieces/Qty:</span> <span>' + (totalServings % 1 === 0 ? totalServings : totalServings.toFixed(1)) + ' ' + sellUnit + 's</span></div>';
+                var displayUnit = sellUnit;
+                if (totalServings > 1) {
+                    if (displayUnit.toLowerCase() === 'glass') displayUnit = 'Glasses';
+                    else if (displayUnit.toLowerCase() === 'tot' || displayUnit.toLowerCase() === 'shot') displayUnit += 's';
+                    else if (!displayUnit.endsWith('s')) displayUnit += 's';
+                }
+                
+                html += '<div class="d-flex justify-content-between"><span><strong>' + displayUnit + ' Sales</strong> (Total):</span> <strong>' + Math.round(priceServing * totalServings).toLocaleString() + '</strong></div>';
+                html += '<div class="d-flex justify-content-between text-muted" style="font-size: 9px;"><span>Pieces/Qty:</span> <span>' + (totalServings % 1 === 0 ? totalServings : totalServings.toFixed(1)) + ' ' + displayUnit + '</span></div>';
                 html += '<div class="d-flex justify-content-between text-muted" style="font-size: 9px;"><span>Profit per ' + sellUnit + ':</span> <span>' + Math.round(profitPerServing).toLocaleString() + '</span></div>';
                 html += '<div class="d-flex justify-content-between text-info" style="font-size: 9px;"><span>Total Profit:</span> <span>' + Math.round(totalProfitServing).toLocaleString() + '</span></div>';
                 hasOutput = true;
@@ -336,10 +398,15 @@ $(document).ready(function() {
                 var totalProfitServing = (priceServing - (unitCost / servingsPerPic)) * totalServings;
                 var diff = totalProfitServing - totalProfitPic;
                 
+                var displayUnit = sellUnit;
+                if (totalServings > 1) {
+                    if (displayUnit.toLowerCase() === 'glass') displayUnit = 'Glasses';
+                }
+
                 if (diff > 0) {
-                    html += '<div class="text-success font-weight-bold">💡 Sell ' + sellUnit + ' to make +' + Math.round(diff).toLocaleString() + ' extra </div>';
+                    html += '<div class="text-success font-weight-bold" style="font-size: 9px;">💡 Sell ' + displayUnit + ' to make +' + Math.round(diff).toLocaleString() + ' extra </div>';
                 } else if (diff < 0) {
-                     html += '<div class="text-primary font-weight-bold">💡 Sell PIC to make +' + Math.round(Math.abs(diff)).toLocaleString() + ' extra</div>';
+                     html += '<div class="text-primary font-weight-bold" style="font-size: 9px;">💡 Sell Bottle to make +' + Math.round(Math.abs(diff)).toLocaleString() + ' extra</div>';
                 }
             }
             

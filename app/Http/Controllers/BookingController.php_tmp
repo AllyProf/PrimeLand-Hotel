@@ -1,0 +1,86 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Room;
+use App\Models\Booking;
+use App\Models\User;
+use App\Models\Guest;
+use App\Models\HotelSetting;
+use App\Models\Notification;
+use App\Mail\BookingConfirmationMail;
+use App\Services\NotificationService;
+use App\Services\CurrencyExchangeService;
+use App\Services\ExchangeRateService;
+use App\Models\Company;
+use App\Services\WeatherService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class BookingController extends Controller
+{
+    // Show the booking page with search form
+    // TEMPORARILY DISABLED - Online booking coming soon
+    public function index(Request $request)
+    {
+        return view('landing_page_views.booking');
+    }
+
+    // Check availability and return available rooms
+    // TEMPORARILY DISABLED - Online booking coming soon
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'check_in' => 'required|date|after_or_equal:today',
+            'check_out' => 'required|date|after:check_in',
+            'room_type' => 'required',
+        ]);
+
+        return response()->json(['message' => 'Online booking is temporarily disabled. Please contact reception at 0677-155-156.']);
+    }
+
+    // Find and assign an available room of the specified type
+    public function assignAvailableRoom($roomType, $checkIn, $checkOut)
+    {
+        // Get all rooms of the requested type
+        $rooms = Room::where('room_type', $roomType)->get();
+        
+        foreach ($rooms as $room) {
+            // Check if the room is available for the given dates
+            $isOccupied = Booking::where('room_id', $room->id)
+                ->where(function ($query) use ($checkIn, $checkOut) {
+                    $query->where(function ($q) use ($checkIn, $checkOut) {
+                        $q->where('check_in', '>=', $checkIn)
+                          ->where('check_in', '<', $checkOut);
+                    })->orWhere(function ($q) use ($checkIn, $checkOut) {
+                        $q->where('check_out', '>', $checkIn)
+                          ->where('check_out', '<=', $checkOut);
+                    })->orWhere(function ($q) use ($checkIn, $checkOut) {
+                        $q->where('check_in', '<=', $checkIn)
+                          ->where('check_out', '>=', $checkOut);
+                    });
+                })
+                ->where('status', '!=', 'cancelled')
+                ->exists();
+
+            if (!$isOccupied) {
+                return $room;
+            }
+        }
+
+        return null;
+    }
+
+    // Store a new booking
+    // TEMPORARILY DISABLED - Online booking coming soon
+    public function store(Request $request)
+    {
+        return response()->json(['message' => 'Online booking is temporarily disabled. Please contact reception at 0677-155-156.']);
+    }
+
+    // ... (skipping some methods for brevity in explanation, but I need the whole file to write_to_file)
+    // Wait, I can't write the whole file 4700 lines easily. I'll use replace_file_content for the broken sections.

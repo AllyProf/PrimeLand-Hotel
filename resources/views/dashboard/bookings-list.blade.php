@@ -392,10 +392,25 @@
                       $checkOut = \Carbon\Carbon::parse($firstBooking->check_out);
                       $daysRemaining = $today->diffInDays($checkOut, false);
                       $weeksRemaining = floor($daysRemaining / 7);
-                    @endphp
-                    @php
+                      
+                      // Check extension for the group (representative of the first booking)
+                      $isExtended = false;
+                      $isDecreased = false;
+                      if ($firstBooking->original_check_out) {
+                        $originalCheckOut = \Carbon\Carbon::parse($firstBooking->original_check_out);
+                        if ($checkOut->gt($originalCheckOut)) $isExtended = true;
+                        elseif ($checkOut->lt($originalCheckOut)) $isDecreased = true;
+                      }
+
                       $allCheckedOut = $companyBookings->every(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_out'; });
                     @endphp
+
+                    @if($isExtended)
+                      <br><span class="badge badge-info shadow-sm" style="font-size: 10px;"><i class="fa fa-calendar-plus-o"></i> Extended stay</span>
+                    @elseif($isDecreased)
+                      <br><span class="badge badge-warning shadow-sm" style="font-size: 10px;"><i class="fa fa-calendar-minus-o"></i> Decreased stay</span>
+                    @endif
+
                     @if($allCheckedOut)
                       <br><small class="text-success"><i class="fa fa-check-circle"></i> All Checked Out</small>
                     @elseif($daysRemaining > 0)
@@ -518,6 +533,17 @@
                     <button class="btn btn-sm btn-info" onclick="viewCompanyBookingGroup({{ $company->id ?? 'null' }}, {{ $firstBooking->id }})" title="View All Guests">
                       <i class="fa fa-eye"></i> View More
                     </button>
+                    @php
+                      $anyCheckedIn = $companyBookings->contains(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_in'; });
+                    @endphp
+                    @if($anyCheckedIn)
+                      <button class="btn btn-sm btn-info mt-1" onclick="openGroupExtensionModal({{ $company->id ?? 'null' }}, '{{ $firstBooking->check_in->format('Y-m-d') }}', '{{ $firstBooking->check_out->format('Y-m-d') }}')" title="Extend Group Stay">
+                        <i class="fa fa-calendar-plus-o"></i> Extend
+                      </button>
+                      <button class="btn btn-sm btn-warning mt-1" onclick="openGroupDecreaseModal({{ $company->id ?? 'null' }}, '{{ $firstBooking->check_in->format('Y-m-d') }}', '{{ $firstBooking->check_out->format('Y-m-d') }}')" title="Decrease Group Stay">
+                        <i class="fa fa-calendar-minus-o"></i> Decrease
+                      </button>
+                    @endif
                     @if(in_array($firstBooking->payment_status, ['paid', 'partial']) || $firstBooking->status == 'confirmed')
                       @php
                         $firstPaidBooking = $companyBookings->where('payment_status', '!=', 'pending')->first();
@@ -835,11 +861,7 @@
                     <i class="fa fa-download"></i>
                   </a>
                   @endif
-                  @if($booking->status == 'confirmed' && $booking->check_in_status == 'pending')
-                  <button class="btn btn-sm btn-success" onclick="updateCheckIn({{ $booking->id }}, 'checked_in')" title="Check In">
-                    <i class="fa fa-sign-in"></i>
-                  </button>
-                  @endif
+
                   @if($booking->check_in_status == 'checked_in')
                   <button class="btn btn-sm btn-info" onclick="openManagerExtensionModal({{ $booking->id }}, '{{ $booking->check_in->format('Y-m-d') }}', '{{ $booking->check_out->format('Y-m-d') }}')" title="Extend Stay">
                     <i class="fa fa-calendar-plus-o"></i> Extend
@@ -1269,11 +1291,7 @@
             <a href="{{ route('payment.receipt.download', $booking) }}?download=1" class="btn btn-sm btn-success" target="_blank" title="Download Receipt">
               <i class="fa fa-download"></i>
             </a>
-            @if($booking->status == 'confirmed' && $booking->check_in_status == 'pending')
-            <button class="btn btn-sm btn-success" onclick="updateCheckIn({{ $booking->id }}, 'checked_in')" title="Check In">
-              <i class="fa fa-sign-in"></i> Check In
-            </button>
-            @endif
+
             <button class="btn btn-sm btn-secondary" onclick="showNotesModal({{ $booking->id }})" title="Admin Notes">
               <i class="fa fa-sticky-note"></i> Notes
             </button>
@@ -1339,6 +1357,7 @@
       <div class="modal-body">
         <form id="managerExtensionForm">
           <input type="hidden" id="manager_extension_booking_id" name="booking_id">
+          <input type="hidden" id="manager_extension_company_id" name="company_id">
           <div class="alert alert-info">
             <i class="fa fa-info-circle"></i> <strong>Note:</strong> The booking will be extended and the price will be adjusted automatically.
           </div>
@@ -1363,7 +1382,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-info" onclick="submitManagerExtension()">
+        <button type="button" class="btn btn-info" onclick="submitManagerExtension(this)">
           <i class="fa fa-save"></i> Extend Booking
         </button>
       </div>
@@ -1384,8 +1403,9 @@
       <div class="modal-body">
         <form id="managerDecreaseForm">
           <input type="hidden" id="manager_decrease_booking_id" name="booking_id">
+          <input type="hidden" id="manager_decrease_company_id" name="company_id">
           <div class="alert alert-warning">
-            <i class="fa fa-info-circle"></i> <strong>Note:</strong> The booking will be decreased and the price will be adjusted automatically. A refund will be calculated.
+            <i class="fa fa-info-circle"></i> <strong>Note:</strong> The booking stay will be decreased. Please note that no refund or price adjustment will be applied as per the hotel policy.
           </div>
           <div class="form-group">
             <label for="manager_decrease_new_check_out">New Check-out Date *</label>
@@ -1396,19 +1416,12 @@
             <label for="manager_decrease_reason">Reason (Optional)</label>
             <textarea class="form-control" id="manager_decrease_reason" name="reason" rows="3" placeholder="Reason for decreasing the booking..."></textarea>
           </div>
-          <div id="managerDecreaseCostPreview" style="display: none; padding: 15px; background: #fff3cd; border-radius: 5px; margin-bottom: 15px;">
-            <p class="mb-0">
-              <span id="managerDecreaseNights">0</span> night(s) reduction × 
-              $<span id="managerDecreaseRoomPrice">0</span> per night = 
-              <strong>Refund: $<span id="managerDecreaseTotalRefund">0</span></strong>
-            </p>
-          </div>
           <div id="managerDecreaseAlert"></div>
         </form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-warning" onclick="submitManagerDecrease()">
+        <button type="button" class="btn btn-warning" onclick="submitManagerDecrease(this)">
           <i class="fa fa-save"></i> Decrease Booking
         </button>
       </div>
@@ -1921,6 +1934,9 @@
 </style>
 
 <script>
+const baseUrl = '{{ rtrim(asset(""), "/") }}/';
+const isReception = {{ ($role ?? '') === 'reception' ? 'true' : 'false' }};
+
 function viewBooking(bookingId) {
   console.log('Loading booking:', bookingId);
   fetch('{{ url("/manager/bookings") }}/' + bookingId, {
@@ -2306,10 +2322,195 @@ function viewBooking(bookingId) {
                       </td>
                     </tr>
                   </table>
-                  ${booking.payment_transaction_id ? `<div class="mt-2 text-center"><small class="bg-light p-1 px-2 rounded font-monospace text-muted">ID: ${booking.payment_transaction_id}</small></div>` : ''}
+                ${booking.payment_transaction_id ? `<div class="mt-2 text-center"><small class="bg-light p-1 px-2 rounded font-monospace text-muted">ID: ${booking.payment_transaction_id}</small></div>` : ''}
                 </div>
               </div>
             </div>
+
+            <!-- Exchange Rate Override Panel -->
+            <div class="row mt-4">
+              <div class="col-md-12">
+                <div class="preview-section">
+                  <h5 style="color: #e77a3a; border-bottom: 2px solid #e77a3a; padding-bottom: 5px; margin-bottom: 15px;">
+                    <i class="fa fa-exchange"></i> Exchange Rate
+                    ${booking.rate_source && booking.rate_source !== 'system' ? `<span class="badge badge-info ml-2" style="font-size:0.75rem;"><i class="fa fa-pencil"></i> Overridden</span>` : ''}
+                  </h5>
+                  <div class="row">
+                    <div class="col-md-5">
+                      <table class="table table-bordered table-sm mb-0">
+                        <tr>
+                          <th>Current Rate:</th>
+                          <td><strong class="text-primary">1 USD = ${parseFloat(booking.locked_exchange_rate || 2500).toLocaleString()} TZS</strong></td>
+                        </tr>
+                        ${booking.original_exchange_rate ? `
+                        <tr>
+                          <th>Original Rate:</th>
+                          <td class="text-muted">1 USD = ${parseFloat(booking.original_exchange_rate).toLocaleString()} TZS</td>
+                        </tr>` : ''}
+                        ${booking.rate_source ? `
+                        <tr>
+                          <th>Rate Source:</th>
+                          <td><span class="badge badge-secondary">${booking.rate_source}</span></td>
+                        </tr>` : ''}
+                        ${booking.exchange_rate_note ? `
+                        <tr>
+                          <th>Note:</th>
+                          <td class="small text-muted">${booking.exchange_rate_note}</td>
+                        </tr>` : ''}
+                        ${booking.exchange_rate_overridden_by ? `
+                        <tr>
+                          <th>Changed by:</th>
+                          <td class="small text-muted">${booking.exchange_rate_overridden_by} &mdash; ${booking.exchange_rate_overridden_at || ''}</td>
+                        </tr>` : ''}
+                      </table>
+                    </div>
+                    <div class="col-md-7">
+                      <div class="card border-warning" id="rateOverrideCard_${booking.id}">
+                        <div class="card-header bg-warning-light py-2" style="background: #fff8e1; cursor:pointer;"
+                             onclick="toggleRateForm(${booking.id})">
+                          <i class="fa fa-pencil-square-o text-warning"></i>
+                          <strong class="text-warning"> Override Exchange Rate</strong>
+                          <i class="fa fa-chevron-down float-right mt-1" id="rateFormChevron_${booking.id}"></i>
+                        </div>
+                        <div class="card-body p-3" id="rateOverrideForm_${booking.id}" style="display:none;">
+                          <div class="alert alert-warning py-2 small mb-3">
+                            <i class="fa fa-exclamation-triangle"></i>
+                            Override when the guest paid using a different rate (e.g., Booking.com, bank transfer).
+                            This recalculates all TZS amounts for this booking.
+                          </div>
+                          <div class="form-group mb-2">
+                            <label class="small font-weight-bold">New Exchange Rate <span class="text-danger">*</span></label>
+                            <div class="input-group input-group-sm">
+                              <div class="input-group-prepend"><span class="input-group-text">1 USD =</span></div>
+                              <input type="number" class="form-control" id="newRate_${booking.id}"
+                                     value="${parseFloat(booking.locked_exchange_rate || 2500).toFixed(0)}"
+                                     min="100" max="10000000" step="1" placeholder="e.g. 2650">
+                              <div class="input-group-append"><span class="input-group-text">TZS</span></div>
+                            </div>
+                          </div>
+                          <div class="form-group mb-2">
+                            <label class="small font-weight-bold">Rate Source <span class="text-danger">*</span></label>
+                            <select class="form-control form-control-sm" id="rateSource_${booking.id}">
+                              <option value="manual">Manual Override</option>
+                              <option value="booking.com">Booking.com</option>
+                              <option value="agoda">Agoda</option>
+                              <option value="expedia">Expedia</option>
+                              <option value="airbnb">Airbnb</option>
+                              <option value="paypal">PayPal</option>
+                              <option value="bank">Bank Transfer</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                          <div class="form-group mb-3">
+                            <label class="small font-weight-bold">Note <span class="text-muted">(optional)</span></label>
+                            <input type="text" class="form-control form-control-sm" id="rateNote_${booking.id}"
+                                   placeholder="e.g. Guest paid via Booking.com at rate of 2650"
+                                   maxlength="500">
+                          </div>
+                          <div id="rateOverrideAlert_${booking.id}"></div>
+                          <button type="button" class="btn btn-warning btn-sm btn-block"
+                                  onclick="submitRateOverride(${booking.id})">
+                            <i class="fa fa-save"></i> Save New Rate
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Identity Records Section -->
+            ${(booking.id_document_type || booking.id_scan_path || booking.guest_signature_path || booking.checkout_signature_path) ? `
+              <div class="row mt-4">
+                <div class="col-md-12">
+                  <h5 style="color: #e77a3a; border-bottom: 2px solid #e77a3a; padding-bottom: 5px; margin-bottom: 15px;"><i class="fa fa-id-card"></i> Identity & Signature Records</h5>
+                </div>
+                <div class="col-md-6">
+                  <div class="card bg-light border-0 h-100">
+                    <div class="card-body">
+                      <h6><strong>Identity Document</strong></h6>
+                      <p class="mb-2"><strong>Type:</strong> ${booking.id_document_type || 'N/A'}</p>
+                      <p class="mb-2"><strong>Number:</strong> ${booking.id_document_number || 'N/A'}</p>
+                      <div class="row mt-2">
+                        <div class="col-6 text-center">
+                          ${booking.id_scan_path ? `
+                            <a href="${baseUrl}${booking.id_scan_path}" target="_blank">
+                              <img src="${baseUrl}${booking.id_scan_path}" 
+                                   style="max-width: 100%; border-radius: 4px; border: 1px solid #ddd; max-height: 120px; cursor: pointer;"
+                                   onerror="this.outerHTML='<p class=text-danger small>Image not found</p>'">
+                            </a>
+                            <br><small class="text-muted">Front Side</small>
+                          ` : '<p class="text-muted small"><i class="fa fa-image"></i> No Front Scan</p>'}
+                        </div>
+                        <div class="col-6 text-center">
+                          ${booking.id_scan_back_path ? `
+                            <a href="${baseUrl}${booking.id_scan_back_path}" target="_blank">
+                              <img src="${baseUrl}${booking.id_scan_back_path}" 
+                                   style="max-width: 100%; border-radius: 4px; border: 1px solid #ddd; max-height: 120px; cursor: pointer;"
+                                   onerror="this.outerHTML='<p class=text-danger small>Image not found</p>'">
+                            </a>
+                            <br><small class="text-muted">Back Side</small>
+                          ` : '<p class="text-muted small"><i class="fa fa-image"></i> No Back Scan</p>'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="card bg-light border-0 h-100">
+                    <div class="card-body">
+                      <h6><strong><i class="fa fa-pencil text-primary"></i> Check-In Signature</strong></h6>
+                      ${booking.guest_signature_path ? `
+                        <div class="mt-2 text-center" style="background: white; border-radius: 4px; padding: 10px; border: 1px solid #ddd;">
+                          <img src="${baseUrl}${booking.guest_signature_path}" 
+                               style="max-width: 100%; max-height: 150px;"
+                               onerror="this.outerHTML='<p class=text-danger small>Signature image not found</p>'">
+                        </div>
+                        <p class="small text-muted mt-2"><i class="fa fa-clock-o"></i> Captured: ${booking.identity_captured_at ? new Date(booking.identity_captured_at).toLocaleString() : 'At check-in'}</p>
+                      ` : '<p class="text-muted small mt-2"><i class="fa fa-pencil"></i> No check-in signature captured</p>'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              ${booking.checkout_signature_path ? `
+              <div class="row mt-3">
+                <div class="col-md-12">
+                  <h6 style="color: #28a745; border-bottom: 1px solid #28a745; padding-bottom: 4px; margin-bottom: 12px;">
+                    <i class="fa fa-sign-out text-success"></i> Check-Out Signature
+                  </h6>
+                </div>
+                <div class="col-md-6">
+                  <div class="card border-success h-100" style="border-width: 1px;">
+                    <div class="card-body text-center" style="background: #f8fff9;">
+                      <div style="background: white; border-radius: 4px; padding: 10px; border: 1px solid #c3e6cb;">
+                        <img src="${baseUrl}${booking.checkout_signature_path}" 
+                             style="max-width: 100%; max-height: 150px;"
+                             onerror="this.outerHTML='<p class=text-danger small>Signature image not found</p>'">
+                      </div>
+                      <p class="small text-success mt-2"><i class="fa fa-check-circle"></i> Guest signed at check-out</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-center">
+                  <div class="alert alert-success mb-0 w-100">
+                    <i class="fa fa-info-circle"></i> <strong>Check-Out Completed</strong>
+                    <p class="mb-0 small mt-1">The guest has digitally signed the check-out confirmation. The signature above confirms their departure agreement.</p>
+                  </div>
+                </div>
+              </div>
+              ` : `
+              <div class="row mt-3">
+                <div class="col-md-12">
+                  <div class="alert alert-secondary py-2 mb-0">
+                    <i class="fa fa-sign-out"></i> <strong>Check-Out Signature:</strong> Not yet captured
+                    ${booking.check_in_status === 'checked_out' ? ' <span class="badge badge-secondary ml-2">Guest checked out without digital signature</span>' : ''}
+                  </div>
+                </div>
+              </div>
+              `}
+            ` : ''}
 
             <!-- Notes & Requests -->
             <div class="row mt-4">
@@ -2404,7 +2605,101 @@ function updateStatus(bookingId, status) {
   });
 }
 
+// ─── Exchange Rate Override helpers ─────────────────────────────────────────
+
+function toggleRateForm(bookingId) {
+  const form    = document.getElementById('rateOverrideForm_' + bookingId);
+  const chevron = document.getElementById('rateFormChevron_' + bookingId);
+  if (!form) return;
+  const isOpen = form.style.display !== 'none';
+  form.style.display    = isOpen ? 'none' : 'block';
+  chevron.className     = isOpen
+    ? 'fa fa-chevron-down float-right mt-1'
+    : 'fa fa-chevron-up float-right mt-1';
+}
+
+function submitRateOverride(bookingId) {
+  const rateInput  = document.getElementById('newRate_' + bookingId);
+  const srcSelect  = document.getElementById('rateSource_' + bookingId);
+  const noteInput  = document.getElementById('rateNote_' + bookingId);
+  const alertDiv   = document.getElementById('rateOverrideAlert_' + bookingId);
+  const newRate    = parseFloat(rateInput ? rateInput.value : 0);
+
+  // Client-side validation
+  if (!newRate || newRate < 100) {
+    if (alertDiv) alertDiv.innerHTML = '<div class="alert alert-danger py-2 small"><i class="fa fa-times-circle"></i> Please enter a valid exchange rate (minimum 100 TZS per USD).</div>';
+    return;
+  }
+
+  // Resolve route based on role
+  const overrideUrl = isReception
+    ? '{{ url("/reception/bookings") }}/' + bookingId + '/override-exchange-rate'
+    : '{{ url("/manager/bookings") }}/' + bookingId + '/override-exchange-rate';
+
+  const btn = event.currentTarget;
+  const originalHtml = btn.innerHTML;
+  btn.disabled  = true;
+  btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+  if (alertDiv) alertDiv.innerHTML = '';
+
+  fetch(overrideUrl, {
+    method: 'POST',
+    headers: {
+      'Accept':       'application/json',
+      'Content-Type': 'application/json',
+      'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    },
+    body: JSON.stringify({
+      exchange_rate:      newRate,
+      rate_source:        srcSelect  ? srcSelect.value  : 'manual',
+      exchange_rate_note: noteInput  ? noteInput.value  : ''
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled  = false;
+    btn.innerHTML = originalHtml;
+
+    if (data.success) {
+      if (alertDiv) {
+        alertDiv.innerHTML = `<div class="alert alert-success py-2 small"><i class="fa fa-check-circle"></i> Rate updated to <strong>${parseFloat(data.new_rate).toLocaleString()} TZS/USD</strong> by ${data.overridden_by} at ${data.overridden_at}.</div>`;
+      }
+      // Update the displayed "Current Rate" in the table row immediately
+      const rateCell = document.querySelector(`#rateOverrideCard_${bookingId}`);
+      if (rateCell) {
+        const tableCell = rateCell.closest('.col-md-7')?.previousElementSibling;
+        if (tableCell) {
+          const firstTd = tableCell.querySelector('td strong.text-primary');
+          if (firstTd) firstTd.textContent = '1 USD = ' + parseFloat(data.new_rate).toLocaleString() + ' TZS';
+        }
+      }
+      // Notify user with SweetAlert after a short delay
+      setTimeout(() => {
+        swal({
+          title: 'Exchange Rate Updated!',
+          text: '1 USD = ' + parseFloat(data.new_rate).toLocaleString() + ' TZS — saved successfully.',
+          type: 'success',
+          confirmButtonColor: '#28a745'
+        });
+      }, 300);
+    } else {
+      if (alertDiv) {
+        alertDiv.innerHTML = '<div class="alert alert-danger py-2 small"><i class="fa fa-times-circle"></i> ' + (data.message || 'Failed to update rate. Please try again.') + '</div>';
+      }
+    }
+  })
+  .catch(err => {
+    btn.disabled  = false;
+    btn.innerHTML = originalHtml;
+    console.error('Rate override error:', err);
+    if (alertDiv) alertDiv.innerHTML = '<div class="alert alert-danger py-2 small"><i class="fa fa-times-circle"></i> Network error. Please try again.</div>';
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
 function deleteBooking(bookingId) {
+
   swal({
     title: "Are you sure?",
     text: "You will not be able to recover this booking!",
@@ -2610,6 +2905,19 @@ function viewCompanyBookingGroup(companyId, firstBookingId) {
     if (data.success && data.bookings) {
       const bookings = data.bookings;
       const company = data.company || {};
+      
+      // Update global managerBookingData for modal bookings to support individual extension/decrease
+      bookings.forEach(function(booking) {
+        if (booking.check_in_status === 'checked_in' && booking.room) {
+          managerBookingData[booking.id] = {
+            id: booking.id,
+            roomPrice: parseFloat(booking.room.price_per_night || 0),
+            currentCheckOut: booking.check_out.substring(0, 10),
+            checkIn: booking.check_in.substring(0, 10)
+          };
+        }
+      });
+
       let html = '<div class="company-booking-group-view">';
       
       // Calculate company payment breakdown
@@ -2629,206 +2937,210 @@ function viewCompanyBookingGroup(companyId, firstBookingId) {
       totalRemaining = totalCompanyCharges - totalCompanyPaid;
       
       // --- Top Summary Section (Company & Financials) ---
-      html += '<div class="row mb-4">';
+      html += '<div class="row px-2 mb-3">';
       
-      // 1. Company Info Card
-      html += '<div class="col-md-4">';
-      html += '<div class="card h-100 border-0 shadow-sm">';
-      html += '<div class="card-body">';
-      html += '<h6 class="text-uppercase text-muted mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">Company Details</h6>';
-      html += '<h5 class="card-title text-primary"><i class="fa fa-building-o mr-2"></i>' + (company.name || 'N/A') + '</h5>';
-      html += '<p class="card-text mb-1"><i class="fa fa-envelope-o mr-2 text-muted" style="width: 20px;"></i>' + (company.email || 'N/A') + '</p>';
-      if (company.phone) {
-        html += '<p class="card-text"><i class="fa fa-phone mr-2 text-muted" style="width: 20px;"></i>' + company.phone + '</p>';
-      }
-      html += '</div></div></div>';
+      // Top Grid
+      html += '<div class="col-md-12">';
+      html += '<div class="card border border-primary shadow-sm rounded-lg">';
+      html += '<div class="card-body p-3 bg-light d-flex flex-wrap justify-content-between align-items-center">';
+      
+      html += '<div class="mb-2 mb-md-0 d-flex align-items-center" style="flex: 1; min-width: 250px;">';
+      html += '<div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center mr-3" style="width: 45px; height: 45px; flex-shrink:0;"><i class="fa fa-building-o" style="font-size:1.2rem;"></i></div>';
+      html += '<div><div class="small text-muted text-uppercase font-weight-bold" style="letter-spacing:0.5px;">Company Details</div>';
+      html += '<h6 class="mb-0 text-dark font-weight-bold">' + (company.name || 'N/A') + '</h6>';
+      html += '<div class="small text-muted mt-1"><i class="fa fa-envelope-o mr-1"></i>' + (company.email || 'N/A') + ' <span class="mx-1">|</span> <i class="fa fa-phone mr-1"></i>' + (company.phone || 'N/A') + '</div></div>';
+      html += '</div>';
+      
+      html += '<div class="mb-2 mb-md-0 border-left pl-3 ml-3 d-flex align-items-center" style="flex: 1; min-width: 250px;">';
+      html += '<div class="bg-info text-white rounded-circle d-flex justify-content-center align-items-center mr-3" style="width: 45px; height: 45px; flex-shrink:0;"><i class="fa fa-user-circle" style="font-size:1.2rem;"></i></div>';
+      html += '<div><div class="small text-muted text-uppercase font-weight-bold" style="letter-spacing:0.5px;">Group Leader</div>';
+      html += '<h6 class="mb-0 text-dark font-weight-bold">' + (company.contact_person || 'N/A') + '</h6>';
+      html += '<div class="small text-muted mt-1"><i class="fa fa-envelope-o mr-1"></i>' + (company.guider_email || 'N/A') + ' <span class="mx-1">|</span> <i class="fa fa-phone mr-1"></i>' + (company.guider_phone || 'N/A') + '</div></div>';
+      html += '</div>';
 
-      // 2. Contact Person / Leader
-      html += '<div class="col-md-4">';
-      html += '<div class="card h-100 border-0 shadow-sm">';
-      html += '<div class="card-body">';
-      html += '<h6 class="text-uppercase text-muted mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">Group Leader</h6>';
-      html += '<h5 class="card-title text-info"><i class="fa fa-user-circle-o mr-2"></i>' + (company.contact_person || 'N/A') + '</h5>';
-      html += '<p class="card-text mb-1"><i class="fa fa-envelope-o mr-2 text-muted" style="width: 20px;"></i>' + (company.guider_email || 'N/A') + '</p>';
-      if (company.guider_phone) {
-        html += '<p class="card-text"><i class="fa fa-phone mr-2 text-muted" style="width: 20px;"></i>' + company.guider_phone + '</p>';
-      }
-      html += '</div></div></div>';
-
-      // 3. Financial Summary
-      html += '<div class="col-md-4">';
-      html += '<div class="card h-100 border-0 shadow-sm bg-light">';
-      html += '<div class="card-body">';
-      // Fix negative zero issue
+      html += '<div class="pl-3 ml-3 text-right" style="flex: 1; min-width: 200px; border-left: 2px solid #e9ecef;">';
       if (Math.abs(totalRemaining) < 0.005) totalRemaining = 0;
-
-      html += '<h6 class="text-uppercase text-muted mb-3" style="font-size: 0.75rem; letter-spacing: 1px;">Company Balance</h6>';
-      html += '<div class="d-flex justify-content-between align-items-end mb-2">';
-      html += '<span>Total Charges:</span>';
-      html += '<span class="font-weight-bold">$' + totalCompanyCharges.toFixed(2) + '</span>';
+      html += '<div class="small text-muted text-uppercase font-weight-bold mb-1" style="letter-spacing:0.5px;">Financial Balance</div>';
+      html += '<div style="font-size:0.85rem;"><span class="text-muted">Total:</span> <strong class="text-dark">$' + totalCompanyCharges.toFixed(2) + '</strong> <span class="mx-1 text-muted">|</span> ';
+      html += '<span class="text-muted">Paid:</span> <strong class="text-success">$' + totalCompanyPaid.toFixed(2) + '</strong></div>';
+      html += '<div class="mt-1 pt-1 border-top"><span class="font-weight-bold">Remaining:</span> <strong class="h5 mb-0 ml-1 ' + (totalRemaining > 0.01 ? 'text-danger' : 'text-success') + '">$' + totalRemaining.toFixed(2) + '</strong></div>';
+      html += '<div class="small text-muted">~ ' + (totalRemaining * exchangeRate).toLocaleString('en-US', {maximumFractionDigits: 0}) + ' TZS</div>';
       html += '</div>';
-      html += '<div class="d-flex justify-content-between align-items-end mb-2">';
-      html += '<span>Total Paid:</span>';
-      html += '<span class="text-success font-weight-bold">$' + totalCompanyPaid.toFixed(2) + '</span>';
-      html += '</div>';
-      html += '<hr class="my-2">';
-      html += '<div class="d-flex justify-content-between align-items-end">';
-      html += '<span class="font-weight-bold">Remaining:</span>';
-      html += '<span class="h5 mb-0 ' + (totalRemaining > 0.01 ? 'text-danger' : 'text-success') + '">$' + totalRemaining.toFixed(2) + '</span>';
-      html += '</div>';
-       html += '<small class="text-muted text-right d-block mt-1">~ ' + (totalRemaining * exchangeRate).toLocaleString('en-US', {maximumFractionDigits: 0}) + ' TZS</small>';
-      html += '</div></div></div>';
       
-      html += '</div>'; // End Row
+      html += '</div>'; // End card body
+      html += '<div class="card-footer bg-white p-2 border-top-0 border-primary" style="font-size:0.8rem;"><i class="fa fa-info-circle text-info mx-1"></i> <strong>Note:</strong> Corporate covers room charges. Individual personal services are billed separately to guest if self-pay.</div>';
+      html += '</div></div></div>'; // End Top Grid row
       
-      // Note Alert
-      html += '<div class="alert alert-info border-0 shadow-sm mb-4">';
-      html += '<div class="d-flex">';
-      html += '<div class="mr-3"><i class="fa fa-info-circle fa-2x"></i></div>';
-      html += '<div><h6 class="alert-heading mb-1">Payment Responsibility</h6>All room charges linked to this booking are billed to the company. Individual guests are responsible for personal services (food, spa, etc.) if marked as self-pay.</div>';
-      html += '</div></div>';
-
       // --- Guests Section with Tabs ---
-      html += '<div class="card border-0 shadow-sm">';
-      html += '<div class="card-header bg-white border-bottom-0 pt-4 px-4">';
-      html += '<h5 class="mb-0"><i class="fa fa-users text-primary mr-2"></i>Guest Bookings (' + bookings.length + ')</h5>';
-      html += '</div>';
-      
-      // Tabs Header
-      html += '<div class="card-header bg-white border-bottom-0 px-4 pb-0">';
-      html += '<ul class="nav nav-tabs card-header-tabs" id="companyGuestTabs" role="tablist">';
+      html += '<div class="card border-0 shadow-sm mx-2">';
+      html += '<div class="card-header bg-white pt-3 pb-0 px-3 border-bottom-0">';
+      html += '<h6 class="text-primary font-weight-bold mb-3"><i class="fa fa-users mr-2"></i>Guest Bookings (' + bookings.length + ')</h6>';
+      html += '<ul class="nav nav-tabs" id="companyGuestTabs" role="tablist">';
       bookings.forEach(function(booking, index) {
         const isActive = index === 0 ? 'active' : '';
-        const tabId = 'guest-tab-' + index;
-        const panelId = 'guest-panel-' + index;
-        const guestName = (booking.guest_name || 'Guest ' + (index + 1)).split(' ')[0]; // First name only for tab
+        const tabId = 'gx-tab-' + booking.id;
+        const panelId = 'gx-panel-' + booking.id;
+        const guestName = (booking.guest_name || 'Guest ' + (index + 1)).split(' ')[0];
         
         html += '<li class="nav-item">';
-        html += '<a class="nav-link ' + isActive + '" id="' + tabId + '" data-toggle="tab" href="#' + panelId + '" role="tab" aria-controls="' + panelId + '" aria-selected="' + (index === 0) + '">';
-        html += '<i class="fa fa-user mr-1"></i> ' + guestName;
-        html += '</a></li>';
+        html += '<a class="nav-link font-weight-bold ' + isActive + '" id="' + tabId + '" data-toggle="tab" data-target="#' + panelId + '" href="#' + panelId + '" role="tab" style="color: #495057; padding: 10px 20px;"><i class="fa fa-user-o text-muted mr-1"></i> ' + guestName + '</a></li>';
       });
       html += '</ul></div>';
 
       // Tabs Content
-      html += '<div class="card-body p-0">';
+      html += '<div class="card-body p-0 border border-top-0 rounded-bottom">';
       html += '<div class="tab-content" id="companyGuestTabsContent">';
       
       bookings.forEach(function(booking, index) {
         const isActive = index === 0 ? 'show active' : '';
-        const panelId = 'guest-panel-' + index;
-        const tabId = 'guest-tab-' + index;
+        const panelId = 'gx-panel-' + booking.id;
         
         // Data prep
-        const checkIn = booking.check_in ? new Date(booking.check_in).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
-        const checkOut = booking.check_out ? new Date(booking.check_out).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
+        const checkIn = booking.check_in ? new Date(booking.check_in).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+        const checkOut = booking.check_out ? new Date(booking.check_out).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
         const room = booking.room || {};
-        const exchangeRate = booking.locked_exchange_rate || 2500;
         const roomTotal = parseFloat(booking.total_price || 0);
         const paidAmount = parseFloat(booking.amount_paid || 0);
-        const remaining = roomTotal - paidAmount;
         
         // Badges
         let statusText = booking.status;
         if (booking.check_in_status === 'checked_out' && statusText === 'confirmed') statusText = 'completed';
         
-        const statusBadge = statusText === 'confirmed' ? '<span class="badge badge-success">Confirmed</span>' :
-                            statusText === 'completed' ? '<span class="badge badge-primary"><i class="fa fa-flag-checkered"></i> Completed</span>' :
-                            statusText === 'pending' ? '<span class="badge badge-warning">Pending</span>' :
-                            statusText === 'cancelled' ? '<span class="badge badge-danger">Cancelled</span>' :
-                            '<span class="badge badge-info">' + (statusText ? statusText.charAt(0).toUpperCase() + statusText.slice(1) : 'N/A') + '</span>';
+        const statusBadge = statusText === 'confirmed' ? '<span class="badge badge-success px-2 py-1"><i class="fa fa-check"></i> Confirmed</span>' :
+                            statusText === 'completed' ? '<span class="badge badge-primary px-2 py-1"><i class="fa fa-flag-checkered"></i> Completed</span>' :
+                            statusText === 'pending' ? '<span class="badge badge-warning px-2 py-1"><i class="fa fa-clock-o"></i> Pending</span>' :
+                            '<span class="badge badge-secondary px-2 py-1">' + (statusText ? statusText.charAt(0).toUpperCase() + statusText.slice(1) : 'N/A') + '</span>';
                             
-        const paymentBadge = booking.payment_status === 'paid' ? '<span class="badge badge-success">Paid</span>' :
-                            booking.payment_status === 'partial' ? '<span class="badge badge-info">Partial</span>' :
-                            '<span class="badge badge-warning">Unpaid</span>';
+        const paymentBadge = booking.payment_status === 'paid' ? '<span class="badge badge-success px-2 py-1"><i class="fa fa-check-circle"></i> Paid</span>' :
+                            booking.payment_status === 'partial' ? '<span class="badge badge-info px-2 py-1">Partial</span>' :
+                            '<span class="badge badge-warning px-2 py-1">Unpaid</span>';
                             
-        const checkInBadge = booking.check_in_status === 'checked_in' ? '<span class="badge badge-info"><i class="fa fa-sign-in"></i> Checked In</span>' :
-                            booking.check_in_status === 'checked_out' ? '<span class="badge badge-success"><i class="fa fa-check-circle"></i> Checked Out</span>' :
-                            '<span class="badge badge-warning"><i class="fa fa-clock-o"></i> Pending Check-in</span>';
+        const checkInBadge = booking.check_in_status === 'checked_in' ? '<span class="badge badge-info px-2 py-1"><i class="fa fa-sign-in"></i> Checked In</span>' :
+                            booking.check_in_status === 'checked_out' ? '<span class="badge badge-success px-2 py-1"><i class="fa fa-sign-out"></i> Checked Out</span>' :
+                            '<span class="badge badge-light border px-2 py-1 text-muted"><i class="fa fa-clock-o"></i> Check-in Pending</span>';
 
-        html += '<div class="tab-pane fade ' + isActive + '" id="' + panelId + '" role="tabpanel" aria-labelledby="' + tabId + '">';
-        html += '<div class="p-4">';
+        html += '<div class="tab-pane fade ' + isActive + '" id="' + panelId + '" role="tabpanel">';
+        html += '<div class="p-4 bg-white rounded-bottom">';
         
-        // Guest Header with Status Badges
-        html += '<div class="preview-section mb-4 d-flex justify-content-between align-items-center">';
-        html += '<div><h4 class="mb-0 text-primary">' + (booking.guest_name || 'N/A') + '</h4>';
-        html += '<span class="text-muted small"><i class="fa fa-hashtag"></i> ' + booking.booking_reference + '</span></div>';
-        html += '<div class="text-right">' + statusBadge + ' <span class="ml-1">' + paymentBadge + '</span> <span class="ml-1">' + checkInBadge + '</span></div>';
+        // Guest Header
+        html += '<div class="d-flex align-items-center mb-4 pb-2 border-bottom">';
+        html += '<div><h4 class="mb-0 text-dark font-weight-bold">' + (booking.guest_name || 'N/A') + '</h4>';
+        html += '<div class="text-muted mt-1 w-100"><i class="fa fa-hashtag"></i> Ref: ' + booking.booking_reference + ' <span class="mx-2">|</span> <i class="fa fa-phone"></i> ' + (booking.guest_phone || 'N/A') + ' <span class="mx-2">|</span> <i class="fa fa-envelope-o"></i> ' + (booking.guest_email || 'N/A') + '</div></div>';
+        html += '<div class="ml-auto">' + statusBadge + ' <span class="mx-1"></span> ' + paymentBadge + ' <span class="mx-1"></span> ' + checkInBadge + '</div>';
         html += '</div>';
 
-        html += '<div class="preview-container">';
         html += '<div class="row">';
         
-        // Col 1: Booking Information
+        // Col 1: Stay & Room
         html += '<div class="col-md-6">';
-        html += '<div class="preview-section h-100">';
-        html += '<h5><i class="fa fa-calendar"></i> Booking Information</h5>';
-        html += '<table class="table table-bordered table-sm">';
-        html += '<tr><th>Room Number:</th><td class="h5 mb-0 text-primary">' + (room.room_number || 'N/A') + '</td></tr>';
-        html += '<tr><th>Room Type:</th><td><span class="badge badge-light">' + (room.room_type || 'N/A') + '</span></td></tr>';
-        html += '<tr><th>Check-in:</th><td>' + checkIn + '</td></tr>';
-        html += '<tr><th>Check-out:</th><td>' + checkOut + '</td></tr>';
-        html += '<tr><th>Nights:</th><td>' + (booking.nights || calculateNightsNumber(booking.check_in, booking.check_out)) + '</td></tr>';
-        html += '<tr><th>Guest Email:</th><td>' + (booking.guest_email || 'N/A') + '</td></tr>';
-        html += '<tr><th>Guest Phone:</th><td>' + (booking.guest_phone || 'N/A') + '</td></tr>';
-        html += '</table>';
-        html += '</div></div>';
+        html += '<div class="card bg-light border-0 mb-3 h-100">';
+        html += '<div class="card-body p-3">';
+        html += '<h6 class="text-uppercase text-muted small mb-3 font-weight-bold" style="letter-spacing: 0.5px;"><i class="fa fa-bed mr-2 text-primary"></i> Stay & Room Info</h6>';
+        html += '<ul class="list-group list-group-flush border-top-0 border-bottom-0">';
+        html += '<li class="list-group-item px-0 py-2 bg-transparent border-light d-flex justify-content-between align-items-center"><span class="text-muted small"><strong>Room</strong></span> <span class="text-dark font-weight-bold">' + (room.room_number || 'TBD') + ' &mdash; <span class="text-muted font-weight-normal">' + (room.room_type || 'Standard') + '</span></span></li>';
+        html += '<li class="list-group-item px-0 py-2 bg-transparent border-light d-flex justify-content-between align-items-center"><span class="text-muted small"><strong>Check In</strong></span> <span class="text-dark">' + checkIn + '</span></li>';
+        html += '<li class="list-group-item px-0 py-2 bg-transparent border-light d-flex justify-content-between align-items-center"><span class="text-muted small"><strong>Check Out</strong></span> <span class="text-dark">' + checkOut + '</span></li>';
+        html += '<li class="list-group-item px-0 py-2 bg-transparent border-light d-flex justify-content-between align-items-center"><span class="text-muted small"><strong>Duration</strong></span> <span class="badge badge-primary badge-pill">' + (booking.nights || calculateNightsNumber(booking.check_in, booking.check_out)) + ' Nights</span></li>';
+        html += '<li class="list-group-item px-0 py-2 bg-transparent border-light d-flex justify-content-between align-items-center"><span class="text-muted small"><strong>Guests In Room</strong></span> <span class="text-dark">' + (booking.number_of_guests || 1) + '</span></li>';
+        html += '</ul>';
+        html += '</div></div></div>';
 
-        // Col 2: Room Financials
+        // Col 2: Financials
         html += '<div class="col-md-6">';
-        html += '<div class="preview-section h-100">';
-        html += '<h5><i class="fa fa-dollar"></i> Room Financials</h5>';
+        html += '<div class="card bg-light border-0 mb-3 h-100">';
+        html += '<div class="card-body p-3">';
+        html += '<h6 class="text-uppercase text-muted small mb-3 font-weight-bold" style="letter-spacing: 0.5px;"><i class="fa fa-dollar mr-2 text-success"></i> Room Billing Info</h6>';
         
         const serviceCharges = parseFloat(booking.service_charges_usd || 0);
         const isSelfPay = booking.payment_responsibility === 'self';
         const totalBookingBill = roomTotal + (isSelfPay ? 0 : serviceCharges);
         const guestRemaining = totalBookingBill - paidAmount;
 
-        html += '<table class="table table-bordered table-sm">';
-        html += '<tr><th>Price/Night:</th><td>$' + parseFloat(room.price_per_night || 0).toFixed(2) + '</td></tr>';
-        html += '<tr><th>Room Charge:</th><td>$' + roomTotal.toFixed(2) + '</td></tr>';
-        
+        html += '<ul class="list-group list-group-flush border-top-0 border-bottom-0">';
+        html += '<li class="list-group-item px-0 py-2 bg-transparent border-light d-flex justify-content-between align-items-center"><span class="text-muted small"><strong>Price / Night</strong></span> <span class="text-dark">$' + parseFloat(room.price_per_night || 0).toFixed(2) + '</span></li>';
+        html += '<li class="list-group-item px-0 py-2 bg-transparent border-light d-flex justify-content-between align-items-center"><span class="text-muted small"><strong>Total Room Charge</strong></span> <span class="text-dark font-weight-bold">$' + roomTotal.toFixed(2) + '</span></li>';
         if (serviceCharges > 0) {
-          html += '<tr class="' + (isSelfPay ? 'text-muted' : '') + '"><th>Service Charges:</th><td>$' + serviceCharges.toFixed(2);
-          if (isSelfPay) {
-            html += ' <small class="text-muted">(Guest pays)</small>';
-          }
-          html += '</td></tr>';
+            html += '<li class="list-group-item px-0 py-2 bg-transparent border-light d-flex justify-content-between align-items-center"><span class="text-muted small"><strong>Service Charges</strong> ' + (isSelfPay ? '<span class="badge badge-warning ml-1">Self Pay</span>' : '<span class="badge badge-secondary ml-1">Company Covers</span>') + '</span> <span class="' + (isSelfPay ? 'text-dark' : 'text-danger font-weight-bold') + '">+$' + serviceCharges.toFixed(2) + '</span></li>';
         }
-
-        html += '<tr class="table-active"><th class="font-weight-bold">Total Bill:</th><td class="font-weight-bold h5 mb-0 text-primary">$' + totalBookingBill.toFixed(2) + '</td></tr>';
-        html += '<tr><th>Paid by Company:</th><td class="text-success font-weight-bold">$' + paidAmount.toFixed(2) + '</td></tr>';
         
-        // Balance logic (same as individual booking modal)
+        html += '<li class="list-group-item px-0 py-2 bg-transparent border-secondary d-flex justify-content-between align-items-center mt-2 border-top"><span class="text-dark font-weight-bold">Total Bill</span> <strong class="text-primary" style="font-size:1.15em;">$' + totalBookingBill.toFixed(2) + '</strong></li>';
+        
         if (guestRemaining > 0.01) {
-          html += '<tr class="table-active"><th class="font-weight-bold">Balance Due:</th><td class="font-weight-bold text-danger h5 mb-0">$' + guestRemaining.toFixed(2) + '</td></tr>';
+            html += '<li class="list-group-item px-0 py-2 bg-transparent border-0 d-flex justify-content-between align-items-center"><span class="text-dark font-weight-bold">Balance Due</span> <strong class="text-danger" style="font-size:1.15em;">$' + guestRemaining.toFixed(2) + '</strong></li>';
         } else if (paidAmount >= totalBookingBill && totalBookingBill > 0) {
-          html += '<tr class="table-active"><th class="font-weight-bold">Balance:</th><td><span class="badge badge-success px-3 py-1" style="font-size: 0.85rem;"><i class="fa fa-check-circle"></i> ALL PAID</span></td></tr>';
-          
-          if (guestRemaining < -0.01) {
-            html += '<tr><th class="text-muted">Overpayment:</th><td class="text-info">$' + Math.abs(guestRemaining).toFixed(2) + ' <small class="text-muted">(Credit)</small></td></tr>';
-          }
+            html += '<li class="list-group-item px-0 py-2 bg-transparent border-0 d-flex justify-content-end align-items-center pt-3"><span class="badge badge-success px-3 py-2" style="font-size:1em;"><i class="fa fa-check-circle mr-1"></i> Balance fully resolved</span></li>';
         }
         
-        html += '<tr><th>Payment Status:</th><td>' + paymentBadge + '</td></tr>';
-        html += '</table>';
+        html += '</ul>';
+        html += '</div></div></div>'; // End Right Col // End Card
+        
+        html += '</div>'; // End Row
 
-        // Self-pay warning if applicable
-        if (booking.payment_responsibility === 'self') {
-          html += '<div class="alert alert-warning py-2 mb-0 mt-2" style="font-size: 0.9rem;">';
-          html += '<i class="fa fa-exclamation-triangle mr-2"></i> This guest pays for their own services.';
+        // Identity Records Footer - Check-In
+        if (booking.id_document_type || booking.id_scan_path || booking.guest_signature_path) {
+          html += '<div class="alert alert-secondary border border-secondary mt-3 mb-0 px-3 py-3 rounded">';
+          html += '<div class="mb-3 border-bottom pb-2 border-secondary"><span class="text-uppercase text-muted font-weight-bold mr-2"><i class="fa fa-id-card-o mr-1"></i> Check-in Records:</span>';
+          html += '<span class="small text-dark mt-1 d-inline-block"><strong>ID Type:</strong> ' + (booking.id_document_type || 'N/A') + ' <span class="mx-1 text-muted">|</span> <strong>ID No:</strong> ' + (booking.id_document_number || 'N/A') + '</span></div>';
+          
+          html += '<div class="row align-items-center justify-content-center">';
+          if (booking.id_scan_path) {
+            html += '<div class="col-sm-4 text-center mb-2">';
+            html += '<div class="small font-weight-bold text-muted mb-1 text-uppercase" style="letter-spacing: 0.5px;">Front ID</div>';
+            html += '<a href="' + baseUrl + booking.id_scan_path + '" target="_blank">';
+            html += '<img src="' + baseUrl + booking.id_scan_path + '" class="img-fluid rounded bg-white p-1 shadow-sm border" style="max-height: 120px; object-fit: contain;" onerror="this.outerHTML=\'<span class=text-danger small><i class=\\\'fa fa-exclamation-triangle\\\'></i> Missing Image</span>\'">';
+            html += '</a></div>';
+          }
+          if (booking.id_scan_back_path) {
+            html += '<div class="col-sm-4 text-center mb-2">';
+            html += '<div class="small font-weight-bold text-muted mb-1 text-uppercase" style="letter-spacing: 0.5px;">Back ID</div>';
+            html += '<a href="' + baseUrl + booking.id_scan_back_path + '" target="_blank">';
+            html += '<img src="' + baseUrl + booking.id_scan_back_path + '" class="img-fluid rounded bg-white p-1 shadow-sm border" style="max-height: 120px; object-fit: contain;" onerror="this.outerHTML=\'<span class=text-danger small><i class=\\\'fa fa-exclamation-triangle\\\'></i> Missing Image</span>\'">';
+            html += '</a></div>';
+          }
+          if (booking.guest_signature_path) {
+             html += '<div class="col-sm-4 text-center mb-2">';
+             html += '<div class="small font-weight-bold text-muted mb-1 text-uppercase" style="letter-spacing: 0.5px;"><i class="fa fa-pencil text-primary mr-1"></i> Check-In Signature</div>';
+             html += '<div class="bg-white rounded border shadow-sm p-1 d-inline-block">';
+             html += '<a href="' + baseUrl + booking.guest_signature_path + '" target="_blank">';
+             html += '<img src="' + baseUrl + booking.guest_signature_path + '" class="img-fluid" style="max-height: 110px; object-fit: contain;" onerror="this.outerHTML=\'<span class=text-danger small><i class=\\\'fa fa-exclamation-triangle\\\'></i> Missing Image</span>\'">';
+             html += '</a></div></div>';
+          }
+          html += '</div>'; // end row inside alert
+          html += '</div>'; // end alert
+        }
+
+        // Checkout Signature Section
+        if (booking.checkout_signature_path) {
+          html += '<div class="alert alert-info border border-info mt-3 mb-0 px-3 py-3 rounded">';
+          html += '<div class="mb-3 border-bottom pb-2 border-info"><span class="text-uppercase text-muted font-weight-bold mr-2"><i class="fa fa-sign-out mr-1 text-info"></i> Check-Out Records:</span>';
+          if (booking.check_in_status === 'checked_out') {
+            html += '<span class="badge badge-success ml-2"><i class="fa fa-check-circle"></i> Fully Checked Out</span>';
+          } else {
+            html += '<span class="badge badge-warning ml-2"><i class="fa fa-clock-o"></i> Signature Received – Pending Finalization</span>';
+          }
+          html += '</div>';
+          
+          html += '<div class="row align-items-center justify-content-center">';
+          html += '<div class="col-sm-5 text-center mb-2">';
+          html += '<div class="small font-weight-bold text-muted mb-1 text-uppercase" style="letter-spacing: 0.5px;"><i class="fa fa-pencil text-info mr-1"></i> Check-Out Signature</div>';
+          html += '<div class="bg-white rounded border shadow-sm p-1 d-inline-block">';
+          html += '<a href="' + baseUrl + booking.checkout_signature_path + '" target="_blank">';
+          html += '<img src="' + baseUrl + booking.checkout_signature_path + '" class="img-fluid" style="max-height: 130px; object-fit: contain;" onerror="this.outerHTML=\'<span class=text-danger small><i class=\\\'fa fa-exclamation-triangle\\\'></i> Missing Image</span>\'">';
+          html += '</a></div></div>';
+          html += '</div>'; // end row
+          html += '</div>'; // end alert
+        } else if (booking.check_in_status === 'checked_in') {
+          html += '<div class="alert alert-light border mt-3 mb-0 px-3 py-2 rounded text-muted small">';
+          html += '<i class="fa fa-info-circle mr-1"></i> No check-out signature recorded yet for this guest.';
           html += '</div>';
         }
 
-        html += '</div></div>';
-        html += '</div>'; // End row
-        html += '</div>'; // End preview-container
-        
-        html += '</div></div>'; // End tab pane
+        html += '</div></div>'; // end tab pane
       });
       
       html += '</div></div></div>'; // End card body & tabs container
       html += '</div>'; // End view container
+
       
        $('#companyBookingGroupContent').html(html);
 
@@ -3177,8 +3489,13 @@ let managerBookingData = {};
     @endphp
     @foreach($companyBookings as $booking)
       @if($booking->check_in_status === 'checked_in' && $booking->room)
+        @php
+          $foundCompanyId = $booking->company_id ?? ($group['company_id'] ?? ($group['company']->id ?? null));
+        @endphp
         managerBookingData[{{ $booking->id }}] = {
           id: {{ $booking->id }},
+          companyId: {{ $foundCompanyId ?? 'null' }},
+          roomId: {{ $booking->room_id }},
           roomPrice: {{ $booking->room->price_per_night ?? 0 }},
           currentCheckOut: '{{ $booking->check_out->format('Y-m-d') }}',
           checkIn: '{{ $booking->check_in->format('Y-m-d') }}'
@@ -3191,9 +3508,11 @@ let managerBookingData = {};
     @if($booking->check_in_status === 'checked_in' && $booking->room)
       managerBookingData[{{ $booking->id }}] = {
         id: {{ $booking->id }},
+        roomId: {{ $booking->room_id }},
         roomPrice: {{ $booking->room->price_per_night ?? 0 }},
         currentCheckOut: '{{ $booking->check_out->format('Y-m-d') }}',
-        checkIn: '{{ $booking->check_in->format('Y-m-d') }}'
+        checkIn: '{{ $booking->check_in->format('Y-m-d') }}',
+        companyId: null
       };
     @endif
   @endforeach
@@ -3207,35 +3526,34 @@ function openManagerExtensionModal(bookingId, checkIn, currentCheckOut) {
   }
   
   document.getElementById('manager_extension_booking_id').value = bookingId;
+  document.getElementById('manager_extension_company_id').value = '';
   const dateInput = document.getElementById('manager_extension_new_check_out');
   dateInput.value = '';
   dateInput.min = currentCheckOut;
   document.getElementById('manager_extension_reason').value = '';
   document.getElementById('managerExtensionCostPreview').style.display = 'none';
-  document.getElementById('managerExtensionAlert').innerHTML = '';
   
-  // Show modal first
+  $('#managerExtensionModal .modal-title').html('<i class="fa fa-calendar-plus-o"></i> Extend Booking');
+  $('#managerExtensionModal .alert-info strong').text('Note:');
+  $('#managerExtensionModal .alert-info').text('The booking will be extended and the price will be adjusted automatically.');
+
   $('#managerExtensionModal').modal('show');
+}
+
+function openGroupExtensionModal(companyId, checkIn, currentCheckOut) {
+  document.getElementById('manager_extension_booking_id').value = '';
+  document.getElementById('manager_extension_company_id').value = companyId;
   
-  // Attach event listeners after modal is shown
-  $('#managerExtensionModal').off('shown.bs.modal').on('shown.bs.modal', function() {
-    const dateInputEl = document.getElementById('manager_extension_new_check_out');
-    // Remove any existing listeners
-    dateInputEl.removeEventListener('change', calculateManagerExtensionCost);
-    dateInputEl.removeEventListener('input', calculateManagerExtensionCost);
-    $(dateInputEl).off('change input');
-    
-    // Add new listeners using both methods for maximum compatibility
-    dateInputEl.addEventListener('change', calculateManagerExtensionCost);
-    dateInputEl.addEventListener('input', calculateManagerExtensionCost);
-    $(dateInputEl).on('change', calculateManagerExtensionCost);
-    $(dateInputEl).on('input', calculateManagerExtensionCost);
-  });
+  const dateInput = document.getElementById('manager_extension_new_check_out');
+  dateInput.value = '';
+  dateInput.min = currentCheckOut;
+  document.getElementById('manager_extension_reason').value = '';
+  document.getElementById('managerExtensionCostPreview').style.display = 'none';
   
-  // Trigger the event if modal is already shown
-  if ($('#managerExtensionModal').hasClass('show')) {
-    $('#managerExtensionModal').trigger('shown.bs.modal');
-  }
+  $('#managerExtensionModal .modal-title').html('<i class="fa fa-calendar-plus-o"></i> Extend Group Stay');
+  $('#managerExtensionModal .alert-info').html('<i class="fa fa-info-circle"></i> <strong>Note:</strong> This will extend the stay for ALL guests in this group who are currently checked in.');
+
+  $('#managerExtensionModal').modal('show');
 }
 
 function openManagerDecreaseModal(bookingId, checkIn, currentCheckOut) {
@@ -3246,133 +3564,171 @@ function openManagerDecreaseModal(bookingId, checkIn, currentCheckOut) {
   }
   
   document.getElementById('manager_decrease_booking_id').value = bookingId;
+  document.getElementById('manager_decrease_company_id').value = '';
   const dateInput = document.getElementById('manager_decrease_new_check_out');
   dateInput.value = '';
-  dateInput.min = checkIn;
   dateInput.max = currentCheckOut;
   document.getElementById('manager_decrease_reason').value = '';
-  document.getElementById('managerDecreaseCostPreview').style.display = 'none';
-  document.getElementById('managerDecreaseAlert').innerHTML = '';
   
-  // Remove existing event listeners (both native and jQuery)
-  dateInput.removeEventListener('change', calculateManagerDecreaseRefund);
-  dateInput.removeEventListener('input', calculateManagerDecreaseRefund);
-  $(dateInput).off('change input');
+  $('#managerDecreaseModal .modal-title').html('<i class="fa fa-calendar-minus-o"></i> Decrease Booking');
+  $('#managerDecreaseModal .alert-warning strong').text('Note:');
   
   $('#managerDecreaseModal').modal('show');
-  
-  // Attach event listeners after modal is shown to ensure they work
-  $('#managerDecreaseModal').off('shown.bs.modal').on('shown.bs.modal', function() {
-    const dateInputEl = document.getElementById('manager_decrease_new_check_out');
-    // Remove any existing listeners
-    dateInputEl.removeEventListener('change', calculateManagerDecreaseRefund);
-    dateInputEl.removeEventListener('input', calculateManagerDecreaseRefund);
-    $(dateInputEl).off('change input');
-    
-    // Add new listeners using both methods for maximum compatibility
-    dateInputEl.addEventListener('change', calculateManagerDecreaseRefund);
-    dateInputEl.addEventListener('input', calculateManagerDecreaseRefund);
-    $(dateInputEl).on('change', calculateManagerDecreaseRefund);
-    $(dateInputEl).on('input', calculateManagerDecreaseRefund);
-  });
 }
+
+function openGroupDecreaseModal(companyId, checkIn, currentCheckOut) {
+  document.getElementById('manager_decrease_booking_id').value = '';
+  document.getElementById('manager_decrease_company_id').value = companyId;
+  
+  const dateInput = document.getElementById('manager_decrease_new_check_out');
+  dateInput.value = '';
+  dateInput.max = currentCheckOut;
+  document.getElementById('manager_decrease_reason').value = '';
+  
+  $('#managerDecreaseModal .modal-title').html('<i class="fa fa-calendar-minus-o"></i> Decrease Group Stay');
+  $('#managerDecreaseModal .alert-warning').html('<i class="fa fa-exclamation-triangle"></i> <strong>Note:</strong> This will decrease the stay for ALL guests in this group who are currently checked in. No refund will be applied.');
+  
+  $('#managerDecreaseModal').modal('show');
+}
+
+// Attach event listeners after modals are shown to ensure they work
+$('#managerExtensionModal').on('shown.bs.modal', function() {
+  const dateInputEl = document.getElementById('manager_extension_new_check_out');
+  $(dateInputEl).off('change input').on('change input', calculateManagerExtensionCost);
+});
+
+$('#managerDecreaseModal').on('shown.bs.modal', function() {
+  const dateInputEl = document.getElementById('manager_decrease_new_check_out');
+  $(dateInputEl).off('change input');
+});
 
 // Event listeners are attached when modals are opened for better reliability
 
 function calculateManagerExtensionCost() {
   const bookingId = document.getElementById('manager_extension_booking_id').value;
-  const bookingData = managerBookingData[bookingId];
-  if (!bookingData) {
+  const companyId = document.getElementById('manager_extension_company_id').value;
+  const isGroup = !!companyId;
+  const alertDiv = document.getElementById('managerExtensionAlert');
+  alertDiv.innerHTML = ''; // Clear previous alerts
+
+  let bookingData = null;
+  let groupBookings = [];
+  let currentCheckOutDate = null;
+  let totalDailyRate = 0;
+
+  if (isGroup) {
+    // For group, sum all checked-in bookings for this company
+    for (const id in managerBookingData) {
+      if (managerBookingData[id].companyId == companyId) {
+        groupBookings.push(managerBookingData[id]);
+        totalDailyRate += managerBookingData[id].roomPrice;
+        if (!currentCheckOutDate) {
+          currentCheckOutDate = new Date(managerBookingData[id].currentCheckOut + 'T00:00:00');
+        }
+      }
+    }
+  } else {
+    bookingData = managerBookingData[bookingId];
+    if (bookingData) {
+      totalDailyRate = bookingData.roomPrice;
+      currentCheckOutDate = new Date(bookingData.currentCheckOut + 'T00:00:00');
+    }
+  }
+
+  if (!currentCheckOutDate) {
     document.getElementById('managerExtensionCostPreview').style.display = 'none';
     return;
   }
   
-  const newDate = document.getElementById('manager_extension_new_check_out').value;
-  if (!newDate) {
+  const newDateVal = document.getElementById('manager_extension_new_check_out').value;
+  if (!newDateVal) {
     document.getElementById('managerExtensionCostPreview').style.display = 'none';
     return;
   }
   
-  const currentCheckOut = new Date(bookingData.currentCheckOut + 'T00:00:00');
-  const requestedDate = new Date(newDate + 'T00:00:00');
+  const requestedDate = new Date(newDateVal + 'T00:00:00');
   
-  if (requestedDate <= currentCheckOut) {
+  if (requestedDate <= currentCheckOutDate) {
     document.getElementById('managerExtensionCostPreview').style.display = 'none';
     return;
   }
+
+  // Live availability check (for single booking)
+  if (!isGroup && bookingData) {
+    checkManagerExtensionAvailability(bookingData.id, bookingData.checkIn, newDateVal);
+  }
   
-  const diffTime = requestedDate - currentCheckOut;
+  const diffTime = requestedDate - currentCheckOutDate;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
   if (diffDays > 0) {
-    const totalCost = bookingData.roomPrice * diffDays;
+    const totalCost = totalDailyRate * diffDays;
     document.getElementById('managerExtensionNights').textContent = diffDays;
-    document.getElementById('managerExtensionRoomPrice').textContent = bookingData.roomPrice.toFixed(2);
+    document.getElementById('managerExtensionRoomPrice').textContent = totalDailyRate.toFixed(2);
     document.getElementById('managerExtensionTotalCost').textContent = totalCost.toFixed(2);
+    
+    // Update labels if it's a group
+    if (isGroup) {
+      document.querySelector('#managerExtensionCostPreview p').innerHTML = 
+        `<span id="managerExtensionNights">${diffDays}</span> night(s) extension × 
+        $<span id="managerExtensionRoomPrice">${totalDailyRate.toFixed(2)}</span> (Group Total Rate) = 
+        <strong>Additional Cost: $<span id="managerExtensionTotalCost">${totalCost.toFixed(2)}</span></strong>`;
+    }
+
     document.getElementById('managerExtensionCostPreview').style.display = 'block';
   } else {
     document.getElementById('managerExtensionCostPreview').style.display = 'none';
   }
 }
 
-function calculateManagerDecreaseRefund() {
-  const bookingId = document.getElementById('manager_decrease_booking_id').value;
-  const bookingData = managerBookingData[bookingId];
-  if (!bookingData) {
-    document.getElementById('managerDecreaseCostPreview').style.display = 'none';
-    return;
-  }
-  
-  const newDate = document.getElementById('manager_decrease_new_check_out').value;
-  if (!newDate) {
-    document.getElementById('managerDecreaseCostPreview').style.display = 'none';
-    return;
-  }
-  
-  const currentCheckOut = new Date(bookingData.currentCheckOut + 'T00:00:00');
-  const requestedDate = new Date(newDate + 'T00:00:00');
-  
-  if (requestedDate >= currentCheckOut) {
-    document.getElementById('managerDecreaseCostPreview').style.display = 'none';
-    return;
-  }
-  
-  const diffTime = currentCheckOut - requestedDate;
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays > 0) {
-    const totalRefund = bookingData.roomPrice * diffDays;
-    document.getElementById('managerDecreaseNights').textContent = diffDays;
-    document.getElementById('managerDecreaseRoomPrice').textContent = bookingData.roomPrice.toFixed(2);
-    document.getElementById('managerDecreaseTotalRefund').textContent = totalRefund.toFixed(2);
-    document.getElementById('managerDecreaseCostPreview').style.display = 'block';
-  } else {
-    document.getElementById('managerDecreaseCostPreview').style.display = 'none';
-  }
+function checkManagerExtensionAvailability(bookingId, checkIn, newCheckOut) {
+    const bookingData = managerBookingData[bookingId];
+    if (!bookingData) return;
+
+    const alertDiv = document.getElementById('managerExtensionAlert');
+    const roomId = bookingData.room_id || bookingData.roomId; // Ensure we have the room ID
+    
+    // Attempt to get room ID if not in data (fallback for some views)
+    const effectiveRoomId = roomId || bookingData.id; // This is a fallback, ideally roomId is there
+
+    const url = `{{ route('admin.bookings.check-availability') }}?room_id=${effectiveRoomId}&check_in=${checkIn}&check_out=${newCheckOut}&exclude_booking_id=${bookingId}`;
+
+    fetch(url)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && !data.available) {
+            alertDiv.innerHTML = `<div class="alert alert-danger"><i class="fa fa-exclamation-triangle"></i> <strong>Conflict Detected:</strong> ${data.message}</div>`;
+        } else if (data.success && data.available) {
+            alertDiv.innerHTML = `<div class="alert alert-success"><i class="fa fa-check-circle"></i> Room is available for the extended period.</div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error checking availability:', error);
+    });
 }
 
-function submitManagerExtension() {
-  const form = document.getElementById('managerExtensionForm');
-  const alertDiv = document.getElementById('managerExtensionAlert');
-  const submitBtn = event.target;
-  const originalText = submitBtn.innerHTML;
+
+function submitManagerExtension(btn) {
+  const bookingId = document.getElementById('manager_extension_booking_id').value;
+  const companyId = document.getElementById('manager_extension_company_id').value;
+  const newCheckOut = document.getElementById('manager_extension_new_check_out').value;
+  const reason = document.getElementById('manager_extension_reason').value;
+  const submitBtn = btn || (typeof event !== 'undefined' ? event.target : null);
   
-  if (alertDiv) {
-    alertDiv.innerHTML = '';
-  }
-  
-  if (!form.checkValidity()) {
-    form.reportValidity();
+  if (!newCheckOut) {
+    swal("Error", "Please select a new check-out date.", "error");
     return;
   }
-  
+
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
-  
-  const bookingId = document.getElementById('manager_extension_booking_id').value;
-  const newCheckOut = document.getElementById('manager_extension_new_check_out').value;
-  
-  fetch('{{ route("admin.bookings.modify-dates", ":id") }}'.replace(':id', bookingId), {
+
+  const isGroup = !!companyId;
+  const url = isGroup 
+    ? (isReception ? '{{ url("/reception/companies") }}/' + companyId + '/modify-dates' : '{{ url("/manager/companies") }}/' + companyId + '/modify-dates')
+    : (isReception ? '{{ url("/reception/bookings") }}/' + bookingId + '/modify-dates' : '{{ url("/manager/bookings") }}/' + bookingId + '/modify-dates');
+
+  fetch(url, {
     method: 'PUT',
     headers: {
       'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -3381,7 +3737,7 @@ function submitManagerExtension() {
     },
     body: JSON.stringify({
       new_check_out: newCheckOut,
-      reason: document.getElementById('manager_extension_reason').value
+      reason: reason
     })
   })
   .then(response => response.json())
@@ -3389,58 +3745,46 @@ function submitManagerExtension() {
     if (data.success) {
       swal({
         title: "Success!",
-        text: data.message || "Booking extended successfully!",
-        type: "success",
-        confirmButtonColor: "#28a745"
+        text: data.message,
+        type: "success"
       }, function() {
-        $('#managerExtensionModal').modal('hide');
         location.reload();
       });
     } else {
-      let errorMsg = data.message || 'An error occurred. Please try again.';
-      if (data.errors) {
-        const errorList = Object.values(data.errors).flat().join('<br>');
-        errorMsg = errorList;
-      }
-      if (alertDiv) {
-        alertDiv.innerHTML = '<div class="alert alert-danger">' + errorMsg + '</div>';
-      }
+      swal("Error", data.message || "Failed to update stay.", "error");
       submitBtn.disabled = false;
-      submitBtn.innerHTML = originalText;
+      submitBtn.innerHTML = 'Save Extension';
     }
   })
   .catch(error => {
     console.error('Error:', error);
-    if (alertDiv) {
-      alertDiv.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
-    }
+    swal("Error", "A system error occurred.", "error");
     submitBtn.disabled = false;
-    submitBtn.innerHTML = originalText;
+    submitBtn.innerHTML = 'Save Extension';
   });
 }
 
-function submitManagerDecrease() {
-  const form = document.getElementById('managerDecreaseForm');
-  const alertDiv = document.getElementById('managerDecreaseAlert');
-  const submitBtn = event.target;
-  const originalText = submitBtn.innerHTML;
+function submitManagerDecrease(btn) {
+  const bookingId = document.getElementById('manager_decrease_booking_id').value;
+  const companyId = document.getElementById('manager_decrease_company_id').value;
+  const newCheckOut = document.getElementById('manager_decrease_new_check_out').value;
+  const reason = document.getElementById('manager_decrease_reason').value;
+  const submitBtn = btn || (typeof event !== 'undefined' ? event.target : null);
   
-  if (alertDiv) {
-    alertDiv.innerHTML = '';
-  }
-  
-  if (!form.checkValidity()) {
-    form.reportValidity();
+  if (!newCheckOut) {
+    swal("Error", "Please select a new check-out date.", "error");
     return;
   }
-  
+
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Processing...';
   
-  const bookingId = document.getElementById('manager_decrease_booking_id').value;
-  const newCheckOut = document.getElementById('manager_decrease_new_check_out').value;
-  
-  fetch('{{ route("admin.bookings.modify-dates", ":id") }}'.replace(':id', bookingId), {
+  const isGroup = !!companyId;
+  const url = isGroup
+    ? (isReception ? '{{ url("/reception/companies") }}/' + companyId + '/modify-dates' : '{{ url("/manager/companies") }}/' + companyId + '/modify-dates')
+    : (isReception ? '{{ url("/reception/bookings") }}/' + bookingId + '/modify-dates' : '{{ url("/manager/bookings") }}/' + bookingId + '/modify-dates');
+
+  fetch(url, {
     method: 'PUT',
     headers: {
       'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -3449,7 +3793,7 @@ function submitManagerDecrease() {
     },
     body: JSON.stringify({
       new_check_out: newCheckOut,
-      reason: document.getElementById('manager_decrease_reason').value
+      reason: reason
     })
   })
   .then(response => response.json())
@@ -3457,33 +3801,22 @@ function submitManagerDecrease() {
     if (data.success) {
       swal({
         title: "Success!",
-        text: data.message || "Booking decreased successfully!",
-        type: "success",
-        confirmButtonColor: "#28a745"
+        text: data.message,
+        type: "success"
       }, function() {
-        $('#managerDecreaseModal').modal('hide');
         location.reload();
       });
     } else {
-      let errorMsg = data.message || 'An error occurred. Please try again.';
-      if (data.errors) {
-        const errorList = Object.values(data.errors).flat().join('<br>');
-        errorMsg = errorList;
-      }
-      if (alertDiv) {
-        alertDiv.innerHTML = '<div class="alert alert-danger">' + errorMsg + '</div>';
-      }
+      swal("Error", data.message || "Failed to update stay.", "error");
       submitBtn.disabled = false;
-      submitBtn.innerHTML = originalText;
+      submitBtn.innerHTML = 'Save Changes';
     }
   })
   .catch(error => {
     console.error('Error:', error);
-    if (alertDiv) {
-      alertDiv.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
-    }
+    swal("Error", "A system error occurred.", "error");
     submitBtn.disabled = false;
-    submitBtn.innerHTML = originalText;
+    submitBtn.innerHTML = 'Save Changes';
   });
 }
 </script>

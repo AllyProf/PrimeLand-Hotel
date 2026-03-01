@@ -119,6 +119,56 @@
           </div>
         </div>
 
+        <!-- Stay Modifications (Extensions/Decreases) -->
+        @if(!empty($groupData['modifications']))
+        <div class="mb-4">
+          <h5 style="color: #17a2b8; border-bottom: 2px solid #17a2b8; padding-bottom: 10px; margin-bottom: 15px;">Stay Modifications (Extensions / Reductions)</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead style="background-color: #f8f9fa;">
+                <tr>
+                  <th>Guest / Ref</th>
+                  <th>Type</th>
+                  <th>Nights</th>
+                  <th>Original Period</th>
+                  <th>New Checkout</th>
+                  <th>Cost Impact ($)</th>
+                  <th class="no-print">Internal Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                @foreach($groupData['modifications'] as $mod)
+                <tr>
+                  <td>
+                    <strong>{{ $mod['guest_name'] }}</strong><br>
+                    <small>{{ $mod['ref'] }}</small>
+                  </td>
+                  <td>
+                    @if($mod['type'] == 'Extension')
+                      <span class="badge badge-info px-2"><i class="fa fa-calendar-plus-o"></i> Extension</span>
+                    @else
+                      <span class="badge badge-warning px-2"><i class="fa fa-calendar-minus-o"></i> Reduction</span>
+                    @endif
+                  </td>
+                  <td>{{ $mod['nights'] }} night(s)</td>
+                  <td>{{ $mod['original'] }}</td>
+                  <td><strong>{{ $mod['new'] }}</strong></td>
+                  <td>
+                    @if($mod['cost_usd'] > 0)
+                      <strong>+${{ number_format($mod['cost_usd'], 2) }}</strong>
+                    @else
+                      <span class="text-muted">$0.00 (No Refund)</span>
+                    @endif
+                  </td>
+                  <td class="no-print"><small>{{ $mod['reason'] }}</small></td>
+                </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+        </div>
+        @endif
+
         <!-- Final Summary Box -->
         <div class="row mt-5">
           <div class="col-md-6 mb-4">
@@ -145,7 +195,7 @@
                   <td style="font-size: 18px;"><strong>Total Outstanding:</strong></td>
                   <td class="text-right">
                     <h3 style="color: #e77a3a; margin: 0;">{{ number_format($groupData['totals']['outstanding_tsh'], 0) }} TZS</h3>
-                    <small class="text-muted">≈ ${{ number_format($groupData['totals']['outstanding_tsh'] / $exchangeRate, 2) }}</small>
+                    <small class="text-muted">≈ ${{ number_format($groupData['totals']['outstanding_usd'], 2) }}</small>
                   </td>
                 </tr>
               </table>
