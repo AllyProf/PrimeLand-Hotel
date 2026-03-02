@@ -83,9 +83,27 @@
                             $cat = strtolower($item['product_category'] ?? '');
                             $icon = 'fa-glass';
                             $grad = 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)';
-                            if (str_contains($cat, 'beer')) { $icon='fa-beer'; $grad='linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'; }
-                            elseif (str_contains($cat, 'spirit') || str_contains($cat, 'whiskey')) { $icon='fa-glass'; $grad='linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'; }
-                            elseif (str_contains($cat, 'water')) { $icon='fa-tint'; $grad='linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)'; }
+                            if (str_contains($cat, 'beer') || str_contains($cat, 'alcoholic_beverage')) { 
+                                $icon='fa-beer'; $grad='linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'; 
+                            }
+                            elseif (str_contains($cat, 'spirit') || str_contains($cat, 'whiskey') || str_contains($cat, 'liquor')) { 
+                                $icon='fa-glass'; $grad='linear-gradient(135deg, #243B55 0%, #141E30 100%)'; 
+                            }
+                            elseif (str_contains($cat, 'water')) { 
+                                $icon='fa-tint'; $grad='linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'; 
+                            }
+                            elseif (str_contains($cat, 'wine')) { 
+                                $icon='fa-vine'; $grad='linear-gradient(135deg, #8E24AA 0%, #D81B60 100%)'; 
+                            }
+                            elseif (str_contains($cat, 'soft') || str_contains($cat, 'soda') || str_contains($cat, 'juice')) { 
+                                $icon='fa-flask'; $grad='linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'; 
+                            }
+                            elseif (str_contains($cat, 'coffee') || str_contains($cat, 'hot')) { 
+                                $icon='fa-coffee'; $grad='linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'; 
+                            }
+                            elseif (str_contains($cat, 'cocktail')) { 
+                                $icon='fa-magic'; $grad='linear-gradient(135deg, #F093FB 0%, #F5576C 100%)'; 
+                            }
                         @endphp
                         <div class="d-flex align-items-center justify-content-center h-100" style="background: {!! $grad !!};">
                             <i class="fa {!! $icon !!} fa-2x text-white opacity-50"></i>

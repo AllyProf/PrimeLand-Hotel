@@ -152,16 +152,18 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
         @foreach($sortedCategories as $categoryKey)
           @php 
             $items = $groupedProducts[$categoryKey]; 
-            $categoryIcons = [
-                'soft_drinks' => 'fa-flask',
-                'water' => 'fa-tint',
-                'alcoholic_beverage' => 'fa-beer',
-                'wines' => 'fa-vine',
-                'spirits' => 'fa-glass',
-                'hot_beverages' => 'fa-coffee',
-                'cocktails' => 'fa-magic'
+            $categoryStyles = [
+                'soft_drinks' => ['icon' => 'fa-flask', 'grad' => 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'],
+                'water' => ['icon' => 'fa-tint', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
+                'alcoholic_beverage' => ['icon' => 'fa-beer', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
+                'wines' => ['icon' => 'fa-vine', 'grad' => 'linear-gradient(135deg, #8E24AA 0%, #D81B60 100%)'],
+                'spirits' => ['icon' => 'fa-glass', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
+                'hot_beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
+                'cocktails' => ['icon' => 'fa-magic', 'grad' => 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)']
             ];
-            $icon = $categoryIcons[$categoryKey] ?? 'fa-folder-open-o';
+            $style = $categoryStyles[$categoryKey] ?? ['icon' => 'fa-cube', 'grad' => 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'];
+            $icon = $style['icon'];
+            $grad = $style['grad'];
             $displayName = ($categoryKey === 'soft_drinks') ? 'Soft Drinks & Sodas' : (ucfirst(str_replace('_', ' ', $categoryKey)));
           @endphp
           
@@ -197,7 +199,7 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
                                class="w-100 h-100" style="object-fit: cover;"
                                onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
                         @else
-                          <div class="d-flex align-items-center justify-content-center h-100" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+                          <div class="d-flex align-items-center justify-content-center h-100" style="background: {!! $grad !!};">
                             <i class="fa {{ $icon }} fa-4x text-white opacity-50"></i>
                           </div>
                         @endif
@@ -311,6 +313,23 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
 
 @section('scripts')
 <script>
+// Beautiful default icon helper
+function getCategoryStyle(category) {
+    const styles = {
+        'non_alcoholic_beverage': {icon: 'fa-flask', grad: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'},
+        'soft_drinks': {icon: 'fa-flask', grad: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'},
+        'energy_drinks': {icon: 'fa-flask', grad: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'},
+        'juices': {icon: 'fa-flask', grad: 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'},
+        'water': {icon: 'fa-tint', grad: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'},
+        'alcoholic_beverage': {icon: 'fa-beer', grad: 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'},
+        'wines': {icon: 'fa-vine', grad: 'linear-gradient(135deg, #8E24AA 0%, #D81B60 100%)'},
+        'spirits': {icon: 'fa-glass', grad: 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'},
+        'hot_beverages': {icon: 'fa-coffee', grad: 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'},
+        'cocktails': {icon: 'fa-magic', grad: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)'}
+    };
+    return styles[category] || {icon: 'fa-cube', grad: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'};
+}
+
 // Filter logic
 let searchTimeout;
 function filterProducts() {
@@ -360,7 +379,7 @@ function viewProduct(id) {
   $('#productDetailsModal').modal('show');
   content.html('<div class="text-center py-5"><i class="fa fa-spinner fa-spin fa-3x text-primary mb-3"></i><p>Loading information...</p></div>');
   
-  fetch(`{{ route($routePrefix . ".products.show", ":id") }}`.replace(':id', id), {
+    fetch(`{{ route($routePrefix . ".products.show", ":id") }}`.replace(':id', id), {
     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
   })
   .then(res => res.json())
@@ -368,15 +387,22 @@ function viewProduct(id) {
     if (!data.success) throw new Error('Failed');
     const p = data.product;
     const variants = p.variants || [];
+    const catStyle = getCategoryStyle(p.category);
     
-    const mainImage = p.image ? '{{ asset("storage") }}/' + p.image : (variants.length > 0 && variants[0].image ? '{{ asset("storage") }}/' + variants[0].image : '{{ asset("dashboard_assets/images/room-placeholder.jpg") }}');
+    let mainImageHtml = '';
+    if (p.image || (variants.length > 0 && variants[0].image)) {
+        const imgSrc = p.image ? '{{ asset("storage") }}/' + p.image : '{{ asset("storage") }}/' + variants[0].image;
+        mainImageHtml = `<img src="${imgSrc}" class="img-fluid rounded shadow-sm border" style="max-height: 250px;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">`;
+    } else {
+        mainImageHtml = `<div class="d-flex align-items-center justify-content-center rounded shadow-sm border" style="height: 250px; width: 100%; background: ${catStyle.grad};">
+                            <i class="fa ${catStyle.icon} fa-5x text-white opacity-50"></i>
+                         </div>`;
+    }
     
     let html = `
       <div class="row align-items-center">
         <div class="col-md-4 text-center mb-4 mb-md-0">
-          <img src="${mainImage}" 
-               class="img-fluid rounded shadow-sm border" style="max-height: 250px;"
-               onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">
+          ${mainImageHtml}
         </div>
         <div class="col-md-8">
           <h3 class="font-weight-bold mb-3">${p.name}</h3>
@@ -401,10 +427,15 @@ function viewProduct(id) {
               </tr>
             </thead>
             <tbody>
-              ${variants.map(v => `
+              ${variants.map(v => {
+                const innerStyle = getCategoryStyle(p.category);
+                return `
                 <tr>
                   <td>
-                    ${v.image ? `<img src="{{ asset('storage') }}/${v.image}" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">` : '<div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;"><i class="fa fa-image text-muted"></i></div>'}
+                    ${v.image ? `<img src="{{ asset('storage') }}/${v.image}" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">` : 
+                    `<div class="rounded d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px; background: ${innerStyle.grad};">
+                        <i class="fa ${innerStyle.icon} text-white opacity-50" style="font-size: 14px;"></i>
+                     </div>`}
                   </td>
                   <td class="font-weight-bold align-middle">
                       ${v.variant_name || 'Standard'} <span class="text-muted small">(${v.measurement})</span>
@@ -415,7 +446,7 @@ function viewProduct(id) {
                   </td>
                   <td class="align-middle">${v.can_sell_as_serving ? (v.servings_per_pic || 1) + ' servings' : '-'}</td>
                 </tr>
-              `).join('')}
+              `}).join('')}
             </tbody>
           </table>
         </div>
