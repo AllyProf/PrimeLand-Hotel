@@ -2,191 +2,184 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Invoice - {{ $booking->booking_reference }}</title>
+    <title>{{ ($booking->status === 'pending') ? 'Proforma Invoice' : 'Invoice' }} - {{ $booking->booking_reference }}</title>
     <style>
         @page {
-            margin: 0.5cm;
+            margin: 0;
         }
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 12px;
-            color: #1e293b;
-            line-height: 1.4;
+            font-size: 13px;
+            color: #334155;
+            line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            background-color: #ffffff;
         }
-        table {
+        .container {
+            padding: 40px;
+        }
+        .header {
+            border-bottom: 4px solid #f97316;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header table {
             width: 100%;
             border-collapse: collapse;
         }
-        .header-table td {
-            vertical-align: middle;
-        }
-        .primary-color { color: #e07632; }
-        .text-light { color: #64748b; }
-        .border-bottom { border-bottom: 2px solid #e07632; }
-        
-        .logo-section h1 {
-            font-size: 24px;
-            color: #e07632;
-            margin: 0 0 4px 0;
-            font-weight: bold;
-        }
-        .logo-section p {
-            font-size: 11px;
-            color: #64748b;
-            margin: 0 0 2px 0;
-        }
-        
-        .title-section {
-            text-align: right;
-        }
-        .title-section h2 {
-            font-size: 26px;
-            font-weight: bold;
-            color: #0f172a;
-            margin: 0 0 8px 0;
+        .hotel-info h1 {
+            color: #f97316;
+            margin: 0;
+            font-size: 28px;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .ref-pill {
-            display: inline-block;
-            background: #f8fafc;
-            padding: 6px 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 12px;
+        .hotel-info p {
+            margin: 2px 0;
+            color: #64748b;
+            font-size: 11px;
         }
-        
-        .info-table {
-            margin-top: 25px;
-            margin-bottom: 25px;
+        .invoice-title {
+            text-align: right;
+            vertical-align: top;
         }
-        .info-table td {
+        .invoice-title h2 {
+            margin: 0;
+            font-size: 32px;
+            color: #1e293b;
+            font-weight: 900;
+        }
+        .invoice-title .ref {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .meta-section {
+            width: 100%;
+            margin-bottom: 40px;
+        }
+        .meta-section td {
             width: 50%;
             vertical-align: top;
-            padding-right: 20px;
         }
-        .info-table h3 {
+        .section-title {
             font-size: 11px;
-            text-transform: uppercase;
-            color: #e07632;
-            letter-spacing: 0.5px;
-            margin: 0 0 10px 0;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 4px;
-        }
-        .info-row {
-            margin-bottom: 4px;
-            font-size: 12px;
-        }
-        .info-row label {
-            width: 80px;
-            color: #64748b;
-            display: inline-block;
-        }
-        .info-row span {
             font-weight: bold;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
         }
-        
+        .info-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-right: 10px;
+            min-height: 100px;
+        }
+        .info-card.right {
+            margin-right: 0;
+            margin-left: 10px;
+        }
+        .info-card p {
+            margin: 4px 0;
+        }
+        .info-card strong {
+            color: #1e293b;
+        }
+
         .items-table {
-            margin-top: 20px;
-            border-bottom: 2px solid #e2e8f0;
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
         }
         .items-table th {
             text-align: left;
-            background: #f8fafc;
-            padding: 10px;
-            border-bottom: 2px solid #e2e8f0;
-            font-size: 10px;
+            padding: 12px 15px;
+            background: #1e293b;
+            color: #ffffff;
+            font-size: 11px;
             text-transform: uppercase;
-            color: #475569;
+            letter-spacing: 1px;
         }
         .items-table td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #f1f5f9;
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
         }
-        
-        .summary-table {
-            margin-top: 20px;
+        .items-table .desc strong {
+            display: block;
+            font-size: 14px;
+            color: #1e293b;
         }
-        .summary-table td {
+        .items-table .desc span {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .summary-section {
+            width: 100%;
+        }
+        .summary-section td {
             vertical-align: top;
         }
-        .notes-box {
-            background: #f8fafc;
-            padding: 12px;
-            border-radius: 6px;
-            font-size: 10px;
+        .notes-area {
             width: 60%;
+            padding-top: 10px;
         }
-        .totals-box {
-            width: 35%;
+        .notes-area h4 {
+            margin: 0 0 10px 0;
+            font-size: 12px;
+            color: #1e293b;
+        }
+        .notes-area p {
+            font-size: 11px;
+            color: #64748b;
+            margin: 5px 0;
+        }
+        .totals-area {
+            width: 40%;
             background: #f8fafc;
-            padding: 15px;
-            border-radius: 6px;
+            padding: 20px;
+            border-radius: 8px;
         }
         .total-row {
-            margin-bottom: 6px;
-            font-size: 12px;
+            width: 100%;
+            margin-bottom: 8px;
         }
-        .total-row label {
+        .total-row td {
+            padding: 4px 0;
+        }
+        .total-row .label {
             color: #64748b;
         }
-        .total-row span {
-            float: right;
+        .total-row .value {
+            text-align: right;
             font-weight: bold;
+            color: #1e293b;
         }
-        .grand-total {
-            margin-top: 10px;
-            padding-top: 10px;
+        .grand-total td {
             border-top: 2px solid #e2e8f0;
-            font-weight: bold;
-            font-size: 16px;
-            color: #e07632;
-        }
-        .paid-row {
-            color: #10b981;
-        }
-        .due-row {
-            color: #dc2626;
-        }
-        
-        .signatures {
-            margin-top: 40px;
-            text-align: center;
-        }
-        .sig-box {
-            width: 45%;
-            display: inline-block;
-            vertical-align: top;
-        }
-        .sig-line {
-            width: 150px;
-            margin: 0 auto;
-            border-bottom: 1px solid #000;
-            height: 40px;
-            margin-bottom: 5px;
-        }
-        
-        .policies {
-            margin-top: 30px;
-            border-top: 1px solid #f1f5f9;
             padding-top: 15px;
+            margin-top: 10px;
+            font-size: 20px;
+            color: #f97316;
         }
-        .policy-col {
-            width: 30%;
-            display: inline-block;
-            vertical-align: top;
-            font-size: 8px;
+
+        .footer {
+            position: fixed;
+            bottom: 40px;
+            left: 40px;
+            right: 40px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        .footer strong {
             color: #64748b;
-            padding-right: 10px;
-        }
-        .policy-col h4 {
-            font-size: 9px;
-            text-transform: uppercase;
-            color: #e07632;
-            margin: 0 0 4px 0;
         }
     </style>
 </head>
@@ -198,128 +191,114 @@
         $balanceUSD = max(0, $totalUSD - $paidUSD);
     @endphp
 
-    <table class="header-table border-bottom" style="margin-bottom: 20px; padding-bottom: 15px;">
-        <tr>
-            <td class="logo-section">
-                <h1>PRIMELAND HOTEL</h1>
-                <p>Comfort in every Stay</p>
-                <p>Moshi, Kilimanjaro, Tanzania</p>
-                <p>Tel: +255 677 155 156 | Email: info@primelandhotel.com</p>
-            </td>
-            <td class="title-section">
-                <h2>INVOICE</h2>
-                <div class="ref-pill">{{ $booking->booking_reference }}</div>
-                <p class="text-light" style="margin-top: 8px;">Date: {{ date('M d, Y') }}</p>
-            </td>
-        </tr>
-    </table>
+    <div class="container">
+        <div class="header">
+            <table>
+                <tr>
+                    <td class="hotel-info">
+                        <h1>PRIMELAND HOTEL</h1>
+                        <p>Comfort in every Stay</p>
+                        <p>Moshi, Kilimanjaro, Tanzania</p>
+                        <p>+255 677 155 156 | info@primelandhotel.com</p>
+                    </td>
+                    <td class="invoice-title">
+                        <h2>{{ ($booking->status === 'pending') ? 'PROFORMA' : 'INVOICE' }}</h2>
+                        <div class="ref">#{{ $booking->booking_reference }}</div>
+                        <div class="ref">{{ date('F d, Y') }}</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
 
-    <table class="info-table">
-        <tr>
-            <td>
-                <h3>Billed To</h3>
-                <div class="info-row"><label>Guest:</label> <span>{{ $booking->guest_name }}</span></div>
-                <div class="info-row"><label>Email:</label> <span>{{ $booking->guest_email }}</span></div>
-                <div class="info-row"><label>Phone:</label> <span>{{ $booking->guest_phone ?? 'N/A' }}</span></div>
-            </td>
-            <td>
-                <h3>Stay Details</h3>
-                <div class="info-row"><label>Dates:</label> <span>{{ \Carbon\Carbon::parse($booking->check_in)->format('M d') }} - {{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}</span></div>
-                <div class="info-row"><label>Stay:</label> <span>{{ $nights }} Nights</span></div>
-                <div class="info-row"><label>Room:</label> <span>{{ $booking->room->room_type }}</span></div>
-            </td>
-        </tr>
-    </table>
-
-    <table class="items-table">
-        <thead>
-            <tr>
-                <th>Description</th>
-                <th style="text-align: center;">Nights</th>
-                <th style="text-align: right;">Unit Price</th>
-                <th style="text-align: right;">Total (USD)</th>
-            </tr>
-        </thead>
-        <tbody>
+        <table class="meta-section">
             <tr>
                 <td>
-                    <strong style="font-size: 13px;">Accommodation: {{ $booking->room->room_type }}</strong><br>
-                    <span class="text-light" style="font-size: 11px;">Guest: {{ $booking->guest_name }}</span>
+                    <div class="section-title">BILL TO</div>
+                    <div class="info-card">
+                        <p><strong>{{ $booking->guest_name }}</strong></p>
+                        <p>{{ $booking->guest_email }}</p>
+                        <p>{{ $booking->guest_phone ?? 'No Phone Provided' }}</p>
+                    </div>
                 </td>
-                <td style="text-align: center;">{{ $nights }}</td>
-                <td style="text-align: right;">${{ number_format($totalUSD / max(1, $nights), 2) }}</td>
-                <td style="text-align: right; font-weight: bold;">${{ number_format($totalUSD, 2) }}</td>
+                <td>
+                    <div class="section-title">STAY DETAILS</div>
+                    <div class="info-card right">
+                        <p><strong>Check-in:</strong> {{ \Carbon\Carbon::parse($booking->check_in)->format('M d, Y') }}</p>
+                        <p><strong>Check-out:</strong> {{ \Carbon\Carbon::parse($booking->check_out)->format('M d, Y') }}</p>
+                        <p><strong>Duration:</strong> {{ $nights }} Night(s)</p>
+                    </div>
+                </td>
             </tr>
-        </tbody>
-    </table>
+        </table>
 
-    <table class="summary-table">
-        <tr>
-            <td style="width: 60%;">
-                <div class="notes-box">
-                    <strong class="primary-color" style="display: block; margin-bottom: 4px;">Important Notes:</strong>
-                    - 50% deposit required for confirmation.<br>
-                    - Full pre-payment within 7 days of stay.<br>
-                    - Standard Check-in is 2:00 PM, Check-out is 11:00 AM.<br>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="text-align: center; width: 80px;">Nights</th>
+                    <th style="text-align: right; width: 120px;">Rate</th>
+                    <th style="text-align: right; width: 120px;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="desc">
+                        <strong>Accommodation: {{ $booking->room->room_type }}</strong>
+                        <span>Stay for {{ $booking->guest_name }}</span>
+                    </td>
+                    <td style="text-align: center;">{{ $nights }}</td>
+                    <td style="text-align: right;">${{ number_format($totalUSD / max(1, $nights), 2) }}</td>
+                    <td style="text-align: right; font-weight: bold;">${{ number_format($totalUSD, 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table class="summary-section">
+            <tr>
+                <td class="notes-area">
+                    @if($booking->status === 'pending')
+                    <h4>Status: Quotation</h4>
+                    <p>This document is a formal quotation for your upcoming stay. Prices are valid for 48 hours.</p>
+                    @endif
+                    
                     @if($booking->special_requests)
-                    <br><strong>Special Requests:</strong> {{ $booking->special_requests }}
+                    <h4>Special Requests</h4>
+                    <p>{{ $booking->special_requests }}</p>
                     @endif
-                </div>
-                
-                <div class="signatures" style="margin-top: 30px;">
-                    <div class="sig-box">
-                        <div class="sig-line"></div>
-                        <p style="font-size: 10px; color: #64748b;">Authorized Signature</p>
-                    </div>
-                    <div class="sig-box">
-                        <div class="sig-line"></div>
-                        <p style="font-size: 10px; color: #64748b;">Guest Signature</p>
-                    </div>
-                </div>
-            </td>
-            <td style="width: 40%; padding-left: 20px;">
-                <div class="totals-box">
-                    <div class="total-row">
-                        <label>Subtotal:</label>
-                        <span>${{ number_format($totalUSD, 2) }}</span>
-                    </div>
-                    <div class="total-row grand-total">
-                        <label>Total Bill:</label>
-                        <span>${{ number_format($totalUSD, 2) }}</span>
-                    </div>
-                    <div class="total-row paid-row" style="margin-top: 8px;">
-                        <label>Amount Paid:</label>
-                        <span>${{ number_format($paidUSD, 2) }}</span>
-                    </div>
-                    @if($balanceUSD > 0)
-                    <div class="total-row due-row" style="margin-top: 5px; border-top: 1px dashed #e2e8f0; padding-top: 5px;">
-                        <label>Balance Due:</label>
-                        <span>${{ number_format($balanceUSD, 2) }}</span>
-                    </div>
-                    @endif
-                </div>
-            </td>
-        </tr>
-    </table>
 
-    <div class="policies">
-        <div class="policy-col">
-            <h4>Booking Policy</h4>
-            <p>50% deposit required for confirmation. Remaining balance due on arrival.</p>
-        </div>
-        <div class="policy-col">
-            <h4>Cancellation</h4>
-            <p>30 days: Free | 14 days: 50% fee | 7 days: 100% fee. No-show: Full charge.</p>
-        </div>
-        <div class="policy-col">
-            <h4>General</h4>
-            <p>Room charges include VAT. Self-paid services (laundry, drinks) are extra.</p>
-        </div>
-    </div>
+                    <div style="margin-top: 20px;">
+                        <h4>Policies</h4>
+                        <p>• 50% deposit required for confirmation.</p>
+                        <p>• Full cancellation allowed 30 days before arrival.</p>
+                    </div>
+                </td>
+                <td class="totals-area">
+                    <table class="total-row">
+                        <tr>
+                            <td class="label">Subtotal</td>
+                            <td class="value">${{ number_format($totalUSD, 2) }}</td>
+                        </tr>
+                    </table>
+                    <table class="total-row">
+                        <tr>
+                            <td class="label">Amount Paid</td>
+                            <td class="value">${{ number_format($paidUSD, 2) }}</td>
+                        </tr>
+                    </table>
+                    <table class="total-row grand-total">
+                        <tr>
+                            <td class="label">TOTAL DUE</td>
+                            <td class="value">${{ number_format($balanceUSD, 2) }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
 
-    <div style="text-align: center; margin-top: 30px; font-size: 10px; color: #1e293b; border-top: 1px solid #f1f5f9; padding-top: 15px;">
-        <p>This is a computer generated document. No physical signature required for electronic copy.</p>
-        <p style="font-weight: bold; margin-top: 5px;">Powered By <span style="color: #940000;">EmCa Techonologies</span></p>
+        <div class="footer">
+            <p>Thank you for choosing <strong>PrimeLand Hotel</strong>. We look forward to your stay.</p>
+            <p>Powered By <span style="color: #940000; font-weight: bold;">EmCa Technologies</span></p>
+        </div>
     </div>
 </body>
 </html>

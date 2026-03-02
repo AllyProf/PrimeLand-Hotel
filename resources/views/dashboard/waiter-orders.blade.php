@@ -507,6 +507,14 @@ $(function() {
         });
     }
 
+    // Auto-refresh every 5 seconds
+    setInterval(() => {
+        // Only refresh if no modal is open to avoid UI disruption during actions
+        if ($('.modal.show').length === 0) {
+            updateOrdersList();
+        }
+    }, 5000);
+
     // Live Search
     $(document).on('input', '#liveSearch', function() {
         currentSearch = $(this).val();

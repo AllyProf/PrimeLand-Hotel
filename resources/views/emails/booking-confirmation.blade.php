@@ -1,5 +1,5 @@
 <x-mail::message>
-# {{ ($booking->status === 'pending' || (isset($generalNotes) && str_contains(strtolower($generalNotes), 'proforma'))) ? 'Proforma Invoice / Quotation' : 'Booking Confirmation' }}
+# {{ ($booking->status === 'pending' || (isset($generalNotes) && (str_contains(strtolower($generalNotes), 'proforma') || str_contains(strtolower($generalNotes), 'quotation')))) ? 'Proforma Invoice / Quotation' : 'Booking Confirmation' }}
 
 Hello {{ $booking->guest_name }},
 
@@ -13,7 +13,7 @@ Thank you for your booking at PrimeLand Hotel! We're excited to host you.
 **Check-out:** {{ \Carbon\Carbon::parse($booking->check_out)->format('F d, Y') }}  
 **Number of Nights:** {{ \Carbon\Carbon::parse($booking->check_in)->diffInDays($booking->check_out) }} night(s)
 
-Please find your **Booking Invoice & Receipt (PDF)** attached for the full cost breakdown and payment details.
+Please find your **{{ ($booking->status === 'pending' || (isset($generalNotes) && (str_contains(strtolower($generalNotes), 'proforma') || str_contains(strtolower($generalNotes), 'quotation')))) ? 'Proforma Invoice / Quotation' : 'Booking Invoice & Receipt' }} (PDF)** attached for the full cost breakdown and payment details.
 
 ## Your Account Credentials
 

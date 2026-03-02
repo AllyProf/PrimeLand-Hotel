@@ -879,16 +879,15 @@ class BarKeeperController extends Controller
             if (isset($stockMap[$key])) {
                 $item = &$stockMap[$key];
                 $qtySold = (float)$sale->quantity;
-                $unitPrice = (float)$sale->unit_price_tsh;
+                // Use selling_method metadata for accurate deduction (regardless of price changes)
+                $sellingMethod = strtolower($meta['selling_method'] ?? 'pic');
+                $isServing = in_array($sellingMethod, ['glass', 'serving', 'tot', 'shot']);
+                $servingsPerPic = $item['servings_per_pic'] > 0 ? $item['servings_per_pic'] : 1;
                 
-                // Precision check for unit matching
-                $isPicSale = abs($unitPrice - $item['selling_price_per_pic']) < 100;
-                
-                if ($isPicSale) {
-                    $item['total_sold_pics'] += $qtySold;
+                if ($isServing) {
+                    $item['total_sold_pics'] += ($qtySold / $servingsPerPic);
                 } else {
-                    $ratio = $item['servings_per_pic'] > 0 ? $item['servings_per_pic'] : 1;
-                    $item['total_sold_pics'] += ($qtySold / $ratio);
+                    $item['total_sold_pics'] += $qtySold;
                 }
 
                 $item['revenue_generated'] += (float)$sale->total_price_tsh;
@@ -1085,11 +1084,11 @@ class BarKeeperController extends Controller
                 $prefix = $m['is_addition'] ? '+' : '-';
                 $val = (float)$m['change'];
                 if ($ratio > 1 && ($val - (int)$val) > 0.001) {
-                    $cFull = floor($val);
+                    $cFull = floor($val + 0.0001);
                     $cGls = round(($val - $cFull) * $ratio);
-                    $changeText = $prefix . ($cFull > 0 ? $cFull . ' Bot ' : '') . ($cGls > 0 ? ($cFull > 0 ? '+ ' : '') . $cGls . ' gls' : '');
+                    $changeText = $prefix . ($cFull > 0 ? $cFull . 'B ' : '') . ($cGls > 0 ? $cGls . 'G' : ($cFull == 0 ? '0' : ''));
                 } else {
-                    $changeText = $prefix . number_format($val, 1);
+                    $changeText = $prefix . number_format($val, 1) . ($ratio > 1 ? 'B' : '');
                 }
             }
 
@@ -1100,11 +1099,11 @@ class BarKeeperController extends Controller
             } else {
                 $bAbs = abs($runningBalance);
                 if ($ratio > 1 && ($bAbs - (int)$bAbs) > 0.001) {
-                    $bFull = floor($bAbs);
+                    $bFull = floor($bAbs + 0.0001);
                     $bGls = round(($bAbs - $bFull) * $ratio);
-                    $balanceText = ($bFull > 0 ? $bFull . ' Bot ' : '') . ($bGls > 0 ? ($bFull > 0 ? '+ ' : '') . $bGls . ' gls' : '');
+                    $balanceText = ($bFull > 0 ? $bFull . 'B ' : '') . ($bGls > 0 ? $bGls . 'G' : ($bFull == 0 ? '0' : ''));
                 } else {
-                    $balanceText = number_format($runningBalance, 1);
+                    $balanceText = number_format($runningBalance, 1) . ($ratio > 1 ? 'B' : '');
                 }
             }
 
@@ -1130,10 +1129,20 @@ class BarKeeperController extends Controller
             ];
         }
 
+        $finalBalance = max(0, $runningBalance);
+        $formattedStock = "";
+        if ($ratio > 1) {
+            $fFull = floor($finalBalance + 0.0001);
+            $fGls = round(($finalBalance - $fFull) * $ratio);
+            $formattedStock = ($fFull > 0 ? $fFull . 'B ' : '') . ($fGls > 0 ? $fGls . 'G' : ($fFull == 0 ? '0' : ''));
+        } else {
+            $formattedStock = number_format($finalBalance, 1);
+        }
+
         return response()->json([
             'success' => true,
             'item_name' => $variant->product->name . ' (' . $variant->measurement . ')',
-            'current_stock' => number_format(max(0, $runningBalance), 1),
+            'current_stock' => $formattedStock,
             'movements' => array_reverse($formatted)
         ]);
     }

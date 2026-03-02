@@ -249,11 +249,11 @@ Route::prefix('manager')->group(function () {
         Route::get('/rooms/status', [\App\Http\Controllers\ReceptionController::class, 'roomStatus'])->name('admin.rooms.status');
         Route::get('/rooms/cleaning', [\App\Http\Controllers\ReceptionController::class, 'roomsNeedsCleaning'])->name('admin.rooms.cleaning');
         Route::post('/rooms/{room}/mark-cleaned', [\App\Http\Controllers\ReceptionController::class, 'markRoomCleaned'])->name('admin.rooms.mark-cleaned');
+        Route::get('/rooms/qr-generator', [RoomController::class, 'qrGenerator'])->name('admin.rooms.qr-generator');
         Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('admin.rooms.show');
         Route::get('/rooms/{room}/edit', [RoomController::class, 'edit'])->name('admin.rooms.edit');
         Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('admin.rooms.update');
         Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('admin.rooms.destroy');
-        Route::get('/rooms/qr-generator', [RoomController::class, 'qrGenerator'])->name('admin.rooms.qr-generator');
         
         // Room Issues management
         Route::get('/room-issues', [\App\Http\Controllers\HousekeeperController::class, 'roomIssues'])->name('admin.rooms.issues');
@@ -319,8 +319,8 @@ Route::prefix('manager')->group(function () {
 Route::prefix('manager')->group(function () {
     Route::middleware(['check.auth', 'role:manager,head_chef,super_admin'])->group(function () {
         
-        // Restaurant Reports
-        Route::get('/restaurant-reports', [App\Http\Controllers\AdminController::class, 'restaurantReports'])->name('admin.restaurants.reports');
+        // Restaurant Reports Disabled
+        // Route::get('/restaurant-reports', [App\Http\Controllers\AdminController::class, 'restaurantReports'])->name('admin.restaurants.reports');
         
         
         // Housekeeping Inventory (Manager View)

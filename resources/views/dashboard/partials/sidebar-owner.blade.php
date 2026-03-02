@@ -74,6 +74,14 @@
     </a>
 </li>
 
+<li class="treeview {{ str_contains($activePage, 'invoices') ? 'is-expanded' : '' }}">
+    <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-file-text-o"></i><span class="app-menu__label">Invoices</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+    <ul class="treeview-menu">
+        <li><a class="treeview-item {{ str_contains($activePage, 'reception/invoices') ? 'active' : '' }}" href="{{ route('reception.invoices.index') }}"><i class="icon fa fa-list"></i> Invoices List</a></li>
+        <li><a class="treeview-item {{ str_contains($activePage, 'reception/invoices/create') ? 'active' : '' }}" href="{{ route('reception.invoices.create') }}"><i class="icon fa fa-plus-circle"></i> Create Invoice</a></li>
+    </ul>
+</li>
+
 <li>
     <a class="app-menu__item {{ str_contains($activePage, 'admin/rooms/status') ? 'active' : '' }}" href="{{ route('admin.rooms.status') }}">
         <i class="app-menu__icon fa fa-bed"></i>

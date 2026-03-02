@@ -1,5 +1,5 @@
 <x-mail::message>
-# Corporate Booking Invoice
+# {{ (isset($generalNotes) && (str_contains(strtolower($generalNotes), 'proforma') || str_contains(strtolower($generalNotes), 'quotation'))) ? 'Proforma Corporate Invoice / Quotation' : 'Corporate Booking Invoice' }}
 
 Hello {{ $company->name }},
 
@@ -26,7 +26,7 @@ Thank you for your corporate booking at PrimeLand Hotel. This email contains you
 **Total Amount Paid:** ${{ number_format($totalCompanyPaid, 2) }}  
 **Overall Balance Due:** ${{ number_format(($companyCharges + $selfPaidCharges) - $totalCompanyPaid, 2) }}
 
-Please find the attached **Corporate Booking Invoice (PDF)** for the full detailed breakdown of guest rooms, individual costs, and payment responsibilities.
+Please find the attached **{{ (isset($generalNotes) && (str_contains(strtolower($generalNotes), 'proforma') || str_contains(strtolower($generalNotes), 'quotation'))) ? 'Proforma Corporate Invoice / Quotation' : 'Corporate Booking Invoice' }} (PDF)** for the full detailed breakdown of guest rooms, individual costs, and payment responsibilities.
 
 @if($generalNotes)
 ## General Notes
@@ -42,7 +42,7 @@ All company charges will be invoiced separately. Individual guests with self-pai
 ## Next Steps
 
 1. All guests have been sent their booking confirmations with login credentials
-2. Guests can log in to their accounts to request services during their stay
+2. Guests can log in to their accounts to request services during your stay
 3. Company invoice will be sent separately for payment processing
 4. For any questions or modifications, please contact our reception team
 

@@ -89,14 +89,12 @@
 
     {{-- 2. KITCHEN & RESTAURANT --}}
     <li class="treeview-item-header" style="padding: 10px 20px; color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-top: 10px;">Kitchen & Restaurant</li>
-    <li class="treeview {{ (str_contains($activePage, 'restaurant/food') || str_contains($activePage, 'recipes') || str_contains($activePage, 'shopping-list') || str_contains($activePage, 'restaurant-reports')) ? 'is-expanded' : '' }}">
+    <li class="treeview {{ (str_contains($activePage, 'restaurant/food') || str_contains($activePage, 'recipes') || str_contains($activePage, 'shopping-list')) ? 'is-expanded' : '' }}">
         <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-cutlery"></i><span class="app-menu__label">Food Operations</span><i class="treeview-indicator fa fa-angle-right"></i></a>
         <ul class="treeview-menu">
             <li><a class="treeview-item" href="{{ route('admin.recipes.index') }}"><i class="icon fa fa-book"></i> Menu Recipes</a></li>
             <li><a class="treeview-item" href="{{ route('chef-master.inventory') }}"><i class="icon fa fa-cubes"></i> Kitchen Inventory</a></li>
             <li><a class="treeview-item" href="{{ route('admin.restaurants.shopping-list.index') }}"><i class="icon fa fa-shopping-basket"></i> Shopping Lists</a></li>
-            <li class="treeview-divider"></li>
-            <li><a class="treeview-item" href="{{ route('admin.restaurants.reports') }}"><i class="icon fa fa-bar-chart"></i> Restaurant Sales</a></li>
         </ul>
     </li>
 
@@ -133,7 +131,8 @@
         <ul class="treeview-menu">
             <li><a class="treeview-item" href="{{ route('admin.bookings.index') }}"><i class="icon fa fa-list"></i> All Bookings</a></li>
             <li><a class="treeview-item" href="{{ route('admin.bookings.manual.create') }}"><i class="icon fa fa-plus-circle"></i> Individual Booking</a></li>
-            <li><a class="treeview-item" href="{{ route('admin.invoices.create') }}"><i class="icon fa fa-file-text-o"></i> Create Invoice</a></li>
+            <li><a class="treeview-item" href="{{ route('reception.invoices.index') }}"><i class="icon fa fa-list"></i> Invoices List</a></li>
+            <li><a class="treeview-item" href="{{ route('reception.invoices.create') }}"><i class="icon fa fa-plus-circle"></i> Create Invoice</a></li>
             <li><a class="treeview-item" href="{{ route('admin.bookings.corporate.create') }}"><i class="icon fa fa-building"></i> Corporate Booking</a></li>
             <li><a class="treeview-item" href="{{ route('admin.bookings.calendar') }}"><i class="icon fa fa-calendar"></i> Calendar View</a></li>
             <li class="treeview-divider"></li>
