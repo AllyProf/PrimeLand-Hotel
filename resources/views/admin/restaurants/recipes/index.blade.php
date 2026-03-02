@@ -204,8 +204,23 @@
                                         @if($recipe->image)
                                             <img src="{{ asset('storage/' . ltrim($recipe->image, '/')) }}" class="rounded shadow-sm" alt="{{ $recipe->name }}" style="width: 100%; height: 90px; object-fit: cover; border: 2px solid #f0f0f0;" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($recipe->name) }}&background=fff3e0&color=e77a31&size=200'">
                                         @else
-                                            <div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 100%; height: 90px;">
-                                                <i class="fa fa-utensils fa-2x text-muted opacity-50"></i>
+                                            @php
+                                                $foodIcons = [
+                                                    'appetizers' => ['icon' => 'fa-pepper-hot', 'grad' => 'linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)'],
+                                                    'main_course' => ['icon' => 'fa-hamburger', 'grad' => 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'],
+                                                    'desserts' => ['icon' => 'fa-ice-cream', 'grad' => 'linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%)'],
+                                                    'beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
+                                                    'breakfast' => ['icon' => 'fa-egg', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
+                                                    'lunch' => ['icon' => 'fa-box', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
+                                                    'dinner' => ['icon' => 'fa-moon', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
+                                                    'snacks' => ['icon' => 'fa-cookie', 'grad' => 'linear-gradient(135deg, #f2994a 0%, #f2c94c 100%)'],
+                                                    'salads' => ['icon' => 'fa-leaf', 'grad' => 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)'],
+                                                    'soups' => ['icon' => 'fa-bowl-rice', 'grad' => 'linear-gradient(135deg, #EB3349 0%, #F45C43 100%)'],
+                                                ];
+                                                $style = $foodIcons[$recipe->category] ?? ['icon' => 'fa-utensils', 'grad' => 'linear-gradient(135deg, #009688 0%, #00695c 100%)'];
+                                            @endphp
+                                            <div class="rounded d-flex align-items-center justify-content-center border shadow-sm" style="width: 100%; height: 90px; background: {!! $style['grad'] !!};">
+                                                <i class="fa {!! $style['icon'] !!} fa-2x text-white opacity-50"></i>
                                             </div>
                                         @endif
                                         <div class="text-center mt-2">
