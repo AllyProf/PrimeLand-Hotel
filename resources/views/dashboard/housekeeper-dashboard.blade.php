@@ -143,7 +143,7 @@
                 
                 // Check if guest is about to check out (within 24 hours or today)
                 $now = \Carbon\Carbon::now();
-                $hoursUntilCheckout = $now->diffInHours($checkOutDateTime, false);
+                $hoursUntilCheckout = $now->floatDiffInHours($checkOutDateTime, false);
                 $isAboutToCheckOut = $hoursUntilCheckout >= 0 && $hoursUntilCheckout <= 24;
               }
               $guestName = $room->currentBooking->guest_name;
@@ -220,7 +220,21 @@
                   <span class="badge badge-warning badge-lg" style="font-size: 11px; padding: 6px 10px; width: 100%; display: block; text-align: center;">
                     <i class="fa fa-clock"></i> Checking Out Soon
                     @if($hoursUntilCheckout !== null)
-                      <br><small>({{ $hoursUntilCheckout > 0 ? $hoursUntilCheckout . ' hours' : 'Today' }})</small>
+                      <br><small>(
+                        @if($hoursUntilCheckout > 0)
+                          @php
+                            $fullHours = floor($hoursUntilCheckout);
+                            $remainingMinutes = round(($hoursUntilCheckout - $fullHours) * 60);
+                            if ($remainingMinutes == 60) {
+                                $fullHours++;
+                                $remainingMinutes = 0;
+                            }
+                          @endphp
+                          {{ $fullHours > 0 ? $fullHours . 'h ' : '' }}{{ $remainingMinutes }}m
+                        @else
+                          Today
+                        @endif
+                      )</small>
                     @endif
                   </span>
                 </div>
