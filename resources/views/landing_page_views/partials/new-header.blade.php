@@ -120,10 +120,10 @@
         <div class="mega-menu-wrapper">
             <div class="header-main">
                 <div class="logo">
-                    <a href="{{ url('/') }}" class="header-logo" style="text-decoration: none;">
+                    <a href="{{ url('/') }}" class="header-logo d-none d-md-block" style="text-decoration: none;">
                         <span style="font-size: 24px; font-weight: 800; color: #fff; letter-spacing: 1px;">PrimeLand Hotel</span>
                     </a>
-                    <a href="{{ url('/') }}" class="header-logo-2" style="text-decoration: none;">
+                    <a href="{{ url('/') }}" class="header-logo-2 d-none d-md-block" style="text-decoration: none;">
                         <span style="font-size: 24px; font-weight: 800; color: #e77a3a; letter-spacing: 1px;">PrimeLand Hotel</span>
                     </a>
                 </div>
