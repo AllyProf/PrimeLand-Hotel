@@ -50,8 +50,8 @@
             <div class="offcanvas__content">
                 <div class="offcanvas__top mb-5 d-flex justify-content-between align-items-center">
                     <div class="offcanvas__logo">
-                        <a href="{{ url('/') }}">
-                            <img src="{{ asset('royal-master/image/logo/Logo.png') }}" alt="logo-img" style="max-height: 60px;">
+                        <a href="{{ url('/') }}" style="text-decoration: none;">
+                            <span style="font-size: 24px; font-weight: 800; color: #000; letter-spacing: 1px;">PrimeLand Hotel</span>
                         </a>
                     </div>
                     <div class="offcanvas__close">
@@ -120,11 +120,11 @@
         <div class="mega-menu-wrapper">
             <div class="header-main">
                 <div class="logo">
-                    <a href="{{ url('/') }}" class="header-logo">
-                        <img src="{{ asset('royal-master/image/logo/Logo.png') }}" alt="logo-img" style="max-height: 50px; filter: brightness(0) invert(1);">
+                    <a href="{{ url('/') }}" class="header-logo" style="text-decoration: none;">
+                        <span style="font-size: 24px; font-weight: 800; color: #fff; letter-spacing: 1px;">PrimeLand Hotel</span>
                     </a>
-                    <a href="{{ url('/') }}" class="header-logo-2">
-                        <img src="{{ asset('royal-master/image/logo/Logo.png') }}" alt="logo-img" style="max-height: 50px;">
+                    <a href="{{ url('/') }}" class="header-logo-2" style="text-decoration: none;">
+                        <span style="font-size: 24px; font-weight: 800; color: #e77a3a; letter-spacing: 1px;">PrimeLand Hotel</span>
                     </a>
                 </div>
                 <div class="header-right d-flex justify-content-end align-items-center">

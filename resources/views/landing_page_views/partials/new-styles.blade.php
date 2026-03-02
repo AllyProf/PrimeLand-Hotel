@@ -1,5 +1,5 @@
 <!--<< Favcion >>-->
-<link rel="shortcut icon" href="{{ asset('landing-assets/img/favicon.svg') }}">
+<link rel="shortcut icon" href="{{ asset('royal-master/image/logo/Logo.png') }}">
 <!--<< Bootstrap min.css >>-->
 <link rel="stylesheet" href="{{ asset('landing-assets/css/bootstrap.min.css') }}">
 <!--<< All Min Css >>-->

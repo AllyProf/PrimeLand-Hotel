@@ -12,14 +12,14 @@
     <div class="container">
         <div class="hero-content">
             <div class="star wow fadeInUp">
-                <img src="{{ asset('landing-assets/img/home-1/hero/star.svg') }}" alt="img">
-                <img src="{{ asset('landing-assets/img/home-1/hero/star.svg') }}" alt="img">
-                <img src="{{ asset('landing-assets/img/home-1/hero/star.svg') }}" alt="img">
-                <img src="{{ asset('landing-assets/img/home-1/hero/star.svg') }}" alt="img">
+                <i class="fa-solid fa-star" style="color: #e77a3a;"></i>
+                <i class="fa-solid fa-star" style="color: #e77a3a;"></i>
+                <i class="fa-solid fa-star" style="color: #e77a3a;"></i>
+                <i class="fa-solid fa-star" style="color: #e77a3a;"></i>
+                <i class="fa-solid fa-star" style="color: #e77a3a;"></i>
             </div>
             <h1 class="wow fadeInUp" data-wow-delay=".3s">
-                Primeland Hotel <br>
-                Best Hotel in Kilimanjaro
+                Primeland Hotel
             </h1>
             <p class="wow fadeInUp" data-wow-delay=".5s">
                 Comfort in Every Stay
