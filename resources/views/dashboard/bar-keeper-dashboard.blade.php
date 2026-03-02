@@ -32,21 +32,21 @@
       </div>
     </div>
   </div>
-  <div class="col-md-6 col-sm-6">
-    <div class="widget-small info coloured-icon">
-      <i class="icon fa fa-check-circle fa-3x"></i>
+  <div class="col-md-3 col-sm-6">
+    <div class="widget-small success coloured-icon">
+      <i class="icon fa fa-money fa-3x"></i>
       <div class="info">
-        <h4>Bar Keeper Dashboard</h4>
-        <p><b>Welcome Back</b></p>
+        <h4>Today's Revenue</h4>
+        <p><b>{{ number_format($todayRevenue) }} <small>TZS</small></b></p>
       </div>
     </div>
   </div>
   <div class="col-md-3 col-sm-6">
-    <div class="widget-small warning coloured-icon">
-      <i class="icon fa fa-cubes fa-3x"></i>
+    <div class="widget-small {{ $lowStockCount > 0 ? 'warning' : 'primary' }} coloured-icon">
+      <i class="icon fa fa-exclamation-triangle fa-3x"></i>
       <div class="info">
-        <h4>System Status</h4>
-        <p><b>Online</b></p>
+        <h4>Low Stock Alerts</h4>
+        <p><b>{{ $lowStockCount }} <small>item(s)</small></b></p>
       </div>
     </div>
   </div>

@@ -218,10 +218,26 @@ class BarKeeperController extends Controller
         $drinksCollection = collect($drinks);
         $drinkCategories = $drinksCollection->groupBy('category')->sortKeys();
 
+        // Today's bar revenue
+        $todayRevenue = \App\Models\ServiceRequest::where('status', 'completed')
+            ->whereDate('completed_at', today())
+            ->whereHas('service', fn($q) => $q->whereIn('category', ['bar', 'drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'wines', 'cocktails', 'hot_beverages']))
+            ->sum('total_price_tsh');
+
+        // Low stock items (in stock <= minimum or <= 3 bottles)
+        $lowStockCount = 0;
+        foreach ($stockLevels as $vid => $qty) {
+            $v = \App\Models\ProductVariant::find($vid);
+            $minStock = $v ? ($v->minimum_stock_level ?? 3) : 3;
+            if ($qty <= $minStock && $qty >= 0) $lowStockCount++;
+        }
+
         return view('dashboard.bar-keeper-dashboard', compact(
             'pendingOrders',
             'totalPendingOrders',
             'totalCancelledToday',
+            'todayRevenue',
+            'lowStockCount',
             'drinks',
             'drinkCategories',
             'activeCeremonies',
