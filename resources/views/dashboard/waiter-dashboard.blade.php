@@ -326,7 +326,7 @@
 </div>
 
 <!-- Drink Sub-cats (Visible only when drinks active) -->
-<div id="drinkSubCats" class="cat-nav pt-0" style="display: none;">
+<div id="drinkSubCats" class="cat-nav pt-0 sub-cat-bar" style="display: none;">
     <div class="cat-item active" style="font-size: 0.75rem; padding: 6px 15px;" onclick="setDrinkSub('all', this)">All</div>
     @php
         $catLabels = [
@@ -351,11 +351,34 @@
     @endforeach
 </div>
 
+<!-- Food Sub-cats (Visible only when food active) -->
+<div id="foodSubCats" class="cat-nav pt-0 sub-cat-bar">
+    <div class="cat-item active" style="font-size: 0.75rem; padding: 6px 15px;" onclick="setFoodSub('all', this)">All Foods</div>
+    @php
+        $foodCatLabels = [
+            'soups' => 'Soups',
+            'salads' => 'Salads',
+            'snacks' => 'Snacks & Bites',
+            'main_course' => 'Main Course',
+            'desserts' => 'Desserts',
+        ];
+        // Unique food categories from the fetched foodItems
+        $availableFoodCats = collect($foodItems)->pluck('category')->unique()->filter()->values();
+    @endphp
+    @foreach($availableFoodCats as $fCat)
+        @php 
+             $fCatKey = strtolower(str_replace(' ', '_', $fCat));
+             $fLabel = $foodCatLabels[$fCatKey] ?? ucfirst($fCat); 
+        @endphp
+        <div class="cat-item" style="font-size: 0.75rem; padding: 6px 15px;" onclick="setFoodSub('{{ $fCat }}', this)">{{ $fLabel }}</div>
+    @endforeach
+</div>
+
 <!-- Menu Grid -->
 <div class="menu-grid" id="menuGrid">
     <!-- Food Items -->
     @foreach($foodItems as $food)
-    <div class="item-card food-item" data-name="{{ strtolower($food['name']) }}">
+    <div class="item-card food-item" data-name="{{ strtolower($food['name']) }}" data-fcat="{{ strtolower($food['category'] ?? 'all') }}">
         <div class="item-img">
             @if(isset($food['image']))
                 <img src="{{ asset('storage/' . $food['image']) }}" alt="{{ $food['name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($food['name']) }}&background=fff3e0&color=e77a31'">
@@ -369,7 +392,8 @@
             @endif
         </div>
         <div class="item-info">
-            <h6 class="item-name">{{ $food['name'] }}</h6>
+            <h6 class="item-name" style="margin-bottom: 3px;">{{ $food['name'] }}</h6>
+            <div class="mb-2 text-muted" style="font-size: 0.65rem; text-transform: uppercase;">{{ str_replace('_', ' ', $food['category'] ?? 'Food') }}</div>
             <button class="add-btn-small" onclick="fastAdd('food', {{ json_encode($food) }})">ADD TO BASKET</button>
         </div>
     </div>
@@ -695,27 +719,50 @@
         // Remove payment flow change handler as it's gone
     });
 
-    function setMasterTab(tab, el) {
-        curMaster = tab;
-        $('.cat-item').not($(el).siblings()).removeClass('active');
+    function setMasterTab(type, el) {
+        $('.cat-nav:not(.sub-cat-bar) .cat-item').removeClass('active');
         $(el).addClass('active');
-        
-        // Hide all grids first
-        $('#menuGrid').hide();
-        $('#ceremonyGrid').hide();
-        $('.food-item').hide();
-        $('.drink-item').hide();
-        $('#drinkSubCats').hide();
+        $('#globalSearch').val('');
 
-        if (tab === 'food') {
-            $('#menuGrid').show();
+        let hasFound = false;
+
+        if (type === 'food') {
+            $('.drink-item').hide();
             $('.food-item').show();
-        } else if (tab === 'drinks') {
+            $('#drinkSubCats').hide();
+            $('#foodSubCats').show();
+            $('#ceremonyGrid').hide();
             $('#menuGrid').show();
+            
+            // Reset to "All" food when switching main tabs
+            setFoodSub('all', $('#foodSubCats .cat-item').first());
+            hasFound = $('.food-item').length > 0;
+            
+        } else if (type === 'drinks') {
+            $('.food-item').hide();
             $('.drink-item').show();
             $('#drinkSubCats').show();
-        } else if (tab === 'ceremony_list') {
+            $('#foodSubCats').hide();
+            $('#ceremonyGrid').hide();
+            $('#menuGrid').show();
+            
+            // Reset to "All" drinks
+            setDrinkSub('all', $('#drinkSubCats .cat-item').first());
+            hasFound = $('.drink-item').length > 0;
+
+        } else if (type === 'ceremony_list') {
+            $('#menuGrid').hide();
+            $('#drinkSubCats').hide();
+            $('#foodSubCats').hide();
             $('#ceremonyGrid').show();
+            hasFound = $('.item-card', '#ceremonyGrid').length > 0;
+        }
+
+        if (!hasFound) {
+            Swal.fire({
+                toast: true, position: 'top', timer: 2000, showConfirmButton: false,
+                icon: 'info', title: `No active ${type.replace('_', ' ')} logic available.`, background: '#2d3436', color: '#fff'
+            });
         }
     }
 
@@ -744,6 +791,26 @@
             // Strict exact match to avoid "non_alcoholic" matching "alcoholic"
             $(`.drink-item`).each(function() {
                 if ($(this).data('cat') === sub) {
+                    $(this).show();
+                }
+            });
+        }
+    }
+
+    function setFoodSub(sub, el) {
+        $(el).siblings().removeClass('active');
+        $(el).addClass('active');
+        
+        if (sub === 'all') {
+            $('.food-item').show();
+        } else {
+            $('.food-item').hide();
+            
+            // Match the data-fcat format (lowercase, underscores instead of spaces)
+            const targetCat = sub.toLowerCase().replace(/ /g, '_');
+            
+            $(`.food-item`).each(function() {
+                if ($(this).data('fcat') === targetCat || $(this).data('fcat').includes(targetCat)) {
                     $(this).show();
                 }
             });
