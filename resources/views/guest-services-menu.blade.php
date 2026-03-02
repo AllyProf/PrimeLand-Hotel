@@ -246,8 +246,8 @@
     <!-- Navigation -->
     <div class="sticky-wrapper">
         <nav class="main-nav">
-            <div class="nav-link-btn active" onclick="navTo('food', this)" data-en="🍳 Cuisine" data-sw="🍳 Chakula">🍳 Cuisine</div>
-            <div class="nav-link-btn" onclick="navTo('drinks', this)" data-en="🍷 Cellar" data-sw="🍷 Kinywaji">🍷 Cellar</div>
+            <div class="nav-link-btn active" onclick="navTo('food', this)" data-en="🍳 Food" data-sw="🍳 Chakula">🍳 Food</div>
+            <div class="nav-link-btn" onclick="navTo('drinks', this)" data-en="🍷 Drinks" data-sw="🍷 Kinywaji">🍷 Drinks</div>
             <div class="nav-link-btn" onclick="navTo('discover', this)" data-en="⛰️ Discover" data-sw="⛰️ Tembelea">⛰️ Discover</div>
             <div class="nav-link-btn" onclick="navTo('services', this)" data-en="🛎️ Services" data-sw="🛎️ Huduma">🛎️ Services</div>
             <div class="nav-link-btn" onclick="navTo('info', this)" data-en="ℹ️ Info" data-sw="ℹ️ Taarifa">ℹ️ Info</div>
@@ -261,7 +261,7 @@
         </div>
     </div>
 
-    <!-- CUISINE -->
+    <!-- FOOD -->
     <div id="page-food" class="content-container active">
         <div class="category-tabs" id="foodCatTabs">
             <div class="cat-pill active" data-cat="all" onclick="tabFilter('food','all',this)" data-en="All" data-sw="Vyote">All</div>
@@ -307,7 +307,7 @@
         </div>
     </div>
 
-    <!-- DRINKS (Cellar) -->
+    <!-- DRINKS -->
     <div id="page-drinks" class="content-container">
         <div class="category-tabs" id="drinkCatTabs">
             <div class="cat-pill active" data-cat="all" onclick="tabFilter('drinks','all',this)" data-en="All" data-sw="Vyote">All</div>
@@ -450,6 +450,15 @@
                         @endif
                     </div>
                 @endforeach
+
+                <!-- Static Laundry Service -->
+                <div class="service-card" onclick="requestItem('Laundry Services')">
+                    <div class="service-icon-box">👕</div>
+                    <div class="service-name">Laundry Services</div>
+                    <div class="service-price">
+                        <span data-en="Provided upon request" data-sw="Inatolewa ukiomba">Provided upon request</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -501,8 +510,7 @@
     </div>
 
     <!-- Floats -->
-    <div class="floats">
-        <a href="https://wa.me/255677155156" target="_blank" class="whatsapp-bubble"><i class="fa fa-whatsapp"></i></a>
+    <div class="floats" style="justify-content: center;">
         <button class="order-action-btn" onclick="toggleCallModal(true)">
             <i class="fa fa-phone"></i> <span data-en="Order Now" data-sw="Agiza Sasa">Order Now</span>
         </button>

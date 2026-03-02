@@ -125,7 +125,7 @@
                                 Restaurant Delicious Meals
                             </h3>
                             <p class="faq-text">
-                                Savor delicious meals prepared with fresh, local ingredients. Our restaurant offers a diverse menu featuring local and international cuisine.
+                                Savor delicious meals prepared with fresh, local ingredients. Our restaurant offers a diverse menu featuring local and international food.
                             </p>
                         </div>
                          <div class="faq-item wow fadeInUp" data-wow-delay=".7s">
