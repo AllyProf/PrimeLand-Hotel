@@ -133,22 +133,23 @@ class AdminController extends Controller
             $stats = [
                 'total_users' => \App\Models\Staff::count() + \App\Models\Guest::count(),
                 'total_rooms' => Room::count(),
-                'total_bookings' => Booking::count(),
+                'total_bookings' => Booking::where('booking_reference', 'NOT LIKE', 'INV%')->where('booking_reference', 'NOT LIKE', 'CINV%')->count(),
                 'total_revenue' => $totalRevenueTZS,
                 
                 // Today's stats
-                'today_bookings' => Booking::whereDate('created_at', $today)->count(),
+                'today_bookings' => Booking::whereDate('created_at', $today)->where('booking_reference', 'NOT LIKE', 'INV%')->where('booking_reference', 'NOT LIKE', 'CINV%')->count(),
                 'today_revenue' => $todayRevenueTZS,
                 
                 // This month's stats
-                'month_bookings' => Booking::where('created_at', '>=', $thisMonth)->count(),
+                // This month's stats
+                'month_bookings' => Booking::where('created_at', '>=', $thisMonth)->where('booking_reference', 'NOT LIKE', 'INV%')->where('booking_reference', 'NOT LIKE', 'CINV%')->count(),
                 'month_revenue' => $monthRevenueTZS,
                 
                 // Booking status counts
-                'pending_bookings' => Booking::where('status', 'pending')->count(),
-                'confirmed_bookings' => Booking::where('status', 'confirmed')->count(),
-                'cancelled_bookings' => Booking::where('status', 'cancelled')->count(),
-                'completed_bookings' => Booking::where('status', 'completed')->count(),
+                'pending_bookings' => Booking::where('status', 'pending')->where('booking_reference', 'NOT LIKE', 'INV%')->where('booking_reference', 'NOT LIKE', 'CINV%')->count(),
+                'confirmed_bookings' => Booking::where('status', 'confirmed')->where('booking_reference', 'NOT LIKE', 'INV%')->where('booking_reference', 'NOT LIKE', 'CINV%')->count(),
+                'cancelled_bookings' => Booking::where('status', 'cancelled')->where('booking_reference', 'NOT LIKE', 'INV%')->where('booking_reference', 'NOT LIKE', 'CINV%')->count(),
+                'completed_bookings' => Booking::where('status', 'completed')->where('booking_reference', 'NOT LIKE', 'INV%')->where('booking_reference', 'NOT LIKE', 'CINV%')->count(),
                 
                 // Payment status (include partial payments as "paid" for counting purposes)
                 'paid_bookings' => Booking::whereIn('payment_status', ['paid', 'partial'])
@@ -207,6 +208,8 @@ class AdminController extends Controller
 
             // Get recent bookings - group corporate bookings by company
             $allRecentBookings = Booking::with(['room', 'company'])
+                ->where('booking_reference', 'NOT LIKE', 'INV%')
+                ->where('booking_reference', 'NOT LIKE', 'CINV%')
                 ->orderBy('created_at', 'desc')
                 ->limit(20)
                 ->get();

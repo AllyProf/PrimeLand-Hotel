@@ -40,7 +40,10 @@ class ReceptionController extends Controller
      */
     public function bookings(Request $request)
     {
-        $query = Booking::with(['room', 'company', 'serviceRequests'])->orderBy('created_at', 'desc');
+        $query = Booking::with(['room', 'company', 'serviceRequests'])
+            ->where('booking_reference', 'NOT LIKE', 'INV%')
+            ->where('booking_reference', 'NOT LIKE', 'CINV%')
+            ->orderBy('created_at', 'desc');
 
         // Filter by status
         if ($request->has('status') && $request->status && $request->status !== 'all') {
@@ -979,7 +982,9 @@ class ReceptionController extends Controller
      */
     public function guests(Request $request)
     {
-        $query = Booking::select('guest_name', 'guest_email', 'guest_phone', 'country', 'country_code')
+        $query = Booking::where('booking_reference', 'NOT LIKE', 'INV%')
+            ->where('booking_reference', 'NOT LIKE', 'CINV%')
+            ->select('guest_name', 'guest_email', 'guest_phone', 'country', 'country_code')
             ->selectRaw('MAX(created_at) as last_booking')
             ->selectRaw('COUNT(*) as total_bookings')
             ->groupBy('guest_email', 'guest_name', 'guest_phone', 'country', 'country_code');

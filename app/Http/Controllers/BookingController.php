@@ -442,7 +442,10 @@ class BookingController extends Controller
      */
     public function adminIndex(Request $request)
     {
-        $query = Booking::with(['room', 'company'])->orderBy('created_at', 'desc');
+        $query = Booking::with(['room', 'company'])
+            ->where('booking_reference', 'NOT LIKE', 'INV%')
+            ->where('booking_reference', 'NOT LIKE', 'CINV%')
+            ->orderBy('created_at', 'desc');
 
         // Filter by status
         if ($request->has('status') && $request->status) {
@@ -4815,6 +4818,8 @@ class BookingController extends Controller
         // Attach last booking info
         $guests->transform(function ($guest) {
             $lastBooking = Booking::where('guest_email', $guest->email)
+                ->where('booking_reference', 'NOT LIKE', 'INV%')
+                ->where('booking_reference', 'NOT LIKE', 'CINV%')
                 ->orderBy('check_in', 'desc')
                 ->first();
             
