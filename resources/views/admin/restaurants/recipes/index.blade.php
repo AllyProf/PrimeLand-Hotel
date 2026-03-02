@@ -25,7 +25,7 @@
                     </div>
                     <div>
                         <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Total Items</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ $recipes->total() }}</h3>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ $totalCount }}</h3>
                     </div>
                 </div>
                 <div class="mt-3">
@@ -48,12 +48,11 @@
                     </div>
                     <div>
                         <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Available</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ $recipes->where('is_available', true)->count() }}</h3>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ $availableCount }}</h3>
                     </div>
                 </div>
                 @php
-                    $totalCount = $recipes->total() > 0 ? $recipes->total() : 1;
-                    $availPercent = ($recipes->where('is_available', true)->count() / $totalCount) * 100;
+                    $availPercent = $totalCount > 0 ? ($availableCount / $totalCount) * 100 : 0;
                 @endphp
                 <div class="mt-3">
                     <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
@@ -75,11 +74,11 @@
                     </div>
                     <div>
                         <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Unavailable</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ $recipes->where('is_available', false)->count() }}</h3>
+                        <h3 class="text-white mb-0 font-weight-bold">{{ $unavailableCount }}</h3>
                     </div>
                 </div>
                 @php
-                    $unavailPercent = ($recipes->where('is_available', false)->count() / $totalCount) * 100;
+                    $unavailPercent = $totalCount > 0 ? ($unavailableCount / $totalCount) * 100 : 0;
                 @endphp
                 <div class="mt-3">
                     <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
@@ -137,7 +136,7 @@
                         </div>
                     </div>
                     <div class="col-md-6 text-right pt-2 text-muted">
-                        <span id="resultCount">{{ $recipes->count() }}</span> items found in total
+                        <span id="resultCount">{{ $totalCount }}</span> items found in total
                     </div>
                 </div>
 
@@ -156,14 +155,15 @@
                     <li class="nav-item">
                         <a class="nav-link active category-pill" data-category="" href="#" role="tab" style="border-radius: 8px; font-weight: 600; color: white;">
                             <i class="fa fa-th-large"></i> All Items
-                            <span class="badge badge-light ml-1">{{ $recipes->count() }}</span>
+                            <span class="badge badge-light ml-1" id="totalCount">{{ $totalCount }}</span>
                         </a>
                     </li>
                     @foreach($categories as $category)
+                    @php $catCount = \App\Models\Recipe::where('category', $category)->count(); @endphp
                     <li class="nav-item">
                         <a class="nav-link category-pill" data-category="{{ $category }}" href="#" role="tab" style="border-radius: 8px; font-weight: 600; color: rgba(255,255,255,0.8);">
                             {{ ucfirst(str_replace('_', ' ', $category)) }}
-                            <span class="badge badge-light ml-1">{{ $recipes->where('category', $category)->count() }}</span>
+                            <span class="badge badge-light ml-1">{{ $catCount }}</span>
                         </a>
                     </li>
                     @endforeach
@@ -254,12 +254,16 @@
                                         <small class="text-muted d-block" style="font-size: 10px;">Selling Price</small>
                                         <h5 class="text-primary font-weight-bold mb-0" id="price-display-{{ $recipe->id }}" style="font-size: 16px;">
                                             {{ number_format($recipe->selling_price) }} <small class="text-muted" style="font-size: 10px;">TSH</small>
+                                            @if(!empty($recipe->selling_price_usd) && $recipe->selling_price_usd > 0)
+                                                <span class="text-success ml-2" style="font-size: 14px;">${{ rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') }}</span>
+                                            @endif
                                         </h5>
                                     </div>
                                     <button type="button" class="btn btn-outline-primary btn-sm rounded-circle quick-price-btn" 
                                             data-id="{{ $recipe->id }}" 
                                             data-name="{{ $recipe->name }}" 
                                             data-price="{{ $recipe->selling_price }}"
+                                            data-price-usd="{{ $recipe->selling_price_usd }}"
                                             style="width: 30px; height: 30px; padding: 0;"
                                             title="Update Price">
                                         <i class="fa fa-money" style="font-size: 12px;"></i>
@@ -277,9 +281,36 @@
                 </div>
 
                 <div class="mt-3">
-                    {{ $recipes->links() }}
+                    <div id="clientPaginator" class="d-flex justify-content-center flex-wrap" style="gap: 4px;"></div>
                 </div>
                 @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Price Update Modal -->
+<div class="modal fade" id="quickPriceModal" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: 2000;">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <div class="modal-header border-0 pb-0">
+                <h6 class="modal-title font-weight-bold" id="quickPriceTitle">Update Price</h6>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body pt-3">
+                <input type="hidden" id="qp_recipe_id">
+                <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted mb-1">TSH Price <span class="text-danger">*</span></label>
+                    <input type="number" id="qp_price_tsh" class="form-control" placeholder="e.g. 15000">
+                </div>
+                <div class="form-group mb-0">
+                    <label class="small font-weight-bold text-muted mb-1">USD Price ($)</label>
+                    <input type="number" step="0.01" id="qp_price_usd" class="form-control" placeholder="e.g. 7.50">
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-1 pb-3">
+                <button type="button" class="btn btn-light btn-sm font-weight-bold" data-dismiss="modal" style="border-radius: 8px;">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm font-weight-bold" id="btnSaveQuickPrice" style="border-radius: 8px;">Save Changes</button>
             </div>
         </div>
     </div>
@@ -323,47 +354,101 @@
 <script>
 $(document).ready(function() {
     var selectedCategory = '';
+    var ITEMS_PER_PAGE = 12;
+    var currentPage = 1;
 
-    // Search and Filter Function
-    function filterCards() {
+    // Collect all cards once
+    var allCards = [];
+    $('.menu-card').each(function() { allCards.push(this); });
+
+    // ── Core render ──────────────────────────────────────────────
+    function applyFilterAndPage() {
         var searchTerm = $('#menuSearch').val().toLowerCase().trim();
-        var visibleCount = 0;
-        
-        $('.menu-card').each(function() {
-            var $card = $(this);
-            var name = $card.data('name') || '';
-            var category = $card.data('category') || '';
-            
-            var matchesSearch = searchTerm === '' || name.includes(searchTerm);
-            var matchesCategory = selectedCategory === '' || category === selectedCategory;
-            
-            if (matchesSearch && matchesCategory) {
-                $card.show();
-                visibleCount++;
-            } else {
-                $card.hide();
-            }
+
+        var matched = allCards.filter(function(card) {
+            var name  = $(card).data('name') || '';
+            var cat   = $(card).data('category') || '';
+            var okS   = searchTerm === '' || name.includes(searchTerm);
+            var okC   = selectedCategory === '' || cat === selectedCategory;
+            return okS && okC;
         });
-        $('#resultCount').text(visibleCount);
+
+        $(allCards).hide();
+        var total      = matched.length;
+        var totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+        if (currentPage > totalPages) currentPage = 1;
+
+        var start = (currentPage - 1) * ITEMS_PER_PAGE;
+        $(matched.slice(start, start + ITEMS_PER_PAGE)).show();
+
+        $('#resultCount').text(total);
+        renderPaginator(totalPages);
     }
 
-    // Category Pill Click
+    // ── Paginator ────────────────────────────────────────────────
+    function renderPaginator(totalPages) {
+        var $pager = $('#clientPaginator');
+        $pager.empty();
+        if (totalPages <= 1) return;
+
+        function mkBtn(label, page, disabled, active) {
+            return $('<button>')
+                .addClass('btn btn-sm ' + (active ? 'btn-primary' : 'btn-outline-secondary'))
+                .prop('disabled', disabled)
+                .css({ borderRadius: '6px', fontWeight: '600', minWidth: '36px', margin: '2px' })
+                .text(label)
+                .on('click', function() {
+                    currentPage = page;
+                    applyFilterAndPage();
+                    $('html,body').animate({ scrollTop: $('#menuCards').offset().top - 80 }, 200);
+                });
+        }
+
+        $pager.append(mkBtn('‹', currentPage - 1, currentPage === 1, false));
+
+        var pages = [];
+        if (totalPages <= 7) {
+            for (var i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            pages = [1];
+            if (currentPage > 3) pages.push('...');
+            for (var i = Math.max(2, currentPage-1); i <= Math.min(totalPages-1, currentPage+1); i++) pages.push(i);
+            if (currentPage < totalPages - 2) pages.push('...');
+            pages.push(totalPages);
+        }
+
+        pages.forEach(function(p) {
+            if (p === '...') {
+                $pager.append($('<span>').text('…').css({ padding: '4px 8px', color: '#999' }));
+            } else {
+                $pager.append(mkBtn(p, p, false, p === currentPage));
+            }
+        });
+
+        $pager.append(mkBtn('›', currentPage + 1, currentPage === totalPages, false));
+    }
+
+    // ── Events ───────────────────────────────────────────────────
     $('.category-pill').on('click', function(e) {
         e.preventDefault();
         $('.category-pill').removeClass('active').css('color', 'rgba(255,255,255,0.8)');
-        $(this).addClass('active').css('color', 'black'); // Black text for active white pill
-        
+        $(this).addClass('active').css('color', 'black');
         selectedCategory = $(this).data('category');
-        filterCards();
+        currentPage = 1;
+        applyFilterAndPage();
     });
 
-    $('#menuSearch').on('input', filterCards);
+    $('#menuSearch').on('input', function() {
+        currentPage = 1;
+        applyFilterAndPage();
+    });
 
-    // Initial styles for active pill
+    // Initial styles & render
     $('.category-pill.active').css('color', 'black');
+    applyFilterAndPage();
 
-    // Delete confirmation
-    $('.delete-btn').on('click', function(e) {
+    // ── Delete ───────────────────────────────────────────────────
+    $(document).on('click', '.delete-btn', function(e) {
         e.preventDefault();
         var formId = $(this).data('form');
         swal({
@@ -374,54 +459,73 @@ $(document).ready(function() {
             confirmButtonText: "Yes, delete it!",
             cancelButtonText: "Cancel",
             closeOnConfirm: false
-        }, function() {
-            $('#' + formId).submit();
-        });
+        }, function() { $('#' + formId).submit(); });
     });
 
-    // Quick Price Update
-    $('.quick-price-btn').on('click', function() {
-        var id = $(this).data('id');
+    // ── Quick Price ──────────────────────────────────────────────
+    $(document).on('click', '.quick-price-btn', function() {
+        var id   = $(this).data('id');
         var name = $(this).data('name');
-        var currentPrice = $(this).data('price');
+        var curTsh  = $(this).data('price');
+        var curUsd  = $(this).data('price-usd') || '';
+        
+        $('#quickPriceTitle').text('Update: ' + name);
+        $('#qp_recipe_id').val(id);
+        $('#qp_price_tsh').val(curTsh);
+        $('#qp_price_usd').val(curUsd);
+        
+        $('#quickPriceModal').modal('show');
+    });
 
-        swal({
-            title: "Update Price",
-            text: "Set a new price for " + name + " (TSH):",
-            type: "input",
-            showCancelButton: true,
-            closeOnConfirm: false,
-            inputPlaceholder: "Enter new price...",
-            inputValue: currentPrice
-        }, function(inputValue) {
-            if (inputValue === false) return false;
-            if (inputValue === "" || isNaN(inputValue)) {
-                swal.showInputError("Please enter a valid numeric price!");
-                return false;
-            }
+    $('#btnSaveQuickPrice').on('click', function() {
+        var id = $('#qp_recipe_id').val();
+        var valTsh = $('#qp_price_tsh').val();
+        var valUsd = $('#qp_price_usd').val();
+        var name = $('.quick-price-btn[data-id="' + id + '"]').data('name');
 
-            $.ajax({
-                url: '/manager/restaurants/recipes/' + id + '/update-price',
-                type: 'PUT',
-                data: {
-                    _token: '{{ csrf_token() }}',
-                    selling_price: inputValue
-                },
-                success: function(response) {
-                    if (response.success) {
-                        $('#price-display-' + id).html(response.new_price + ' <small class="text-muted font-weight-normal" style="font-size: 0.55rem;">TSH</small>');
-                        swal("Updated!", "Price for " + name + " has been updated to " + response.new_price + " TSH", "success");
-                        $('.quick-price-btn[data-id="' + id + '"]').data('price', inputValue);
-                    } else {
-                        swal("Error!", response.message, "error");
+        if (!valTsh || isNaN(valTsh) || valTsh < 0) {
+            swal("Invalid Input!", "Please enter a valid TSH price.", "error");
+            return;
+        }
+
+        var btn = $(this);
+        btn.prop('disabled', true).text('Saving...');
+
+        $.ajax({
+            url: '/manager/restaurants/recipes/' + id + '/update-price',
+            type: 'PUT',
+            data: { 
+                _token: '{{ csrf_token() }}', 
+                selling_price: valTsh,
+                selling_price_usd: valUsd
+            },
+            success: function(r) {
+                btn.prop('disabled', false).text('Save Changes');
+                if (r.success) {
+                    $('#quickPriceModal').modal('hide');
+                    
+                    var newHtml = r.new_price + ' <small class="text-muted" style="font-size: 10px;">TSH</small>';
+                    if (r.new_price_usd) {
+                        newHtml += ' <span class="text-success ml-2" style="font-size: 14px;">$' + r.new_price_usd + '</span>';
                     }
-                },
-                error: function(xhr) {
-                    swal("Error!", "Something went wrong!", "error");
+                    
+                    $('#price-display-' + id).html(newHtml);
+                    swal("Updated!", name + " price updated to " + r.new_price + " TSH", "success");
+                    
+                    $('.quick-price-btn[data-id="' + id + '"]')
+                        .data('price', valTsh)
+                        .data('price-usd', valUsd);
+                } else { 
+                    swal("Error!", r.message, "error"); 
                 }
-            });
+            },
+            error: function() { 
+                btn.prop('disabled', false).text('Save Changes');
+                swal("Error!", "Something went wrong!", "error"); 
+            }
         });
     });
 });
 </script>
 @endsection
+

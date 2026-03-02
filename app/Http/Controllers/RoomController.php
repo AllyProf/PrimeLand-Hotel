@@ -998,9 +998,9 @@ class RoomController extends Controller
             foreach ($product->variants as $variant) {
                 $options = [];
                 if ($variant->can_sell_as_pic && $variant->selling_price_per_pic > 0)
-                    $options[] = ['type' => 'Bottle', 'method' => 'pic', 'price' => (float)$variant->selling_price_per_pic];
+                    $options[] = ['type' => 'Bottle', 'method' => 'pic', 'price' => (float)$variant->selling_price_per_pic, 'price_usd' => (float)$variant->selling_price_per_pic_usd];
                 if ($variant->can_sell_as_serving && $variant->selling_price_per_serving > 0)
-                    $options[] = ['type' => $variant->selling_unit_name ?? 'Glass', 'method' => 'serving', 'price' => (float)$variant->selling_price_per_serving];
+                    $options[] = ['type' => $variant->selling_unit_name ?? 'Glass', 'method' => 'serving', 'price' => (float)$variant->selling_price_per_serving, 'price_usd' => (float)$variant->selling_price_per_serving_usd];
 
                 if (empty($options)) {
                     $price = optional(\App\Models\StockReceipt::where('product_variant_id', $variant->id)->latest('received_date')->first())->selling_price_per_bottle ?? 0;

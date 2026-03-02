@@ -14,9 +14,18 @@ class RecipeController extends Controller
      */
     public function index()
     {
-        $recipes = Recipe::with('creator')->latest()->paginate(12);
+        $recipes = Recipe::with('creator')->latest()->get();
         $categories = Recipe::select('category')->distinct()->pluck('category');
-        return view('admin.restaurants.recipes.index', compact('recipes', 'categories'));
+
+        // Pre-compute counts from the full table
+        $totalCount       = $recipes->count();
+        $availableCount   = $recipes->where('is_available', true)->count();
+        $unavailableCount = $recipes->where('is_available', false)->count();
+
+        return view('admin.restaurants.recipes.index', compact(
+            'recipes', 'categories',
+            'totalCount', 'availableCount', 'unavailableCount'
+        ));
     }
 
     /**
@@ -153,18 +162,21 @@ class RecipeController extends Controller
     {
         $request->validate([
             'selling_price' => 'required|numeric|min:0',
+            'selling_price_usd' => 'nullable|numeric|min:0',
         ]);
 
         try {
             $recipe->update([
                 'selling_price' => $request->selling_price,
+                'selling_price_usd' => $request->selling_price_usd,
             ]);
 
             if ($request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Price updated successfully.',
-                    'new_price' => number_format($recipe->selling_price)
+                    'new_price' => number_format($recipe->selling_price),
+                    'new_price_usd' => $recipe->selling_price_usd ? rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') : null
                 ]);
             }
 

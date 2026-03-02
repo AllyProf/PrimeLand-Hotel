@@ -96,58 +96,77 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
         </div>
       </div>
       
-      <!-- Filters -->
-      <div class="row mb-4 bg-light p-3 rounded mx-0 border">
-        <div class="col-md-3">
-          <label class="small font-weight-bold text-muted">FILTER BY CATEGORY</label>
-          <select class="form-control" id="categoryFilter" onchange="filterProducts()">
-            <option value="">All Categories</option>
-            @php
-                $uniqueCategories = $products->unique('category')->pluck('category_name', 'category')->sort();
-            @endphp
-            @foreach($uniqueCategories as $key => $name)
-                <option value="{{ $key }}">{{ $name }}</option>
+      @php 
+        $type = request('type');
+        
+        // Merge specific categories into "Soft Drinks" as requested
+        $groupedProducts = $products->groupBy(function($item) {
+            if (in_array($item->category, ['non_alcoholic_beverage', 'energy_drinks', 'juices'])) {
+                return 'soft_drinks';
+            }
+            return $item->category;
+        });
+        
+        $categoryOrder = ['soft_drinks', 'water', 'alcoholic_beverage', 'wines', 'spirits', 'hot_beverages', 'cocktails'];
+        
+        $sortedCategories = $groupedProducts->keys()->sortBy(function($key) use ($categoryOrder) {
+            $pos = array_search($key, $categoryOrder);
+            return $pos === false ? 999 : $pos;
+        });
+
+        $categoryStyles = [
+            'soft_drinks' => ['icon' => 'fa-flask', 'grad' => 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'],
+            'water' => ['icon' => 'fa-tint', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
+            'alcoholic_beverage' => ['icon' => 'fa-beer', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
+            'wines' => ['icon' => 'fa-vine', 'grad' => 'linear-gradient(135deg, #8E24AA 0%, #D81B60 100%)'],
+            'spirits' => ['icon' => 'fa-glass', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
+            'hot_beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
+            'cocktails' => ['icon' => 'fa-magic', 'grad' => 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)']
+        ];
+      @endphp
+
+      <!-- Filters & Category Tabs -->
+      <div class="row border-bottom pb-4 mb-4 mx-0 align-items-center">
+        <div class="col-md-8 pl-0 mb-3 mb-md-0">
+          <ul class="nav nav-pills category-tabs-scrollable" id="categoryTabs" role="tablist" style="flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch;">
+            <li class="nav-item pr-2">
+              <a class="nav-link active font-weight-bold px-3 py-2 shadow-sm border text-white btn-primary" id="all-tab" data-toggle="tab" href="#all" role="tab" onclick="setCategoryFilter('', this); return false;" style="border-radius: 25px; white-space: nowrap;">
+                  <i class="fa fa-th-large mr-1"></i> All Items
+              </a>
+            </li>
+            @foreach($sortedCategories as $categoryKey)
+              @php
+                  $style = $categoryStyles[$categoryKey] ?? ['icon' => 'fa-cube', 'grad' => 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'];
+                  $cName = ($categoryKey === 'soft_drinks') ? 'Soft Drinks & Sodas' : ucfirst(str_replace('_', ' ', $categoryKey));
+              @endphp
+              <li class="nav-item pr-2">
+                <a class="nav-link px-3 py-2 font-weight-bold shadow-sm text-dark bg-white border" id="tab-{{ $categoryKey }}" data-toggle="tab" href="#pane-{{ $categoryKey }}" role="tab" onclick="setCategoryFilter('{{ $categoryKey }}', this); return false;" style="border-radius: 25px; white-space: nowrap;">
+                    <i class="fa {{ $style['icon'] }} mr-1"></i> {{ $cName }} <span class="badge badge-light border text-muted ml-1">{{ $groupedProducts[$categoryKey]->count() }}</span>
+                </a>
+              </li>
             @endforeach
-          </select>
+          </ul>
+          <input type="hidden" id="categoryFilter" value="">
         </div>
-        <div class="col-md-4">
-          <label class="small font-weight-bold text-muted">SEARCH NAME / SUPPLIER / BRAND</label>
-          <div class="input-group">
+        <div class="col-md-4 pr-0">
+          <div class="input-group shadow-sm">
             <div class="input-group-prepend">
-              <span class="input-group-text bg-white"><i class="fa fa-search"></i></span>
+              <span class="input-group-text bg-white border-right-0"><i class="fa fa-search text-muted"></i></span>
             </div>
-            <input type="text" class="form-control" id="searchInput" placeholder="Type to search..." 
+            <input type="text" class="form-control border-left-0 border-right-0" id="searchInput" placeholder="Search product..." 
                    value="{{ request('search') }}" 
                    oninput="filterProducts()">
+            <div class="input-group-append">
+               <button class="btn border border-left-0 bg-white text-muted" type="button" onclick="resetFilters()">
+                 <i class="fa fa-refresh"></i>
+               </button>
+            </div>
           </div>
-        </div>
-        <div class="col-md-5 text-right d-flex align-items-end justify-content-end">
-          <button class="btn btn-secondary" onclick="resetFilters()">
-            <i class="fa fa-refresh"></i> Reset View
-          </button>
         </div>
       </div>
       
       @if($products->count() > 0)
       <div id="productsWrapper">
-        @php 
-          $type = request('type');
-          
-          // Merge specific categories into "Soft Drinks" as requested
-          $groupedProducts = $products->groupBy(function($item) {
-              if (in_array($item->category, ['non_alcoholic_beverage', 'energy_drinks', 'juices'])) {
-                  return 'soft_drinks';
-              }
-              return $item->category;
-          });
-          
-          $categoryOrder = ['soft_drinks', 'water', 'alcoholic_beverage', 'wines', 'spirits', 'hot_beverages', 'cocktails'];
-          
-          $sortedCategories = $groupedProducts->keys()->sortBy(function($key) use ($categoryOrder) {
-              $pos = array_search($key, $categoryOrder);
-              return $pos === false ? 999 : $pos;
-          });
-        @endphp
 
         @foreach($sortedCategories as $categoryKey)
           @php 
@@ -167,7 +186,7 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
             $displayName = ($categoryKey === 'soft_drinks') ? 'Soft Drinks & Sodas' : (ucfirst(str_replace('_', ' ', $categoryKey)));
           @endphp
           
-          <div class="category-section mb-5">
+          <div class="category-section mb-5" data-section-category="{{ $categoryKey }}">
             <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
               <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
                 <i class="fa {{ $icon }} fa-lg"></i>
@@ -332,10 +351,32 @@ function getCategoryStyle(category) {
 
 // Filter logic
 let searchTimeout;
+let triggerFromSearch = false;
+
+function setCategoryFilter(val, el) {
+    $('#categoryFilter').val(val);
+    $('#categoryTabs .nav-link').removeClass('active text-white btn-primary').addClass('text-dark bg-white border');
+    $(el).addClass('active text-white btn-primary').removeClass('text-dark bg-white border');
+    
+    if (!triggerFromSearch) {
+        document.getElementById('searchInput').value = '';
+    }
+    triggerFromSearch = false;
+    filterProducts();
+}
+
 function filterProducts() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(function() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    
+    // Auto-switch to "All" tab if searching while inside a specific tab
+    if (searchTerm.length > 0 && $('#categoryFilter').val() !== '') {
+        triggerFromSearch = true;
+        setCategoryFilter('', document.getElementById('all-tab'));
+        return;
+    }
+
     const categoryFilter = document.getElementById('categoryFilter').value;
     const cards = document.querySelectorAll('.product-card-wrapper');
     let count = 0;
@@ -345,23 +386,21 @@ function filterProducts() {
       const supplier = card.dataset.productSupplier || '';
       const brand = card.dataset.productBrand || '';
       const categoryName = card.dataset.productCategoryName || '';
-      const categoryCode = card.dataset.category || '';
       
-      const match = (!searchTerm || name.includes(searchTerm) || supplier.includes(searchTerm) || brand.includes(searchTerm) || categoryName.includes(searchTerm)) &&
-                    (!categoryFilter || categoryCode === categoryFilter);
+      const matchSearch = (!searchTerm || name.includes(searchTerm) || supplier.includes(searchTerm) || brand.includes(searchTerm) || categoryName.includes(searchTerm));
       
-      card.style.display = match ? 'block' : 'none';
-      if (match) count++;
+      card.style.display = matchSearch ? 'block' : 'none';
+      if (matchSearch) count++;
     });
     
     document.getElementById('noResultsMessage').style.display = (count === 0) ? 'block' : 'none';
     
-    // Also toggle the section headers if all items in them are hidden
     document.querySelectorAll('.category-section').forEach(section => {
+        const sectionCat = section.dataset.sectionCategory;
+        const matchCategory = !categoryFilter || sectionCat === categoryFilter;
         const visibleItems = section.querySelectorAll('.product-card-wrapper[style*="display: block"]');
-        if(section.querySelectorAll('.product-card-wrapper').length > 0) { // If section has items originally
-             section.style.display = (visibleItems.length > 0) ? 'block' : 'none';
-        }
+        
+        section.style.display = (matchCategory && visibleItems.length > 0) ? 'block' : 'none';
     });
     
     document.getElementById('productsWrapper').style.display = (count === 0) ? 'none' : 'block';
@@ -370,8 +409,7 @@ function filterProducts() {
 
 function resetFilters() {
   document.getElementById('searchInput').value = '';
-  document.getElementById('categoryFilter').value = '';
-  filterProducts();
+  setCategoryFilter('', document.getElementById('all-tab'));
 }
 
 function viewProduct(id) {
@@ -414,37 +452,57 @@ function viewProduct(id) {
           </ul>
         </div>
       </div>
-      <div class="mt-5">
-        <h5 class="font-weight-bold border-bottom pb-2 mb-3"><i class="fa fa-tags mr-2 text-primary"></i> Configured Sizes</h5>
+      <div class="mt-4">
+        <h5 class="font-weight-bold border-bottom pb-2 mb-3"><i class="fa fa-list-ul mr-2 text-primary"></i> Product Variants & Pricing</h5>
         <div class="table-responsive">
-          <table class="table table-bordered table-hover bg-white shadow-sm">
+          <table class="table table-hover table-bordered bg-white shadow-sm mb-0">
             <thead class="thead-light">
               <tr>
-                <th style="width: 50px;">Img</th>
+                <th style="width: 60px;" class="text-center">Image</th>
                 <th>Variant Name & Size</th>
-                <th>Selling Method</th>
-                <th>Servings (Glass/Mixed)</th>
+                <th>Methods</th>
+                <th>Price (TSH)</th>
+                <th>Price (USD)</th>
               </tr>
             </thead>
             <tbody>
               ${variants.map(v => {
                 const innerStyle = getCategoryStyle(p.category);
+                
+                let tshPrices = [];
+                let usdPrices = [];
+                
+                if (v.can_sell_as_pic) {
+                    tshPrices.push(`<div class="mb-1"><span class="text-muted small">Bottle:</span> <strong>${Number(v.selling_price_per_pic || 0).toLocaleString()}</strong></div>`);
+                    usdPrices.push(`<div class="mb-1"><span class="text-muted small">Bottle:</span> <strong>$${Number(v.selling_price_per_pic_usd || 0)}</strong></div>`);
+                }
+                if (v.can_sell_as_serving) {
+                    tshPrices.push(`<div><span class="text-muted small">Glass:</span> <strong>${Number(v.selling_price_per_serving || 0).toLocaleString()}</strong></div>`);
+                    usdPrices.push(`<div><span class="text-muted small">Glass:</span> <strong>$${Number(v.selling_price_per_serving_usd || 0)}</strong></div>`);
+                }
+
                 return `
                 <tr>
-                  <td>
-                    ${v.image ? `<img src="{{ asset('storage') }}/${v.image}" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">` : 
-                    `<div class="rounded d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px; background: ${innerStyle.grad};">
-                        <i class="fa ${innerStyle.icon} text-white opacity-50" style="font-size: 14px;"></i>
+                  <td class="text-center align-middle p-2">
+                    ${v.image ? `<img src="{{ asset('storage') }}/${v.image}" class="rounded shadow-sm" style="width: 45px; height: 45px; object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">` : 
+                    `<div class="rounded d-flex align-items-center justify-content-center shadow-sm mx-auto" style="width: 45px; height: 45px; background: ${innerStyle.grad};">
+                        <i class="fa ${innerStyle.icon} text-white opacity-75" style="font-size: 18px;"></i>
                      </div>`}
                   </td>
-                  <td class="font-weight-bold align-middle">
-                      ${v.variant_name || 'Standard'} <span class="text-muted small">(${v.measurement})</span>
+                  <td class="align-middle">
+                      <div class="font-weight-bold" style="font-size: 14px; color: #333;">${v.variant_name || 'Standard'}</div>
+                      <div class="text-muted small" style="font-weight: 500;"><i class="fa fa-balance-scale"></i> ${v.measurement || '-'}</div>
                   </td>
                   <td class="align-middle">
-                      ${v.can_sell_as_pic ? '<span class="badge badge-success mr-1">Bottle</span>' : ''}
-                      ${v.can_sell_as_serving ? '<span class="badge badge-info">Glass/Tot</span>' : ''}
+                      ${v.can_sell_as_pic ? '<span class="badge badge-success px-2 py-1 mr-1 mb-1"><i class="fa fa-check"></i> Bottle</span>' : ''}
+                      ${v.can_sell_as_serving ? `<span class="badge badge-info px-2 py-1 mb-1"><i class="fa fa-glass"></i> Glass (${v.servings_per_pic || 1})</span>` : ''}
                   </td>
-                  <td class="align-middle">${v.can_sell_as_serving ? (v.servings_per_pic || 1) + ' servings' : '-'}</td>
+                  <td class="align-middle text-dark">
+                      ${tshPrices.length > 0 ? tshPrices.join('') : '<span class="text-muted">-</span>'}
+                  </td>
+                  <td class="align-middle text-success">
+                      ${usdPrices.length > 0 ? usdPrices.join('') : '<span class="text-muted">-</span>'}
+                  </td>
                 </tr>
               `}).join('')}
             </tbody>

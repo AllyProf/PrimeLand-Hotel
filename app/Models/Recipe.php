@@ -19,15 +19,18 @@ class Recipe extends Model
         'prep_time',
         'image',
         'selling_price',
+        'selling_price_usd',
         'is_available',
         'created_by'
     ];
 
     protected $casts = [
-        'is_available' => 'boolean',
-        'selling_price' => 'decimal:2',
-        'prep_time' => 'integer',
+        'is_available'      => 'boolean',
+        'selling_price'     => 'decimal:2',
+        'selling_price_usd' => 'decimal:2',
+        'prep_time'         => 'integer',
     ];
+
 
     protected static function boot()
     {

@@ -90,10 +90,20 @@ class WaiterController extends Controller
                 $options = [];
                 // Build options based on pricing
                 if ($variant->can_sell_as_serving && $variant->selling_price_per_serving > 0) {
-                    $options[] = ['type' => 'Glass', 'method' => 'glass', 'price' => (float)$variant->selling_price_per_serving];
+                    $options[] = [
+                        'type' => 'Glass', 
+                        'method' => 'glass', 
+                        'price' => (float)$variant->selling_price_per_serving,
+                        'price_usd' => (float)$variant->selling_price_per_serving_usd
+                    ];
                 }
                 if ($variant->can_sell_as_pic && $variant->selling_price_per_pic > 0) {
-                    $options[] = ['type' => 'Bottle', 'method' => 'pic', 'price' => (float)$variant->selling_price_per_pic];
+                    $options[] = [
+                        'type' => 'Bottle', 
+                        'method' => 'pic', 
+                        'price' => (float)$variant->selling_price_per_pic,
+                        'price_usd' => (float)$variant->selling_price_per_pic_usd
+                    ];
                 }
 
                 if (!empty($options)) {
@@ -123,6 +133,7 @@ class WaiterController extends Controller
                 'name' => $recipe->name,
                 'description' => $recipe->description ?? 'Chef Special',
                 'price' => $recipe->selling_price,
+                'price_usd' => $recipe->selling_price_usd,
                 'category' => $recipe->category ?? 'Food',
                 'image' => $recipe->image,
             ];

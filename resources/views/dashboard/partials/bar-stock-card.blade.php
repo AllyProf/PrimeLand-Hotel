@@ -65,6 +65,8 @@
                             data-minimum-stock="{{ $item['minimum_stock'] ?? 0 }}"
                             data-price-pic="{{ $item['selling_price_per_pic'] }}"
                             data-price-glass="{{ $item['selling_price_per_serving'] }}"
+                            data-price-pic-usd="{{ (float)($item['selling_price_per_pic_usd'] ?? 0) }}"
+                            data-price-glass-usd="{{ (float)($item['selling_price_per_serving_usd'] ?? 0) }}"
                             style="width: 22px; height: 22px; font-size: 10px;">
                         <i class="fa fa-cog"></i>
                     </button>

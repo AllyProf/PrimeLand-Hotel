@@ -952,6 +952,8 @@ class BarKeeperController extends Controller
         $request->validate([
             'selling_price_per_pic' => 'required|numeric|min:0',
             'selling_price_per_serving' => 'nullable|numeric|min:0',
+            'selling_price_per_pic_usd' => 'nullable|numeric|min:0',
+            'selling_price_per_serving_usd' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -960,6 +962,8 @@ class BarKeeperController extends Controller
             
             $variant->selling_price_per_pic = $request->selling_price_per_pic;
             $variant->selling_price_per_serving = $request->selling_price_per_serving ?? 0;
+            $variant->selling_price_per_pic_usd = $request->selling_price_per_pic_usd ?? 0;
+            $variant->selling_price_per_serving_usd = $request->selling_price_per_serving_usd ?? 0;
             
             // Record Price History
             $history = is_array($variant->price_history) ? $variant->price_history : (json_decode($variant->price_history, true) ?? []);

@@ -283,6 +283,9 @@
                         @endif
                         <div class="price-badge">
                             <span class="price-tsh">Tsh {{ number_format($recipe->selling_price) }}</span>
+                            @if(!empty($recipe->selling_price_usd) && $recipe->selling_price_usd > 0)
+                                <span class="price-usd">(${{ rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') }})</span>
+                            @endif
                         </div>
                     </div>
                     <div class="rich-body">
@@ -294,7 +297,12 @@
                             <div class="opt-row">
                                 <div>
                                     <div class="opt-label">Portion</div>
-                                    <div class="opt-price">{{ number_format($recipe->selling_price) }} TZS</div>
+                                    <div class="opt-price">
+                                        {{ number_format($recipe->selling_price) }} TZS
+                                        @if(!empty($recipe->selling_price_usd) && $recipe->selling_price_usd > 0)
+                                            <span style="color:#fff;opacity:0.6;font-size:10px;">(${{ rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') }})</span>
+                                        @endif
+                                    </div>
                                 </div>
                                 <button class="btn-order-mini" onclick="requestItem('{{ addslashes($recipe->name) }}')">Order</button>
                             </div>
@@ -341,7 +349,12 @@
                                 <div class="opt-row">
                                     <div>
                                         <div class="opt-label">{{ $opt['type'] }}</div>
-                                        <div class="opt-price">{{ number_format($opt['price']) }} TZS</div>
+                                        <div class="opt-price">
+                                            {{ number_format($opt['price']) }} TZS
+                                            @if(!empty($opt['price_usd']) && $opt['price_usd'] > 0)
+                                                <span style="color:#fff;opacity:0.6;font-size:10px;">(${{ rtrim(rtrim(number_format($opt['price_usd'], 2), '0'), '.') }})</span>
+                                            @endif
+                                        </div>
                                     </div>
                                     @if($drink->in_stock ?? true)
                                         <button class="btn-order-mini" onclick="requestItem('{{ addslashes($drink->name) }} ({{ $opt['type'] }})')">Order</button>

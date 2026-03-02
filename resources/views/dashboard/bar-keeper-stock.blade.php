@@ -232,7 +232,47 @@
           </div>
           @endif
 
-          <!-- Pricing section removed as requested -->
+          <!-- Section 2: Pricing -->
+          <div class="p-3 mb-3 rounded shadow-sm" style="background: #fff; border-top: 3px solid #e77a31; border-right: 1px solid #eee; border-bottom: 1px solid #eee; border-left: 1px solid #eee;">
+               <h6 class="font-weight-bold text-dark"><i class="fa fa-money"></i> Selling Prices</h6>
+               <form id="priceUpdateForm">
+                  <input type="hidden" class="settings_variant_id" name="variant_id">
+                  
+                  <div class="row mt-3">
+                      <div class="col-6">
+                           <div class="form-group mb-2">
+                                <label class="small font-weight-bold text-muted mb-1">Per Bottle (TSH)</label>
+                                <input type="number" class="form-control form-control-sm border-primary" id="price_pic" name="selling_price_per_pic" required min="0">
+                           </div>
+                      </div>
+                      <div class="col-6">
+                           <div class="form-group mb-2">
+                                <label class="small text-success mb-1" style="font-weight:800;">USD ($)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-success" id="price_pic_usd" name="selling_price_per_pic_usd" min="0">
+                           </div>
+                      </div>
+                  </div>
+
+                  <div class="row mt-1 pb-2 border-bottom mb-3" id="glass_price_section">
+                      <div class="col-6">
+                           <div class="form-group mb-0">
+                                <label class="small font-weight-bold text-muted mb-1">Per Glass (TSH)</label>
+                                <input type="number" class="form-control form-control-sm border-primary" id="price_glass" name="selling_price_per_serving" min="0">
+                           </div>
+                      </div>
+                      <div class="col-6">
+                           <div class="form-group mb-0">
+                                <label class="small text-success mb-1" style="font-weight:800;">USD ($)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm border-success" id="price_glass_usd" name="selling_price_per_serving_usd" min="0">
+                           </div>
+                      </div>
+                  </div>
+
+                  <button type="submit" class="btn btn-block font-weight-bold text-white shadow-sm mt-3" style="background-color: #e77a31;">
+                      Save Changes
+                  </button>
+               </form>
+          </div>
       </div>
       <div class="modal-footer bg-light">
           <button type="button" class="btn btn-link text-muted" data-dismiss="modal">Close</button>
@@ -382,6 +422,8 @@ $(document).ready(function() {
         $('#minimum_stock').val(btn.data('minimum-stock'));
         $('#price_pic').val(btn.data('price-pic'));
         $('#price_glass').val(btn.data('price-glass'));
+        $('#price_pic_usd').val(btn.data('price-pic-usd'));
+        $('#price_glass_usd').val(btn.data('price-glass-usd'));
         $('#productSettingsModal').modal('show');
     });
 

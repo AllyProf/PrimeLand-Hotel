@@ -362,7 +362,11 @@
             @else
                 <i class="fa fa-cutlery fa-2x text-muted"></i>
             @endif
-            <span class="item-price-tag">{{ number_format($food['price']) }}</span>
+            @if(!empty($food['price_usd']) && $food['price_usd'] > 0)
+                <span class="item-price-tag">${{ rtrim(rtrim(number_format($food['price_usd'], 2), '0'), '.') }}</span>
+            @else
+                <span class="item-price-tag">{{ number_format($food['price']) }}</span>
+            @endif
         </div>
         <div class="item-info">
             <h6 class="item-name">{{ $food['name'] }}</h6>
@@ -416,7 +420,13 @@
                     {{ $isOut ? 'disabled' : '' }}
                     onclick="fastAdd('drink', {{ json_encode($drink) }}, '{{ $opt['type'] }}', {{ $opt['price'] }}, '{{ $opt['method'] }}')">
                 <span>{{ strtoupper($opt['type']) }}</span>
-                <span>{{ number_format($opt['price']) }}</span>
+                <span>
+                    @if(!empty($opt['price_usd']) && $opt['price_usd'] > 0)
+                        ${{ rtrim(rtrim(number_format($opt['price_usd'], 2), '0'), '.') }}
+                    @else
+                        {{ number_format($opt['price']) }}
+                    @endif
+                </span>
             </button>
             @endforeach
         </div>
