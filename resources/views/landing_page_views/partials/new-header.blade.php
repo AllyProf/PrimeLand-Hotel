@@ -126,6 +126,10 @@
                     <a href="{{ url('/') }}" class="header-logo-2 d-none d-md-block" style="text-decoration: none;">
                         <span style="font-size: 24px; font-weight: 800; color: #e77a3a; letter-spacing: 1px;">PrimeLand Hotel</span>
                     </a>
+                    <!-- Mobile location text -->
+                    <div class="d-md-none" style="padding-top: 10px;">
+                        <span style="font-size: 14px; font-weight: 700; color: #e77a3a; text-transform: uppercase; letter-spacing: 1px;">Moshi, Kilimanjaro</span>
+                    </div>
                 </div>
                 <div class="header-right d-flex justify-content-end align-items-center">
                      <div class="mean__menu-wrapper">
