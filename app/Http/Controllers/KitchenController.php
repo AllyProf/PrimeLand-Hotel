@@ -933,9 +933,17 @@ class KitchenController extends Controller
                     ->get()
                     ->filter(fn($s) => ($s->service_specific_data['product_variant_id'] ?? null) == $v->id);
                 $totalSold = 0;
+                $servingsPerPic = $v->servings_per_pic > 0 ? $v->servings_per_pic : 1;
                 foreach ($sales as $s) {
-                    $isPic = abs((float)$s->unit_price_tsh - (float)$v->selling_price_per_pic) < 100;
-                    $totalSold += $isPic ? $s->quantity : ($s->quantity / max(1, $v->servings_per_pic));
+                    $meta = $s->service_specific_data;
+                    $sellingMethod = strtolower($meta['selling_method'] ?? 'pic');
+                    $isServing = in_array($sellingMethod, ['glass', 'serving', 'tot', 'shot']);
+                    
+                    if ($isServing) {
+                        $totalSold += ($s->quantity / $servingsPerPic);
+                    } else {
+                        $totalSold += $s->quantity;
+                    }
                 }
                 $variantStockMap[$v->id] = max(0, $totalReceived - $totalSold);
             }

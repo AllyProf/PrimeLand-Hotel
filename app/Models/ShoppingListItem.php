@@ -84,13 +84,22 @@ class ShoppingListItem extends Model
     }
 
     /**
-     * Get the associated product variant (or first variant of product)
+     * Proper relationship to variant
      */
-    public function getProductVariantAttribute()
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    /**
+     * Helper to find the best matching variant for this item
+     */
+    public function guessProductVariant()
     {
         // 1. Precise variant link (Priority)
-        if ($this->getAttribute('product_variant_id')) {
-            return ProductVariant::find($this->getAttribute('product_variant_id'));
+        if ($this->product_variant_id) {
+            $v = ProductVariant::find($this->product_variant_id);
+            if ($v) return $v;
         }
 
         // Parse name and size
@@ -103,74 +112,53 @@ class ShoppingListItem extends Model
             $baseName = trim($name);
         }
 
+        // Clean brand prefixes (e.g. "BONITE - Coca Cola" -> "Coca Cola")
+        $cleanName = $baseName;
+        if (strpos($baseName, ' - ') !== false) {
+            $parts = explode(' - ', $baseName);
+            $cleanName = trim(end($parts));
+        }
+
         // --- MATCHING STRATEGY ---
         
-        // A. Direct Match by Variant Name
-        $variant = ProductVariant::where('variant_name', 'LIKE', '%' . $baseName . '%')
-                 ->orWhere('measurement', 'LIKE', '%' . $baseName . '%')
-                 ->first();
+        // A. Direct Match by Variant Name or Measurement
+        $variant = ProductVariant::active()
+                 ->where(function($q) use ($baseName, $cleanName) {
+                    $q->where('variant_name', 'LIKE', '%' . $cleanName . '%')
+                      ->orWhere('variant_name', 'LIKE', '%' . $baseName . '%')
+                      ->orWhereRaw('? LIKE CONCAT("%", variant_name, "%")', [$baseName]);
+                 })->first();
 
-        // B. If product_id exists, look for a variant within THAT product that matches the baseName
-        if (!$variant && $this->product_id) {
-            $variant = ProductVariant::where('product_id', $this->product_id)
-                ->where(function($q) use ($baseName) {
-                    $q->where('variant_name', 'LIKE', '%' . $baseName . '%')
-                      ->orWhere('measurement', 'LIKE', '%' . $baseName . '%');
-                })->first();
-            
-            // C. Fallback to first variant ONLY if still no specific match
-            if (!$variant) {
-                $variant = ProductVariant::where('product_id', $this->product_id)->orderBy('id')->first();
-            }
-        }
-
-        // D. Fallback: Search for any variant by name if no product link yet
+        // B. If no variant, try product-based drill down
         if (!$variant) {
-            // Extra fuzzy check for common typos (e.g. Pineapple vs Pineaple)
-            if (stripos($baseName, 'Pineapple') !== false) {
-                $fuzzyName = str_ireplace('Pineapple', 'Pineaple', $baseName);
-                $variant = ProductVariant::where('variant_name', 'LIKE', '%' . $fuzzyName . '%')->first();
-            }
+            $product = Product::where('is_active', true)
+                     ->where(function($q) use ($baseName, $cleanName) {
+                         $q->where('name', 'LIKE', '%' . $cleanName . '%')
+                           ->orWhere('name', 'LIKE', '%' . $baseName . '%')
+                           ->orWhereRaw('? LIKE CONCAT("%", name, "%")', [$baseName]);
+                     })->first();
 
-            // E. Match by Product Name
-            if (!$variant) {
-                $product = Product::where('name', $baseName)->first()
-                         ?? Product::where('name', 'LIKE', $baseName . '%')->first()
-                         ?? Product::where('name', 'LIKE', '%' . $baseName . '%')->first()
-                         ?? Product::whereRaw('? LIKE CONCAT("%", name, "%")', [$baseName])->first();
-
-                if ($product) {
-                    $remainingPart = trim(str_ireplace($product->name, '', $baseName));
-                    $variantQuery = ProductVariant::where('product_id', $product->id);
-                    
-                    if ($remainingPart) {
-                        $specificVariant = (clone $variantQuery)->where('variant_name', 'LIKE', '%' . $remainingPart . '%')->first();
-                        if ($specificVariant) {
-                            $variant = $specificVariant;
-                        }
-                    }
-                    
-                    if (!$variant && $variantQuery->count() === 1) {
-                        $variant = $variantQuery->first();
-                    }
-                }
-            }
-        }
-
-        // F. Final Refinement by Size if multiple variants exist
-        if ($variant && $size) {
-            $sizedVariant = ProductVariant::where('product_id', $variant->product_id)
-                ->where(function($q) use ($size) {
-                    $q->where('measurement', 'LIKE', $size)
-                      ->orWhere('measurement', 'LIKE', '%' . $size . '%')
-                      ->orWhere('variant_name', 'LIKE', '%' . $size . '%');
-                })->first();
-            
-            if ($sizedVariant) {
-                return $sizedVariant;
+            if ($product) {
+                // Try to find variant within product
+                $variant = $product->variants()
+                         ->where(function($q) use ($cleanName, $size) {
+                             $q->where('variant_name', 'LIKE', '%' . $cleanName . '%');
+                             if ($size) $q->orWhere('measurement', 'LIKE', '%' . $size . '%');
+                         })->first() ?? $product->variants()->first();
             }
         }
 
         return $variant;
+    }
+
+    /**
+     * Legacy accessor - now uses the guessing helper if not linked
+     */
+    public function getProductVariantAttribute()
+    {
+        if ($this->product_variant_id) {
+            return $this->variant;
+        }
+        return $this->guessProductVariant();
     }
 }

@@ -129,7 +129,7 @@
                                                     <div class="card-body p-2 {{ $item->productVariant ? 'bg-light' : 'bg-white' }}">
                                                         <input type="hidden" class="unit-cost" value="{{ $item->unit_price ?? 0 }}">
                                                         
-                                                        @if($foundVariant && ($foundVariant->selling_price_per_pic > 0 || $foundVariant->selling_price_per_serving > 0))
+                                                        @if($foundVariant)
                                                             @php $currentBarStock = $variantStockMap[$foundVariant->id] ?? null; @endphp
                                                             <div class="mb-2 p-1 px-2 d-flex align-items-center shadow-sm" style="font-size: 10px; color: #1b5e20; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px;">
                                                                 <i class="fa fa-check-circle mr-2" style="opacity: 0.8;"></i> 
@@ -155,16 +155,16 @@
                                                             </div>
                                                         @else
                                                             <div class="mb-2 p-1 px-2 border border-warning rounded shadow-sm" style="font-size: 10px; background: #fff3cd; color: #856404;">
-                                                                <i class="fa fa-warning mr-1"></i> <strong>New:</strong> Not configured
+                                                                <i class="fa fa-warning mr-1"></i> <strong>New:</strong> Not in Registry
                                                             </div>
                                                         @endif
 
                                                         <div class="mb-2">
                                                             <label class="small text-muted mb-0 font-weight-bold" style="font-size: 10px;">Selling Method</label>
                                                             <select class="form-control form-control-sm selling-method" name="transfers[{{ $item->id }}][selling_method]" style="border-radius: 4px; font-size: 11px; height: 30px; border-color: #d1d8e0;">
-                                                                 <option value="pic" {{ ($foundVariant?->can_sell_as_pic && !$foundVariant?->can_sell_as_serving) ? 'selected' : '' }}>Bottle Only</option>
-                                                                <option value="serving" {{ (!$foundVariant?->can_sell_as_pic && $foundVariant?->can_sell_as_serving) ? 'selected' : '' }}>Glass/Tot Only</option>
-                                                                <option value="mixed" {{ ($foundVariant?->can_sell_as_pic && $foundVariant?->can_sell_as_serving) ? 'selected' : ($foundVariant ? '' : 'selected') }}>Bottle & Glass (Mixed)</option>
+                                                                <option value="pic" {{ ($foundVariant && $foundVariant->can_sell_as_pic && !$foundVariant->can_sell_as_serving) || ($foundVariant && !$foundVariant->can_sell_as_pic && !$foundVariant->can_sell_as_serving) ? 'selected' : '' }}>Bottle Only</option>
+                                                                <option value="serving" {{ ($foundVariant && !$foundVariant->can_sell_as_pic && $foundVariant->can_sell_as_serving) ? 'selected' : '' }}>Glass/Tot Only</option>
+                                                                <option value="mixed" {{ (!$foundVariant || ($foundVariant->can_sell_as_pic && $foundVariant->can_sell_as_serving)) ? 'selected' : '' }}>Bottle & Glass (Mixed)</option>
                                                             </select>
                                                         </div>
 
