@@ -380,10 +380,28 @@
     @foreach($foodItems as $food)
     <div class="item-card food-item" data-name="{{ strtolower($food['name']) }}" data-fcat="{{ strtolower($food['category'] ?? 'all') }}">
         <div class="item-img">
-            @if(isset($food['image']))
+            @if(isset($food['image']) && !empty($food['image']))
                 <img src="{{ asset('storage/' . $food['image']) }}" alt="{{ $food['name'] }}" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($food['name']) }}&background=fff3e0&color=e77a31'">
             @else
-                <i class="fa fa-cutlery fa-2x text-muted"></i>
+                @php
+                    $foodIcons = [
+                        'appetizers' => ['icon' => 'fa-fire', 'grad' => 'linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)'],
+                        'main_course' => ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'],
+                        'desserts' => ['icon' => 'fa-birthday-cake', 'grad' => 'linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%)'],
+                        'beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
+                        'breakfast' => ['icon' => 'fa-sun-o', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
+                        'lunch' => ['icon' => 'fa-shopping-bag', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
+                        'dinner' => ['icon' => 'fa-moon-o', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
+                        'snacks' => ['icon' => 'fa-lemon-o', 'grad' => 'linear-gradient(135deg, #f2994a 0%, #f2c94c 100%)'],
+                        'salads' => ['icon' => 'fa-leaf', 'grad' => 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)'],
+                        'soups' => ['icon' => 'fa-spoon', 'grad' => 'linear-gradient(135deg, #EB3349 0%, #F45C43 100%)'],
+                    ];
+                    $catKey = strtolower(str_replace(' ', '_', $food['category'] ?? ''));
+                    $style = $foodIcons[$catKey] ?? ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #e77a31 0%, #eaafc8 100%)'];
+                @endphp
+                <div class="d-flex align-items-center justify-content-center w-100 h-100" style="background: {!! $style['grad'] !!};">
+                     <i class="fa {!! $style['icon'] !!} fa-3x text-white opacity-50"></i>
+                </div>
             @endif
             @php 
                 $hasUsd = !empty($food['price_usd']) && $food['price_usd'] > 0;

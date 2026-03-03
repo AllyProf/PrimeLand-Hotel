@@ -183,12 +183,13 @@ class PrimeLandMenuSeeder extends Seeder
             ['Cake of the Day',                   'desserts',    10000,  5,  5,
                 'Ask your waiter for today\'s freshly baked cake selection.'],
 
-            // ── SIDES (no standardised USD price — accompaniments only) ──
-            ['Plain Rice',                        'snacks',       3000, null,  5,  'Steamed white rice.'],
-            ['French Fries',                      'snacks',       4000, null,  8,  'Golden crispy French fries.'],
-            ['Potato Wedges',                     'snacks',       4000, null,  8,  'Seasoned oven-baked potato wedges.'],
-            ['Mashed Potatoes',                   'snacks',       4000, null, 10,  'Creamy butter mashed potatoes.'],
-            ['Fried Banana',                      'snacks',       3000, null,  8,  'Sweet fried ripe banana — a local favourite.'],
+            // ── SIDES & TRADITIONAL (Part of Main Course logic) ──────────
+            ['Ugali',                             'main_course',  2000,  1,  5,  'Traditional Tanzanian staple made of maize flour.'],
+            ['Plain Rice',                        'main_course',  3000,  1.5,5,  'Steamed white rice.'],
+            ['French Fries',                      'main_course',  4000,  2,  8,  'Golden crispy French fries.'],
+            ['Potato Wedges',                     'main_course',  4000,  2,  8,  'Seasoned oven-baked potato wedges.'],
+            ['Mashed Potatoes',                   'main_course',  4000,  2, 10,  'Creamy butter mashed potatoes.'],
+            ['Fried Banana',                      'main_course',  3000,  1.5,8,  'Sweet fried ripe banana — a local favourite.'],
         ];
 
         foreach ($foodItems as [$name, $category, $tsh, $usd, $prep, $desc]) {
