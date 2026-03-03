@@ -1021,6 +1021,21 @@ class BookingController extends Controller
         $updateData = ['check_in_status' => $request->check_in_status];
 
         if ($request->check_in_status === 'checked_in') {
+            // Prevent multiple active check-ins for the same room
+            if ($booking->room_id) {
+                $currentlyOccupied = Booking::where('room_id', $booking->room_id)
+                    ->where('check_in_status', 'checked_in')
+                    ->where('id', '!=', $booking->id)
+                    ->first();
+                
+                if ($currentlyOccupied) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Cannot check in. Room " . ($booking->room->room_number ?? 'this room') . " is already occupied by " . $currentlyOccupied->guest_name . ". Please check out the existing guest first.",
+                    ], 400);
+                }
+            }
+
             $updateData['checked_in_at'] = now();
             // Auto-update booking status to confirmed if not already
             if ($booking->status === 'pending') {
@@ -1828,7 +1843,21 @@ class BookingController extends Controller
             ], 400);
         }
 
-        // Date restriction removed for testing purposes - guests can check in at any time
+        // Prevent multiple active check-ins for the same room
+        if ($booking->room_id) {
+            $currentlyOccupied = Booking::where('room_id', $booking->room_id)
+                ->where('check_in_status', 'checked_in')
+                ->where('id', '!=', $booking->id)
+                ->first();
+            
+            if ($currentlyOccupied) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Cannot check in. Room " . ($booking->room->room_number ?? 'this room') . " is already occupied. Please contact reception to assist with your check-in.",
+                ], 400);
+            }
+        }
+
         // Perform check-in
         $booking->update([
             'check_in_status' => 'checked_in',
