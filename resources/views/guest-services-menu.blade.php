@@ -217,10 +217,13 @@
         /* ── Modal ── */
         .modal-content { background: #111; border: 1px solid var(--glass-border); border-radius: 30px; }
         .modal-body { padding: 25px; }
-        .call-item { background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 18px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; text-decoration: none !important; color: #fff; }
-        .dept-info b { display: block; font-size: 15px; }
-        .dept-info span { font-size: 11px; opacity: 0.5; }
         .dept-phone { color: var(--primary); font-weight: 800; font-size: 14px; }
+
+        /* ── Description Modal ── */
+        .desc-modal-body { color: var(--text-dim); font-size: 15px; line-height: 1.6; }
+        .desc-modal-title { font-weight: 800; color: #fff; margin-bottom: 5px; }
+        .clickable-card { cursor: pointer !important; }
+        .clickable-card:active { transform: scale(0.98); }
 
     </style>
 </head>
@@ -276,7 +279,10 @@
 
         <div class="list-view" id="grid-food">
             @forelse($recipes as $recipe)
-                <div class="rich-card recipe-node" data-cat="{{ $recipe->category }}" data-search="{{ strtolower($recipe->name) }}">
+                <div class="rich-card recipe-node clickable-card" 
+                     data-cat="{{ $recipe->category }}" 
+                     data-search="{{ strtolower($recipe->name) }}"
+                     onclick="showFullDescription('{{ addslashes($recipe->name) }}', '{{ addslashes($recipe->description ?? '') }}')">
                     <div class="rich-thumb">
                         <span class="cat-chip">{{ $recipe->category ?? 'Food' }}</span>
                         @if($recipe->image)
@@ -326,7 +332,7 @@
                                         @endif
                                     </div>
                                 </div>
-                                <button class="btn-order-mini" onclick="requestItem('{{ addslashes($recipe->name) }}')">Order</button>
+                                <button class="btn-order-mini" onclick="event.stopPropagation(); requestItem('{{ addslashes($recipe->name) }}')">Order</button>
                             </div>
                         </div>
                     </div>
@@ -587,6 +593,20 @@
         </div>
     </div>
 
+    <!-- Food Description Modal -->
+    <div class="modal fade" id="descModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 25px;">
+                <div class="modal-body">
+                    <h5 class="desc-modal-title" id="descTitle">Item Name</h5>
+                    <hr style="border-color: var(--glass-border); margin: 15px 0;">
+                    <p class="desc-modal-body" id="descText">Description goes here...</p>
+                    <button class="btn btn-primary btn-block mt-4" style="border-radius: 12px; font-weight: 800;" onclick="closeDescModal()">Awesome</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -635,6 +655,14 @@
 
         function requestItem(name) { $('#orderTarget').text(`Order: ${name}`); toggleCallModal(true); }
         function toggleCallModal(show) { $('#orderCallModal').modal(show ? 'show' : 'hide'); }
+
+        function showFullDescription(name, desc) {
+            if(!desc || desc.length < 5) return; // Don't show if empty
+            $('#descTitle').text(name);
+            $('#descText').text(desc);
+            $('#descModal').modal('show');
+        }
+        function closeDescModal() { $('#descModal').modal('hide'); }
     </script>
 </body>
 </html>
