@@ -124,8 +124,11 @@ class WaiterController extends Controller
             }
         }
 
-        // 3. Get all available Food Recipes
-        $recipes = \App\Models\Recipe::where('is_available', true)->get();
+        // 3. Get all available Food Recipes (Sorted for better POS organization)
+        $recipes = \App\Models\Recipe::where('is_available', true)
+            ->orderBy('category', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
         $foodItems = [];
         foreach ($recipes as $recipe) {
             $foodItems[] = [

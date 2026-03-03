@@ -385,15 +385,23 @@
             @else
                 <i class="fa fa-cutlery fa-2x text-muted"></i>
             @endif
-            @if(!empty($food['price_usd']) && $food['price_usd'] > 0)
-                <span class="item-price-tag">${{ rtrim(rtrim(number_format($food['price_usd'], 2), '0'), '.') }}</span>
-            @else
-                <span class="item-price-tag">{{ number_format($food['price']) }}</span>
-            @endif
+            @php 
+                $hasUsd = !empty($food['price_usd']) && $food['price_usd'] > 0;
+            @endphp
+            <div class="item-price-tag d-flex flex-column align-items-end" style="line-height: 1.1; padding: 4px 8px;">
+                @if($hasUsd)
+                    <span style="font-size: 0.85rem; font-weight: 800;">${{ rtrim(rtrim(number_format($food['price_usd'], 2), '0'), '.') }}</span>
+                    <span style="font-size: 0.6rem; opacity: 0.9;">{{ number_format($food['price']) }} TSH</span>
+                @else
+                    <span style="font-size: 0.75rem; font-weight: 800;">{{ number_format($food['price']) }} TSH</span>
+                @endif
+            </div>
         </div>
         <div class="item-info">
-            <h6 class="item-name" style="margin-bottom: 3px;">{{ $food['name'] }}</h6>
-            <div class="mb-2 text-muted" style="font-size: 0.65rem; text-transform: uppercase;">{{ str_replace('_', ' ', $food['category'] ?? 'Food') }}</div>
+            <h6 class="item-name" style="margin-bottom: 2px; font-weight: 700; color: #333;">{{ $food['name'] }}</h6>
+            <div class="mb-2" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700; color: #e77a31; letter-spacing: 0.5px;">
+                <i class="fa fa-tag mr-1"></i> {{ str_replace('_', ' ', $food['category'] ?? 'Food') }}
+            </div>
             <button class="add-btn-small" onclick="fastAdd('food', {{ json_encode($food) }})">ADD TO BASKET</button>
         </div>
     </div>
@@ -443,10 +451,11 @@
             <button class="add-btn-small mb-1 d-flex justify-content-between align-items-center" 
                     {{ $isOut ? 'disabled' : '' }}
                     onclick="fastAdd('drink', {{ json_encode($drink) }}, '{{ $opt['type'] }}', {{ $opt['price'] }}, '{{ $opt['method'] }}')">
-                <span>{{ strtoupper($opt['type']) }}</span>
-                <span>
+                <span style="font-weight: 700;">{{ strtoupper($opt['type']) }}</span>
+                <span class="text-right">
                     @if(!empty($opt['price_usd']) && $opt['price_usd'] > 0)
-                        ${{ rtrim(rtrim(number_format($opt['price_usd'], 2), '0'), '.') }}
+                        <span class="d-block" style="font-size: 0.8rem; font-weight: 800;">${{ rtrim(rtrim(number_format($opt['price_usd'], 2), '0'), '.') }}</span>
+                        <span class="d-block" style="font-size: 0.6rem; opacity: 0.8;">{{ number_format($opt['price']) }}</span>
                     @else
                         {{ number_format($opt['price']) }}
                     @endif
