@@ -222,8 +222,30 @@
         /* ── Description Modal ── */
         .desc-modal-body { color: var(--text-dim); font-size: 15px; line-height: 1.6; }
         .desc-modal-title { font-weight: 800; color: #fff; margin-bottom: 5px; }
-        .clickable-card { cursor: pointer !important; }
+        .clickable-card { cursor: pointer !important; position: relative; }
         .clickable-card:active { transform: scale(0.98); }
+
+        /* ── Pulse Animation (Steam effect) ── */
+        .pulse-hint {
+            position: absolute; top: 15px; right: 15px;
+            background: var(--primary); color: #fff;
+            font-size: 9px; font-weight: 800; padding: 4px 8px;
+            border-radius: 50px; text-transform: uppercase;
+            animation: pulse-steam 2s infinite;
+            pointer-events: none;
+            z-index: 5;
+        }
+        @keyframes pulse-steam {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 122, 58, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(231, 122, 58, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 122, 58, 0); }
+        }
+        .btn-details {
+            padding: 4px 10px; background: rgba(255,255,255,0.05); color: var(--text-dim);
+            border: 1px solid var(--glass-border); border-radius: 7px; font-size: 10px; font-weight: 800;
+            cursor: pointer; transition: 0.3s; margin-right: 5px;
+        }
+        .btn-details:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
     </style>
 </head>
@@ -319,20 +341,23 @@
                     <div class="rich-body">
                         <div class="rich-title">{{ $recipe->name }}</div>
                         @if($recipe->description)
+                            <div class="pulse-hint">Details</div>
                             <div class="rich-sub">{{ Str::limit($recipe->description, 55) }}</div>
                         @endif
                         <div class="option-strip">
                             <div class="opt-row">
-                                <div>
+                                <div style="flex: 1;">
                                     <div class="opt-label">Portion</div>
                                     <div class="opt-price">
                                         {{ number_format($recipe->selling_price) }} TZS
-                                        @if(!empty($recipe->selling_price_usd) && $recipe->selling_price_usd > 0)
-                                            <span style="color:#fff;opacity:0.6;font-size:10px;">(${{ rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') }})</span>
-                                        @endif
                                     </div>
                                 </div>
-                                <button class="btn-order-mini" onclick="event.stopPropagation(); requestItem('{{ addslashes($recipe->name) }}')">Order</button>
+                                <div class="d-flex align-items-center">
+                                    @if($recipe->description)
+                                        <button class="btn-details" onclick="event.stopPropagation(); showFullDescription('{{ addslashes($recipe->name) }}', '{{ addslashes($recipe->description ?? '') }}')">Details</button>
+                                    @endif
+                                    <button class="btn-order-mini" onclick="event.stopPropagation(); requestItem('{{ addslashes($recipe->name) }}')">Order</button>
+                                </div>
                             </div>
                         </div>
                     </div>
