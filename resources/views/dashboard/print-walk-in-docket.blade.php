@@ -161,14 +161,13 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Served By:</span>
-                <span class="info-value">Bar Keeper</span>
+                <span class="info-value">
+                    Bar Keeper
+                    @if($serviceRequest->paidBy && trim($serviceRequest->paidBy->name) !== 'Bar Keeper')
+                        | Payment Recorded By: {{ $serviceRequest->paidBy->name }}
+                    @endif
+                </span>
             </div>
-            @if($serviceRequest->paidBy)
-            <div class="info-row">
-                <span class="info-label">Payment Recorded By:</span>
-                <span class="info-value">{{ $serviceRequest->paidBy->name }}</span>
-            </div>
-            @endif
         </div>
 
         <!-- Items Table -->

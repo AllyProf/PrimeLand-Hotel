@@ -183,7 +183,7 @@
                     @php
                         $paidOrder = $orders->whereIn('payment_status', ['paid', 'room_charge'])->first();
                     @endphp
-                    @if($paidOrder && $paidOrder->paidBy)
+                    @if($paidOrder && $paidOrder->paidBy && trim($paidOrder->paidBy->name) !== trim($requestedBy))
                         | Payment Recorded By: {{ $paidOrder->paidBy->name }}
                     @endif
                 </span>

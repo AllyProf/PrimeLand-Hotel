@@ -172,7 +172,7 @@
                 <span class="info-label">Served By:</span>
                 <span class="info-value">
                     {{ $requestedBy }}
-                    @if($order->paidBy)
+                    @if($order->paidBy && trim($order->paidBy->name) !== trim($requestedBy))
                         | Payment recorded by: {{ $order->paidBy->name }}
                     @endif
                 </span>
