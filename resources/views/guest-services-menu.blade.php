@@ -225,27 +225,19 @@
         .clickable-card { cursor: pointer !important; position: relative; }
         .clickable-card:active { transform: scale(0.98); }
 
-        /* ── Pulse Animation (Steam effect) ── */
-        .pulse-hint {
-            position: absolute; top: 15px; right: 15px;
-            background: var(--primary); color: #fff;
-            font-size: 9px; font-weight: 800; padding: 4px 8px;
-            border-radius: 50px; text-transform: uppercase;
-            animation: pulse-steam 2s infinite;
-            pointer-events: none;
-            z-index: 5;
-        }
         @keyframes pulse-steam {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 122, 58, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(231, 122, 58, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 122, 58, 0); }
+            0% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(231, 122, 58, 0.6); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(231, 122, 58, 0); }
+            100% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(231, 122, 58, 0); }
         }
-        .btn-details {
-            padding: 4px 10px; background: rgba(255,255,255,0.05); color: var(--text-dim);
-            border: 1px solid var(--glass-border); border-radius: 7px; font-size: 10px; font-weight: 800;
-            cursor: pointer; transition: 0.3s; margin-right: 5px;
+        .btn-order-mini {
+            padding: 6px 15px; background: var(--primary); color: #fff;
+            border: none; border-radius: 50px; font-size: 11px; font-weight: 800;
+            cursor: pointer; white-space: nowrap;
+            transition: 0.3s;
+            animation: pulse-steam 2.5s infinite;
         }
-        .btn-details:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .btn-order-mini:hover { background: #c45e18; transform: scale(1.05); }
 
     </style>
 </head>
@@ -341,7 +333,6 @@
                     <div class="rich-body">
                         <div class="rich-title">{{ $recipe->name }}</div>
                         @if($recipe->description)
-                            <div class="pulse-hint">Details</div>
                             <div class="rich-sub">{{ Str::limit($recipe->description, 55) }}</div>
                         @endif
                         <div class="option-strip">
@@ -353,10 +344,7 @@
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center">
-                                    @if($recipe->description)
-                                        <button class="btn-details" onclick="event.stopPropagation(); showFullDescription('{{ addslashes($recipe->name) }}', '{{ addslashes($recipe->description ?? '') }}')">Details</button>
-                                    @endif
-                                    <button class="btn-order-mini" onclick="event.stopPropagation(); requestItem('{{ addslashes($recipe->name) }}')">Order</button>
+                                    <button class="btn-order-mini" onclick="event.stopPropagation(); requestItem('{{ addslashes($recipe->name) }}')">Order Now</button>
                                 </div>
                             </div>
                         </div>
