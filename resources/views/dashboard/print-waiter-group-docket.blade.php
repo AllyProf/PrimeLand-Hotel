@@ -163,8 +163,8 @@
         <div class="header">
             <h1>PrimeLand Hotel</h1>
             <p>Moshi, Kilimanjaro, Tanzania</p>
-            <p>Tel: +255 XXX XXX XXX</p>
-            <p style="margin-top: 10px; font-weight: bold; font-size: 13px;">GUEST BILL</p>
+            <p>Tel: 0677155157</p>
+            <div class="bill-label">GUEST BILL</div>
         </div>
 
         <div class="section">
@@ -180,6 +180,15 @@
                 <span class="info-label">Served By:</span>
                 <span class="info-value">{{ $requestedBy }}</span>
             </div>
+            @php
+                $paidOrder = $orders->whereIn('payment_status', ['paid', 'room_charge'])->first();
+            @endphp
+            @if($paidOrder && $paidOrder->paidBy)
+            <div class="info-row">
+                <span class="info-label">Payment Recorded By:</span>
+                <span class="info-value">{{ $paidOrder->paidBy->name }}</span>
+            </div>
+            @endif
             <div class="info-row">
                 <span class="info-label">Date:</span>
                 <span class="info-value">{{ $first->requested_at->format('M d, Y H:i') }}</span>
@@ -281,6 +290,9 @@
         <div class="footer">
             <p>Thank you for dining with us!</p>
             <p style="margin-top: 5px;">Printed: {{ now()->format('M d, Y H:i') }}</p>
+            <p style="margin-top: 8px; font-weight: 700; color: #1e293b; font-size: 10px;">
+                Powered By EmCa Techonologies LTD (www.emca.tech)
+            </p>
         </div>
     </div>
 

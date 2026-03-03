@@ -30,6 +30,9 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
         }
         
         body {
@@ -243,7 +246,7 @@
             </div>
             <h1>PRIMELAND HOTEL</h1>
             <p>Sokoine Road - Moshi Kilimanjaro - Tanzania</p>
-            <p>Phone: 0677-155-156</p>
+            <p>Phone: 0677155157</p>
             <p>Email: info@primelandhotel.com / infoprimelandhotel@gmail.com | infoprimelandhotel@gmail.com</p>
         </div>
         
@@ -563,7 +566,7 @@
         <div class="footer">
             <p>Thank you for choosing PrimeLand Hotel!</p>
             <p>For inquiries, please contact us at the information above.</p>
-            <p class="powered-by">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
+            <p class="powered-by">Powered By EmCa Techonologies LTD (www.emca.tech)</p>
         </div>
     </div>
     

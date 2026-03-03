@@ -4,124 +4,136 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Bill - {{ $guestName }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
         }
         body {
-            font-family: 'Courier New', monospace;
-            padding: 20px;
-            max-width: 400px; /* Thinner for thermal printer style */
+            font-family: 'Inter', sans-serif;
+            padding: 10px;
+            max-width: 380px;
             margin: 0 auto;
-            background: #fff;
-            position: relative;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            line-height: 1.4;
         }
         .docket {
-            border: 2px solid #e07632; /* Primary Color */
-            padding: 15px;
-            position: relative;
             background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            border-top: 5px solid #e07632;
         }
         .header {
             text-align: center;
-            border-bottom: 2px dashed #e07632;
-            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
             margin-bottom: 15px;
         }
         .header h1 {
-            font-size: 20px;
-            margin-bottom: 5px;
+            font-size: 22px;
+            font-weight: 800;
             color: #e07632;
             text-transform: uppercase;
+            margin-bottom: 4px;
         }
         .header p {
             font-size: 11px;
-            margin: 2px 0;
-            color: #333;
+            color: #666;
+            margin: 1px 0;
+        }
+        .label {
+            display: inline-block;
+            background: #e07632;
+            color: #fff;
+            padding: 4px 10px;
+            font-weight: 800;
+            font-size: 12px;
+            border-radius: 4px;
+            margin-top: 5px;
         }
         .section {
-            margin: 10px 0;
-            border-bottom: 1px dashed #e07632;
-            padding-bottom: 10px;
-        }
-        .section-title {
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 8px;
-            text-align: center;
-            text-transform: uppercase;
-            color: #e07632;
+            padding: 10px 0;
+            border-bottom: 1px dashed #ddd;
         }
         .info-row {
             display: flex;
             justify-content: space-between;
-            margin: 5px 0;
-            font-size: 13px;
+            margin: 4px 0;
+            font-size: 12px;
         }
+        .info-label { color: #666; }
+        .info-value { font-weight: 700; text-align: right; }
         .item-row {
             margin: 15px 0;
-            font-size: 16px;
-            font-weight: bold;
+            padding: 12px;
+            background: #fcfcfc;
+            border-left: 5px solid #e07632;
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        .item-details {
-            display: flex;
-            align-items: center;
+            font-size: 16px;
         }
         .item-qty {
-            font-size: 16px;
+            font-weight: 800;
             color: #e07632;
-            margin-right: 10px;
-            font-weight: bold;
+            font-family: 'JetBrains Mono', monospace;
+            margin-right: 12px;
         }
+        .item-name { font-weight: 700; color: #1a1a1a; }
         .notes {
             margin-top: 10px;
-            padding: 8px;
-            background: #fff9f5;
-            border: 1px dashed #ddd;
-            font-style: italic;
-            font-size: 12px;
-            color: #666;
-        }
-        .payment-info {
-            margin: 15px 0;
-            text-align: center;
-            font-weight: bold;
-            font-size: 16px;
-            border: 2px solid #e07632;
-            background: #fff3e0;
             padding: 10px;
-            color: #e07632;
+            background: #fff9f5;
+            border-left: 2px solid #edaf82;
+            font-style: italic;
+            font-size: 11px;
+            color: #d35400;
         }
-        .total-pay {
-            font-size: 20px;
-            margin-top: 5px;
+        .status-box {
+            margin: 20px 0;
+            text-align: center;
+            padding: 15px;
+            border: 2px solid #333;
+            background: #f8f9fa;
+        }
+        .status-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #666;
             display: block;
-            border-top: 1px solid #e07632;
-            padding-top: 5px;
+            margin-bottom: 5px;
+        }
+        .status-value {
+            font-size: 16px;
+            font-weight: 800;
+            color: #1a1a1a;
+        }
+        .total-bill {
+            font-size: 22px;
+            font-weight: 800;
+            color: #e07632;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
         }
         .footer {
-            margin-top: 20px;
             text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
             font-size: 11px;
-            color: #333;
-        }
-        .emca-credit {
-            margin-top: 15px;
-            font-weight: bold;
-            color: #940000;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            color: #888;
         }
         @media print {
-            body { padding: 0; }
+            body { background: #fff; padding: 0; margin: 0; }
+            .docket { box-shadow: none; border-top: none; padding: 10px; width: 100%; }
             .no-print { display: none; }
-            .docket { border-width: 1px; }
         }
     </style>
 </head>
@@ -129,46 +141,53 @@
     <div class="docket">
         <!-- Header -->
         <div class="header">
-            <h1 style="font-size: 24px;">PRIMELAND HOTEL</h1>
-            <p style="font-weight: bold; letter-spacing: 2px; color: #e07632;">
+            <h1>PRIMELAND HOTEL</h1>
+            <p>Sokoine Road - Moshi Kilimanjaro - Tanzania</p>
+            <p>Tel: 0677155157</p>
+            <div class="label">
                 @if(in_array(($order->payment_status ?? 'pending'), ['paid', 'room_charge']))
                     GUEST BILL RECEIPT
                 @else
                     KITCHEN ORDER DOCKET
                 @endif
-            </p>
-            <p>{{ now()->format('M d, Y - h:i A') }}</p>
+            </div>
+            <p style="margin-top: 5px;">{{ now()->format('M d, Y - h:i A') }}</p>
         </div>
 
         <!-- Order Information -->
         <div class="section">
             <div class="info-row">
-                <span>Guest Name:</span>
-                <strong>{{ $guestName }}</strong>
+                <span class="info-label">Guest Name:</span>
+                <span class="info-value">{{ $guestName }}</span>
             </div>
             <div class="info-row">
-                <span>Location:</span>
-                <strong>{{ str_replace('WALK-IN (', '', str_replace(')', '', $destination)) }}</strong>
+                <span class="info-label">Location:</span>
+                <span class="info-value">{{ str_replace('WALK-IN (', '', str_replace(')', '', $destination)) }}</span>
             </div>
             <div class="info-row">
-                <span>Bill #:</span>
-                <strong>{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</strong>
+                <span class="info-label">Bill #:</span>
+                <span class="info-value">{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</span>
             </div>
             <div class="info-row">
-                <span>Requested By:</span>
-                <strong>{{ $requestedBy }}</strong>
+                <span class="info-label">Served By:</span>
+                <span class="info-value">{{ $requestedBy }}</span>
             </div>
+            @if($order->paidBy)
+            <div class="info-row">
+                <span class="info-label">Payment Recorded By:</span>
+                <span class="info-value">{{ $order->paidBy->name }}</span>
+            </div>
+            @endif
         </div>
 
         <!-- Billing Items -->
         <div class="section" style="border-bottom: none;">
-            <div class="section-title">Order Details</div>
             <div class="item-row">
-                <div class="item-details">
+                <div class="item-info">
                     <span class="item-qty">{{ $order->quantity }}x</span>
-                    <span>{{ $itemName }}</span>
+                    <span class="item-name">{{ $itemName }}</span>
                 </div>
-                <span>{{ number_format($order->unit_price_tsh) }}</span>
+                <span class="item-price">{{ number_format($order->unit_price_tsh) }}</span>
             </div>
             
             @if($note)
@@ -179,32 +198,34 @@
         </div>
 
         <!-- Total Section -->
-        <div class="payment-info">
+        <div class="status-box">
             <div>
                 @php
                     $status = strtoupper($order->payment_status ?? 'PENDING');
                     if($status === 'ROOM_CHARGE') $status = 'CHARGED TO ROOM';
                 @endphp
-                ORDER STATUS: {{ $status }}
+                <span class="status-label">ORDER STATUS</span>
+                <span class="status-value">{{ $status }}</span>
                 
                 @if(in_array($order->payment_status, ['paid', 'room_charge']))
-                    <div style="font-size: 11px; margin-top: 8px; font-weight: normal; color: #333; border-top: 1px solid #ccc; padding-top: 5px;">
-                        METHOD: <strong>{{ strtoupper(str_replace('_', ' ', $order->payment_method ?? 'N/A')) }}</strong><br>
-                        REF #: <strong>{{ $order->payment_reference ?: 'N/A' }}</strong>
+                    <div style="font-size: 11px; margin-top: 8px; font-weight: normal; color: #666; border-top: 1px solid #ddd; padding-top: 8px; text-align: left;">
+                        METHOD: <strong style="color:#1a1a1a;">{{ strtoupper(str_replace('_', ' ', $order->payment_method ?? 'N/A')) }}</strong><br>
+                        REF #: <strong style="color:#1a1a1a;">{{ $order->payment_reference ?: 'N/A' }}</strong>
                     </div>
                 @endif
             </div>
-            <div class="total-pay">
-                TOTAL BILL: {{ number_format($order->total_price_tsh) }} TZS
+            <div class="total-bill">
+                {{ number_format($order->total_price_tsh) }} TZS
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            <p style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Thank you for dining with us!</p>
+            <p style="font-weight: 800; color: #1a1a1a; margin-bottom: 5px;">Thank you for dining with us!</p>
             <p>Please keep this receipt for your records.</p>
-            <p>Visit again soon!</p>
-            <div class="emca-credit">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></div>
+            <p style="margin-top: 10px; font-weight: 700; color: #1a1a1a;">
+                Powered By EmCa Techonologies LTD (www.emca.tech)
+            </p>
         </div>
     </div>
 

@@ -4,110 +4,159 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Service Bill - {{ $dayService->service_reference }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
         body {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
-            color: #000;
-            background: #fff;
-            padding: 20px;
+            font-family: 'Inter', sans-serif;
+            padding: 10px;
+            max-width: 380px;
+            margin: 0 auto;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            line-height: 1.4;
         }
         .container {
-            max-width: 400px;
-            margin: 0 auto;
-            border: 1px dashed #000;
-            padding: 15px;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            border-top: 5px solid #e77a3a;
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
         }
         .header h2 {
-            margin: 5px 0;
-            font-size: 16px;
+            font-size: 22px;
+            font-weight: 800;
+            color: #e77a3a;
             text-transform: uppercase;
+            margin-bottom: 4px;
         }
         .header p {
-            margin: 2px 0;
             font-size: 11px;
+            color: #666;
+            margin: 1px 0;
+        }
+        .label {
+            display: inline-block;
+            background: #e77a3a;
+            color: #fff;
+            padding: 4px 10px;
+            font-weight: 800;
+            font-size: 12px;
+            border-radius: 4px;
+            margin-top: 5px;
+            text-transform: uppercase;
         }
         .info-section {
-            margin-bottom: 15px;
-            border-bottom: 2px dashed #e77a3a;
-            padding-bottom: 10px;
+            padding: 10px 0;
+            border-bottom: 1px dashed #ddd;
         }
         .info-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 3px;
+            margin: 4px 0;
+            font-size: 12px;
         }
+        .info-label { color: #666; }
+        .info-value { font-weight: 700; text-align: right; }
         .items-table {
             width: 100%;
-            margin-bottom: 15px;
+            margin: 15px 0;
             border-collapse: collapse;
         }
         .items-table th {
             text-align: left;
-            border-bottom: 2px solid #e77a3a;
-            padding: 5px 0;
-            color: #e77a3a;
+            border-bottom: 2px solid #333;
+            padding: 8px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #333;
+            background: #f8f9fa;
         }
         .items-table td {
-            padding: 5px 0;
-            vertical-align: top;
+            padding: 10px 8px;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
         }
         .totals {
             margin-top: 15px;
-            border-top: 2px solid #e77a3a;
             padding-top: 10px;
+            border-top: 2px solid #333;
         }
         .total-row {
             display: flex;
             justify-content: space-between;
             margin-bottom: 5px;
-            font-weight: bold;
+            font-weight: 800;
+            font-size: 14px;
+        }
+        .balance-due {
+            font-size: 20px;
+            color: #e77a3a;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
         }
         .signature-section {
-            margin-top: 40px;
+            margin-top: 25px;
             text-align: center;
+            border-top: 1px dashed #ccc;
+            padding-top: 20px;
         }
         .signature-line {
-            border-top: 1px solid #e77a3a;
-            margin-top: 40px;
-            width: 100%;
+            border-bottom: 1px solid #333;
+            margin: 10px auto 5px;
+            width: 80%;
+        }
+        .footer-credit {
+            font-size: 10px;
+            color: #1a1a1a;
+            font-weight: 700;
+            margin-top: 15px;
         }
         @media print {
-            body { padding: 0; }
-            .container { border: none; width: 100%; max-width: none; }
+            body { background: #fff; padding: 0; margin: 0; }
+            .container { box-shadow: none; border-top: none; padding: 10px; width: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h2 style="color: #e77a3a;">PRIMELAND HOTEL</h2>
-            <p>Sokoine Road - Moshi</p>
-            <p>Tel: 0677-155-156</p>
-            <h3 style="border-bottom: 1px solid #e77a3a; display: inline-block; padding-bottom: 2px;">SERVICE DOCKET / BILL</h3>
+            <h2>PRIMELAND HOTEL</h2>
+            <p>Sokoine Road - Moshi Kilimanjaro - Tanzania</p>
+            <p>Tel: 0677155157</p>
+            <div class="label">SERVICE DOCKET / BILL</div>
         </div>
 
         <div class="info-section">
             <div class="info-row">
-                <span>Ref:</span>
-                <span>{{ $dayService->service_reference }}</span>
+                <span class="info-label">Ref:</span>
+                <span class="info-value">{{ $dayService->service_reference }}</span>
             </div>
             <div class="info-row">
-                <span>Date:</span>
-                <span>{{ $dayService->service_date->format('d/m/Y') }}</span>
+                <span class="info-label">Date:</span>
+                <span class="info-value">{{ $dayService->service_date->format('d/m/Y') }}</span>
             </div>
             <div class="info-row">
-                <span>Guest:</span>
-                <span>{{ strtoupper($dayService->guest_name) }}</span>
+                <span class="info-label">Guest:</span>
+                <span class="info-value">{{ strtoupper($dayService->guest_name) }}</span>
             </div>
             @if($dayService->guest_phone)
             <div class="info-row">
-                <span>Phone:</span>
-                <span>{{ str_replace('+255+255', '+255', $dayService->guest_phone) }}</span>
+                <span class="info-label">Phone:</span>
+                <span class="info-value">{{ str_replace('+255+255', '+255', $dayService->guest_phone) }}</span>
             </div>
             @endif
         </div>
@@ -176,10 +225,7 @@
         <div class="totals">
             @php
                 $mainAmount = ($showPackage ?? true) ? $dayService->amount : 0;
-                
-                // Ensure we use filtered list for totals
                 $calcConsumption = $dayService->serviceRequests ?? collect();
-                // Exclude cancelled items
                 $calcConsumption = $calcConsumption->filter(fn($item) => strtolower($item->status ?? "") !== 'cancelled');
 
                 if(isset($filterCategories) && !empty($filterCategories)) {
@@ -188,7 +234,6 @@
                     });
                 }
                 
-                // Exclude items that have been merged/billed into the main day service bill
                 $calcConsumption = $calcConsumption->filter(fn($item) => strtolower($item->status ?? '') !== 'billed');
                 
                 $totalConsumption = $calcConsumption->sum('total_price_tsh');
@@ -207,14 +252,14 @@
             </div>
             
             @if($totalPaid > 0)
-            <div class="total-row">
-                <span>Paid:</span>
+            <div class="total-row" style="color: #28a745;">
+                <span>Total Paid:</span>
                 <span>{{ number_format($totalPaid) }} TZS</span>
             </div>
             @endif
 
             @if($balanceDue > 0)
-            <div class="total-row" style="font-size: 14px;">
+            <div class="total-row balance-due">
                 <span>BALANCE DUE:</span>
                 <span>{{ number_format($balanceDue) }} TZS</span>
             </div>
@@ -222,14 +267,15 @@
         </div>
 
         <div class="signature-section">
-            <p style="margin-bottom: 30px;">Guest Signature</p>
-            <div class="signature-line" style="margin-top: 30px;"></div>
+            <p style="font-size: 11px;">Guest Signature</p>
+            <div class="signature-line"></div>
             
-            <p style="margin-bottom: 30px; margin-top: 20px;">Served By: {{ auth()->user()->name ?? 'Staff' }}</p>
-            <div class="signature-line" style="margin-top: 30px; border-color: #e77a3a;"></div>
+            <p style="font-size: 11px; margin-top: 15px;">Served By: <strong>{{ auth()->user()->name ?? 'Staff' }}</strong></p>
+            <div class="signature-line" style="border-color: #e77a3a;"></div>
             
-            <p style="font-size: 10px; margin-top: 15px;">Thank you for visiting PrimeLand Hotel!</p>
-            <p style="font-size: 10px; margin-top: 5px; color: #940000;">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
+            <p class="footer-credit">
+                Powered By EmCa Techonologies LTD (www.emca.tech)
+            </p>
         </div>
     </div>
     <script>

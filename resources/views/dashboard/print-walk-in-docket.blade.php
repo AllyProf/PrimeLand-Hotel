@@ -4,157 +4,134 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Walk-in Docket - {{ $guestName }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
         }
         body {
-            font-family: 'Courier New', monospace;
-            padding: 20px;
-            max-width: 800px;
+            font-family: 'Inter', sans-serif;
+            padding: 10px;
+            max-width: 380px;
             margin: 0 auto;
-            background: #fff;
-            position: relative;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            line-height: 1.4;
         }
         .docket {
-            border: 2px solid #e77a31;
-            padding: 20px;
-            position: relative;
             background: #fff;
-        }
-        .docket::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 650px;
-            height: 650px;
-            background-image: url('/dashboard_assets/images/Logo.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0.05;
-            z-index: 0;
-            pointer-events: none;
-        }
-        .docket > * {
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            border-top: 5px solid #e77a31;
             position: relative;
-            z-index: 1;
         }
         .header {
             text-align: center;
-            border-bottom: 2px dashed #e77a31;
+            border-bottom: 2px solid #333;
             padding-bottom: 15px;
             margin-bottom: 15px;
         }
         .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 22px;
+            font-weight: 800;
             color: #e77a31;
+            text-transform: uppercase;
+            margin-bottom: 4px;
         }
         .header p {
+            font-size: 11px;
+            color: #666;
+            margin: 1px 0;
+        }
+        .label {
+            display: inline-block;
+            background: #e77a31;
+            color: #fff;
+            padding: 4px 10px;
+            font-weight: 800;
             font-size: 12px;
-            margin: 2px 0;
+            border-radius: 4px;
+            margin-top: 5px;
+            text-transform: uppercase;
         }
         .section {
-            margin: 15px 0;
-        }
-        .section-title {
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 8px;
-            text-decoration: underline;
-            color: #e77a31;
+            padding: 10px 0;
+            border-bottom: 1px dashed #ddd;
         }
         .info-row {
             display: flex;
             justify-content: space-between;
-            margin: 5px 0;
-            font-size: 13px;
+            margin: 4px 0;
+            font-size: 12px;
         }
+        .info-label { color: #666; }
+        .info-value { font-weight: 700; text-align: right; }
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 15px 0;
         }
-        th, td {
-            padding: 8px 5px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-            font-size: 13px;
-        }
         th {
-            background: #fff3e0;
-            font-weight: bold;
-            color: #e77a31;
+            text-align: left;
+            border-bottom: 2px solid #333;
+            padding: 8px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #333;
+            background: #f8f9fa;
         }
-        .text-right {
-            text-align: right;
-        }
-        .text-center {
-            text-align: center;
+        td {
+            padding: 10px 8px;
+            font-size: 12px;
+            border-bottom: 1px solid #f0f0f0;
         }
         .total-section {
-            border-top: 2px solid #e77a31;
             margin-top: 15px;
             padding-top: 10px;
+            border-top: 2px solid #333;
         }
         .total-row {
             display: flex;
             justify-content: space-between;
-            font-size: 16px;
-            font-weight: bold;
-            margin: 5px 0;
+            font-size: 18px;
+            font-weight: 800;
             color: #e77a31;
-        }
-        .footer {
-            margin-top: 20px;
-            border-top: 2px dashed #e77a31;
-            padding-top: 15px;
-            text-align: center;
-            font-size: 11px;
-        }
-        .footer .emca-credit {
-            margin-top: 10px;
-            font-size: 10px;
-            color: #940000;
-            font-weight: bold;
-        }
-        .payment-status {
-            display: inline-block;
-            padding: 5px 15px;
-            background: #ffc107;
-            color: #000;
-            font-weight: bold;
-            border-radius: 3px;
             margin: 10px 0;
         }
-        .payment-status.paid {
-            background: #28a745;
-            color: #fff;
+        .payment-status-badge {
+            text-align: center;
+            padding: 8px;
+            border-radius: 4px;
+            font-weight: 800;
+            font-size: 13px;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+        .paid-badge { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .unpaid-badge { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            font-size: 11px;
+            color: #888;
+        }
+        .footer-credit {
+            font-size: 10px;
+            color: #1a1a1a;
+            font-weight: 700;
+            margin-top: 10px;
         }
         @media print {
-            body {
-                padding: 0;
-            }
-            .no-print {
-                display: none;
-            }
-            .docket {
-                border-color: #000;
-            }
-            .header {
-                border-bottom-color: #000;
-            }
-            .total-section {
-                border-top-color: #000;
-            }
-            .footer {
-                border-top-color: #000;
-            }
+            body { background: #fff; padding: 0; margin: 0; }
+            .docket { box-shadow: none; border-top: none; padding: 10px; width: 100%; }
+            .no-print { display: none; }
         }
     </style>
 </head>
@@ -164,29 +141,34 @@
         <div class="header">
             <h1>PRIMELAND HOTEL</h1>
             <p>Sokoine Road - Moshi, Kilimanjaro - Tanzania</p>
-            <p>Mobile/WhatsApp: 0677-155-156</p>
-            <p>Email: info@primelandhotel.com / infoprimelandhotel@gmail.com</p>
+            <p>Tel: 0677155157</p>
+            <div class="label">WALK-IN SALE DOCKET</div>
         </div>
 
         <!-- Docket Info -->
         <div class="section">
-            <div class="section-title">WALK-IN SALE DOCKET</div>
             <div class="info-row">
-                <span>Guest Name:</span>
-                <strong>{{ $guestName }}</strong>
+                <span class="info-label">Guest Name:</span>
+                <span class="info-value">{{ $guestName }}</span>
             </div>
             <div class="info-row">
-                <span>Date & Time:</span>
-                <strong>{{ $serviceRequest->created_at->format('M d, Y - h:i A') }}</strong>
+                <span class="info-label">Date & Time:</span>
+                <span class="info-value">{{ $serviceRequest->created_at->format('M d, Y - h:i A') }}</span>
             </div>
             <div class="info-row">
-                <span>Docket #:</span>
-                <strong>{{ str_pad($serviceRequest->id, 6, '0', STR_PAD_LEFT) }}</strong>
+                <span class="info-label">Docket #:</span>
+                <span class="info-value">{{ str_pad($serviceRequest->id, 6, '0', STR_PAD_LEFT) }}</span>
             </div>
             <div class="info-row">
-                <span>Served By:</span>
-                <strong>Bar Keeper</strong>
+                <span class="info-label">Served By:</span>
+                <span class="info-value">Bar Keeper</span>
             </div>
+            @if($serviceRequest->paidBy)
+            <div class="info-row">
+                <span class="info-label">Payment Recorded By:</span>
+                <span class="info-value">{{ $serviceRequest->paidBy->name }}</span>
+            </div>
+            @endif
         </div>
 
         <!-- Items Table -->
@@ -219,11 +201,11 @@
                 <span>TOTAL AMOUNT:</span>
                 <span>{{ number_format($totalAmount) }} TZS</span>
             </div>
-            <div class="text-center" style="margin-top: 10px;">
+            <div style="text-align: center; margin-top: 10px;">
                 @if($serviceRequest->payment_status === 'paid')
-                    <div class="payment-status paid">✓ PAID</div>
+                    <div class="payment-status-badge paid-badge">✓ PAID</div>
                 @else
-                    <div class="payment-status">UNPAID - PENDING PAYMENT</div>
+                    <div class="payment-status-badge unpaid-badge">UNPAID - PENDING PAYMENT</div>
                 @endif
             </div>
         </div>
@@ -231,9 +213,10 @@
         <!-- Footer -->
         <div class="footer">
             <p><strong>Thank you for your patronage!</strong></p>
-            <p>This is a computer-generated docket. No signature required.</p>
-            <p style="margin-top: 10px;">For inquiries, please contact us at the numbers above.</p>
-            <p class="emca-credit">Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></p>
+            <p>This is a computer-generated docket.</p>
+            <p class="footer-credit">
+                Powered By EmCa Techonologies LTD (www.emca.tech)
+            </p>
         </div>
     </div>
 

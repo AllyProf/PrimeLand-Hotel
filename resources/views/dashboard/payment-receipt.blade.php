@@ -15,7 +15,7 @@
             --bg-light: #f8fafc;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
         body {
             background-color: #f1f5f9;
             color: var(--text-main);
@@ -323,7 +323,7 @@
                 <h1>PRIMELAND HOTEL</h1>
                 <p>Comfort in every Stay</p>
                 <p><i class="fa fa-map-marker"></i> Moshi, Kilimanjaro, Tanzania</p>
-                <p><i class="fa fa-phone"></i> +255 677 155 156 | <i class="fa fa-envelope"></i> info@primelandhotel.com / infoprimelandhotel@gmail.com</p>
+                <p><i class="fa fa-phone"></i> 0677155157 | <i class="fa fa-envelope"></i> info@primelandhotel.com</p>
             </div>
             <div class="receipt-title-section">
                 <h2>RECEIPT</h2>
@@ -486,7 +486,7 @@
         </div>
 
         <div style="text-align: center; margin-top: 20px; font-size: 10px; color: #1e293b; font-weight: 700;">
-            Powered By <a href="https://www.emca.tech" target="_blank" style="color: #940000; font-weight: bold; text-decoration: none;">EmCa Techonologies</a></div>
+            Powered By EmCa Techonologies LTD (www.emca.tech)</div>
     </div>
 </body>
 </html>
