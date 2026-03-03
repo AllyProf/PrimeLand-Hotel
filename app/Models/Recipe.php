@@ -58,9 +58,15 @@ class Recipe extends Model
             'breakfast' => 'Breakfast',
             'lunch' => 'Lunch',
             'dinner' => 'Dinner',
-            'snacks' => 'Snacks',
+            'snacks' => 'Snacks & Bites',
             'salads' => 'Salads',
-            'soups' => 'Soups',
+            'soups' => 'Soup',
+            'pasta_noodles' => 'Pasta & Noodles',
+            'fish_dishes' => 'Fish Dishes',
+            'side_dishes' => 'Side Dishes',
+            'burgers' => 'Burgers',
+            'pizza_corner' => 'Pizza Corner',
+            'sandwiches' => 'Sandwiches',
             default => ucfirst(str_replace('_', ' ', $this->category ?? 'Other')),
         };
     }

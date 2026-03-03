@@ -287,7 +287,23 @@
         <div class="category-tabs" id="foodCatTabs">
             <div class="cat-pill active" data-cat="all" onclick="tabFilter('food','all',this)" data-en="All" data-sw="Vyote">All</div>
             @foreach($foodCategories as $cat)
-                <div class="cat-pill" data-cat="{{ $cat }}" onclick="tabFilter('food','{{ $cat }}',this)">{{ ucwords(str_replace('_',' ',$cat)) }}</div>
+                @php
+                    $catName = match($cat) {
+                        'salads' => 'Salads',
+                        'soups' => 'Soup',
+                        'snacks' => 'Snacks & Bites',
+                        'main_course' => 'Main Course',
+                        'pasta_noodles' => 'Pasta & Noodles',
+                        'fish_dishes' => 'Fish Dishes',
+                        'side_dishes' => 'Side Dishes',
+                        'burgers' => 'Burgers',
+                        'pizza_corner' => 'Pizza Corner',
+                        'sandwiches' => 'Sandwiches',
+                        'desserts' => 'Desserts',
+                        default => ucwords(str_replace('_',' ',$cat))
+                    };
+                @endphp
+                <div class="cat-pill" data-cat="{{ $cat }}" onclick="tabFilter('food','{{ $cat }}',this)">{{ $catName }}</div>
             @endforeach
         </div>
 
@@ -298,37 +314,7 @@
                      data-search="{{ strtolower($recipe->name) }}"
                      onclick="showFullDescription('{{ addslashes($recipe->name) }}', '{{ addslashes($recipe->description ?? '') }}')">
                     <div class="rich-thumb">
-                        <span class="cat-chip">{{ $recipe->category ?? 'Food' }}</span>
-                        @if($recipe->image)
-                            <img src="{{ asset('storage/' . $recipe->image) }}" alt="{{ $recipe->name }}"
-                                 onerror="this.outerHTML='<div class=&quot;no-img&quot;>🥘</div>'">
-                        @else
-                            @php
-                                $foodIcons = [
-                                    'appetizers' => ['icon' => 'fa-fire', 'grad' => 'linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)'],
-                                    'main_course' => ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'],
-                                    'desserts' => ['icon' => 'fa-birthday-cake', 'grad' => 'linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%)'],
-                                    'beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
-                                    'breakfast' => ['icon' => 'fa-sun-o', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
-                                    'lunch' => ['icon' => 'fa-shopping-bag', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
-                                    'dinner' => ['icon' => 'fa-moon-o', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
-                                    'snacks' => ['icon' => 'fa-lemon-o', 'grad' => 'linear-gradient(135deg, #f2994a 0%, #f2c94c 100%)'],
-                                    'salads' => ['icon' => 'fa-leaf', 'grad' => 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)'],
-                                    'soups' => ['icon' => 'fa-spoon', 'grad' => 'linear-gradient(135deg, #EB3349 0%, #F45C43 100%)'],
-                                ];
-                                $catKey = strtolower(str_replace(' ', '_', $recipe->category ?? ''));
-                                $style = $foodIcons[$catKey] ?? ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #e77a31 0%, #eaafc8 100%)'];
-                            @endphp
-                            <div class="d-flex align-items-center justify-content-center w-100 h-100" style="background: {!! $style['grad'] !!};">
-                                <i class="fa {!! $style['icon'] !!} fa-3x text-white opacity-40"></i>
-                            </div>
-                        @endif
-                        <div class="price-badge">
-                            <span class="price-tsh">Tsh {{ number_format($recipe->selling_price) }}</span>
-                            @if(!empty($recipe->selling_price_usd) && $recipe->selling_price_usd > 0)
-                                <span class="price-usd">(${{ rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') }})</span>
-                            @endif
-                        </div>
+                        <span class="cat-chip">{{ $recipe->category_name }}</span>
                     </div>
                     <div class="rich-body">
                         <div class="rich-title">{{ $recipe->name }}</div>
@@ -340,7 +326,14 @@
                                 <div style="flex: 1;">
                                     <div class="opt-label">Portion</div>
                                     <div class="opt-price">
-                                        {{ number_format($recipe->selling_price) }} TZS
+                                        @if($recipe->selling_price > 0)
+                                            {{ number_format($recipe->selling_price) }} TZS
+                                            @if($recipe->selling_price_usd > 0)
+                                                <span style="color:#fff;opacity:0.6;font-size:10px;">(${{ number_format($recipe->selling_price_usd) }})</span>
+                                            @endif
+                                        @else
+                                            <span data-en="Subject to availability" data-sw="Kulingana na upatikanaji">Subject to availability</span>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center">
