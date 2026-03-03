@@ -4,106 +4,133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guest Bill - {{ $guestName }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
         }
         body {
-            font-family: 'Courier New', monospace;
-            padding: 20px;
-            max-width: 400px;
+            font-family: 'Inter', sans-serif;
+            padding: 10px;
+            max-width: 380px;
             margin: 0 auto;
-            background: #fff;
+            background: #f8f9fa;
+            color: #1a1a1a;
+            line-height: 1.4;
         }
         .docket {
-            border: 2px solid #e07632;
-            padding: 15px;
             background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+            border-top: 5px solid #e07632;
         }
         .header {
             text-align: center;
-            border-bottom: 2px dashed #e07632;
-            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
             margin-bottom: 15px;
         }
         .header h1 {
-            font-size: 20px;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
             margin-bottom: 5px;
             color: #e07632;
             text-transform: uppercase;
         }
         .header p {
             font-size: 11px;
-            margin: 2px 0;
-            color: #333;
+            color: #666;
+            margin: 1px 0;
         }
         .section {
-            margin: 10px 0;
-            border-bottom: 1px dashed #e07632;
-            padding-bottom: 10px;
+            padding: 10px 0;
+            border-bottom: 1px dashed #ddd;
         }
         .section-title {
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 8px;
+            font-weight: 800;
+            font-size: 13px;
+            margin-bottom: 10px;
             text-align: center;
             text-transform: uppercase;
-            color: #e07632;
+            color: #333;
+            background: #f8f9fa;
+            padding: 5px;
         }
         .info-row {
             display: flex;
             justify-content: space-between;
             margin: 5px 0;
-            font-size: 13px;
+            font-size: 12px;
         }
         .item-row {
-            margin: 10px 0;
-            font-size: 14px;
-            padding: 8px;
-            background: #f9f9f9;
-            border-left: 3px solid #e07632;
+            margin: 12px 0;
+            font-size: 13px;
+            padding: 10px;
+            background: #fcfcfc;
+            border-left: 4px solid #e07632;
+            border-bottom: 1px solid #f0f0f0;
         }
         .item-header {
             display: flex;
             justify-content: space-between;
-            font-weight: bold;
-            margin-bottom: 5px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-size: 14px;
         }
         .item-qty {
             color: #e07632;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
         }
         .item-note {
             font-size: 11px;
             font-style: italic;
-            color: #666;
-            margin-top: 5px;
+            color: #d35400;
+            margin-top: 6px;
+            padding-left: 8px;
+            border-left: 2px solid #edaf82;
         }
         .total-section {
-            margin-top: 15px;
+            margin-top: 20px;
             padding-top: 10px;
-            border-top: 2px solid #e07632;
+            border-top: 2px solid #333;
         }
         .total-row {
             display: flex;
             justify-content: space-between;
             font-size: 18px;
-            font-weight: bold;
-            color: #e07632;
+            font-weight: 800;
+            color: #1a1a1a;
             margin: 10px 0;
         }
+        .grand-total-label { color: #e07632; }
         .footer {
             text-align: center;
-            margin-top: 15px;
-            padding-top: 10px;
-            border-top: 2px dashed #e07632;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
             font-size: 11px;
-            color: #666;
+            color: #888;
         }
         @media print {
             body {
+                background: #fff;
                 padding: 0;
+                margin: 0;
+            }
+            .docket {
+                box-shadow: none;
+                border-top: none;
+                padding: 10px;
+                width: 100%;
             }
             .no-print {
                 display: none;
@@ -111,18 +138,15 @@
         }
         .watermark {
             position: absolute;
-            top: 40%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) rotate(-35deg);
-            font-size: 60px;
-            color: rgba(40, 167, 69, 0.3);
-            border: 8px solid rgba(40, 167, 69, 0.3);
-            padding: 5px 30px;
+            font-size: 80px;
+            color: rgba(40, 167, 69, 0.1);
             font-weight: 900;
-            z-index: 999;
+            z-index: 0;
             pointer-events: none;
             white-space: nowrap;
-            letter-spacing: 5px;
         }
     </style>
 </head>
@@ -145,20 +169,20 @@
 
         <div class="section">
             <div class="info-row">
-                <span><strong>Guest:</strong></span>
-                <span>{{ $guestName }}</span>
+                <span class="info-label">Guest:</span>
+                <span class="info-value">{{ $guestName }}</span>
             </div>
             <div class="info-row">
-                <span><strong>Location:</strong></span>
-                <span>{{ $destination }}</span>
+                <span class="info-label">Location:</span>
+                <span class="info-value">{{ $destination }}</span>
             </div>
             <div class="info-row">
-                <span><strong>Served By:</strong></span>
-                <span>{{ $requestedBy }}</span>
+                <span class="info-label">Served By:</span>
+                <span class="info-value">{{ $requestedBy }}</span>
             </div>
             <div class="info-row">
-                <span><strong>Date:</strong></span>
-                <span>{{ $first->requested_at->format('M d, Y H:i') }}</span>
+                <span class="info-label">Date:</span>
+                <span class="info-value">{{ $first->requested_at->format('M d, Y H:i') }}</span>
             </div>
         </div>
 
@@ -219,8 +243,8 @@
 
         <div class="total-section">
             <div class="total-row">
-                <span>TOTAL:</span>
-                <span>{{ number_format($totalAmount) }} TZS</span>
+                <span class="grand-total-label">TOTAL AMOUNT:</span>
+                <span class="grand-total-value">{{ number_format($totalAmount) }} TZS</span>
             </div>
             
             @php
