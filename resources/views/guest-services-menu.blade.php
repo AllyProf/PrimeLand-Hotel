@@ -279,7 +279,25 @@
                             <img src="{{ asset('storage/' . $recipe->image) }}" alt="{{ $recipe->name }}"
                                  onerror="this.outerHTML='<div class=&quot;no-img&quot;>🥘</div>'">
                         @else
-                            <div class="no-img">🥘</div>
+                            @php
+                                $foodIcons = [
+                                    'appetizers' => ['icon' => 'fa-fire', 'grad' => 'linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)'],
+                                    'main_course' => ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'],
+                                    'desserts' => ['icon' => 'fa-birthday-cake', 'grad' => 'linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%)'],
+                                    'beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
+                                    'breakfast' => ['icon' => 'fa-sun-o', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
+                                    'lunch' => ['icon' => 'fa-shopping-bag', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
+                                    'dinner' => ['icon' => 'fa-moon-o', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
+                                    'snacks' => ['icon' => 'fa-lemon-o', 'grad' => 'linear-gradient(135deg, #f2994a 0%, #f2c94c 100%)'],
+                                    'salads' => ['icon' => 'fa-leaf', 'grad' => 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)'],
+                                    'soups' => ['icon' => 'fa-spoon', 'grad' => 'linear-gradient(135deg, #EB3349 0%, #F45C43 100%)'],
+                                ];
+                                $catKey = strtolower(str_replace(' ', '_', $recipe->category ?? ''));
+                                $style = $foodIcons[$catKey] ?? ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #e77a31 0%, #eaafc8 100%)'];
+                            @endphp
+                            <div class="d-flex align-items-center justify-content-center w-100 h-100" style="background: {!! $style['grad'] !!};">
+                                <i class="fa {!! $style['icon'] !!} fa-3x text-white opacity-40"></i>
+                            </div>
                         @endif
                         <div class="price-badge">
                             <span class="price-tsh">Tsh {{ number_format($recipe->selling_price) }}</span>
@@ -339,7 +357,24 @@
                                  onerror="this.outerHTML='<div class=&quot;no-img&quot;>🍾</div>'"
                                  style="{{ !($drink->in_stock ?? true) ? 'filter:grayscale(1)brightness(0.6);' : '' }}">
                         @else
-                            <div class="no-img">🍾</div>
+                            @php
+                                $drinkDesign = [
+                                    'spirits' => ['icon' => 'fa-glass', 'grad' => 'linear-gradient(135deg, #4b6cb7 0%, #182848 100%)'],
+                                    'wines' => ['icon' => 'fa-glass', 'grad' => 'linear-gradient(135deg, #8e0e00 0%, #1f1c18 100%)'],
+                                    'alcoholic_beverage' => ['icon' => 'fa-beer', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
+                                    'cocktails' => ['icon' => 'fa-glass', 'grad' => 'linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)'],
+                                    'non_alcoholic_beverage' => ['icon' => 'fa-tint', 'grad' => 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'],
+                                    'energy_drinks' => ['icon' => 'fa-bolt', 'grad' => 'linear-gradient(135deg, #f12711 0%, #f5af19 100%)'],
+                                    'water' => ['icon' => 'fa-tint', 'grad' => 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)'],
+                                    'juices' => ['icon' => 'fa-sun-o', 'grad' => 'linear-gradient(135deg, #ff9966 0%, #ff5e62 100%)'],
+                                    'hot_beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
+                                ];
+                                $dCatKey = strtolower(str_replace([' ', '-', '/'], '_', $drink->category ?? ''));
+                                $dStyle = $drinkDesign[$dCatKey] ?? ['icon' => 'fa-glass', 'grad' => 'linear-gradient(135deg, #e77a31 0%, #eaafc8 100%)'];
+                            @endphp
+                            <div class="d-flex align-items-center justify-content-center w-100 h-100" style="background: {!! $dStyle['grad'] !!};">
+                                <i class="fa {!! $dStyle['icon'] !!} fa-3x text-white opacity-40"></i>
+                            </div>
                         @endif
                     </div>
                     <div class="rich-body">
