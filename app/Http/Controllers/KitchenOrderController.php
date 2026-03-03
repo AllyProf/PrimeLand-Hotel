@@ -324,10 +324,10 @@ class KitchenOrderController extends Controller
         $requestedBy = 'N/A';
         if ($order->reception_notes) {
             if (str_contains($order->reception_notes, 'Waiter: ')) {
-                $parts = explode('Waiter: ', $order->reception_notes);
-                $byParts = explode(' - Msg:', $parts[1] ?? '');
-                $requestedBy = $byParts[0] ?? 'Waiter';
-            } elseif (str_contains($order->reception_notes, 'Recorded by ')) {
+            $parts = explode('Waiter: ', $order->reception_notes);
+            $byParts = explode(' - Msg:', $parts[1] ?? '');
+            $requestedBy = trim(explode('|', $byParts[0] ?? 'Waiter')[0]);
+        } elseif (str_contains($order->reception_notes, 'Recorded by ')) {
                 $parts = explode('Recorded by ', $order->reception_notes);
                 $byParts = explode(':', $parts[1] ?? '');
                 // The format is "Recorded by Role: Name"
@@ -391,17 +391,16 @@ class KitchenOrderController extends Controller
         // Determine Requested By
         $requestedBy = 'N/A';
         if ($first->reception_notes) {
-            if (str_contains($first->reception_notes, 'Waiter: ')) {
-                $parts = explode('Waiter: ', $first->reception_notes);
-                $byParts = explode(' - Msg:', $parts[1] ?? '');
-                $requestedBy = $byParts[0] ?? 'Waiter';
-            } elseif (str_contains($first->reception_notes, 'Recorded by: ')) {
+        if (str_contains($first->reception_notes, 'Waiter: ')) {
+            $parts = explode('Waiter: ', $first->reception_notes);
+            $byParts = explode(' - Msg:', $parts[1] ?? '');
+            $requestedBy = trim(explode('|', $byParts[0] ?? 'Waiter')[0]);
+        } elseif (str_contains($first->reception_notes, 'Recorded by: ')) {
                 $parts = explode('Recorded by: ', $first->reception_notes);
                 $requestedBy = trim($parts[1] ?? 'Staff');
             } elseif (str_contains($first->reception_notes, 'Recorded by ')) {
                 $parts = explode('Recorded by ', $first->reception_notes);
                 $byParts = explode(':', $parts[1] ?? '');
-                $requestedBy = trim($byParts[1] ?? 'Staff');
             }
         }
         

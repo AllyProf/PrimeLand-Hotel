@@ -178,17 +178,16 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Served By:</span>
-                <span class="info-value">{{ $requestedBy }}</span>
+                <span class="info-value">
+                    {{ $requestedBy }}
+                    @php
+                        $paidOrder = $orders->whereIn('payment_status', ['paid', 'room_charge'])->first();
+                    @endphp
+                    @if($paidOrder && $paidOrder->paidBy)
+                        | Payment Recorded By: {{ $paidOrder->paidBy->name }}
+                    @endif
+                </span>
             </div>
-            @php
-                $paidOrder = $orders->whereIn('payment_status', ['paid', 'room_charge'])->first();
-            @endphp
-            @if($paidOrder && $paidOrder->paidBy)
-            <div class="info-row">
-                <span class="info-label">Payment Recorded By:</span>
-                <span class="info-value">{{ $paidOrder->paidBy->name }}</span>
-            </div>
-            @endif
             <div class="info-row">
                 <span class="info-label">Date:</span>
                 <span class="info-value">{{ $first->requested_at->format('M d, Y H:i') }}</span>

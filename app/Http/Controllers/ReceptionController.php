@@ -2528,7 +2528,7 @@ class ReceptionController extends Controller
         if ($first->reception_notes && str_contains($first->reception_notes, 'Waiter: ')) {
             $parts = explode('Waiter: ', $first->reception_notes);
             $byParts = explode(' - Msg:', $parts[1] ?? '');
-            $requestedBy = $byParts[0] ?? 'Waiter';
+            $requestedBy = trim(explode('|', $byParts[0] ?? 'Waiter')[0]);
         }
         
 

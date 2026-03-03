@@ -170,14 +170,13 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Served By:</span>
-                <span class="info-value">{{ $requestedBy }}</span>
+                <span class="info-value">
+                    {{ $requestedBy }}
+                    @if($order->paidBy)
+                        | Payment recorded by: {{ $order->paidBy->name }}
+                    @endif
+                </span>
             </div>
-            @if($order->paidBy)
-            <div class="info-row">
-                <span class="info-label">Payment Recorded By:</span>
-                <span class="info-value">{{ $order->paidBy->name }}</span>
-            </div>
-            @endif
         </div>
 
         <!-- Billing Items -->
