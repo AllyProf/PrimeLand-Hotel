@@ -157,18 +157,22 @@
         .price-tsh { color: var(--primary); display: block; }
         .price-usd { color: #fff; opacity: 0.6; font-size: 9px; font-weight: 700; }
         .rich-body { padding: 10px 12px 12px; flex: 1; display: flex; flex-direction: column; }
-        .rich-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px; line-height: 1.3; }
-        .rich-sub { font-size: 10px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
-        .option-strip { display: flex; flex-direction: column; gap: 5px; margin-top: auto; }
+        .rich-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 6px; line-height: 1.3; }
+        .rich-sub { font-size: 13px; font-weight: 500; color: var(--text-dim); line-height: 1.4; margin-bottom: 12px; }
+        .option-strip { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
         .opt-row {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 5px 8px;
-            background: rgba(231,122,58,0.08);
-            border: 1px solid rgba(231,122,58,0.2);
-            border-radius: 8px;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
         }
-        .opt-label { font-size: 10px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; }
-        .opt-price { font-size: 12px; font-weight: 900; color: var(--primary); }
+        .opt-label { font-size: 11px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+        .opt-price { font-size: 15px; font-weight: 900; color: var(--primary); }
+        .list-view { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
+        .list-view .rich-card { flex-direction: column; padding: 20px; border-radius: 24px; }
+        .list-view .rich-thumb { display: none; }
+        .list-view .rich-body { padding: 0; }
         .btn-order-mini {
             padding: 4px 10px; background: var(--primary); color: #fff;
             border: none; border-radius: 7px; font-size: 10px; font-weight: 800;
@@ -270,7 +274,7 @@
             @endforeach
         </div>
 
-        <div class="item-grid" id="grid-food">
+        <div class="list-view" id="grid-food">
             @forelse($recipes as $recipe)
                 <div class="rich-card recipe-node" data-cat="{{ $recipe->category }}" data-search="{{ strtolower($recipe->name) }}">
                     <div class="rich-thumb">
@@ -342,7 +346,7 @@
             @endforeach
         </div>
 
-        <div class="item-grid" id="grid-drinks">
+        <div class="list-view" id="grid-drinks">
             @forelse($drinks as $drink)
                 <div class="rich-card drink-node" data-cat="{{ $drink->category }}" data-search="{{ strtolower($drink->name) }}">
                     <div class="rich-thumb">
