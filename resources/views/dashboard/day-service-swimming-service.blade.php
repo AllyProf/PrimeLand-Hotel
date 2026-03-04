@@ -516,56 +516,72 @@ $(document).ready(function() {
   
   // Apply discount - Make globally accessible
   window.applyDiscount = function() {
-    const discountType = document.getElementById('discount_type').value;
+    const discountTypeEl = document.getElementById('discount_type');
     const discountValueInput = document.getElementById('discount_value');
     const discountHint = document.getElementById('discount_hint');
-    const originalAmount = parseFloat(document.getElementById('original_amount').value) || 0;
+    const discountAmountDisplay = document.getElementById('discount_amount_display');
+    const originalAmountInput = document.getElementById('original_amount');
+    const amountInput = document.getElementById('amount');
+    const amountPaidInput = document.getElementById('amount_paid');
+    
+    if (!originalAmountInput || !amountInput) return;
+    
+    const originalAmount = parseFloat(originalAmountInput.value) || 0;
+    let discountAmount = 0;
+    
+    // If discount elements don't exist (e.g., for reception role), just set amount to original
+    if (!discountTypeEl) {
+      amountInput.value = originalAmount.toFixed(2);
+      if (amountPaidInput && (parseFloat(amountPaidInput.value) || 0) === 0) {
+        amountPaidInput.value = originalAmount.toFixed(2);
+      }
+      return;
+    }
+    
+    const discountType = discountTypeEl.value;
     
     // Enable/disable discount value input based on type
     if (discountType === 'none') {
       discountValueInput.disabled = true;
       discountValueInput.value = 0;
-      discountHint.textContent = 'Select discount type first';
+      if (discountHint) discountHint.textContent = 'Select discount type first';
     } else if (discountType === 'percentage') {
       discountValueInput.disabled = false;
       discountValueInput.max = 100;
-      discountHint.textContent = 'Enter percentage (0-100%)';
+      if (discountHint) discountHint.textContent = 'Enter percentage (0-100%)';
     } else if (discountType === 'fixed') {
       discountValueInput.disabled = false;
       discountValueInput.max = originalAmount;
-      discountHint.textContent = 'Enter fixed amount in TZS';
+      if (discountHint) discountHint.textContent = 'Enter fixed amount in TZS';
     }
     
     // Calculate discount amount
-    let discountAmount = 0;
     const discountValue = parseFloat(discountValueInput.value) || 0;
     
     if (discountType === 'percentage' && discountValue > 0) {
-      // Validate percentage
-      if (discountValue > 100) {
-        discountValueInput.value = 100;
-      }
+      if (discountValue > 100) discountValueInput.value = 100;
       discountAmount = (originalAmount * Math.min(discountValue, 100)) / 100;
     } else if (discountType === 'fixed' && discountValue > 0) {
-      // Validate fixed amount doesn't exceed original
-      if (discountValue > originalAmount) {
-        discountValueInput.value = originalAmount;
-      }
+      if (discountValue > originalAmount) discountValueInput.value = originalAmount;
       discountAmount = Math.min(discountValue, originalAmount);
     }
     
     // Update discount amount display
-    document.getElementById('discount_amount_display').value = discountAmount.toFixed(2);
+    if (discountAmountDisplay) {
+      discountAmountDisplay.value = discountAmount.toFixed(2);
+    }
     
     // Calculate final amount after discount
     const finalAmount = Math.max(0, originalAmount - discountAmount);
-    document.getElementById('amount').value = finalAmount.toFixed(2);
+    amountInput.value = finalAmount.toFixed(2);
     
     // Update amount paid to match final amount
-    if (finalAmount > 0) {
-      document.getElementById('amount_paid').value = finalAmount.toFixed(2);
-    } else {
-      document.getElementById('amount_paid').value = '0';
+    if (amountPaidInput) {
+      if (finalAmount > 0) {
+        amountPaidInput.value = finalAmount.toFixed(2);
+      } else {
+        amountPaidInput.value = '0';
+      }
     }
   };
   
