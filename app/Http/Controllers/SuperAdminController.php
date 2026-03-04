@@ -439,7 +439,7 @@ class SuperAdminController extends Controller
                 try {
                     $smsService = new \App\Services\SmsService();
                     $roleLabel = ucfirst(str_replace('_', ' ', $validated['role']));
-                    $smsMessage = "PrimeLand Hotel: Your {$roleLabel} account is ready! 🏨\nLogin: primelandhotel.com/login\nUser: {$user->email}\nPass: {$password}\n(Please change password after login)";
+                    $smsMessage = "Hello {$user->name}, your {$roleLabel} account at PrimeLand Hotel has been created. Info: Email: {$user->email}, Password: {$password}. Login at primelandhotel.com/login to start using the system and please change your password upon login. Welcome!";
                     $smsService->sendSingle($user->phone, $smsMessage);
                 } catch (\Exception $e) {
                     Log::error('Failed to send staff welcome SMS: ' . $e->getMessage());
@@ -475,7 +475,7 @@ class SuperAdminController extends Controller
             if ($user->phone) {
                 try {
                     $smsService = new \App\Services\SmsService();
-                    $smsMessage = "Welcome to PrimeLand Hotel! 🏨\nYour account is ready.\nLogin: primelandhotel.com/login\nUser: {$user->email}\nPass: {$password}\n(Please change password after login)";
+                    $smsMessage = "Welcome {$user->name} to PrimeLand Hotel! Your account is ready. Info: Email: {$user->email}, Password: {$password}. Login at primelandhotel.com/login to start using the system and please change your password upon login.";
                     $smsService->sendSingle($user->phone, $smsMessage);
                 } catch (\Exception $e) {
                     Log::error('Failed to send guest welcome SMS: ' . $e->getMessage());
