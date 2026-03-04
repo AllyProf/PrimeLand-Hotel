@@ -79,8 +79,15 @@ class DayServiceController extends Controller
         $user = Auth::guard('staff')->user();
         $role = strtolower($user->role ?? 'manager');
         
-        // Get swimming services from catalog (both swimming and swimming_with_bucket)
-        $swimmingServices = \App\Models\ServiceCatalog::whereIn('service_key', ['swimming', 'swimming_with_bucket', 'swimming-with-bucket', 'swimming_with_floating_trey'])
+        // Get swimming services from catalog (both swimming and swimming_with_bucket variations)
+        $swimmingServices = \App\Models\ServiceCatalog::whereIn('service_key', [
+                'swimming', 
+                'swimming_with_bucket', 
+                'swimming-with-bucket', 
+                'swimming_with_floating_trey', 
+                'swimming_with_floating_busket',
+                'swimming_with_floating_basket'
+            ])
             ->where('is_active', true)
             ->orderBy('display_order')
             ->get();
@@ -101,7 +108,12 @@ class DayServiceController extends Controller
             ->first();
         
         $swimmingWithBucketServiceModel = \App\Models\Service::where('name', 'LIKE', '%swimming%')
-            ->where('name', 'LIKE', '%bucket%')
+            ->where(function($q) {
+                $q->where('name', 'LIKE', '%bucket%')
+                  ->orWhere('name', 'LIKE', '%busket%')
+                  ->orWhere('name', 'LIKE', '%trey%')
+                  ->orWhere('name', 'LIKE', '%tray%');
+            })
             ->where('is_active', true)
             ->where(function($q) {
                 $q->where('age_group', 'both')
@@ -111,7 +123,13 @@ class DayServiceController extends Controller
         
         // Get ServiceCatalog pricing as fallback
         $swimmingCatalog = $swimmingServices->where('service_key', 'swimming')->first();
-        $swimmingWithBucketCatalog = $swimmingServices->whereIn('service_key', ['swimming_with_bucket', 'swimming-with-bucket'])->first();
+        $swimmingWithBucketCatalog = $swimmingServices->whereIn('service_key', [
+            'swimming_with_bucket', 
+            'swimming-with-bucket', 
+            'swimming_with_floating_busket', 
+            'swimming_with_floating_basket', 
+            'swimming_with_floating_trey'
+        ])->first();
         
         // Get exchange rate
         try {
