@@ -372,7 +372,7 @@ class SuperAdminController extends Controller
      */
     public function createUser()
     {
-        $roles = Role::where('is_system', false)->orWhereIn('name', ['manager', 'reception', 'guest', 'waiter'])->get();
+        $roles = Role::where('is_system', false)->orWhereIn('name', ['manager', 'reception', 'guest', 'waiter', 'owner', 'housekeeper'])->get();
         
         return view('dashboard.super-admin.user-form', [
             'role' => 'super_admin',
@@ -393,7 +393,7 @@ class SuperAdminController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'phone' => 'nullable|string|max:20',
-            'role' => 'required|string|in:super_admin,manager,reception,guest,bar_keeper,head_chef,housekeeper,waiter',
+            'role' => 'required|string|in:super_admin,manager,reception,guest,bar_keeper,head_chef,housekeeper,waiter,owner',
             'is_active' => 'boolean',
         ];
         
@@ -424,7 +424,7 @@ class SuperAdminController extends Controller
             : $defaultPassword;
         
         // Create Staff or Guest based on role
-        if (in_array($validated['role'], ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef', 'housekeeper', 'waiter'])) {
+        if (in_array($validated['role'], ['super_admin', 'manager', 'reception', 'bar_keeper', 'head_chef', 'housekeeper', 'waiter', 'owner'])) {
             $user = Staff::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -535,7 +535,7 @@ class SuperAdminController extends Controller
             return redirect()->route('super_admin.users')->with('error', 'Cannot edit other super admin accounts.');
         }
         
-        $roles = Role::where('is_system', false)->orWhereIn('name', ['manager', 'reception', 'guest'])->get();
+        $roles = Role::where('is_system', false)->orWhereIn('name', ['manager', 'reception', 'guest', 'waiter', 'owner', 'housekeeper'])->get();
         
         return view('dashboard.super-admin.user-form', [
             'role' => 'super_admin',
@@ -587,7 +587,7 @@ class SuperAdminController extends Controller
         // Email uniqueness check
         if ($userType === 'staff') {
             $rules['email'] = 'required|email|unique:staffs,email,' . $user->id . '|unique:guests,email';
-            $rules['role'] = 'required|string|in:super_admin,manager,reception,bar_keeper,head_chef,housekeeper,waiter';
+            $rules['role'] = 'required|string|in:super_admin,manager,reception,bar_keeper,head_chef,housekeeper,waiter,owner';
         } else {
             $rules['email'] = 'required|email|unique:guests,email,' . $user->id . '|unique:staffs,email';
         }
