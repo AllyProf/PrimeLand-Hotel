@@ -1640,18 +1640,21 @@ class ReportController extends Controller
             ->get();
 
         // 2. Fetch Service Request Transactions
-        $servicesQuery = ServiceRequest::whereBetween('completed_at', [$start, $end])
-            ->where('payment_status', 'paid');
-
         if ($request->has('waiter')) {
             $waiterName = $request->get('waiter');
-            $servicesQuery->where('reception_notes', 'like', "%Waiter: {$waiterName}%");
+            // When filtering by waiter, we match the logic in ReceptionController::waiterSales
+            // which looks for 'completed' status and uses 'requested_at' date
+            $servicesQuery = ServiceRequest::whereDate('requested_at', $start->format('Y-m-d'))
+                ->where('status', 'completed')
+                ->where('reception_notes', 'like', "%Waiter: {$waiterName}%");
         } else {
-            $servicesQuery->where(function($q) use ($targetMethods) {
-                foreach($targetMethods as $m) {
-                    $q->orWhere('payment_method', 'like', "%{$m}%");
-                }
-            });
+            $servicesQuery = ServiceRequest::whereBetween('completed_at', [$start, $end])
+                ->where('payment_status', 'paid')
+                ->where(function($q) use ($targetMethods) {
+                    foreach($targetMethods as $m) {
+                        $q->orWhere('payment_method', 'like', "%{$m}%");
+                    }
+                });
         }
         $services = $servicesQuery->get();
 
