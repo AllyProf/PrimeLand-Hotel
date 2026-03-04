@@ -375,7 +375,7 @@ $(document).ready(function() {
       const childPriceFromData = parseFloat(selectedOption.dataset.childPrice) || 0;
       const ageGroupFromData = selectedOption.dataset.ageGroup || 'both';
       
-      if (adultPriceFromData > 0 && childPriceFromData > 0) {
+      if (adultPriceFromData > 0) {
         // Create a serviceModel-like object from catalog data
         serviceModel = {
           age_group: ageGroupFromData,
@@ -396,13 +396,23 @@ $(document).ready(function() {
     }
     
     // Show price display and adult/child quantity fields
-    if (serviceModel && serviceModel.age_group === 'both' && serviceModel.child_price_tsh && serviceModel.child_price_tsh > 0) {
+    if (serviceModel && (serviceModel.price_tsh > 0 || serviceModel.child_price_tsh > 0)) {
       // Display prices instantly
-      const adultPrice = parseFloat(serviceModel.price_tsh);
-      const childPrice = parseFloat(serviceModel.child_price_tsh);
+      const adultPrice = parseFloat(serviceModel.price_tsh) || 0;
+      const childPrice = parseFloat(serviceModel.child_price_tsh) || 0;
       
       document.getElementById('display_adult_price').textContent = adultPrice.toLocaleString() + ' TZS';
-      document.getElementById('display_child_price').textContent = childPrice.toLocaleString() + ' TZS';
+      
+      const childDisplay = document.getElementById('display_child_price');
+      if (childPrice > 0) {
+        childDisplay.parentElement.style.display = 'block';
+        childDisplay.textContent = childPrice.toLocaleString() + ' TZS';
+        document.getElementById('child_quantity').parentElement.parentElement.style.display = 'block';
+      } else {
+        childDisplay.parentElement.style.display = 'none';
+        document.getElementById('child_quantity').parentElement.parentElement.style.display = 'none';
+      }
+      
       priceDisplaySection.style.display = 'block';
       
       // Show adult/child quantity fields
@@ -443,7 +453,7 @@ $(document).ready(function() {
       const childPriceFromData = parseFloat(selectedOption.dataset.childPrice) || 0;
       const ageGroupFromData = selectedOption.dataset.ageGroup || 'both';
       
-      if (adultPriceFromData > 0 && childPriceFromData > 0) {
+      if (adultPriceFromData > 0) {
         // Create a serviceModel-like object from catalog data
         serviceModel = {
           age_group: ageGroupFromData,
@@ -469,13 +479,13 @@ $(document).ready(function() {
     
     let calculatedAmount = 0;
     
-    if (serviceModel && serviceModel.age_group === 'both' && serviceModel.child_price_tsh && serviceModel.child_price_tsh > 0 && adultChildGroup.style.display !== 'none') {
+    if (serviceModel && (serviceModel.price_tsh > 0 || serviceModel.child_price_tsh > 0) && adultChildGroup.style.display !== 'none') {
       // Calculate based on adult/child quantities
       const adultQuantity = parseInt(document.getElementById('adult_quantity').value) || 0;
       const childQuantity = parseInt(document.getElementById('child_quantity').value) || 0;
       
-      const adultPrice = parseFloat(serviceModel.price_tsh);
-      const childPrice = parseFloat(serviceModel.child_price_tsh);
+      const adultPrice = parseFloat(serviceModel.price_tsh) || 0;
+      const childPrice = parseFloat(serviceModel.child_price_tsh) || 0;
       const adultTotal = adultPrice * adultQuantity;
       const childTotal = childPrice * childQuantity;
       calculatedAmount = adultTotal + childTotal;
