@@ -267,11 +267,11 @@
     <!-- Navigation -->
     <div class="sticky-wrapper">
         <nav class="main-nav">
-            <div class="nav-link-btn active" onclick="navTo('food', this)" data-en="🍳 Food" data-sw="🍳 Chakula">🍳 Food</div>
-            <div class="nav-link-btn" onclick="navTo('drinks', this)" data-en="🍷 Drinks" data-sw="🍷 Kinywaji">🍷 Drinks</div>
-            <div class="nav-link-btn" onclick="navTo('discover', this)" data-en="⛰️ Discover" data-sw="⛰️ Tembelea">⛰️ Discover</div>
-            <div class="nav-link-btn" onclick="navTo('services', this)" data-en="🛎️ Services" data-sw="🛎️ Huduma">🛎️ Services</div>
-            <div class="nav-link-btn" onclick="navTo('info', this)" data-en="ℹ️ Info" data-sw="ℹ️ Taarifa">ℹ️ Info</div>
+            <div class="nav-link-btn active" onclick="navTo('food', this)" data-en="🍳 FOOD MENU" data-sw="🍳 ORODHA YA CHAKULA">🍳 FOOD MENU</div>
+            <div class="nav-link-btn" onclick="navTo('drinks', this)" data-en="🍷 DRINKS" data-sw="🍷 VINYWAJI">🍷 DRINKS</div>
+            <div class="nav-link-btn" onclick="navTo('discover', this)" data-en="⛰️ DISCOVER" data-sw="⛰️ TEMBELEA">⛰️ DISCOVER</div>
+            <div class="nav-link-btn" onclick="navTo('services', this)" data-en="🛎️ SERVICES" data-sw="🛎️ HUDUMA">🛎️ SERVICES</div>
+            <div class="nav-link-btn" onclick="navTo('info', this)" data-en="ℹ️ INFO" data-sw="ℹ️ TAARIFA">ℹ️ INFO</div>
         </nav>
 
         <div class="search-panel">
@@ -591,8 +591,8 @@
                     </div>
                     <a href="tel:601" class="call-item"><div class="dept-info"><b data-en="Reception" data-sw="Mapokezi">Reception</b><span data-en="Internal" data-sw="Ndani ya Hotel">Internal</span></div><div class="dept-phone">601</div></a>
                     <a href="tel:619" class="call-item"><div class="dept-info"><b data-en="Prime Bar" data-sw="Baa ya Prime">Prime Bar</b><span data-en="Drinks" data-sw="Vinywaji">Drinks</span></div><div class="dept-phone">619</div></a>
-                    <a href="tel:+255677155156" class="call-item"><div class="dept-info"><b data-en="Reception Mobile" data-sw="Simu ya Mapokezi">Reception Mobile</b><span data-en="Direct Line" data-sw="Namba ya Moja kwa Moja">Direct Line</span></div><div class="dept-phone">155-156</div></a>
-                    <a href="tel:+255677155157" class="call-item"><div class="dept-info"><b data-en="Manager" data-sw="Meneja">Manager</b><span data-en="Supervisor" data-sw="Msimamizi">Supervisor</span></div><div class="dept-phone">155-157</div></a>
+                    <a href="tel:+255677155156" class="call-item"><div class="dept-info"><b data-en="Reception Mobile" data-sw="Simu ya Mapokezi">Reception Mobile</b><span data-en="Direct Line" data-sw="Namba ya Moja kwa Moja">Direct Line</span></div><div class="dept-phone">0677155156</div></a>
+                    <a href="tel:+255677155157" class="call-item"><div class="dept-info"><b data-en="Manager" data-sw="Meneja">Manager</b><span data-en="Supervisor" data-sw="Msimamizi">Supervisor</span></div><div class="dept-phone">0677155157</div></a>
                     <button class="btn btn-link btn-block text-muted mt-2" onclick="toggleCallModal(false)" data-en="Close" data-sw="Funga">Close</button>
                 </div>
             </div>
