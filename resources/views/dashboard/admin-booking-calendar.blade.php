@@ -17,34 +17,48 @@
   <div class="col-md-12">
     <div class="tile">
       <div class="tile-title-w-btn">
-        <h3 class="title">Filter Calendar</h3>
+        <h3 class="title"><i class="fa fa-filter"></i> Filter Calendar</h3>
         <div class="btn-group">
             <a href="{{ route('admin.bookings.manual.create') }}" class="btn btn-primary px-4"><i class="fa fa-plus"></i> New Booking</a>
         </div>
       </div>
       <div class="tile-body">
-        <div class="row">
+        <div class="row align-items-end">
+
+          {{-- Guest / Room search --}}
           <div class="col-md-4 mb-3">
+            <label class="control-label">Search Guests or Room</label>
             <div class="input-group">
                 <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-search"></i></span></div>
-                <input type="text" id="calendarSearch" class="form-control" placeholder="Search Guest or Room...">
+                <input type="text" id="calendarSearch" class="form-control" placeholder="Name, Room #, Type…">
             </div>
           </div>
+
+          {{-- Day / Month / Year date picker --}}
           <div class="col-md-6 mb-3">
+            <label class="control-label">Check Room Status by Date</label>
             <div class="d-flex">
-              <select id="jumpMonth" class="form-control mr-2">
-                @for ($m=1; $m<=12; $m++)
-                  <option value="{{ $m-1 }}" {{ date('n') == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
+              <select id="filterDay" class="form-control mr-1" style="width:80px; flex:none">
+                @for ($d = 1; $d <= 31; $d++)
+                  <option value="{{ $d }}" {{ date('j') == $d ? 'selected' : '' }}>{{ $d }}</option>
                 @endfor
               </select>
-              <select id="jumpYear" class="form-control mr-2">
-                @for ($y=date('Y'); $y<=date('Y')+2; $y++)
-                  <option value="{{ $y }}">{{ $y }}</option>
+              <select id="filterMonth" class="form-control mr-1">
+                @for ($m = 1; $m <= 12; $m++)
+                  <option value="{{ $m }}" {{ date('n') == $m ? 'selected' : '' }}>{{ date('F', mktime(0,0,0,$m,1)) }}</option>
                 @endfor
               </select>
-              <button onclick="jumpToDate()" class="btn btn-info">Jump</button>
+              <select id="filterYear" class="form-control mr-2" style="width:100px; flex:none">
+                @for ($y = date('Y') - 1; $y <= date('Y') + 3; $y++)
+                  <option value="{{ $y }}" {{ date('Y') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                @endfor
+              </select>
+              <button onclick="searchByDate()" class="btn btn-info" style="white-space:nowrap">
+                <i class="fa fa-calendar"></i> Search
+              </button>
             </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -608,14 +622,21 @@
 let calendar;
 let allRoomSummaryData = [];
 
-// Jump to Date function
-function jumpToDate() {
-    const month = document.getElementById('jumpMonth').value;
-    const year = document.getElementById('jumpYear').value;
-    const date = new Date(year, month, 1);
+
+// Search by specific Day / Month / Year
+function searchByDate() {
+    const day   = String(document.getElementById('filterDay').value).padStart(2, '0');
+    const month = String(document.getElementById('filterMonth').value).padStart(2, '0');
+    const year  = document.getElementById('filterYear').value;
+    const dateStr = `${year}-${month}-${day}`;
+
+    // Navigate calendar to that month
     if (calendar) {
-        calendar.gotoDate(date);
+        calendar.gotoDate(new Date(year, parseInt(month) - 1, 1));
     }
+
+    // Open the day summary modal for that date
+    showDaySummary(dateStr);
 }
 
 // Global scope functions for events
