@@ -239,83 +239,139 @@
         }
         .btn-order-mini:hover { background: #c45e18; transform: scale(1.05); }
 
-        /* ══ Splash Screen ══ */
+        /* ════════════ SPLASH SCREEN ════════════ */
         #splashScreen {
             position: fixed; inset: 0; z-index: 99999;
-            background: var(--bg-dark);
+            background: radial-gradient(ellipse at 50% 40%, #1a1209 0%, #0b0b0d 70%);
             display: flex; align-items: center; justify-content: center;
-            transition: opacity 0.7s ease, visibility 0.7s ease;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            overflow: hidden;
         }
-        #splashScreen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        #splashScreen.hidden {
+            opacity: 0; transform: translateY(-30px); pointer-events: none;
+        }
+
+        /* Ambient glow orb */
+        #splashScreen::before {
+            content: '';
+            position: absolute;
+            width: 340px; height: 340px;
+            background: radial-gradient(circle, rgba(231,122,58,0.18) 0%, transparent 70%);
+            border-radius: 50%;
+            top: 50%; left: 50%; transform: translate(-50%, -60%);
+            animation: orbPulse 3s ease-in-out infinite;
+        }
+        @keyframes orbPulse {
+            0%,100% { opacity: 0.6; transform: translate(-50%,-60%) scale(1); }
+            50%      { opacity: 1;   transform: translate(-50%,-60%) scale(1.15); }
+        }
 
         .splash-inner {
+            position: relative; z-index: 2;
             display: flex; flex-direction: column; align-items: center; text-align: center;
-            padding: 30px 20px;
-            animation: splashPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+            padding: 30px 24px;
+            animation: splashRise 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
         }
-        @keyframes splashPop {
-            from { opacity: 0; transform: scale(0.85) translateY(20px); }
-            to   { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .splash-logo-ring {
-            position: relative; width: 110px; height: 110px; margin-bottom: 22px;
-        }
-        .splash-ring-svg {
-            position: absolute; inset: 0; width: 100%; height: 100%;
-            transform: rotate(-90deg);
-        }
-        .ring-track {
-            fill: none; stroke: rgba(231,122,58,0.15); stroke-width: 6;
-        }
-        .ring-fill {
-            fill: none; stroke: var(--primary); stroke-width: 6;
-            stroke-linecap: round;
-            stroke-dasharray: 339.3;
-            stroke-dashoffset: 339.3;
-            animation: ringDraw 2s ease forwards;
-        }
-        @keyframes ringDraw {
-            to { stroke-dashoffset: 0; }
-        }
-        .splash-icon {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 42px;
-            animation: iconPulse 1.5s ease-in-out infinite alternate;
-        }
-        @keyframes iconPulse {
-            from { transform: scale(0.95); }
-            to   { transform: scale(1.08); }
+        @keyframes splashRise {
+            from { opacity: 0; transform: translateY(40px) scale(0.9); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        .splash-brand {
-            font-size: 11px; letter-spacing: 5px; font-weight: 900;
-            color: var(--primary); text-transform: uppercase; margin-bottom: 10px;
+        /* Logo wrapper with dual orbit rings */
+        .splash-logo-wrap {
+            position: relative; width: 150px; height: 150px; margin-bottom: 26px;
         }
-        .splash-title {
-            font-size: 22px; font-weight: 800;
-            background: linear-gradient(135deg,#fff 0%,#888 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+        .orbit-ring {
+            position: absolute; inset: 0; border-radius: 50%;
+            border: 2px dashed rgba(231,122,58,0.3);
+            animation: orbitSpin 6s linear infinite;
         }
-        .splash-sub {
-            font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 28px;
+        .orbit-ring:nth-child(2) {
+            inset: 12px;
+            border-color: rgba(231,122,58,0.18);
+            animation-direction: reverse;
+            animation-duration: 4s;
         }
-
-        /* Bouncing dots */
-        .splash-dots { display: flex; gap: 8px; }
-        .splash-dots span {
+        /* Dot on outer ring */
+        .orbit-ring::after {
+            content: '';
+            position: absolute; top: -4px; left: 50%; margin-left: -4px;
             width: 8px; height: 8px;
             background: var(--primary); border-radius: 50%;
-            animation: bounceDot 0.9s ease-in-out infinite alternate;
+            box-shadow: 0 0 8px var(--primary);
         }
-        .splash-dots span:nth-child(2) { animation-delay: 0.15s; }
-        .splash-dots span:nth-child(3) { animation-delay: 0.30s; }
-        @keyframes bounceDot {
-            from { transform: translateY(0); opacity: 1; }
-            to   { transform: translateY(-10px); opacity: 0.4; }
+        @keyframes orbitSpin { to { transform: rotate(360deg); } }
+
+        .splash-logo-img {
+            position: absolute;
+            inset: 20px;
+            object-fit: contain;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            padding: 10px;
+            animation: logoPulse 2s ease-in-out infinite alternate;
         }
+        @keyframes logoPulse {
+            from { transform: scale(0.96); filter: drop-shadow(0 0 0px rgba(231,122,58,0)); }
+            to   { transform: scale(1.04); filter: drop-shadow(0 0 14px rgba(231,122,58,0.7)); }
+        }
+
+        /* Shimmer tagline */
+        .splash-brand {
+            font-size: 10px; letter-spacing: 6px; font-weight: 900;
+            text-transform: uppercase; margin-bottom: 8px;
+            background: linear-gradient(90deg, var(--primary) 0%, #ffd580 50%, var(--primary) 100%);
+            background-size: 200%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shimmer 2.5s linear infinite;
+        }
+        @keyframes shimmer { to { background-position: 200% center; } }
+
+        .splash-title {
+            font-size: 26px; font-weight: 900; letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 6px; line-height: 1.2;
+        }
+        .splash-sub {
+            font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 20px;
+        }
+
+        /* Feature pills */
+        .splash-pills {
+            display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+            margin-bottom: 24px;
+        }
+        .splash-pill {
+            font-size: 11px; font-weight: 700; padding: 5px 13px;
+            border-radius: 50px;
+            background: rgba(231,122,58,0.12);
+            border: 1px solid rgba(231,122,58,0.35);
+            color: #e77a3a;
+            animation: pillFade 0.5s ease both;
+        }
+        .splash-pill:nth-child(1) { animation-delay: 0.3s; }
+        .splash-pill:nth-child(2) { animation-delay: 0.5s; }
+        .splash-pill:nth-child(3) { animation-delay: 0.7s; }
+        .splash-pill:nth-child(4) { animation-delay: 0.9s; }
+        @keyframes pillFade {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Progress bar */
+        .splash-progress-wrap {
+            width: 160px; height: 3px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px; overflow: hidden;
+        }
+        .splash-progress-bar {
+            height: 100%; width: 0;
+            background: linear-gradient(90deg, var(--primary), #ffd580);
+            border-radius: 10px;
+            animation: progressFill 2.5s ease forwards;
+        }
+        @keyframes progressFill { to { width: 100%; } }
 
     </style>
 </head>
@@ -324,19 +380,33 @@
     <!-- ═══ Welcome Splash Screen ═══ -->
     <div id="splashScreen">
         <div class="splash-inner">
-            <div class="splash-logo-ring">
-                <svg class="splash-ring-svg" viewBox="0 0 120 120">
-                    <circle class="ring-track" cx="60" cy="60" r="54" />
-                    <circle class="ring-fill"  cx="60" cy="60" r="54" />
-                </svg>
-                <div class="splash-icon">🏨</div>
+
+            <!-- Logo with dual orbit rings -->
+            <div class="splash-logo-wrap">
+                <div class="orbit-ring"></div>
+                <div class="orbit-ring"></div>
+                <img src="{{ asset('royal-master/image/logo/Logo.png') }}"
+                     alt="PrimeLand Hotel"
+                     class="splash-logo-img">
             </div>
-            <div class="splash-brand">PRIMELAND HOTEL</div>
-            <h2 class="splash-title">Welcome to Our World</h2>
-            <p class="splash-sub">Explore our menu, facilities & services<br>crafted just for you.</p>
-            <div class="splash-dots">
-                <span></span><span></span><span></span>
+
+            <div class="splash-brand">PrimeLand Hotel</div>
+            <h2 class="splash-title">Welcome, Valued Guest</h2>
+            <p class="splash-sub">Your comfort is our pride.<br>Everything you need — right here.</p>
+
+            <!-- Feature pills -->
+            <div class="splash-pills">
+                <span class="splash-pill">🍳 Food Menu</span>
+                <span class="splash-pill">🍷 Drinks</span>
+                <span class="splash-pill">🛎️ Services</span>
+                <span class="splash-pill">⛰️ Discover</span>
             </div>
+
+            <!-- Progress bar -->
+            <div class="splash-progress-wrap">
+                <div class="splash-progress-bar"></div>
+            </div>
+
         </div>
     </div>
 
