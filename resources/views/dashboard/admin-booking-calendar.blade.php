@@ -17,25 +17,16 @@
   <div class="col-md-12">
     <div class="tile">
       <div class="tile-title-w-btn">
-        <h3 class="title"><i class="fa fa-filter"></i> Filter Calendar</h3>
+        <h3 class="title"><i class="fa fa-calendar"></i> Booking Calendar</h3>
         <div class="btn-group">
             <a href="{{ route('admin.bookings.manual.create') }}" class="btn btn-primary px-4"><i class="fa fa-plus"></i> New Booking</a>
         </div>
       </div>
-      <div class="tile-body">
+
+      {{-- Date picker bar inside the calendar tile --}}
+      <div class="tile-body" style="padding-bottom:0;">
         <div class="row align-items-end">
-
-          {{-- Guest / Room search --}}
-          <div class="col-md-4 mb-3">
-            <label class="control-label">Search Guests or Room</label>
-            <div class="input-group">
-                <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-search"></i></span></div>
-                <input type="text" id="calendarSearch" class="form-control" placeholder="Name, Room #, Type…">
-            </div>
-          </div>
-
-          {{-- Day / Month / Year date picker --}}
-          <div class="col-md-6 mb-3">
+          <div class="col-md-8 mb-3">
             <label class="control-label">Check Room Status by Date</label>
             <div class="d-flex">
               <select id="filterDay" class="form-control mr-1" style="width:80px; flex:none">
@@ -54,69 +45,19 @@
                 @endfor
               </select>
               <button onclick="searchByDate()" class="btn btn-info" style="white-space:nowrap">
-                <i class="fa fa-calendar"></i> Search
+                <i class="fa fa-search"></i> Search Date
               </button>
             </div>
           </div>
-
         </div>
+      </div>
+
+      {{-- FullCalendar --}}
+      <div class="tile-body">
+        <div id="calendar"></div>
       </div>
     </div>
   </div>
-</div>
-
-<div class="row">
-  <div class="col-md-12">
-    <div class="tile">
-        <h3 class="tile-title">Status Legend</h3>
-        <div class="row">
-          <div class="col-md-3 col-sm-6 mb-2">
-            <div class="d-flex align-items-center">
-              <span style="display: inline-block; width: 15px; height: 15px; background: #dc3545; border-radius: 3px; margin-right: 10px;"></span>
-              <div>
-                <strong style="font-size: 13px;">Occupied</strong>
-                <div class="text-muted" style="font-size: 11px;">Checked In</div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-2">
-            <div class="d-flex align-items-center">
-              <span style="display: inline-block; width: 15px; height: 15px; background: #28a745; border-radius: 3px; margin-right: 10px;"></span>
-              <div>
-                <strong style="font-size: 13px;">Confirmed</strong>
-                <div class="text-muted" style="font-size: 11px;">Paid</div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-2">
-            <div class="d-flex align-items-center">
-              <span style="display: inline-block; width: 15px; height: 15px; background: #ffc107; border-radius: 3px; margin-right: 10px;"></span>
-              <div>
-                <strong style="font-size: 13px;">Pending Payment</strong>
-                <div class="text-muted" style="font-size: 11px;">Awaiting Payment</div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-2">
-            <div class="d-flex align-items-center">
-              <span style="display: inline-block; width: 15px; height: 15px; background: #17a2b8; border-radius: 3px; margin-right: 10px;"></span>
-              <div>
-                <strong style="font-size: 13px;">Partial Payment</strong>
-                <div class="text-muted" style="font-size: 11px;">Partially Paid</div>
-              </div>
-            </div>
-          </div>
-        </div>
-    </div>
-  </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="tile">
-            <div id="calendar"></div>
-        </div>
-    </div>
 </div>
 
 <!-- Day Summary Modal -->
@@ -864,26 +805,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         calendar.render();
-
-        // Search Filter Logic
-        document.getElementById('calendarSearch').addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase();
-            const events = calendar.getEvents();
-            
-            events.forEach(event => {
-                const props = event.extendedProps;
-                const roomMatches = (props.room_number || '').toString().includes(term);
-                const guestMatches = (props.guest_name || '').toLowerCase().includes(term);
-                const typeMatches = (props.room_type || '').toLowerCase().includes(term);
-                const refMatches = (props.booking_reference || '').toLowerCase().includes(term);
-                
-                if (term === '' || roomMatches || guestMatches || typeMatches || refMatches) {
-                    event.setProp('display', 'auto');
-                } else {
-                    event.setProp('display', 'none');
-                }
-            });
-        });
 
         // Modal Room Filter
         const modalRoomFilter = document.getElementById('modalRoomFilter');
