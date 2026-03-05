@@ -633,45 +633,54 @@ function renderRoomGrid(filter = '') {
     }
 
     filtered.forEach(room => {
-        let statusColor = '#28a745'; // Available
-        let statusClass = 'success';
-        let statusIcon = 'check-circle';
-        let subText = 'Available';
-        let actionBtn = `<button class="btn btn-sm btn-outline-success" onclick="createBooking('${room.room_number}')">Book</button>`;
+        let bgColor     = '#28a745';  // Available — green
+        let textColor   = '#fff';
+        let statusLabel = 'Available';
+        let statusIcon  = 'check-circle';
+        let guestLine   = '';
+        let actionBtn   = `<button class="btn btn-sm btn-success btn-block mt-2" onclick="createBooking('${room.room_number}')"><i class="fa fa-plus"></i> Book</button>`;
 
-        if (room.status === 'occupied' || room.status === 'reserved') {
-            statusColor = room.status === 'occupied' ? '#dc3545' : '#009688';
-            statusClass = room.status === 'occupied' ? 'danger' : 'primary';
-            statusIcon = 'user';
-            subText = room.guest || 'Reserved';
-            actionBtn = `<button class="btn btn-sm btn-info" onclick="viewBookingDetails(${room.booking_id})">Info</button>`;
+        if (room.status === 'occupied') {
+            bgColor     = '#dc3545';
+            statusLabel = 'Occupied';
+            statusIcon  = 'user';
+            guestLine   = `<div class="text-truncate small mt-1" style="font-size:11px;opacity:.9"><i class="fa fa-user-circle"></i> ${room.guest || ''}</div>`;
+            actionBtn   = `<button class="btn btn-sm btn-light btn-block mt-2" onclick="viewBookingDetails(${room.booking_id})"><i class="fa fa-info-circle"></i> Details</button>`;
+        } else if (room.status === 'reserved') {
+            bgColor     = '#007bff';
+            statusLabel = 'Reserved';
+            statusIcon  = 'clock-o';
+            guestLine   = `<div class="text-truncate small mt-1" style="font-size:11px;opacity:.9"><i class="fa fa-user-circle"></i> ${room.guest || 'Reserved'}</div>`;
+            actionBtn   = `<button class="btn btn-sm btn-light btn-block mt-2" onclick="viewBookingDetails(${room.booking_id})"><i class="fa fa-info-circle"></i> Details</button>`;
         } else if (room.status === 'dirty') {
-            statusColor = '#ffc107';
-            statusClass = 'warning';
-            statusIcon = 'tint';
-            subText = 'Cleaning';
-            actionBtn = '';
+            bgColor     = '#ffc107';
+            textColor   = '#333';
+            statusLabel = 'Cleaning';
+            statusIcon  = 'tint';
+            actionBtn   = '';
         } else if (room.status === 'maintenance') {
-            statusColor = '#6c757d';
-            statusClass = 'secondary';
-            statusIcon = 'wrench';
-            subText = 'Maint.';
-            actionBtn = '';
+            bgColor     = '#6c757d';
+            statusLabel = 'Maintenance';
+            statusIcon  = 'wrench';
+            actionBtn   = '';
         }
 
         const card = `
-            <div class="col-6 col-md-4 mb-3 px-1">
-                <div class="tile p-2 mb-0 shadow-sm border" style="border-radius: 8px;">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <span class="badge badge-light px-2" style="font-size:12px">#${room.room_number}</span>
-                        <i class="fa fa-${statusIcon} text-${statusClass}"></i>
+            <div class="col-6 col-md-3 mb-3">
+                <div style="border-radius:8px; overflow:hidden; border: 2px solid ${bgColor}; background:#fff; height:100%;">
+                    {{-- Colored header --}}
+                    <div style="background:${bgColor}; color:${textColor}; padding:12px 10px 8px; text-align:center;">
+                        <i class="fa fa-bed fa-2x"></i>
+                        <div style="font-size:18px; font-weight:700; line-height:1.2; margin-top:4px;">Room #${room.room_number}</div>
+                        <div style="font-size:11px; opacity:.85;">${room.room_type}</div>
+                        ${guestLine}
                     </div>
-                    <div class="mb-2">
-                        <div class="text-truncate font-weight-bold" style="font-size:12px">${room.room_type}</div>
-                        <div class="text-${statusClass} small text-truncate" style="font-size:10px">${subText}</div>
-                    </div>
-                    <div class="text-right">
-                       ${actionBtn}
+                    {{-- Status footer --}}
+                    <div style="padding:8px 10px; text-align:center;">
+                        <span style="font-size:12px; font-weight:600; color:${bgColor};">
+                            <i class="fa fa-${statusIcon}"></i> ${statusLabel}
+                        </span>
+                        ${actionBtn}
                     </div>
                 </div>
             </div>
