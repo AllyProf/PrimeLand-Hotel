@@ -24,29 +24,43 @@
       </div>
 
       {{-- Date picker bar inside the calendar tile --}}
-      <div class="tile-body" style="padding-bottom:0;">
+      <div class="tile-body" style="padding-bottom:0; border-bottom:1px solid #eee;">
         <div class="row align-items-end">
-          <div class="col-md-8 mb-3">
+          <div class="col-md-5 mb-3">
             <label class="control-label">Check Room Status by Date</label>
-            <div class="d-flex">
-              <select id="filterDay" class="form-control mr-1" style="width:80px; flex:none">
-                @for ($d = 1; $d <= 31; $d++)
-                  <option value="{{ $d }}" {{ date('j') == $d ? 'selected' : '' }}>{{ $d }}</option>
-                @endfor
-              </select>
-              <select id="filterMonth" class="form-control mr-1">
-                @for ($m = 1; $m <= 12; $m++)
-                  <option value="{{ $m }}" {{ date('n') == $m ? 'selected' : '' }}>{{ date('F', mktime(0,0,0,$m,1)) }}</option>
-                @endfor
-              </select>
-              <select id="filterYear" class="form-control mr-2" style="width:100px; flex:none">
-                @for ($y = date('Y') - 1; $y <= date('Y') + 3; $y++)
-                  <option value="{{ $y }}" {{ date('Y') == $y ? 'selected' : '' }}>{{ $y }}</option>
-                @endfor
-              </select>
-              <button onclick="searchByDate()" class="btn btn-info" style="white-space:nowrap">
-                <i class="fa fa-search"></i> Search Date
-              </button>
+            <div class="input-group">
+              <div class="input-group-prepend">
+                <span class="input-group-text"><i class="fa fa-calendar"></i></span>
+              </div>
+              <input type="date" id="filterDate" class="form-control" value="{{ date('Y-m-d') }}">
+              <div class="input-group-append">
+                <button onclick="searchByDate()" class="btn btn-info">
+                  <i class="fa fa-search"></i> Search
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {{-- Status Legend --}}
+          <div class="col-md-7 mb-3">
+            <label class="control-label">Status Legend</label>
+            <div class="d-flex flex-wrap" style="gap: 16px;">
+              <div class="d-flex align-items-center">
+                <span style="width:14px;height:14px;background:#dc3545;border-radius:3px;margin-right:6px;display:inline-block;"></span>
+                <small><strong>Occupied</strong> <span class="text-muted">/ Checked In</span></small>
+              </div>
+              <div class="d-flex align-items-center">
+                <span style="width:14px;height:14px;background:#28a745;border-radius:3px;margin-right:6px;display:inline-block;"></span>
+                <small><strong>Confirmed</strong> <span class="text-muted">/ Paid</span></small>
+              </div>
+              <div class="d-flex align-items-center">
+                <span style="width:14px;height:14px;background:#ffc107;border-radius:3px;margin-right:6px;display:inline-block;"></span>
+                <small><strong>Pending</strong> <span class="text-muted">/ Awaiting Payment</span></small>
+              </div>
+              <div class="d-flex align-items-center">
+                <span style="width:14px;height:14px;background:#17a2b8;border-radius:3px;margin-right:6px;display:inline-block;"></span>
+                <small><strong>Partial</strong> <span class="text-muted">/ Partially Paid</span></small>
+              </div>
             </div>
           </div>
         </div>
@@ -564,16 +578,18 @@ let calendar;
 let allRoomSummaryData = [];
 
 
-// Search by specific Day / Month / Year
+// Search by date input
 function searchByDate() {
-    const day   = String(document.getElementById('filterDay').value).padStart(2, '0');
-    const month = String(document.getElementById('filterMonth').value).padStart(2, '0');
-    const year  = document.getElementById('filterYear').value;
-    const dateStr = `${year}-${month}-${day}`;
+    const dateStr = document.getElementById('filterDate').value;
+    if (!dateStr) return;
+
+    const parts = dateStr.split('-');
+    const year  = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1; // JS months are 0-indexed
 
     // Navigate calendar to that month
     if (calendar) {
-        calendar.gotoDate(new Date(year, parseInt(month) - 1, 1));
+        calendar.gotoDate(new Date(year, month, 1));
     }
 
     // Open the day summary modal for that date
