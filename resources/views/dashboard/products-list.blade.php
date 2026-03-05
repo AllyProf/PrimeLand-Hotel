@@ -7,30 +7,15 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
 
 @section('content')
 <style>
-    .product-card {
-        border: none !important;
-        background: #ffffff !important;
-    }
-    .product-card:hover {
-        cursor: pointer;
-    }
-    .btn-white {
-        background: #ffffff !important;
-        border: none !important;
-        background-color: #fff !important;
-        transition: all 0.2s ease;
-    }
-    .btn-white:hover {
-        background: #f8f9fa !important;
-        color: #000 !important;
-        transform: scale(1.05);
-    }
-    .category-section h4 {
-        color: #333 !important;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-size: 1.1rem;
-    }
+    .tile { border-radius: 15px; overflow: hidden; }
+    .transition-all { transition: all 0.3s ease; }
+    .bg-primary-light { background: #eef2ff !important; }
+    .product-row:hover { background-color: #f8f9ff !important; }
+    .category-header td { background: #fdfdfd; }
+    .badge-success-light { background: #e6ffed; color: #28a745; border: none; }
+    .badge-info-light { background: #e8f4ff; color: #007bff; border: none; }
+    .category-tabs-scrollable::-webkit-scrollbar { display: none; }
+    .btn-light.rounded-circle:hover { background: #eef2ff !important; transform: scale(1.1); }
 </style>
 <div class="app-title">
   <div>
@@ -46,39 +31,30 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
 
 <!-- Statistics Section -->
 <div class="row mb-4">
-  <div class="col-md-3">
-    <div class="widget-small primary coloured-icon text-white" style="background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);">
-      <i class="icon fa fa-tags fa-3x"></i>
+  <div class="col-md-4">
+    <div class="widget-small primary coloured-icon bg-white shadow-sm border-0" style="border-radius: 12px;">
+      <i class="icon fa fa-tags fa-2x" style="background-color: #f0f7ff; color: #007bff; border-radius: 12px 0 0 12px;"></i>
       <div class="info">
-        <h4 class="text-white">Product Brands</h4>
-        <p class="text-white"><b>{{ $summaryStats['brands'] }}</b></p>
+        <h4 class="text-muted small text-uppercase font-weight-bold">Product Brands</h4>
+        <p class="mb-0 h3"><b>{{ $summaryStats['brands'] }}</b></p>
       </div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="widget-small info coloured-icon text-white" style="background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);">
-      <i class="icon fa fa-barcode fa-3x"></i>
+  <div class="col-md-4">
+    <div class="widget-small info coloured-icon bg-white shadow-sm border-0" style="border-radius: 12px;">
+      <i class="icon fa fa-folder fa-2x" style="background-color: #fffaf0; color: #ff9800; border-radius: 12px 0 0 12px;"></i>
       <div class="info">
-        <h4 class="text-white">Total SKUs</h4>
-        <p class="text-white"><b>{{ $summaryStats['variants'] }}</b></p>
+        <h4 class="text-muted small text-uppercase font-weight-bold">Categories</h4>
+        <p class="mb-0 h3"><b>{{ $summaryStats['categories'] }}</b></p>
       </div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="widget-small warning coloured-icon text-white" style="background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);">
-      <i class="icon fa fa-folder fa-3x"></i>
+  <div class="col-md-4">
+    <div class="widget-small success coloured-icon bg-white shadow-sm border-0" style="border-radius: 12px;">
+      <i class="icon fa fa-check-circle fa-2x" style="background-color: #f0fff4; color: #28a745; border-radius: 12px 0 0 12px;"></i>
       <div class="info">
-        <h4 class="text-white">Categories</h4>
-        <p class="text-white"><b>{{ $summaryStats['categories'] }}</b></p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3">
-    <div class="widget-small success coloured-icon text-white" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-      <i class="icon fa fa-check-circle fa-3x"></i>
-      <div class="info">
-        <h4 class="text-white">Active Items</h4>
-        <p class="text-white"><b>{{ $summaryStats['active'] }}</b></p>
+        <h4 class="text-dark small text-uppercase font-weight-bold">Active Items</h4>
+        <p class="mb-0 h3 text-dark"><b>{{ $summaryStats['active'] }}</b></p>
       </div>
     </div>
   </div>
@@ -86,12 +62,17 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
 
 <div class="row">
   <div class="col-md-12">
-    <div class="tile shadow-sm">
+    <div class="tile border-0 shadow-sm" style="border-radius: 15px;">
       <div class="tile-title-w-btn mb-4">
-        <h3 class="title">Product Inventory</h3>
+        <div class="d-flex align-items-center">
+            <div class="bg-primary-light text-primary rounded-circle mr-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #eef2ff;">
+                <i class="fa fa-list-ul fa-lg"></i>
+            </div>
+            <h3 class="title mb-0">Product Inventory</h3>
+        </div>
         <div class="btn-group">
-          <a class="btn btn-primary shadow-sm" href="{{ route($routePrefix . '.products.create') }}">
-            <i class="fa fa-plus"></i> Register New Product
+          <a class="btn btn-primary rounded-pill shadow-sm px-4" href="{{ route($routePrefix . '.products.create') }}">
+            <i class="fa fa-plus-circle"></i> Register New Product
           </a>
         </div>
       </div>
@@ -115,169 +96,138 @@ $routePrefix = request()->is('bar-keeper*') ? 'bar-keeper' : 'admin';
         });
 
         $categoryStyles = [
-            'soft_drinks' => ['icon' => 'fa-flask', 'grad' => 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'],
-            'water' => ['icon' => 'fa-tint', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
-            'alcoholic_beverage' => ['icon' => 'fa-beer', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
-            'wines' => ['icon' => 'fa-vine', 'grad' => 'linear-gradient(135deg, #8E24AA 0%, #D81B60 100%)'],
-            'spirits' => ['icon' => 'fa-glass', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
-            'hot_beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
-            'cocktails' => ['icon' => 'fa-magic', 'grad' => 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)']
+            'soft_drinks' => ['icon' => 'fa-flask', 'color' => '#ff4757', 'bg' => '#fff0f0'],
+            'water' => ['icon' => 'fa-tint', 'color' => '#2f3542', 'bg' => '#f1f2f6'],
+            'alcoholic_beverage' => ['icon' => 'fa-beer', 'color' => '#ffa502', 'bg' => '#fff9e6'],
+            'wines' => ['icon' => 'fa-vine', 'color' => '#6c5ce7', 'bg' => '#f3f0ff'],
+            'spirits' => ['icon' => 'fa-glass', 'color' => '#2d3436', 'bg' => '#f5f5f5'],
+            'hot_beverages' => ['icon' => 'fa-coffee', 'color' => '#747d8c', 'bg' => '#f8f9fa'],
+            'cocktails' => ['icon' => 'fa-magic', 'color' => '#ff6b81', 'bg' => '#fff0f3']
         ];
       @endphp
 
-      <!-- Filters & Category Tabs -->
-      <div class="row border-bottom pb-4 mb-4 mx-0 align-items-center">
-        <div class="col-md-8 pl-0 mb-3 mb-md-0">
-          <ul class="nav nav-pills category-tabs-scrollable" id="categoryTabs" role="tablist" style="flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; -webkit-overflow-scrolling: touch;">
-            <li class="nav-item pr-2">
-              <a class="nav-link active font-weight-bold px-3 py-2 shadow-sm border text-white btn-primary" id="all-tab" data-toggle="tab" href="#all" role="tab" onclick="setCategoryFilter('', this); return false;" style="border-radius: 25px; white-space: nowrap;">
-                  <i class="fa fa-th-large mr-1"></i> All Items
-              </a>
-            </li>
-            @foreach($sortedCategories as $categoryKey)
-              @php
-                  $style = $categoryStyles[$categoryKey] ?? ['icon' => 'fa-cube', 'grad' => 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'];
-                  $cName = ($categoryKey === 'soft_drinks') ? 'Soft Drinks & Sodas' : ucfirst(str_replace('_', ' ', $categoryKey));
-              @endphp
-              <li class="nav-item pr-2">
-                <a class="nav-link px-3 py-2 font-weight-bold shadow-sm text-dark bg-white border" id="tab-{{ $categoryKey }}" data-toggle="tab" href="#pane-{{ $categoryKey }}" role="tab" onclick="setCategoryFilter('{{ $categoryKey }}', this); return false;" style="border-radius: 25px; white-space: nowrap;">
-                    <i class="fa {{ $style['icon'] }} mr-1"></i> {{ $cName }} <span class="badge badge-light border text-muted ml-1">{{ $groupedProducts[$categoryKey]->count() }}</span>
+      <!-- Navigation Tabs (Template Style) -->
+      <div class="row mb-0 mt-3">
+        <div class="col-md-12">
+          <div class="d-flex align-items-end justify-content-between bg-light rounded-top p-2" style="border: 1px solid #dee2e6; border-bottom: none;">
+            <ul class="nav nav-tabs border-0" role="tablist" style="gap: 5px;">
+              <li class="nav-item">
+                <a class="nav-link py-2 px-3 {{ !request('category') ? 'active font-weight-bold' : '' }}" 
+                   id="all-tab" href="#" onclick="setCategoryFilter('', this); return false;"
+                   style="{{ !request('category') ? 'color: #e77a3a; background: #fff; border-color: #dee2e6 #dee2e6 #fff;' : 'color: #6c757d; border: 1px solid transparent;' }}">
+                   <i class="fa fa-th-large"></i> All Items
                 </a>
               </li>
-            @endforeach
-          </ul>
-          <input type="hidden" id="categoryFilter" value="">
-        </div>
-        <div class="col-md-4 pr-0">
-          <div class="input-group shadow-sm">
-            <div class="input-group-prepend">
-              <span class="input-group-text bg-white border-right-0"><i class="fa fa-search text-muted"></i></span>
-            </div>
-            <input type="text" class="form-control border-left-0 border-right-0" id="searchInput" placeholder="Search product..." 
-                   value="{{ request('search') }}" 
-                   oninput="filterProducts()">
-            <div class="input-group-append">
-               <button class="btn border border-left-0 bg-white text-muted" type="button" onclick="resetFilters()">
-                 <i class="fa fa-refresh"></i>
-               </button>
+              @foreach($sortedCategories as $categoryKey)
+                @php
+                    $style = $categoryStyles[$categoryKey] ?? ['icon' => 'fa-cube', 'color' => '#747d8c', 'bg' => '#f8f9fa'];
+                    $cName = ($categoryKey === 'soft_drinks') ? 'Soft Drinks' : ucfirst(str_replace('_', ' ', $categoryKey));
+                    $isActive = request('category') == $categoryKey;
+                @endphp
+                <li class="nav-item">
+                  <a class="nav-link py-2 px-3 {{ $isActive ? 'active font-weight-bold' : '' }}" 
+                     id="tab-{{ $categoryKey }}" href="#" onclick="setCategoryFilter('{{ $categoryKey }}', this); return false;"
+                     style="{{ $isActive ? 'color: #e77a3a; background: #fff; border-color: #dee2e6 #dee2e6 #fff;' : 'color: #6c757d; border: 1px solid transparent;' }}">
+                     <i class="fa {{ $style['icon'] }} mr-1"></i> {{ $cName }}
+                     <span class="badge badge-light border ml-1">{{ $groupedProducts[$categoryKey]->count() }}</span>
+                  </a>
+                </li>
+              @endforeach
+            </ul>
+            
+            <div class="pb-1 pr-2" style="width: 300px;">
+              <div class="input-group input-group-sm rounded bg-white border">
+                <div class="input-group-prepend">
+                  <span class="input-group-text bg-transparent border-0"><i class="fa fa-search text-muted"></i></span>
+                </div>
+                <input type="text" class="form-control border-0" id="searchInput" placeholder="Search products..." 
+                       value="{{ request('search') }}" oninput="filterProducts()" style="box-shadow: none;">
+                <input type="hidden" id="categoryFilter" value="{{ request('category') }}">
+              </div>
             </div>
           </div>
         </div>
       </div>
       
       @if($products->count() > 0)
-      <div id="productsWrapper">
-
-        @foreach($sortedCategories as $categoryKey)
-          @php 
-            $items = $groupedProducts[$categoryKey]; 
-            $categoryStyles = [
-                'soft_drinks' => ['icon' => 'fa-flask', 'grad' => 'linear-gradient(135deg, #ff0844 0%, #ffb199 100%)'],
-                'water' => ['icon' => 'fa-tint', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
-                'alcoholic_beverage' => ['icon' => 'fa-beer', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
-                'wines' => ['icon' => 'fa-vine', 'grad' => 'linear-gradient(135deg, #8E24AA 0%, #D81B60 100%)'],
-                'spirits' => ['icon' => 'fa-glass', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
-                'hot_beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
-                'cocktails' => ['icon' => 'fa-magic', 'grad' => 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)']
-            ];
-            $style = $categoryStyles[$categoryKey] ?? ['icon' => 'fa-cube', 'grad' => 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)'];
-            $icon = $style['icon'];
-            $grad = $style['grad'];
-            $displayName = ($categoryKey === 'soft_drinks') ? 'Soft Drinks & Sodas' : (ucfirst(str_replace('_', ' ', $categoryKey)));
-          @endphp
-          
-          <div class="category-section mb-5" data-section-category="{{ $categoryKey }}">
-            <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
-              <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 40px; height: 40px;">
-                <i class="fa {{ $icon }} fa-lg"></i>
-              </div>
-              <h4 class="m-0 font-weight-bold" style="letter-spacing: 0.5px;">
-                {{ $displayName }}
-                <span class="badge badge-pill badge-light border ml-2 text-muted" style="font-size: 14px; font-weight: normal;">{{ $items->count() }} items</span>
-              </h4>
-            </div>
-            
-            <div class="row">
-              @foreach($items as $product)
-                @foreach($product->variants as $variant)
-                  <div class="col-md-4 col-lg-3 mb-4 product-card-wrapper" 
-                       data-product-name="{{ strtolower($variant->variant_name . ' ' . $product->name) }}"
-                       data-product-supplier="{{ strtolower($product->supplier->name ?? '') }}"
-                       data-product-brand="{{ strtolower($product->brand_or_type ?? '') }}"
-                       data-product-category-name="{{ strtolower($product->category_name) }}"
-                       data-category="{{ $product->category }}"
-                       data-product-type="{{ strtolower($product->type) }}">
-                    <div class="card h-100 product-card border-0 shadow-sm" style="transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); border-radius: 15px; overflow: hidden; background: #fff;" 
-                         onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 15px 30px rgba(0,0,0,0.1)';" 
-                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)';" 
-                         onclick="viewProduct({{ $product->id }})">
+      <div id="productsWrapper" class="tab-content" style="background: #fff; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 8px 8px; padding: 20px;">
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered mb-0">
+              <thead class="bg-light text-dark">
+                  <tr>
+                      <th style="width: 60px;" class="text-center">#</th>
+                      <th>Product Name & Brand</th>
+                      <th>Supplier</th>
+                      <th>Volume/Size</th>
+                      <th>Sale Config</th>
+                      <th class="text-center">Actions</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  @foreach($sortedCategories as $categoryKey)
+                      @php 
+                          $items = $groupedProducts[$categoryKey]; 
+                          $style = $categoryStyles[$categoryKey] ?? ['icon' => 'fa-cube', 'color' => '#747d8c', 'bg' => '#f8f9fa'];
+                          $displayName = ($categoryKey === 'soft_drinks') ? 'Soft Drinks & Sodas' : (ucfirst(str_replace('_', ' ', $categoryKey)));
+                      @endphp
                       
-                      <div class="card-header border-0 p-0 position-relative" style="height: 180px; background: #f0f2f5; cursor: pointer;">
-                        @if($variant->image)
-                          <img src="{{ asset('storage/' . ltrim($variant->image, '/')) }}" alt="{{ $variant->variant_name }}" 
-                               class="w-100 h-100" style="object-fit: cover;"
-                               onerror="this.onerror=null; this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}';">
-                        @else
-                          <div class="d-flex align-items-center justify-content-center h-100" style="background: {!! $grad !!};">
-                            <i class="fa {{ $icon }} fa-4x text-white opacity-50"></i>
-                          </div>
-                        @endif
-                        
-                        <!-- Category Bubble -->
-                        <div class="position-absolute" style="top: 12px; left: 12px;">
-                            <span class="badge badge-light shadow-sm px-2 py-1" style="font-size: 10px; text-transform: uppercase; font-weight: 700; color: #555; background: rgba(255,255,255,0.9);">
-                               <i class="fa {{ $icon }} mr-1"></i> {{ substr($product->category_name, 0, 15) }}
-                            </span>
-                        </div>
-                        
-                        <!-- Measurement Badge -->
-                         <div class="position-absolute" style="bottom: 12px; right: 12px;">
-                            <span class="badge badge-primary shadow-sm px-2 py-1" style="font-size: 11px;">
-                               {{ $variant->measurement }}
-                            </span>
-                        </div>
-                      </div>
-
-                      <div class="card-body p-3 d-flex flex-column">
-                        <h5 class="card-title mb-1 font-weight-bold text-dark" style="font-size: 1.05rem; line-height: 1.2;">
-                          {{ $variant->variant_name }}
-                        </h5>
-                        <p class="small text-muted mb-2 font-italic">{{ $product->name }}</p>
-                        
-                        <div class="small text-muted mb-3">
-                           <i class="fa fa-building-o mr-1"></i> {{ $product->supplier->name ?? 'Direct Supply' }}
-                        </div>
-                        
-                        <div class="mt-auto pt-2 d-flex justify-content-between align-items-center border-top">
-                            <div class="small font-weight-bold">
-                               @if($variant->can_sell_as_pic) <span class="badge badge-success">BOTTLE</span> @endif
-                               @if($variant->can_sell_as_serving) <span class="badge badge-info">GLASS</span> @endif
-                            </div>
-                            <!-- Price or Status could go here -->
-                        </div>
-                      </div>
-
-                      <div class="card-footer bg-white border-top-0 p-3 d-flex">
-                        <div class="btn-group w-100 shadow-sm border rounded">
-                            <button class="btn btn-sm btn-white text-primary rounded-left py-2" onclick="event.stopPropagation(); viewProduct({{ $product->id }})" title="View Details" style="border: none;">
-                              <i class="fa fa-eye"></i>
-                            </button>
-                            <a href="{{ route($routePrefix . '.products.edit', $product) }}" class="btn btn-sm btn-white text-info py-2" onclick="event.stopPropagation();" title="Edit Family" style="border: none; border-left: 1px solid #eee; border-right: 1px solid #eee;">
-                              <i class="fa fa-edit"></i>
-                            </a>
-                            <!-- Deleting single variant via main list is tricky, might delete main product if not careful. For now keeping link to main deletion or hiding -->
-                             <button class="btn btn-sm btn-white text-danger rounded-right py-2" onclick="event.stopPropagation(); deleteVariant({{ $variant->id }})" title="Delete Variant" style="border: none;">
-                              <i class="fa fa-trash"></i>
-                            </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                @endforeach
-              @endforeach
-            </div>
-          </div>
-        @endforeach
+                      <tr class="category-header bg-light" data-section-category="{{ $categoryKey }}">
+                          <td colspan="6" class="py-2 px-3">
+                              <div class="d-flex align-items-center justify-content-between">
+                                  <span class="font-weight-bold text-dark" style="font-size: 13px;">
+                                      <i class="fa {{ $style['icon'] }} mr-2 text-primary"></i> {{ $displayName }}
+                                  </span>
+                                  <span class="badge badge-pill badge-secondary">{{ $items->count() }} items</span>
+                              </div>
+                          </td>
+                      </tr>
+  
+                      @foreach($items as $product)
+                          @foreach($product->variants as $variant)
+                              <tr class="product-row" 
+                                  data-product-name="{{ strtolower($variant->variant_name . ' ' . $product->name) }}"
+                                  data-product-supplier="{{ strtolower($product->supplier->name ?? '') }}"
+                                  data-product-category="{{ $product->category }}"
+                                  data-section-category="{{ $categoryKey }}">
+                                  <td class="text-center align-middle">
+                                      <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto shadow-xs" style="width: 35px; height: 35px; background: {{ $style['bg'] }}; color: {{ $style['color'] }};">
+                                          <i class="fa {{ $style['icon'] }}"></i>
+                                      </div>
+                                  </td>
+                                  <td class="align-middle">
+                                      <div class="font-weight-bold text-dark">{{ $variant->variant_name }}</div>
+                                      <div class="small text-muted">{{ $product->name }}</div>
+                                  </td>
+                                  <td class="align-middle px-3">
+                                      <span class="text-muted small font-weight-bold">{{ $product->supplier->name ?? 'Direct' }}</span>
+                                  </td>
+                                  <td class="align-middle">
+                                      <span class="badge badge-light border text-dark px-2 font-weight-bold">{{ $variant->measurement }}</span>
+                                  </td>
+                                  <td class="align-middle">
+                                      @if($variant->can_sell_as_pic)<span class="badge badge-success-light mr-1"><i class="fa fa-shopping-bag mr-1"></i> Bottle</span>@endif
+                                      @if($variant->can_sell_as_serving)<span class="badge badge-info-light"><i class="fa fa-glass mr-1"></i> {{ ucfirst($variant->selling_unit ?? 'Glass') }}</span>@endif
+                                  </td>
+                                  <td class="text-center align-middle">
+                                      <div class="btn-group">
+                                          <button class="btn btn-sm btn-light rounded-circle border p-2 mr-2" onclick="viewProduct({{ $product->id }})" title="View Details">
+                                              <i class="fa fa-eye text-primary"></i>
+                                          </button>
+                                          <a href="{{ route($routePrefix . '.products.edit', $product->id) }}" class="btn btn-sm btn-light rounded-circle border p-2 mr-2" title="Edit" style="display: inline-flex; align-items: center; justify-content: center;">
+                                              <i class="fa fa-edit text-info"></i>
+                                          </a>
+                                          <button class="btn btn-sm btn-light rounded-circle border p-2" onclick="deleteVariant({{ $variant->id }})" title="Delete Variant">
+                                              <i class="fa fa-trash text-danger"></i>
+                                          </button>
+                                      </div>
+                                  </td>
+                              </tr>
+                          @endforeach
+                      @endforeach
+                  @endforeach
+              </tbody>
+          </table>
+        </div>
       </div>
       
       <div class="d-flex justify-content-center mt-4">
@@ -355,8 +305,24 @@ let triggerFromSearch = false;
 
 function setCategoryFilter(val, el) {
     $('#categoryFilter').val(val);
-    $('#categoryTabs .nav-link').removeClass('active text-white btn-primary').addClass('text-dark bg-white border');
-    $(el).addClass('active text-white btn-primary').removeClass('text-dark bg-white border');
+    
+    // Reset styles for all navigation links
+    $('.nav-link').each(function() {
+        $(this).removeClass('active font-weight-bold');
+        $(this).css({
+            'color': '#6c757d',
+            'background': 'transparent',
+            'border-color': 'transparent'
+        });
+    });
+    
+    // Apply active styles to the clicked tab
+    $(el).addClass('active font-weight-bold');
+    $(el).css({
+        'color': '#e77a3a',
+        'background': '#fff',
+        'border-color': '#dee2e6 #dee2e6 #fff'
+    });
     
     if (!triggerFromSearch) {
         document.getElementById('searchInput').value = '';
@@ -369,41 +335,53 @@ function filterProducts() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(function() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value;
     
     // Auto-switch to "All" tab if searching while inside a specific tab
-    if (searchTerm.length > 0 && $('#categoryFilter').val() !== '') {
+    if (searchTerm.length > 0 && categoryFilter !== '') {
         triggerFromSearch = true;
         setCategoryFilter('', document.getElementById('all-tab'));
         return;
     }
 
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    const cards = document.querySelectorAll('.product-card-wrapper');
-    let count = 0;
+    const rows = document.querySelectorAll('.product-row');
+    const headers = document.querySelectorAll('.category-header');
+    let totalVisible = 0;
     
-    cards.forEach(card => {
-      const name = card.dataset.productName || '';
-      const supplier = card.dataset.productSupplier || '';
-      const brand = card.dataset.productBrand || '';
-      const categoryName = card.dataset.productCategoryName || '';
+    // 1. Filter Rows
+    rows.forEach(row => {
+      const name = row.dataset.productName || '';
+      const supplier = row.dataset.productSupplier || '';
+      const cat = row.dataset.productCategory || '';
       
-      const matchSearch = (!searchTerm || name.includes(searchTerm) || supplier.includes(searchTerm) || brand.includes(searchTerm) || categoryName.includes(searchTerm));
+      const matchSearch = (!searchTerm || name.includes(searchTerm) || supplier.includes(searchTerm));
+      const matchCategory = (!categoryFilter || row.dataset.sectionCategory === categoryFilter);
       
-      card.style.display = matchSearch ? 'block' : 'none';
-      if (matchSearch) count++;
+      const isVisible = matchSearch && matchCategory;
+      row.style.display = isVisible ? 'table-row' : 'none';
+      if (isVisible) totalVisible++;
     });
     
-    document.getElementById('noResultsMessage').style.display = (count === 0) ? 'block' : 'none';
-    
-    document.querySelectorAll('.category-section').forEach(section => {
-        const sectionCat = section.dataset.sectionCategory;
+    // 2. Filter Headers (only show if they have visible items)
+    headers.forEach(header => {
+        const sectionCat = header.dataset.sectionCategory;
         const matchCategory = !categoryFilter || sectionCat === categoryFilter;
-        const visibleItems = section.querySelectorAll('.product-card-wrapper[style*="display: block"]');
         
-        section.style.display = (matchCategory && visibleItems.length > 0) ? 'block' : 'none';
+        let hasVisibleRows = false;
+        let next = header.nextElementSibling;
+        while (next && next.classList.contains('product-row')) {
+            if (next.style.display !== 'none') {
+                hasVisibleRows = true;
+                break;
+            }
+            next = next.nextElementSibling;
+        }
+        
+        header.style.display = (matchCategory && hasVisibleRows) ? 'table-row' : 'none';
     });
     
-    document.getElementById('productsWrapper').style.display = (count === 0) ? 'none' : 'block';
+    document.getElementById('noResultsMessage').style.display = (totalVisible === 0) ? 'block' : 'none';
+    document.getElementById('productsWrapper').style.display = (totalVisible === 0) ? 'none' : 'block';
   }, 250);
 }
 
@@ -427,93 +405,59 @@ function viewProduct(id) {
     const variants = p.variants || [];
     const catStyle = getCategoryStyle(p.category);
     
-    let mainImageHtml = '';
-    if (p.image || (variants.length > 0 && variants[0].image)) {
-        const imgSrc = p.image ? '{{ asset("storage") }}/' + p.image : '{{ asset("storage") }}/' + variants[0].image;
-        mainImageHtml = `<img src="${imgSrc}" class="img-fluid rounded shadow-sm border" style="max-height: 250px;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">`;
-    } else {
-        mainImageHtml = `<div class="d-flex align-items-center justify-content-center rounded shadow-sm border" style="height: 250px; width: 100%; background: ${catStyle.grad};">
-                            <i class="fa ${catStyle.icon} fa-5x text-white opacity-50"></i>
+    const iconHtml = `<div class="d-flex align-items-center justify-content-center rounded-circle shadow-sm border mx-auto mb-3" style="height: 120px; width: 120px; background: ${catStyle.bg}; color: ${catStyle.color}; border: 2px solid ${catStyle.color}44 !important;">
+                            <i class="fa ${catStyle.icon} fa-4x"></i>
                          </div>`;
-    }
     
     let html = `
-      <div class="row align-items-center">
-        <div class="col-md-4 text-center mb-4 mb-md-0">
-          ${mainImageHtml}
+      <div class="text-center mb-4">
+          ${iconHtml}
+          <h3 class="font-weight-bold mb-1">${p.name}</h3>
+          <p class="text-muted"><i class="fa fa-tag"></i> ${p.category_name || p.category}</p>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="p-3 bg-light rounded border-left" style="border-left: 4px solid ${catStyle.color} !important;">
+                <label class="small text-muted text-uppercase font-weight-bold mb-1">Supplier Info</label>
+                <div class="h6 mb-0 font-weight-bold">${p.supplier ? p.supplier.name : 'Direct Supply'}</div>
+            </div>
         </div>
-        <div class="col-md-8">
-          <h3 class="font-weight-bold mb-3">${p.name}</h3>
-          <ul class="list-group list-group-flush border rounded">
-            <li class="list-group-item"><strong>Category:</strong> ${p.category_name || (p.category ? p.category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'N/A')}</li>
-            <li class="list-group-item"><strong>Supplier:</strong> ${p.supplier ? p.supplier.name : 'Direct'}</li>
-            <li class="list-group-item"><strong>Type:</strong> <span class="badge badge-light border px-2">${p.type.toUpperCase()}</span></li>
-            <li class="list-group-item"><strong>Registration Date:</strong> ${new Date(p.created_at).toLocaleDateString()}</li>
-          </ul>
+        <div class="col-md-6">
+            <div class="p-3 bg-light rounded border-left" style="border-left: 4px solid #6c757d !important;">
+                <label class="small text-muted text-uppercase font-weight-bold mb-1">Product Type</label>
+                <div class="h6 mb-0 font-weight-bold">${p.type.toUpperCase()}</div>
+            </div>
         </div>
       </div>
-      <div class="mt-4">
-        <h5 class="font-weight-bold border-bottom pb-2 mb-3"><i class="fa fa-list-ul mr-2 text-primary"></i> Product Variants & Pricing</h5>
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered bg-white shadow-sm mb-0">
-            <thead class="thead-light">
-              <tr>
-                <th style="width: 60px;" class="text-center">Image</th>
-                <th>Variant Name & Size</th>
-                <th>Methods</th>
-                <th>Price (TSH)</th>
-                <th>Price (USD)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${variants.map(v => {
-                const innerStyle = getCategoryStyle(p.category);
-                
-                let tshPrices = [];
-                let usdPrices = [];
-                
-                if (v.can_sell_as_pic) {
-                    tshPrices.push(`<div class="mb-1"><span class="text-muted small">Bottle:</span> <strong>${Number(v.selling_price_per_pic || 0).toLocaleString()}</strong></div>`);
-                    usdPrices.push(`<div class="mb-1"><span class="text-muted small">Bottle:</span> <strong>$${Number(v.selling_price_per_pic_usd || 0)}</strong></div>`);
-                }
-                if (v.can_sell_as_serving) {
-                    tshPrices.push(`<div><span class="text-muted small">Glass:</span> <strong>${Number(v.selling_price_per_serving || 0).toLocaleString()}</strong></div>`);
-                    usdPrices.push(`<div><span class="text-muted small">Glass:</span> <strong>$${Number(v.selling_price_per_serving_usd || 0)}</strong></div>`);
-                }
 
-                return `
-                <tr>
-                  <td class="text-center align-middle p-2">
-                    ${v.image ? `<img src="{{ asset('storage') }}/${v.image}" class="rounded shadow-sm" style="width: 45px; height: 45px; object-fit: cover;" onerror="this.onerror=null;this.src='{{ asset('dashboard_assets/images/room-placeholder.jpg') }}'">` : 
-                    `<div class="rounded d-flex align-items-center justify-content-center shadow-sm mx-auto" style="width: 45px; height: 45px; background: ${innerStyle.grad};">
-                        <i class="fa ${innerStyle.icon} text-white opacity-75" style="font-size: 18px;"></i>
-                     </div>`}
-                  </td>
-                  <td class="align-middle">
-                      <div class="font-weight-bold" style="font-size: 14px; color: #333;">${v.variant_name || 'Standard'}</div>
-                      <div class="text-muted small" style="font-weight: 500;"><i class="fa fa-balance-scale"></i> ${v.measurement || '-'}</div>
-                  </td>
-                  <td class="align-middle">
-                      ${v.can_sell_as_pic ? '<span class="badge badge-success px-2 py-1 mr-1 mb-1"><i class="fa fa-check"></i> Bottle</span>' : ''}
-                      ${v.can_sell_as_serving ? `<span class="badge badge-info px-2 py-1 mb-1"><i class="fa fa-glass"></i> Glass (${v.servings_per_pic || 1})</span>` : ''}
-                  </td>
-                  <td class="align-middle text-dark">
-                      ${tshPrices.length > 0 ? tshPrices.join('') : '<span class="text-muted">-</span>'}
-                  </td>
-                  <td class="align-middle text-success">
-                      ${usdPrices.length > 0 ? usdPrices.join('') : '<span class="text-muted">-</span>'}
-                  </td>
-                </tr>
-              `}).join('')}
-            </tbody>
-          </table>
+      <div class="variants-section">
+        <h6 class="font-weight-bold text-uppercase small text-muted mb-3">Variants & Sizes</h6>
+        <div class="list-group">
+          ${variants.map(v => `
+            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 mb-2 rounded bg-white shadow-sm transition-all p-3">
+              <div class="d-flex align-items-center">
+                <div class="mr-3 text-center" style="width: 40px;">
+                    <i class="fa ${catStyle.icon} text-muted fa-lg"></i>
+                </div>
+                <div>
+                    <div class="font-weight-bold">${v.variant_name}</div>
+                    <div class="small text-muted">${v.measurement}</div>
+                </div>
+              </div>
+              <div class="text-right">
+                ${v.can_sell_as_pic ? `<span class="badge badge-success-light px-2 py-1 mb-1">BOTTLE: ${Number(v.selling_price_per_pic || 0).toLocaleString()} TZS</span><br>` : ''}
+                ${v.can_sell_as_serving ? `<span class="badge badge-info-light px-2 py-1">GLASS: ${Number(v.selling_price_per_serving || 0).toLocaleString()} TZS</span>` : ''}
+              </div>
+            </div>
+          `).join('')}
         </div>
       </div>
     `;
     content.html(html);
   })
   .catch(err => {
-    content.html('<div class="alert alert-danger">Error loading product details. Please try again.</div>');
+    content.html('<div class="alert alert-danger">Error loading product details.</div>');
   });
 }
 

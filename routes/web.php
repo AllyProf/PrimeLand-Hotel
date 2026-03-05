@@ -262,6 +262,8 @@ Route::prefix('manager')->group(function () {
         // Bookings Routes
         Route::get('/bookings', [BookingController::class, 'adminIndex'])->name('admin.bookings.index');
         Route::get('/bookings/calendar', [BookingController::class, 'adminCalendar'])->name('admin.bookings.calendar');
+        Route::get('/bookings/calendar/daily-summary', [BookingController::class, 'getDailySummary'])->name('admin.bookings.calendar.summary');
+        Route::get('/bookings/details/{booking}', [BookingController::class, 'getBookingDetails'])->name('admin.bookings.details');
         Route::post('/bookings/{booking}/send-reminder', [BookingController::class, 'sendReminder'])->name('admin.bookings.send-reminder');
         Route::get('/bookings/expired', [BookingController::class, 'adminIndex'])->name('admin.bookings.expired');
         

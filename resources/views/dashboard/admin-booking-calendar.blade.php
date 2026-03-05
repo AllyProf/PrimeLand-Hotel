@@ -17,23 +17,42 @@
   <div class="col-md-12">
     <div class="tile" style="box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: none;">
       <div class="tile-body" style="padding: 25px;">
-        <!-- Quick Actions Bar -->
+        <!-- Advanced Filters & Navigation -->
         <div class="row mb-4">
           <div class="col-md-12">
-            <div style="background: linear-gradient(135deg, #e77a3a 0%, #d66a2a 100%); padding: 20px; border-radius: 8px; color: white; margin-bottom: 20px;">
-              <div class="row align-items-center">
-                <div class="col-md-8">
-                  <h4 style="margin: 0; color: white; font-weight: 600;">
-                    <i class="fa fa-lightbulb-o"></i> Quick Actions
-                  </h4>
-                  <p style="margin: 8px 0 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">
-                    Click on any empty date to create a new booking • Click on any booking to view details
-                  </p>
-                </div>
-                <div class="col-md-4 text-right">
-                  <a href="{{ route('admin.bookings.manual.create') }}" class="btn btn-light" style="font-weight: 600;">
-                    <i class="fa fa-plus-circle"></i> Create New Booking
-                  </a>
+            <div class="card border-0 shadow-sm" style="border-radius: 12px; background: #fff;">
+              <div class="card-body p-3">
+                <div class="row align-items-center">
+                  <div class="col-lg-4 mb-3 mb-lg-0">
+                    <div class="d-flex align-items-center">
+                      <div class="bg-primary-light text-primary rounded-circle mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="fa fa-search"></i>
+                      </div>
+                      <div style="flex: 1;">
+                        <input type="text" id="calendarSearch" class="form-control border-0 bg-light" placeholder="Search Guest or Room..." style="border-radius: 8px;">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-5 mb-3 mb-lg-0">
+                    <div class="d-flex align-items-center justify-content-center">
+                      <select id="jumpMonth" class="form-control mr-2 border-0 bg-light" style="width: 140px; border-radius: 8px;">
+                        @for ($m=1; $m<=12; $m++)
+                          <option value="{{ $m-1 }}" {{ date('n') == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
+                        @endfor
+                      </select>
+                      <select id="jumpYear" class="form-control border-0 bg-light" style="width: 100px; border-radius: 8px;">
+                        @for ($y=date('Y'); $y<=date('Y')+2; $y++)
+                          <option value="{{ $y }}">{{ $y }}</option>
+                        @endfor
+                      </select>
+                      <button onclick="jumpToDate()" class="btn btn-primary ml-2 rounded-pill px-4">Jump</button>
+                    </div>
+                  </div>
+                  <div class="col-lg-3 text-right">
+                    <a href="{{ route('admin.bookings.manual.create') }}" class="btn btn-success rounded-pill shadow-sm px-4">
+                      <i class="fa fa-plus-circle"></i> New Booking
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -98,6 +117,65 @@
   </div>
 </div>
 
+<!-- Day Summary Modal -->
+<div class="modal fade" id="daySummaryModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
+      <div class="modal-header border-0 bg-primary text-white p-4">
+        <div>
+          <h5 class="modal-title mb-0" style="font-size: 20px; font-weight: 700;">
+            <i class="fa fa-calendar-o mr-2"></i> Day Summary: <span id="summaryDateLabel"></span>
+          </h5>
+          <p class="mb-0 text-white-50" style="font-size: 13px;">Overview of all room assignments for this date</p>
+        </div>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true" style="font-size: 28px;">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-0">
+        <!-- Stats Strip -->
+        <div class="d-flex justify-content-around bg-light py-3 border-bottom">
+          <div class="text-center px-3">
+            <small class="text-muted text-uppercase d-block mb-1">Available</small>
+            <span id="statAvailable" class="h4 mb-0 text-success font-weight-bold">0</span>
+          </div>
+          <div class="text-center px-3 border-left">
+            <small class="text-muted text-uppercase d-block mb-1">Occupied</small>
+            <span id="statOccupied" class="h4 mb-0 text-primary font-weight-bold">0</span>
+          </div>
+          <div class="text-center px-3 border-left">
+            <small class="text-muted text-uppercase d-block mb-1">Cleaning</small>
+            <span id="statCleaning" class="h4 mb-0 text-warning font-weight-bold">0</span>
+          </div>
+          <div class="text-center px-3 border-left">
+            <small class="text-muted text-uppercase d-block mb-1">Maintenance</small>
+            <span id="statMaintenance" class="h4 mb-0 text-danger font-weight-bold">0</span>
+          </div>
+        </div>
+        
+        <!-- Search within summary -->
+        <div class="px-4 py-3 bg-white">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text bg-white border-right-0" style="border-radius: 8px 0 0 8px;"><i class="fa fa-filter text-muted"></i></span>
+            </div>
+            <input type="text" id="modalRoomFilter" class="form-control border-left-0" placeholder="Filter by Room Number or Type..." style="border-radius: 0 8px 8px 0;">
+          </div>
+        </div>
+
+        <div class="p-4" style="max-height: 400px; overflow-y: auto;">
+          <div class="row" id="summaryRoomsGrid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer bg-light border-0">
+        <button type="button" class="btn btn-secondary px-4 rounded-pill" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Booking Details Modal -->
 <div class="modal fade" id="bookingDetailsModal" tabindex="-1" role="dialog" aria-labelledby="bookingDetailsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
@@ -115,7 +193,10 @@
       </div>
       <input type="hidden" id="currentBookingId" value="">
       <div class="modal-footer" style="padding: 20px; border-top: 1px solid #e0e0e0; border-radius: 0 0 10px 10px;">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal" style="font-weight: 600; padding: 10px 20px; border-radius: 5px;">Close</button>
+        <button type="button" class="btn btn-secondary px-4 rounded-pill" data-dismiss="modal">Close</button>
+        <button type="button" id="editBookingBtn" class="btn btn-info px-4 rounded-pill text-white d-none">
+            <i class="fa fa-edit"></i> Edit Booking
+        </button>
       </div>
     </div>
   </div>
@@ -179,6 +260,11 @@
     border-color: #e77a3a !important;
     box-shadow: 0 0 0 0.2rem rgba(231, 122, 58, 0.25) !important;
 }
+
+/* Custom Utilities */
+.bg-primary-light { background-color: rgba(231, 122, 58, 0.1); }
+.shadow-xs { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.rounded-xl { border-radius: 12px; }
 </style>
 <style>
 /* Custom Calendar Styling */
@@ -541,24 +627,219 @@
 }
 </style>
 <script>
+let calendar;
+let allRoomSummaryData = [];
+
+// Jump to Date function
+function jumpToDate() {
+    const month = document.getElementById('jumpMonth').value;
+    const year = document.getElementById('jumpYear').value;
+    const date = new Date(year, month, 1);
+    if (calendar) {
+        calendar.gotoDate(date);
+    }
+}
+
+// Global scope functions for events
+function showDaySummary(dateStr) {
+    $('#summaryDateLabel').text(new Date(dateStr).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }));
+    $('#summaryRoomsGrid').html('<div class="col-12 text-center py-5"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-2">Fetching room states...</p></div>');
+    $('#daySummaryModal').modal('show');
+
+    fetch(`{{ route("admin.bookings.calendar.summary") }}?date=${dateStr}`)
+        .then(res => res.json())
+        .then(data => {
+            allRoomSummaryData = data.rooms_list;
+            $('#statAvailable').text(data.available);
+            $('#statOccupied').text(data.occupied);
+            $('#statCleaning').text(data.pending_cleaning);
+            $('#statMaintenance').text(data.maintenance);
+            renderRoomGrid();
+        })
+        .catch(err => {
+            $('#summaryRoomsGrid').html('<div class="col-12 text-center text-danger py-5"><i class="fa fa-exclamation-triangle fa-2x mb-2"></i><br>Failed to load data. Please try again.</div>');
+        });
+}
+
+function renderRoomGrid(filter = '') {
+    const term = filter.toLowerCase();
+    const container = $('#summaryRoomsGrid');
+    container.empty();
+
+    const filtered = allRoomSummaryData.filter(r => 
+        r.room_number.toString().includes(term) || 
+        r.room_type.toLowerCase().includes(term)
+    );
+
+    if (filtered.length === 0) {
+        container.html('<div class="col-12 text-center py-5 text-muted"><i class="fa fa-search fa-2x mb-2"></i><br>No rooms matching filter found.</div>');
+        return;
+    }
+
+    filtered.forEach(room => {
+        let statusColor = '#28a745'; // Available
+        let statusClass = 'success';
+        let statusIcon = 'check-circle';
+        let subText = 'Available';
+        let actionBtn = `<button class="btn btn-xs btn-success mt-2 rounded-pill px-3 shadow-sm" style="font-size:10px" onclick="createBooking('${room.room_number}')">Book Now</button>`;
+
+        if (room.status === 'occupied' || room.status === 'reserved') {
+            statusColor = room.status === 'occupied' ? '#dc3545' : '#007bff';
+            statusClass = room.status === 'occupied' ? 'danger' : 'primary';
+            statusIcon = 'user';
+            subText = room.guest || 'Reserved';
+            actionBtn = `<button class="btn btn-xs btn-info mt-2 rounded-pill px-3 shadow-sm text-white" style="font-size:10px" onclick="viewBookingDetails(${room.booking_id})">View Guest</button>`;
+        } else if (room.status === 'dirty') {
+            statusColor = '#ffc107';
+            statusClass = 'warning';
+            statusIcon = 'tint';
+            subText = 'Needs Cleaning';
+        } else if (room.status === 'maintenance') {
+            statusColor = '#6c757d';
+            statusClass = 'secondary';
+            statusIcon = 'wrench';
+            subText = 'Maintenance';
+        }
+
+        const card = `
+            <div class="col-md-4 col-sm-6 mb-3">
+                <div class="card border-0 shadow-xs h-100" style="border-radius:12px; border-left: 5px solid ${statusColor} !important; background: #fafafa;">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <span class="badge badge-light px-2" style="font-size:12px; border:1px solid #eee;">#${room.room_number}</span>
+                            <i class="fa fa-${statusIcon} text-${statusClass}" style="opacity:0.8"></i>
+                        </div>
+                        <h6 class="mb-1 font-weight-bold" style="font-size:13px; color:#444;">${room.room_type}</h6>
+                        <div class="mb-2">
+                            <small class="font-weight-bold text-${statusClass}" style="font-size:11px;">
+                                <i class="fa fa-circle mr-1" style="font-size:8px"></i> ${subText}
+                            </small>
+                        </div>
+                        <div class="text-right">
+                           ${actionBtn}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.append(card);
+    });
+}
+
+function createBooking(roomNumber) {
+    const dateLabel = $('#summaryDateLabel').text();
+    // Pre-select room by number if the route supports it, or just pass date
+    window.location.href = `{{ route("admin.bookings.manual.create") }}?check_in=${dateLabel}&room_number=${roomNumber}`;
+}
+
+function viewBookingDetails(id) {
+    $('#daySummaryModal').modal('hide');
+    setTimeout(() => showBookingDetails(id), 300);
+}
+
+function showBookingDetails(id) {
+    const modal = $('#bookingDetailsModal');
+    const content = $('#bookingDetailsContent');
+    const editBtn = $('#editBookingBtn');
+    
+    content.html('<div class="text-center py-5"><i class="fa fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2">Fetching booking details...</p></div>');
+    modal.modal('show');
+
+    fetch(`{{ url('admin/bookings/details') }}/${id}`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.message);
+            const b = data.booking;
+            
+            let statusBadge = `<span class="badge badge-${b.status === 'confirmed' ? 'success' : (b.status === 'pending' ? 'warning' : 'danger')}">${b.status.toUpperCase()}</span>`;
+            let paymentBadge = `<span class="badge badge-${b.payment_status === 'paid' ? 'success' : (b.payment_status === 'partial' ? 'info' : 'warning')}">${b.payment_status.toUpperCase()}</span>`;
+            let checkInBadge = `<span class="badge badge-${b.check_in_status === 'checked_in' ? 'danger' : (b.check_in_status === 'checked_out' ? 'secondary' : 'light')}">${b.check_in_status.replace('_', ' ').toUpperCase()}</span>`;
+
+            let html = `
+                <div class="row">
+                    <div class="col-md-6 border-right">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary-light p-2 rounded mr-3"><i class="fa fa-user text-primary" style="width:20px; text-align:center"></i></div>
+                            <div>
+                                <h6 class="mb-0 font-weight-bold">Guest Information</h6>
+                                <small class="text-muted">Primary Guest Details</small>
+                            </div>
+                        </div>
+                        <table class="table table-sm table-borderless mt-2">
+                            <tr><td class="text-muted" width="100">Name:</td><td class="font-weight-bold">${b.guest_name}</td></tr>
+                            <tr><td class="text-muted">Email:</td><td>${b.guest_email}</td></tr>
+                            <tr><td class="text-muted">Phone:</td><td>${b.guest_phone || 'N/A'}</td></tr>
+                            <tr><td class="text-muted">Reference:</td><td><code class="text-primary font-weight-bold">${b.booking_reference}</code></td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-success-light p-2 rounded mr-3" style="background:rgba(40,167,69,0.1); color:#28a745"><i class="fa fa-bed" style="width:20px; text-align:center"></i></div>
+                            <div>
+                                <h6 class="mb-0 font-weight-bold">Room & Stay</h6>
+                                <small class="text-muted">Booking period & Room #</small>
+                            </div>
+                        </div>
+                        <table class="table table-sm table-borderless mt-2">
+                            <tr><td class="text-muted" width="100">Room:</td><td class="font-weight-bold">#${b.room.room_number} (${b.room.room_type})</td></tr>
+                            <tr><td class="text-muted">Check-in:</td><td class="text-success font-weight-bold">${b.check_in}</td></tr>
+                            <tr><td class="text-muted">Check-out:</td><td class="text-danger font-weight-bold">${b.check_out}</td></tr>
+                            <tr><td class="text-muted">Guests:</td><td>${b.number_of_guests} Person(s)</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <hr class="my-4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0 font-weight-bold"><i class="fa fa-info-circle mr-2 text-primary"></i>Status & Billing</h6>
+                            <h5 class="mb-0 text-primary font-weight-bold">$${parseFloat(b.total_price).toFixed(2)}</h5>
+                        </div>
+                        <div class="d-flex flex-wrap" style="gap:20px">
+                            <div>
+                                <small class="text-muted d-block mb-1">Booking Status</small>
+                                ${statusBadge}
+                            </div>
+                            <div>
+                                <small class="text-muted d-block mb-1">Payment</small>
+                                ${paymentBadge}
+                            </div>
+                            <div>
+                                <small class="text-muted d-block mb-1">Check-in Status</small>
+                                ${checkInBadge}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            content.html(html);
+            editBtn.removeClass('d-none').attr('onclick', `window.location.href='/admin/bookings/${id}/edit'`);
+            document.getElementById('currentBookingId').value = id;
+        })
+        .catch(err => {
+            content.html(`<div class="alert alert-danger p-4 text-center"><i class="fa fa-exclamation-circle fa-2x mb-2"></i><br>Error fetching details: ${err.message}</div>`);
+        });
+}
+
+// Initialization
 document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     if (calendarEl) {
-        // Detect mobile device
         var isMobile = window.innerWidth <= 767;
         var initialView = isMobile ? 'listWeek' : 'dayGridMonth';
         
-        var calendar = new FullCalendar.Calendar(calendarEl, {
+        calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: initialView,
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
             },
-            firstDay: 1, // Start week on Monday
+            firstDay: 1,
             height: 'auto',
             aspectRatio: isMobile ? 1.2 : 1.8,
-            editable: false, // Disable drag and drop (removed reschedule feature)
+            editable: false,
             dayMaxEvents: true,
             moreLinkClick: 'popover',
             eventDisplay: 'block',
@@ -566,199 +847,54 @@ document.addEventListener('DOMContentLoaded', function() {
             eventBorderColor: 'transparent',
             eventBackgroundColor: '#e77a3a',
             dayHeaderFormat: { weekday: 'short' },
-            buttonText: {
-                today: 'Today',
-                month: 'Month',
-                week: 'Week',
-                day: 'Day',
-                list: 'List'
-            },
             dateClick: function(info) {
-                // Click on empty date to create new booking
-                var clickedDate = info.dateStr;
-                var today = new Date().toISOString().split('T')[0];
-                
-                if (clickedDate < today) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Invalid Date',
-                        text: 'Cannot create booking for past dates.',
-                        confirmButtonColor: '#e77a3a',
-                        confirmButtonText: 'OK'
-                    });
-                    return;
-                }
-                
-                // Redirect to manual booking page with pre-filled dates
-                window.location.href = '{{ route("admin.bookings.manual.create") }}?check_in=' + clickedDate;
+                showDaySummary(info.dateStr);
             },
             events: @json($calendarEvents),
             eventClick: function(info) {
-                // Show booking details in modal
-                var event = info.event;
-                var props = event.extendedProps;
-                
-                // Determine status badge
-                var statusBadge = '';
-                var paymentBadge = '';
-                var checkInBadge = '';
-                
-                // Status badge
-                if (props.status === 'confirmed') {
-                    statusBadge = '<span class="badge badge-success">Confirmed</span>';
-                } else if (props.status === 'pending') {
-                    statusBadge = '<span class="badge badge-warning">Pending</span>';
-                } else if (props.status === 'cancelled') {
-                    statusBadge = '<span class="badge badge-danger">Cancelled</span>';
-                } else if (props.status === 'completed') {
-                    statusBadge = '<span class="badge badge-info">Completed</span>';
-                }
-                
-                // Payment status badge
-                if (props.payment_status === 'paid') {
-                    paymentBadge = '<span class="badge badge-success">Paid</span>';
-                } else if (props.payment_status === 'partial') {
-                    paymentBadge = '<span class="badge badge-info">Partial Payment</span>';
-                } else if (props.payment_status === 'pending') {
-                    paymentBadge = '<span class="badge badge-warning">Pending Payment</span>';
-                }
-                
-                // Check-in status badge
-                if (props.check_in_status === 'checked_in') {
-                    checkInBadge = '<span class="badge badge-danger">Checked In</span>';
-                } else if (props.check_in_status === 'checked_out') {
-                    checkInBadge = '<span class="badge badge-secondary">Checked Out</span>';
-                } else {
-                    checkInBadge = '<span class="badge badge-light">Pending Check-in</span>';
-                }
-                
-                var content = `
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="fa fa-bed"></i> Room Information</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Room Number:</strong></td>
-                                    <td>${props.room_number}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Room Type:</strong></td>
-                                    <td>${props.room_type}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="fa fa-user"></i> Guest Information</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Guest Name:</strong></td>
-                                    <td>${props.guest_name}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Booking Reference:</strong></td>
-                                    <td><code>${props.booking_reference}</code></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <h6><i class="fa fa-calendar"></i> Dates</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Check-in:</strong></td>
-                                    <td>${event.startStr}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Check-out:</strong></td>
-                                    <td>${event.endStr}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="fa fa-info-circle"></i> Status</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <td><strong>Booking Status:</strong></td>
-                                    <td>${statusBadge}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Payment Status:</strong></td>
-                                    <td>${paymentBadge}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Check-in Status:</strong></td>
-                                    <td>${checkInBadge}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Total Price:</strong></td>
-                                    <td><strong>$${parseFloat(props.total_price).toFixed(2)}</strong></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                `;
-                
-                document.getElementById('bookingDetailsContent').innerHTML = content;
-                document.getElementById('currentBookingId').value = props.booking_id;
-                $('#bookingDetailsModal').modal('show');
+                const props = info.event.extendedProps;
+                showBookingDetails(props.booking_id);
             },
             eventContent: function(arg) {
                 var props = arg.event.extendedProps;
-                var title = `Room ${props.room_number} - ${props.guest_name}`;
-                var guestName = props.guest_name.length > 12 ? props.guest_name.substring(0, 12) + '...' : props.guest_name;
+                var guestName = props.guest_name.length > 15 ? props.guest_name.substring(0, 15) + '...' : props.guest_name;
                 
                 return {
-                    html: '<div style="padding: 6px 8px; border-radius: 5px; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer; transition: all 0.2s;" title="' + title + '" onmouseover="this.style.transform=\'scale(1.02)\'; this.style.boxShadow=\'0 2px 5px rgba(0,0,0,0.3)\';" onmouseout="this.style.transform=\'scale(1)\'; this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.2)\';">' +
-                          '<i class="fa fa-bed" style="margin-right: 5px; font-size: 11px;"></i>' +
-                          '<strong>R' + props.room_number + '</strong> - ' + guestName +
-                          '</div>'
+                    html: `<div class="p-1 px-2 rounded shadow-xs" style="background:${arg.event.backgroundColor}; font-size: 11px;">
+                            <i class="fa fa-bed"></i> <b>R${props.room_number}</b> ${guestName}
+                           </div>`
                 };
-            },
-            eventDisplay: 'block',
-            height: 'auto',
-            dayMaxEvents: true,
-            moreLinkClick: 'popover',
-            eventMouseEnter: function(info) {
-                // Enhanced tooltip on hover
-                var props = info.event.extendedProps;
-                var statusText = props.check_in_status === 'checked_in' ? 'Occupied' : 
-                               props.payment_status === 'paid' ? 'Confirmed' :
-                               props.payment_status === 'partial' ? 'Partial Payment' : 'Pending Payment';
-                
-                var tooltip = `
-                    <div style="text-align: left; padding: 5px;">
-                        <strong style="color: #e77a3a; font-size: 14px;">Room ${props.room_number} (${props.room_type})</strong><br>
-                        <i class="fa fa-user" style="margin-right: 5px;"></i><strong>Guest:</strong> ${props.guest_name}<br>
-                        <i class="fa fa-calendar-check-o" style="margin-right: 5px;"></i><strong>Check-in:</strong> ${info.event.startStr}<br>
-                        <i class="fa fa-calendar-times-o" style="margin-right: 5px;"></i><strong>Check-out:</strong> ${info.event.endStr}<br>
-                        <i class="fa fa-info-circle" style="margin-right: 5px;"></i><strong>Status:</strong> ${statusText}<br>
-                        <i class="fa fa-dollar" style="margin-right: 5px;"></i><strong>Total:</strong> $${parseFloat(props.total_price).toFixed(2)}
-                    </div>
-                `;
-                $(info.el).tooltip({
-                    title: tooltip,
-                    html: true,
-                    placement: 'top',
-                    container: 'body',
-                    trigger: 'hover'
-                });
-                $(info.el).tooltip('show');
-            },
-            eventMouseLeave: function(info) {
-                $(info.el).tooltip('hide');
             }
         });
         calendar.render();
-        
-        // Handle window resize for responsive calendar
-        var resizeTimer;
-        window.addEventListener('resize', function() {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(function() {
-                calendar.updateSize();
-            }, 250);
+
+        // Search Filter Logic
+        document.getElementById('calendarSearch').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            const events = calendar.getEvents();
+            
+            events.forEach(event => {
+                const props = event.extendedProps;
+                const roomMatches = (props.room_number || '').toString().includes(term);
+                const guestMatches = (props.guest_name || '').toLowerCase().includes(term);
+                const typeMatches = (props.room_type || '').toLowerCase().includes(term);
+                const refMatches = (props.booking_reference || '').toLowerCase().includes(term);
+                
+                if (term === '' || roomMatches || guestMatches || typeMatches || refMatches) {
+                    event.setProp('display', 'auto');
+                } else {
+                    event.setProp('display', 'none');
+                }
+            });
         });
+
+        // Modal Room Filter
+        const modalRoomFilter = document.getElementById('modalRoomFilter');
+        if (modalRoomFilter) {
+            modalRoomFilter.addEventListener('input', function(e) {
+                renderRoomGrid(e.target.value);
+            });
+        }
     }
 });
 </script>

@@ -2183,6 +2183,104 @@ class BookingController extends Controller
     }
 
     /**
+     * Get daily summary for a specific date via AJAX
+     */
+    public function getDailySummary(Request $request)
+    {
+        $dateStr = $request->get('date', Carbon::today()->toDateString());
+        $date = Carbon::parse($dateStr);
+        
+        $rooms = Room::orderBy('room_number', 'asc')->get();
+        
+        // Get all active bookings for this date
+        $bookings = Booking::where('status', 'confirmed')
+            ->where(function ($query) use ($dateStr) {
+                $query->where('check_in', '<=', $dateStr)
+                      ->where('check_out', '>', $dateStr);
+            })
+            ->with('room')
+            ->get();
+            
+        $summary = [
+            'date' => $date->format('d M, Y'),
+            'total_rooms' => $rooms->count(),
+            'occupied' => 0,
+            'available' => 0,
+            'pending_cleaning' => 0,
+            'maintenance' => 0,
+            'rooms_list' => []
+        ];
+        
+        foreach ($rooms as $room) {
+            $booking = $bookings->where('room_id', $room->id)->first();
+            $status = 'available';
+            $guest = null;
+            
+            if ($booking) {
+                $status = ($booking->check_in_status === 'checked_in') ? 'occupied' : 'reserved';
+                $guest = $booking->guest_name;
+                $summary['occupied']++;
+            } elseif ($room->status === 'to_be_cleaned') {
+                $status = 'dirty';
+                $summary['pending_cleaning']++;
+            } elseif ($room->status === 'in_maintenance') {
+                $status = 'maintenance';
+                $summary['maintenance']++;
+            } else {
+                $summary['available']++;
+            }
+            
+            $summary['rooms_list'][] = [
+                'id' => $room->id,
+                'room_number' => $room->room_number,
+                'room_type' => $room->room_type,
+                'status' => $status,
+                'guest' => $guest,
+                'booking_id' => $booking ? $booking->id : null
+            ];
+        }
+        
+        return response()->json($summary);
+    }
+
+    /**
+     * Get booking details for AJAX request
+     */
+    public function getBookingDetails($id)
+    {
+        try {
+            $booking = Booking::with('room')->findOrFail($id);
+            
+            return response()->json([
+                'success' => true,
+                'booking' => [
+                    'id' => $booking->id,
+                    'guest_name' => $booking->guest_name,
+                    'guest_email' => $booking->guest_email,
+                    'guest_phone' => $booking->guest_phone,
+                    'booking_reference' => $booking->booking_reference,
+                    'check_in' => $booking->check_in->format('Y-m-d'),
+                    'check_out' => $booking->check_out->format('Y-m-d'),
+                    'number_of_guests' => $booking->number_of_guests,
+                    'total_price' => $booking->total_price,
+                    'status' => $booking->status,
+                    'payment_status' => $booking->payment_status,
+                    'check_in_status' => $booking->check_in_status,
+                    'room' => [
+                        'room_number' => $booking->room->room_number,
+                        'room_type' => $booking->room->room_type,
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Booking not found.'
+            ], 404);
+        }
+    }
+
+    /**
      * Send reminder email to guest
      */
     public function sendReminder(Request $request, Booking $booking)
