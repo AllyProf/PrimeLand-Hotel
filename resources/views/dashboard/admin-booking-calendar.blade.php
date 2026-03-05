@@ -803,14 +803,14 @@ document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     if (calendarEl) {
         var isMobile = window.innerWidth <= 767;
-        var initialView = isMobile ? 'listWeek' : 'dayGridMonth';
+        var initialView = 'dayGridMonth';
         
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: initialView,
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                right: 'dayGridMonth'
             },
             firstDay: 1,
             height: 'auto',
