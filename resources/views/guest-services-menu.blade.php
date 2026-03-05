@@ -239,9 +239,106 @@
         }
         .btn-order-mini:hover { background: #c45e18; transform: scale(1.05); }
 
+        /* ══ Splash Screen ══ */
+        #splashScreen {
+            position: fixed; inset: 0; z-index: 99999;
+            background: var(--bg-dark);
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        #splashScreen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .splash-inner {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: 30px 20px;
+            animation: splashPop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+        @keyframes splashPop {
+            from { opacity: 0; transform: scale(0.85) translateY(20px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .splash-logo-ring {
+            position: relative; width: 110px; height: 110px; margin-bottom: 22px;
+        }
+        .splash-ring-svg {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            transform: rotate(-90deg);
+        }
+        .ring-track {
+            fill: none; stroke: rgba(231,122,58,0.15); stroke-width: 6;
+        }
+        .ring-fill {
+            fill: none; stroke: var(--primary); stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 339.3;
+            stroke-dashoffset: 339.3;
+            animation: ringDraw 2s ease forwards;
+        }
+        @keyframes ringDraw {
+            to { stroke-dashoffset: 0; }
+        }
+        .splash-icon {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 42px;
+            animation: iconPulse 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes iconPulse {
+            from { transform: scale(0.95); }
+            to   { transform: scale(1.08); }
+        }
+
+        .splash-brand {
+            font-size: 11px; letter-spacing: 5px; font-weight: 900;
+            color: var(--primary); text-transform: uppercase; margin-bottom: 10px;
+        }
+        .splash-title {
+            font-size: 22px; font-weight: 800;
+            background: linear-gradient(135deg,#fff 0%,#888 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        .splash-sub {
+            font-size: 13px; color: var(--text-dim); line-height: 1.6; margin-bottom: 28px;
+        }
+
+        /* Bouncing dots */
+        .splash-dots { display: flex; gap: 8px; }
+        .splash-dots span {
+            width: 8px; height: 8px;
+            background: var(--primary); border-radius: 50%;
+            animation: bounceDot 0.9s ease-in-out infinite alternate;
+        }
+        .splash-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .splash-dots span:nth-child(3) { animation-delay: 0.30s; }
+        @keyframes bounceDot {
+            from { transform: translateY(0); opacity: 1; }
+            to   { transform: translateY(-10px); opacity: 0.4; }
+        }
+
     </style>
 </head>
 <body>
+
+    <!-- ═══ Welcome Splash Screen ═══ -->
+    <div id="splashScreen">
+        <div class="splash-inner">
+            <div class="splash-logo-ring">
+                <svg class="splash-ring-svg" viewBox="0 0 120 120">
+                    <circle class="ring-track" cx="60" cy="60" r="54" />
+                    <circle class="ring-fill"  cx="60" cy="60" r="54" />
+                </svg>
+                <div class="splash-icon">🏨</div>
+            </div>
+            <div class="splash-brand">PRIMELAND HOTEL</div>
+            <h2 class="splash-title">Welcome to Our World</h2>
+            <p class="splash-sub">Explore our menu, facilities & services<br>crafted just for you.</p>
+            <div class="splash-dots">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </div>
 
     @php
         $usdRate = 2700;
@@ -669,6 +766,13 @@
             $('#descModal').modal('show');
         }
         function closeDescModal() { $('#descModal').modal('hide'); }
+
+        // Dismiss splash after page load
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                document.getElementById('splashScreen').classList.add('hidden');
+            }, 2600);
+        });
     </script>
 </body>
 </html>
