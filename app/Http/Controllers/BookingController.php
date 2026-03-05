@@ -2187,16 +2187,17 @@ class BookingController extends Controller
      */
     public function getDailySummary(Request $request)
     {
-        $dateStr = $request->get('date', Carbon::today()->toDateString());
-        $date = Carbon::parse($dateStr);
+        $dateStrReceived = $request->get('date', Carbon::today()->toDateString());
+        $date = Carbon::parse($dateStrReceived);
+        $dateStrOnly = $date->toDateString();
         
         $rooms = Room::orderBy('room_number', 'asc')->get();
         
         // Get all active bookings for this date
         $bookings = Booking::where('status', 'confirmed')
-            ->where(function ($query) use ($dateStr) {
-                $query->where('check_in', '<=', $dateStr)
-                      ->where('check_out', '>', $dateStr);
+            ->where(function ($query) use ($dateStrOnly) {
+                $query->where('check_in', '<=', $dateStrOnly)
+                      ->where('check_out', '>', $dateStrOnly);
             })
             ->with('room')
             ->get();

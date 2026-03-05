@@ -624,7 +624,7 @@ function showDaySummary(dateStr) {
     $('#summaryRoomsGrid').html('<div class="col-12 text-center py-5"><i class="fa fa-spinner fa-spin fa-3x text-primary"></i><p class="mt-2">Fetching room states...</p></div>');
     $('#daySummaryModal').modal('show');
 
-    fetch(`{{ route("admin.bookings.calendar.summary") }}?date=${dateStr}`)
+    fetch(`{{ route("admin.bookings.calendar.summary", [], false) }}?date=${dateStr}`)
         .then(res => res.json())
         .then(data => {
             allRoomSummaryData = data.rooms_list;
@@ -721,7 +721,7 @@ function showBookingDetails(id) {
     content.html('<div class="text-center py-5"><i class="fa fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2">Fetching booking details...</p></div>');
     modal.modal('show');
 
-    fetch(`{{ url('admin/bookings/details') }}/${id}`)
+    fetch(`{{ route("admin.bookings.details", ["booking" => "__ID__"], false) }}`.replace("__ID__", id))
         .then(res => res.json())
         .then(data => {
             if (!data.success) throw new Error(data.message);
