@@ -15,188 +15,166 @@
 
 <div class="row">
   <div class="col-md-12">
-    <div class="tile" style="box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: none;">
-      <div class="tile-body" style="padding: 25px;">
-        <!-- Advanced Filters & Navigation -->
-        <div class="row mb-4">
-          <div class="col-md-12">
-            <div class="card border-0 shadow-sm" style="border-radius: 12px; background: #fff;">
-              <div class="card-body p-3">
-                <div class="row align-items-center">
-                  <div class="col-lg-4 mb-3 mb-lg-0">
-                    <div class="d-flex align-items-center">
-                      <div class="bg-primary-light text-primary rounded-circle mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                        <i class="fa fa-search"></i>
-                      </div>
-                      <div style="flex: 1;">
-                        <input type="text" id="calendarSearch" class="form-control border-0 bg-light" placeholder="Search Guest or Room..." style="border-radius: 8px;">
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-lg-5 mb-3 mb-lg-0">
-                    <div class="d-flex align-items-center justify-content-center">
-                      <select id="jumpMonth" class="form-control mr-2 border-0 bg-light" style="width: 140px; border-radius: 8px;">
-                        @for ($m=1; $m<=12; $m++)
-                          <option value="{{ $m-1 }}" {{ date('n') == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
-                        @endfor
-                      </select>
-                      <select id="jumpYear" class="form-control border-0 bg-light" style="width: 100px; border-radius: 8px;">
-                        @for ($y=date('Y'); $y<=date('Y')+2; $y++)
-                          <option value="{{ $y }}">{{ $y }}</option>
-                        @endfor
-                      </select>
-                      <button onclick="jumpToDate()" class="btn btn-primary ml-2 rounded-pill px-4">Jump</button>
-                    </div>
-                  </div>
-                  <div class="col-lg-3 text-right">
-                    <a href="{{ route('admin.bookings.manual.create') }}" class="btn btn-success rounded-pill shadow-sm px-4">
-                      <i class="fa fa-plus-circle"></i> New Booking
-                    </a>
-                  </div>
-                </div>
-              </div>
+    <div class="tile">
+      <div class="tile-title-w-btn">
+        <h3 class="title">Filter Calendar</h3>
+        <div class="btn-group">
+            <a href="{{ route('admin.bookings.manual.create') }}" class="btn btn-primary px-4"><i class="fa fa-plus"></i> New Booking</a>
+        </div>
+      </div>
+      <div class="tile-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <div class="input-group">
+                <div class="input-group-prepend"><span class="input-group-text"><i class="fa fa-search"></i></span></div>
+                <input type="text" id="calendarSearch" class="form-control" placeholder="Search Guest or Room...">
             </div>
           </div>
-        </div>
-
-        <!-- Legend -->
-        <div class="row mb-4">
-          <div class="col-md-12">
-            <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
-              <h5 style="margin: 0 0 15px 0; font-weight: 600; color: #333;">
-                <i class="fa fa-info-circle" style="color: #e77a3a;"></i> Status Legend
-              </h5>
-              <div class="row">
-                <div class="col-md-3 col-sm-6 mb-2">
-                  <div style="display: flex; align-items: center;">
-                    <span style="display: inline-block; width: 24px; height: 24px; background: #dc3545; border-radius: 5px; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></span>
-                    <div>
-                      <strong style="color: #333; font-size: 14px;">Occupied</strong>
-                      <div style="color: #666; font-size: 12px;">Checked In</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-2">
-                  <div style="display: flex; align-items: center;">
-                    <span style="display: inline-block; width: 24px; height: 24px; background: #28a745; border-radius: 5px; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></span>
-                    <div>
-                      <strong style="color: #333; font-size: 14px;">Confirmed</strong>
-                      <div style="color: #666; font-size: 12px;">Paid</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-2">
-                  <div style="display: flex; align-items: center;">
-                    <span style="display: inline-block; width: 24px; height: 24px; background: #ffc107; border-radius: 5px; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></span>
-                    <div>
-                      <strong style="color: #333; font-size: 14px;">Pending Payment</strong>
-                      <div style="color: #666; font-size: 12px;">Awaiting Payment</div>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-2">
-                  <div style="display: flex; align-items: center;">
-                    <span style="display: inline-block; width: 24px; height: 24px; background: #17a2b8; border-radius: 5px; margin-right: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></span>
-                    <div>
-                      <strong style="color: #333; font-size: 14px;">Partial Payment</strong>
-                      <div style="color: #666; font-size: 12px;">Partially Paid</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <div class="col-md-6 mb-3">
+            <div class="d-flex">
+              <select id="jumpMonth" class="form-control mr-2">
+                @for ($m=1; $m<=12; $m++)
+                  <option value="{{ $m-1 }}" {{ date('n') == $m ? 'selected' : '' }}>{{ date('F', mktime(0, 0, 0, $m, 1)) }}</option>
+                @endfor
+              </select>
+              <select id="jumpYear" class="form-control mr-2">
+                @for ($y=date('Y'); $y<=date('Y')+2; $y++)
+                  <option value="{{ $y }}">{{ $y }}</option>
+                @endfor
+              </select>
+              <button onclick="jumpToDate()" class="btn btn-info">Jump</button>
             </div>
           </div>
-        </div>
-
-        <!-- Calendar Container -->
-        <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <div id="calendar"></div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<div class="row">
+  <div class="col-md-12">
+    <div class="tile">
+        <h3 class="tile-title">Status Legend</h3>
+        <div class="row">
+          <div class="col-md-3 col-sm-6 mb-2">
+            <div class="d-flex align-items-center">
+              <span style="display: inline-block; width: 15px; height: 15px; background: #dc3545; border-radius: 3px; margin-right: 10px;"></span>
+              <div>
+                <strong style="font-size: 13px;">Occupied</strong>
+                <div class="text-muted" style="font-size: 11px;">Checked In</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-2">
+            <div class="d-flex align-items-center">
+              <span style="display: inline-block; width: 15px; height: 15px; background: #28a745; border-radius: 3px; margin-right: 10px;"></span>
+              <div>
+                <strong style="font-size: 13px;">Confirmed</strong>
+                <div class="text-muted" style="font-size: 11px;">Paid</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-2">
+            <div class="d-flex align-items-center">
+              <span style="display: inline-block; width: 15px; height: 15px; background: #ffc107; border-radius: 3px; margin-right: 10px;"></span>
+              <div>
+                <strong style="font-size: 13px;">Pending Payment</strong>
+                <div class="text-muted" style="font-size: 11px;">Awaiting Payment</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6 mb-2">
+            <div class="d-flex align-items-center">
+              <span style="display: inline-block; width: 15px; height: 15px; background: #17a2b8; border-radius: 3px; margin-right: 10px;"></span>
+              <div>
+                <strong style="font-size: 13px;">Partial Payment</strong>
+                <div class="text-muted" style="font-size: 11px;">Partially Paid</div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="tile">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Day Summary Modal -->
 <div class="modal fade" id="daySummaryModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content" style="border: none; border-radius: 15px; overflow: hidden;">
-      <div class="modal-header border-0 bg-primary text-white p-4">
-        <div>
-          <h5 class="modal-title mb-0" style="font-size: 20px; font-weight: 700;">
-            <i class="fa fa-calendar-o mr-2"></i> Day Summary: <span id="summaryDateLabel"></span>
-          </h5>
-          <p class="mb-0 text-white-50" style="font-size: 13px;">Overview of all room assignments for this date</p>
-        </div>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true" style="font-size: 28px;">&times;</span>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold"><i class="fa fa-calendar-check-o mr-2 text-primary"></i> Day Summary: <span id="summaryDateLabel"></span></h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body p-0">
-        <!-- Stats Strip -->
-        <div class="d-flex justify-content-around bg-light py-3 border-bottom">
-          <div class="text-center px-3">
-            <small class="text-muted text-uppercase d-block mb-1">Available</small>
-            <span id="statAvailable" class="h4 mb-0 text-success font-weight-bold">0</span>
+        <!-- Stats Row -->
+        <div class="row no-gutters text-center border-bottom bg-light">
+          <div class="col-3 py-3 border-right">
+            <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 10px;">Available</small>
+            <strong id="statAvailable" class="h4 mb-0 text-success">0</strong>
           </div>
-          <div class="text-center px-3 border-left">
-            <small class="text-muted text-uppercase d-block mb-1">Occupied</small>
-            <span id="statOccupied" class="h4 mb-0 text-primary font-weight-bold">0</span>
+          <div class="col-3 py-3 border-right">
+            <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 10px;">Occupied</small>
+            <strong id="statOccupied" class="h4 mb-0 text-danger">0</strong>
           </div>
-          <div class="text-center px-3 border-left">
-            <small class="text-muted text-uppercase d-block mb-1">Cleaning</small>
-            <span id="statCleaning" class="h4 mb-0 text-warning font-weight-bold">0</span>
+          <div class="col-3 py-3 border-right">
+            <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 10px;">Cleaning</small>
+            <strong id="statCleaning" class="h4 mb-0 text-warning">0</strong>
           </div>
-          <div class="text-center px-3 border-left">
-            <small class="text-muted text-uppercase d-block mb-1">Maintenance</small>
-            <span id="statMaintenance" class="h4 mb-0 text-danger font-weight-bold">0</span>
+          <div class="col-3 py-3">
+            <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 10px;">Maint.</small>
+            <strong id="statMaintenance" class="h4 mb-0 text-secondary">0</strong>
           </div>
         </div>
         
-        <!-- Search within summary -->
-        <div class="px-4 py-3 bg-white">
+        <div class="p-3 bg-white border-bottom">
           <div class="input-group">
             <div class="input-group-prepend">
-              <span class="input-group-text bg-white border-right-0" style="border-radius: 8px 0 0 8px;"><i class="fa fa-filter text-muted"></i></span>
+              <span class="input-group-text"><i class="fa fa-search"></i></span>
             </div>
-            <input type="text" id="modalRoomFilter" class="form-control border-left-0" placeholder="Filter by Room Number or Type..." style="border-radius: 0 8px 8px 0;">
+            <input type="text" id="modalRoomFilter" class="form-control" placeholder="Search room # or type...">
           </div>
         </div>
 
-        <div class="p-4" style="max-height: 400px; overflow-y: auto;">
+        <div class="p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
           <div class="row" id="summaryRoomsGrid">
             <!-- Dynamically populated -->
           </div>
         </div>
       </div>
-      <div class="modal-footer bg-light border-0">
-        <button type="button" class="btn btn-secondary px-4 rounded-pill" data-dismiss="modal">Close</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Booking Details Modal -->
-<div class="modal fade" id="bookingDetailsModal" tabindex="-1" role="dialog" aria-labelledby="bookingDetailsModalLabel" aria-hidden="true">
+<div class="modal fade" id="bookingDetailsModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content" style="border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.2); border-radius: 10px;">
-      <div class="modal-header" style="background: linear-gradient(135deg, #e77a3a 0%, #d66a2a 100%); color: white; border-radius: 10px 10px 0 0; padding: 20px;">
-        <h5 class="modal-title" id="bookingDetailsModalLabel" style="font-weight: 600; font-size: 18px;">
-          <i class="fa fa-calendar-check-o"></i> Booking Details
-        </h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9; font-size: 24px;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-weight-bold"><i class="fa fa-info-circle mr-2 text-info"></i> Booking Profile</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body" id="bookingDetailsContent" style="padding: 25px;">
+      <div class="modal-body p-4" id="bookingDetailsContent">
         <!-- Content will be loaded dynamically -->
       </div>
       <input type="hidden" id="currentBookingId" value="">
-      <div class="modal-footer" style="padding: 20px; border-top: 1px solid #e0e0e0; border-radius: 0 0 10px 10px;">
-        <button type="button" class="btn btn-secondary px-4 rounded-pill" data-dismiss="modal">Close</button>
-        <button type="button" id="editBookingBtn" class="btn btn-info px-4 rounded-pill text-white d-none">
-            <i class="fa fa-edit"></i> Edit Booking
-        </button>
+      <div class="modal-footer">
+        <button type="button" id="editBookingBtn" class="btn btn-primary d-none"><i class="fa fa-edit"></i> Edit Booking</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -681,43 +659,41 @@ function renderRoomGrid(filter = '') {
         let statusClass = 'success';
         let statusIcon = 'check-circle';
         let subText = 'Available';
-        let actionBtn = `<button class="btn btn-xs btn-success mt-2 rounded-pill px-3 shadow-sm" style="font-size:10px" onclick="createBooking('${room.room_number}')">Book Now</button>`;
+        let actionBtn = `<button class="btn btn-sm btn-outline-success" onclick="createBooking('${room.room_number}')">Book</button>`;
 
         if (room.status === 'occupied' || room.status === 'reserved') {
-            statusColor = room.status === 'occupied' ? '#dc3545' : '#007bff';
+            statusColor = room.status === 'occupied' ? '#dc3545' : '#009688';
             statusClass = room.status === 'occupied' ? 'danger' : 'primary';
             statusIcon = 'user';
             subText = room.guest || 'Reserved';
-            actionBtn = `<button class="btn btn-xs btn-info mt-2 rounded-pill px-3 shadow-sm text-white" style="font-size:10px" onclick="viewBookingDetails(${room.booking_id})">View Guest</button>`;
+            actionBtn = `<button class="btn btn-sm btn-info" onclick="viewBookingDetails(${room.booking_id})">Info</button>`;
         } else if (room.status === 'dirty') {
             statusColor = '#ffc107';
             statusClass = 'warning';
             statusIcon = 'tint';
-            subText = 'Needs Cleaning';
+            subText = 'Cleaning';
+            actionBtn = '';
         } else if (room.status === 'maintenance') {
             statusColor = '#6c757d';
             statusClass = 'secondary';
             statusIcon = 'wrench';
-            subText = 'Maintenance';
+            subText = 'Maint.';
+            actionBtn = '';
         }
 
         const card = `
-            <div class="col-md-4 col-sm-6 mb-3">
-                <div class="card border-0 shadow-xs h-100" style="border-radius:12px; border-left: 5px solid ${statusColor} !important; background: #fafafa;">
-                    <div class="card-body p-3">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="badge badge-light px-2" style="font-size:12px; border:1px solid #eee;">#${room.room_number}</span>
-                            <i class="fa fa-${statusIcon} text-${statusClass}" style="opacity:0.8"></i>
-                        </div>
-                        <h6 class="mb-1 font-weight-bold" style="font-size:13px; color:#444;">${room.room_type}</h6>
-                        <div class="mb-2">
-                            <small class="font-weight-bold text-${statusClass}" style="font-size:11px;">
-                                <i class="fa fa-circle mr-1" style="font-size:8px"></i> ${subText}
-                            </small>
-                        </div>
-                        <div class="text-right">
-                           ${actionBtn}
-                        </div>
+            <div class="col-6 col-md-4 mb-3 px-1">
+                <div class="tile p-2 mb-0 shadow-sm border" style="border-radius: 8px;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="badge badge-light px-2" style="font-size:12px">#${room.room_number}</span>
+                        <i class="fa fa-${statusIcon} text-${statusClass}"></i>
+                    </div>
+                    <div class="mb-2">
+                        <div class="text-truncate font-weight-bold" style="font-size:12px">${room.room_type}</div>
+                        <div class="text-${statusClass} small text-truncate" style="font-size:10px">${subText}</div>
+                    </div>
+                    <div class="text-right">
+                       ${actionBtn}
                     </div>
                 </div>
             </div>
