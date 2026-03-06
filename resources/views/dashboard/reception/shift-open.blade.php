@@ -50,13 +50,13 @@
                                     </span>
                                 </div>
                                 <input type="number" step="0.01" class="form-control border-left-0" 
-                                       id="opening_cash" name="opening_cash" placeholder="0.00" 
+                                       id="opening_cash" name="opening_cash" value="0" 
                                        required autofocus style="border-radius: 0 10px 10px 0; height: 60px; font-weight: 700; font-size: 1.4rem;">
                             </div>
                         </div>
 
                         <div class="alert alert-secondary border-0 small py-2 px-3 mb-4" style="border-radius: 8px; background: #f8f9fa;">
-                            <i class="fa fa-info-circle text-info mr-2"></i> Input the physical cash currently in your drawer.
+                            <i class="fa fa-info-circle text-info mr-2"></i> Input the physical cash in your drawer. <strong>If previous shift cash was already submitted, enter 0.</strong>
                         </div>
 
                         <div class="row">

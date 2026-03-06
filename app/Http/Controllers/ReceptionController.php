@@ -2681,13 +2681,15 @@ class ReceptionController extends Controller
         }
 
         $request->validate([
-            'opening_cash' => 'required|numeric|min:0'
+            'opening_cash' => 'nullable|numeric|min:0'
         ]);
+
+        $openingCash = $request->opening_cash ?? 0;
 
         $shift = Shift::create([
             'staff_id'     => Auth::guard('staff')->id(),
             'opened_at'    => now(),
-            'opening_cash' => $request->opening_cash,
+            'opening_cash' => $openingCash,
             'status'       => 'open'
         ]);
 
