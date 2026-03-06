@@ -91,7 +91,13 @@
                         $filterStatus = 'all';
                         $statusIcon = 'fa-question-circle';
 
-                        if ($room->status === 'maintenance') {
+                        if ($room->status === 'closed') {
+                            $cardClass = 'border-dark';
+                            $statusBadge = 'badge-dark';
+                            $statusText = 'Closed';
+                            $filterStatus = 'all';
+                            $statusIcon = 'fa-ban';
+                        } elseif ($room->status === 'maintenance') {
                             $cardClass = 'border-danger';
                             $statusBadge = 'badge-danger';
                             $statusText = 'Maintenance';
@@ -144,9 +150,12 @@
                         
                         // Prepare data for modal
                         $roomData = [
+                            'id' => $room->id,
                             'number' => $room->room_number,
                             'type' => $room->room_type,
                             'status' => $statusText,
+                            'db_status' => $room->status,
+                            'status_until' => $room->status_until ? $room->status_until->format('Y-m-d\TH:i') : null,
                             'price' => $room->price_per_night,
                             'capacity' => $room->capacity,
                             'guest' => null,
@@ -191,10 +200,14 @@
                          data-number="{{ $room->room_number }}">
                         <div class="card shadow-sm {{ $cardClass }}" style="border-width: 0 0 4px 0; overflow: hidden; transition: transform 0.2s;">
                            <!-- Info Button Overlay -->
-                           <div class="position-absolute" style="top: 10px; left: 10px; z-index: 10;">
-                                <button type="button" class="btn btn-sm btn-light shadow-sm rounded-circle" 
+                           <div class="position-absolute d-flex flex-column" style="top: 10px; left: 10px; z-index: 10;">
+                                <button type="button" class="btn btn-sm btn-light shadow-sm rounded-circle mb-2" 
                                         onclick="showRoomDetails({{ json_encode($roomData) }})" title="Quick Info">
                                     <i class="fa fa-info" style="width: 10px;"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light shadow-sm rounded-circle" 
+                                        onclick="openStatusUpdateModal({{ json_encode($roomData) }})" title="Manual Status Update">
+                                    <i class="fa fa-cog" style="width: 10px;"></i>
                                 </button>
                            </div>
 
@@ -359,7 +372,45 @@
       </div>
     </div>
   </div>
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusUpdateModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="statusModalTitle">Update Room Status</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="statusUpdateForm">
+        @csrf
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="newStatus">Room Status</label>
+                <select class="form-control" id="newStatus" name="status" required>
+                    <option value="available">Available</option>
+                    <option value="to_be_cleaned">Needs Cleaning</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="occupied">Occupied (Manual)</option>
+                    <option value="reserved">Reserved (Manual)</option>
+                    <option value="closed">Closed / Out of Service</option>
+                </select>
+            </div>
+            <div id="untilGroup" class="form-group" style="display:none">
+                <label for="statusUntil">Available Again At (Optional)</label>
+                <input type="datetime-local" class="form-local form-control" id="statusUntil" name="status_until">
+                <small class="form-text text-muted">Leave empty if status is indefinite (manual reset required).</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveStatusBtn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
+
 
 @endsection
 
@@ -409,7 +460,15 @@
         document.getElementById('rowCheckin').style.display = 'none';
         document.getElementById('rowCheckout').style.display = 'none';
         document.getElementById('rowPayment').style.display = 'none';
+        document.getElementById('rowStatusUntil').style.display = 'none';
         document.getElementById('modalViewBookingBtn').style.display = 'none';
+
+        // Set manual status info
+        if (data.status_until) {
+            const date = new Date(data.status_until);
+            document.getElementById('modalStatusUntil').innerText = date.toLocaleString();
+            document.getElementById('rowStatusUntil').style.display = 'table-row';
+        }
 
         // Set detailed booking info if available
         if (data.guest) {
@@ -436,5 +495,64 @@
         
         $('#quickInfoModal').modal('show');
     }
+
+    function openStatusUpdateModal(data) {
+        window.currentRoomIdForStatus = data.id;
+        document.getElementById('statusModalTitle').innerText = 'Room ' + data.number + ' Status';
+        document.getElementById('newStatus').value = data.db_status || 'available';
+        document.getElementById('statusUntil').value = data.status_until || '';
+        
+        // Show/hide until field based on status
+        toggleUntilField();
+        
+        $('#statusUpdateModal').modal('show');
+    }
+
+    function toggleUntilField() {
+        const status = document.getElementById('newStatus').value;
+        const untilGroup = document.getElementById('untilGroup');
+        if (['available', 'to_be_cleaned'].includes(status)) {
+            untilGroup.style.display = 'none';
+        } else {
+            untilGroup.style.display = 'block';
+        }
+    }
+
+    document.getElementById('newStatus').addEventListener('change', toggleUntilField);
+
+    document.getElementById('statusUpdateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const saveBtn = document.getElementById('saveStatusBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Saving...';
+
+        const formData = new FormData(this);
+        const url = `{{ route('reception.rooms') }}/${window.currentRoomIdForStatus}/update-status`;
+
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Something went wrong'));
+                saveBtn.disabled = false;
+                saveBtn.innerText = 'Save Changes';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An unexpected error occurred.');
+            saveBtn.disabled = false;
+            saveBtn.innerText = 'Save Changes';
+        });
+    });
 </script>
 @endsection

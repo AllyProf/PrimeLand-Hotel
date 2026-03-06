@@ -35,6 +35,7 @@ class Room extends Model
         'wifi_password',
         'wifi_network_name',
         'images',
+        'status_until',
     ];
 
     protected $casts = [
@@ -47,6 +48,7 @@ class Room extends Model
         'peak_season_price' => 'decimal:2',
         'off_season_price' => 'decimal:2',
         'discount_percentage' => 'decimal:2',
+        'status_until' => 'datetime',
     ];
 
     /**

@@ -1014,9 +1014,18 @@ class ReceptionController extends Controller
     /**
      * Show room status
      */
-    public function roomStatus()
+    public function roomStatus(Request $request)
     {
-        $today = today();
+        $now = now();
+        $today = $now->copy()->startOfDay();
+
+        // Self-healing: Reset any rooms whose manual status has expired
+        Room::whereNotNull('status_until')
+            ->where('status_until', '<=', $now)
+            ->update([
+                'status' => 'to_be_cleaned', // Or available? Usually rooms need checking/cleaning after being "closed" or "occupied"
+                'status_until' => null
+            ]);
         
         // Load all bookings (confirmed paid/partial, and pending bookings for future dates)
         $rooms = Room::with(['bookings' => function($query) use ($today) {
@@ -1079,7 +1088,7 @@ class ReceptionController extends Controller
                 // Room is occupied only if today is between check-in and check-out dates
                 return $today->gte($checkIn) && $today->lte($checkOut);
             });
-            $room->is_occupied = $activeBookings->count() > 0;
+            $room->is_occupied = $activeBookings->count() > 0 || $room->status === 'occupied';
             $room->current_booking = $activeBookings->first();
             
             // Upcoming bookings (future check-ins or pending payment bookings)
@@ -1104,7 +1113,7 @@ class ReceptionController extends Controller
             $room->pending_payment_booking = $pendingPaymentBooking;
             
             // Check if room has any bookings that affect current availability (today or within next 3 days)
-            $room->has_immediate_booking = false;
+            $room->has_immediate_booking = $room->status === 'reserved';
             if ($room->upcoming_checkin) {
                 $checkInDate = \Carbon\Carbon::parse($room->upcoming_checkin->check_in);
                 $daysUntilCheckIn = $today->diffInDays($checkInDate, false);
@@ -1274,11 +1283,33 @@ class ReceptionController extends Controller
      */
     public function markRoomCleaned(Room $room)
     {
-        $room->update(['status' => 'available']);
+        $room->update(['status' => 'available', 'status_until' => null]); // Important to clear status_until too
 
         return response()->json([
             'success' => true,
             'message' => 'Room marked as cleaned and available for booking.',
+            'room' => $room->fresh(),
+        ]);
+    }
+
+    /**
+     * Update room status manually (manual occupation, reservation, or closing)
+     */
+    public function updateRoomManualStatus(Request $request, Room $room)
+    {
+        $request->validate([
+            'status' => 'required|in:available,to_be_cleaned,maintenance,occupied,reserved,closed',
+            'status_until' => 'nullable|date_format:Y-m-d\TH:i|after:now',
+        ]);
+
+        $room->update([
+            'status' => $request->status,
+            'status_until' => ($request->status === 'available') ? null : $request->status_until,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Room status updated successfully until ' . ($request->status_until ?? 'specified otherwise.'),
             'room' => $room->fresh(),
         ]);
     }

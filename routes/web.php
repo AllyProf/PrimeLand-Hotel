@@ -710,6 +710,7 @@ Route::prefix('reception')->group(function () {
         // Rooms Cleaning
         Route::get('/rooms/cleaning', [\App\Http\Controllers\ReceptionController::class, 'roomsNeedsCleaning'])->name('reception.rooms.cleaning');
         Route::post('/rooms/{room}/mark-cleaned', [\App\Http\Controllers\ReceptionController::class, 'markRoomCleaned'])->name('reception.rooms.mark-cleaned');
+        Route::post('/rooms/{room}/update-status', [\App\Http\Controllers\ReceptionController::class, 'updateRoomManualStatus'])->name('reception.rooms.update-status');
         
         // Purchase Request Routes
         Route::get('/purchase-requests/create', [\App\Http\Controllers\PurchaseRequestController::class, 'create'])->name('reception.purchase-requests.create');
