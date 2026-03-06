@@ -19,15 +19,43 @@ class RoomController extends Controller
         $now = now();
         $today = $now->copy()->startOfDay();
 
-        // Load rooms with their active/upcoming bookings for today (similar logic to ReceptionController)
+        // Self-healing: Reset any rooms whose manual status has expired
+        Room::whereNotNull('status_until')
+            ->where('status_until', '<=', $now)
+            ->update([
+                'status' => 'to_be_cleaned',
+                'status_until' => null
+            ]);
+
+        // Load rooms with their active/upcoming bookings (EXACT logic from ReceptionController)
         $rooms = Room::with(['bookings' => function($query) use ($today) {
-            $query->whereIn('status', ['confirmed', 'pending'])
-                  ->where('check_in_status', '!=', 'checked_out')
-                  ->whereDate('check_in', '<=', $today)
-                  ->whereDate('check_out', '>=', $today);
+            $query->where(function($q) use ($today) {
+                // Confirmed and paid/partial bookings for current/upcoming dates
+                $q->where(function($subQ) use ($today) {
+                    $subQ->where('status', 'confirmed')
+                          ->whereIn('payment_status', ['paid', 'partial'])
+                          ->where('check_in_status', '!=', 'checked_out')
+                          ->whereDate('check_in', '<=', $today)
+                          ->whereDate('check_out', '>=', $today);
+                })
+                // OR pending bookings (waiting for payment) for future dates
+                ->orWhere(function($subQ) use ($today) {
+                    $subQ->where('status', 'pending')
+                          ->where('payment_status', 'pending')
+                          ->whereDate('check_in', '>=', $today)
+                          ->whereNull('cancelled_at');
+                })
+                // OR confirmed paid/partial bookings for future dates (upcoming check-ins)
+                ->orWhere(function($subQ) use ($today) {
+                    $subQ->where('status', 'confirmed')
+                          ->whereIn('payment_status', ['paid', 'partial'])
+                          ->where('check_in_status', 'pending')
+                          ->whereDate('check_in', '>=', $today);
+                });
+            });
         }])->orderBy('room_number')->get();
 
-        // Calculate current status for each room and build stats
+        // Statistics initialization
         $stats = [
             'total' => $rooms->count(),
             'available' => 0,
@@ -43,28 +71,67 @@ class RoomController extends Controller
             $statsByType[$type] = ['total' => 0, 'available' => 0, 'occupied' => 0, 'reserved' => 0, 'to_be_cleaned' => 0, 'maintenance' => 0];
         }
 
-        $rooms = $rooms->map(function($room) use (&$stats, &$statsByType) {
-            // Determine dynamic status based on bookings today
-            $activeBooking = $room->bookings->where('check_in_status', 'checked_in')->first();
-            $reservedBooking = $room->bookings->where('check_in_status', 'pending')->where('status', '!=', 'cancelled')->first();
-
-            if ($activeBooking) {
+        // Calculate room status for each room using synchronized logic
+        $rooms = $rooms->map(function($room) use ($today) {
+            // Active bookings
+            $activeBookings = $room->bookings->filter(function($booking) use ($today) {
+                if ($booking->check_in_status !== 'checked_in') return false;
+                $checkIn = \Carbon\Carbon::parse($booking->check_in)->startOfDay();
+                $checkOut = \Carbon\Carbon::parse($booking->check_out)->startOfDay();
+                return $today->gte($checkIn) && $today->lte($checkOut);
+            });
+            $room->is_occupied = $activeBookings->count() > 0 || $room->status === 'occupied';
+            $room->current_guest = $activeBookings->first() ? $activeBookings->first()->guest_name : null;
+            $room->booking_reference = $activeBookings->first() ? $activeBookings->first()->booking_reference : null;
+            
+            // Upcoming bookings
+            $upcomingBookings = $room->bookings->filter(function($booking) use ($today) {
+                $checkInDate = \Carbon\Carbon::parse($booking->check_in)->startOfDay();
+                return $checkInDate->gte($today) && 
+                       ($booking->check_in_status === 'pending' || 
+                        ($booking->status === 'pending' && $booking->payment_status === 'pending'));
+            })->sortBy('check_in')->first();
+            $room->upcoming_checkin = $upcomingBookings;
+            
+            // Determine effective status
+            if ($room->status === 'closed') {
+                $room->effective_status = 'closed';
+            } elseif ($room->status === 'maintenance') {
+                $room->effective_status = 'maintenance';
+            } elseif ($room->status === 'to_be_cleaned') {
+                $room->effective_status = 'to_be_cleaned';
+            } elseif ($room->is_occupied) {
                 $room->effective_status = 'occupied';
-                $room->current_guest = $activeBooking->guest_name;
-            } elseif ($reservedBooking) {
-                $room->effective_status = 'reserved';
-                $room->current_guest = $reservedBooking->guest_name;
+            } elseif ($room->upcoming_checkin) {
+                $checkInDate = \Carbon\Carbon::parse($room->upcoming_checkin->check_in)->startOfDay();
+                $diff = $today->diffInDays($checkInDate, false);
+                if ($diff >= 0 && $diff <= 3) {
+                    $room->effective_status = 'reserved';
+                    $room->current_guest = $room->upcoming_checkin->guest_name;
+                    $room->booking_reference = $room->upcoming_checkin->booking_reference;
+                } else {
+                    $room->effective_status = 'available';
+                }
             } else {
-                $room->effective_status = $room->status;
-                $room->current_guest = null;
+                $room->effective_status = 'available';
             }
+            
+            // Get last checked out booking for rooms that need cleaning
+            $room->last_checked_out_booking = $room->bookings()
+                ->where('check_in_status', 'checked_out')
+                ->orderBy('checked_out_at', 'desc')
+                ->first();
+            
+            return $room;
+        });
 
-            // Update stats
+        // Update stats after mapping
+        foreach ($rooms as $room) {
             $statusKey = $room->effective_status;
             if (isset($stats[$statusKey])) {
                 $stats[$statusKey]++;
-            } else {
-                $stats['available']++; // Fallback
+            } elseif ($statusKey === 'available' || !in_array($statusKey, ['occupied', 'reserved', 'to_be_cleaned', 'maintenance', 'closed'])) {
+                $stats['available']++;
             }
 
             $type = $room->room_type;
@@ -72,13 +139,11 @@ class RoomController extends Controller
                 $statsByType[$type]['total']++;
                 if (isset($statsByType[$type][$statusKey])) {
                     $statsByType[$type][$statusKey]++;
-                } else {
+                } elseif ($statusKey === 'available' || !in_array($statusKey, ['occupied', 'reserved', 'to_be_cleaned', 'maintenance', 'closed'])) {
                     $statsByType[$type]['available']++;
                 }
             }
-
-            return $room;
-        });
+        }
 
         // Get exchange rate from API
         $currencyService = new CurrencyExchangeService();

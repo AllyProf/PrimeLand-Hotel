@@ -15,8 +15,26 @@
 
 <!-- Statistics Cards -->
 <div class="row mb-3">
-  <div class="col-md-2 col-sm-4 mb-3">
-    <div class="widget-small info coloured-icon">
+  <div class="col-md-3 col-sm-6 mb-3">
+    <div class="widget-small success coloured-icon shadow-sm">
+      <i class="icon fa fa-check-circle fa-2x"></i>
+      <div class="info">
+        <h4>Available</h4>
+        <p><b>{{ $stats['available'] ?? 0 }}</b></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6 mb-3">
+    <div class="widget-small danger coloured-icon shadow-sm">
+      <i class="icon fa fa-user fa-2x"></i>
+      <div class="info">
+        <h4>Occupied</h4>
+        <p><b>{{ $stats['occupied'] ?? 0 }}</b></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-sm-6 mb-3">
+    <div class="widget-small info coloured-icon shadow-sm">
       <i class="icon fa fa-calendar-check-o fa-2x"></i>
       <div class="info">
         <h4>Reserved</h4>
@@ -24,11 +42,11 @@
       </div>
     </div>
   </div>
-  <div class="col-md-2 col-sm-4 mb-3">
-    <div class="widget-small warning coloured-icon">
+  <div class="col-md-3 col-sm-6 mb-3">
+    <div class="widget-small warning coloured-icon shadow-sm">
       <i class="icon fa fa-broom fa-2x"></i>
       <div class="info">
-        <h4>To Be Cleaned</h4>
+        <h4>To Clean</h4>
         <p><b>{{ $stats['to_be_cleaned'] ?? 0 }}</b></p>
       </div>
     </div>
@@ -114,6 +132,7 @@
                 <option value="all">All Status</option>
                 <option value="available">Available</option>
                 <option value="occupied">Occupied</option>
+                <option value="reserved">Reserved</option>
                 <option value="to_be_cleaned">To Be Cleaned</option>
                 <option value="maintenance">Maintenance</option>
               </select>
@@ -248,7 +267,7 @@
           <tbody>
             @foreach($rooms as $room)
             <tr class="room-row"
-                data-status="{{ $room->status }}"
+                data-status="{{ $room->effective_status }}"
                 data-room-type="{{ strtolower($room->room_type) }}"
                 data-room-number="{{ strtolower($room->room_number) }}">
               <td>
@@ -278,15 +297,36 @@
                 @elseif($status === 'occupied')
                   <span class="badge badge-danger">Occupied</span>
                   @if($room->current_guest)
-                    <div class="small text-muted mt-1"><i class="fa fa-user"></i> {{ $room->current_guest }}</div>
+                    <div class="small text-muted mt-1">
+                      @if($room->booking_reference)
+                        <a href="{{ route('reception.bookings') }}?search={{ $room->booking_reference }}" class="text-danger" title="View Booking">
+                          <i class="fa fa-user"></i> {{ $room->current_guest }}
+                        </a>
+                      @else
+                        <i class="fa fa-user"></i> {{ $room->current_guest }}
+                      @endif
+                    </div>
                   @endif
                 @elseif($status === 'reserved')
                   <span class="badge badge-info">Reserved</span>
                   @if($room->current_guest)
-                    <div class="small text-muted mt-1"><i class="fa fa-calendar-check-o"></i> {{ $room->current_guest }}</div>
+                    <div class="small text-muted mt-1">
+                      @if($room->booking_reference)
+                        <a href="{{ route('reception.bookings') }}?search={{ $room->booking_reference }}" class="text-info" title="View Booking">
+                          <i class="fa fa-calendar-check-o"></i> {{ $room->current_guest }}
+                        </a>
+                      @else
+                        <i class="fa fa-calendar-check-o"></i> {{ $room->current_guest }}
+                      @endif
+                    </div>
                   @endif
                 @elseif($status === 'to_be_cleaned')
                   <span class="badge badge-warning">To Be Cleaned</span>
+                  @if($room->last_checked_out_booking)
+                    <div class="small text-muted mt-1" title="Last Checkout">
+                      <i class="fa fa-clock-o"></i> {{ \Carbon\Carbon::parse($room->last_checked_out_booking->checked_out_at)->format('H:i') }}
+                    </div>
+                  @endif
                 @elseif($status === 'maintenance')
                   <span class="badge badge-secondary">Maintenance</span>
                 @else
@@ -319,9 +359,12 @@
                     @endif
                   </div>
                 @else
-                  <div class="text-center p-2 border rounded bg-light" style="border-style: dashed !important; width: 60px; height: 50px; cursor: pointer;" onclick="viewRoom({{ $room->id }})">
-                    <i class="fa fa-bed text-muted"></i>
-                    <div style="font-size: 8px; color: #999;">NO IMAGE</div>
+                  <div class="text-center p-1 border rounded bg-light d-flex flex-column align-items-center justify-content-center" 
+                       style="border-style: dashed !important; width: 68px; height: 50px; cursor: pointer; background: #fdfdfd; border-color: #e77a3a !important;" 
+                       onclick="viewRoom({{ $room->id }})"
+                       title="View details/images">
+                    <i class="fa fa-bed text-muted" style="font-size: 1.1rem; opacity: 0.4;"></i>
+                    <div style="font-size: 6px; color: #e77a3a; font-weight: bold; letter-spacing: 0.5px; margin-top: 2px; text-transform: uppercase;">Prime Land</div>
                   </div>
                 @endif
               </td>
@@ -723,10 +766,10 @@ function selectAllVisible() {
   updateBulkActionsBar();
   
   if (selectedCount > 0) {
-    swal({
+    Swal.fire({
       title: "Selected!",
       text: `${selectedCount} visible room(s) have been selected.`,
-      type: "success",
+      icon: "success",
       timer: 2000,
       showConfirmButton: false,
       confirmButtonColor: "#e77a3a"
