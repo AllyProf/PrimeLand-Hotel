@@ -98,16 +98,21 @@
               $statusIcon = 'fa-broom';
               $statusText = 'Needs Cleaning';
               $bgClass = 'status-bg-cleaning';
-            } elseif ($room->currentBooking) {
-              $statusBadge = 'info';
+            } elseif ($room->is_occupied) {
+              $statusBadge = 'danger'; // Use danger for occupied to match reception
               $statusIcon = 'fa-user';
               $statusText = 'Occupied';
               $bgClass = 'status-bg-occupied';
-            } elseif ($roomStatus === 'reserved') {
+            } elseif ($room->has_immediate_booking) {
               $statusBadge = 'primary';
               $statusIcon = 'fa-calendar-check-o';
               $statusText = 'Reserved';
               $bgClass = 'status-bg-reserved';
+              
+              // Check if in today
+              if ($room->upcoming_checkin && \Carbon\Carbon::parse($room->upcoming_checkin->check_in)->isToday()) {
+                  $statusText = 'In Today';
+              }
             }
             
             // Check for active issues
@@ -131,17 +136,17 @@
             $guestName = null;
             $isUrgent = false;
             
-            if ($room->currentBooking) {
+            if ($room->is_occupied && $room->currentBooking) {
               $checkInTime = $room->currentBooking->checked_in_at ? \Carbon\Carbon::parse($room->currentBooking->checked_in_at)->format('M d, H:i') : ($room->currentBooking->check_in ? \Carbon\Carbon::parse($room->currentBooking->check_in)->format('M d') : null);
               if ($room->currentBooking->check_out) {
                 $checkOutDate = \Carbon\Carbon::parse($room->currentBooking->check_out);
                 if ($room->checkout_time) {
                   $timeParts = explode(':', $room->checkout_time);
-                  $checkOutDate->setTime($timeParts[0] ?? 11, $timeParts[1] ?? 0);
+                  $checkOutTime = $checkOutDate->format('M d') . ', ' . ($room->checkout_time);
                 } else {
                   $checkOutDate->setTime(11, 0); 
+                  $checkOutTime = $checkOutDate->format('M d, H:i');
                 }
-                $checkOutTime = $checkOutDate->format('M d, H:i');
                 
                 // Urgent if checking out today
                 if ($checkOutDate->isToday()) {
@@ -151,6 +156,14 @@
                 }
               }
               $guestName = $room->currentBooking->guest_name;
+            } elseif ($room->upcoming_checkin) {
+                $guestName = $room->upcoming_checkin->guest_name;
+                $checkInDate = \Carbon\Carbon::parse($room->upcoming_checkin->check_in);
+                $checkInTime = $checkInDate->format('M d');
+                if ($checkInDate->isToday()) {
+                    $isUrgent = true;
+                    $checkInTime .= ' Today!';
+                }
             } elseif ($room->lastCheckout && ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning')) {
                 $guestName = $room->lastCheckout->guest_name;
                 if ($room->lastCheckout->checked_out_at) {
@@ -162,9 +175,9 @@
             $statusClass = 'available';
             if ($roomStatus === 'maintenance') $statusClass = 'maintenance';
             if ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning') $statusClass = 'needs_cleaning';
-            if ($room->currentBooking) $statusClass = 'occupied';
+            if ($room->is_occupied) $statusClass = 'occupied';
             if ($roomStatus === 'closed') $statusClass = 'closed';
-            if ($roomStatus === 'reserved') $statusClass = 'reserved';
+            if ($room->has_immediate_booking) $statusClass = 'reserved';
           @endphp
           <div class="col-md-3 col-sm-6 mb-4 room-card" data-status="{{ $statusClass }}">
             <div class="card shadow-sm room-card-status {{ $bgClass }} h-100">
@@ -209,15 +222,26 @@
                                 <span class="d-block mt-1 opacity-75">Checked out at {{ $checkOutTime }}</span>
                             @endif
                         </div>
-                    @elseif($room->currentBooking)
+                    @elseif($room->is_occupied && $room->currentBooking)
                         <div class="small">
                             <strong class="text-white"><i class="fa fa-user"></i> {{ Str::limit($guestName, 18) }}</strong>
                             <div class="d-flex justify-content-between mt-1 opacity-75">
                                 <span>Out: {{ $checkOutTime }}</span>
                                 @if($isUrgent)
-                                    <span class="font-weight-bold">Today!</span>
+                                    <span class="font-weight-bold ml-1">Today!</span>
                                 @endif
                             </div>
+                        </div>
+                    @elseif($room->has_immediate_booking && $room->upcoming_checkin)
+                        <div class="small">
+                            <strong class="text-white"><i class="fa fa-user"></i> {{ Str::limit($guestName, 18) }}</strong>
+                            <div class="d-flex justify-content-between mt-1 opacity-75 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.85em;">
+                                <span>In: {{ $checkInTime }}</span>
+                            </div>
+                        </div>
+                    @elseif($roomStatus === 'closed')
+                         <div class="small">
+                            <i class="fa fa-ban"></i> Room Closed
                         </div>
                     @else
                         <div class="small">

@@ -25,39 +25,83 @@ class HousekeeperController extends Controller
     {
         $housekeeper = Auth::guard('staff')->user();
         
-        // Get all rooms with their current bookings and cleaning status
+        $today = Carbon::today();
+
+        // Get all rooms with their relevant bookings (current and future)
         $allRooms = Room::with([
             'latestCleaningLog',
             'issues' => function($query) {
                 $query->where('status', '!=', 'resolved')->latest();
             },
-            'bookings' => function($query) {
-                $query->whereIn('check_in_status', ['checked_in', 'checked_out'])
-                    ->orderBy('created_at', 'desc');
+            'bookings' => function($query) use ($today) {
+                // Same logic as ReceptionController: Active bookings OR pending future bookings
+                $query->where(function($q) use ($today) {
+                    $q->where(function($subQ) {
+                        $subQ->where('check_in_status', 'checked_in');
+                    })
+                    // OR checked out bookings for history/cleaning context
+                    ->orWhere(function($subQ) {
+                        $subQ->where('check_in_status', 'checked_out');
+                    })
+                    // OR pending bookings (waiting for payment) for future dates
+                    ->orWhere(function($subQ) use ($today) {
+                        $subQ->where('status', 'pending')
+                              ->where('payment_status', 'pending')
+                              ->whereDate('check_in', '>=', $today)
+                              ->whereNull('cancelled_at');
+                    })
+                    // OR confirmed paid/partial bookings for future dates (upcoming check-ins)
+                    ->orWhere(function($subQ) use ($today) {
+                        $subQ->where('status', 'confirmed')
+                              ->whereIn('payment_status', ['paid', 'partial'])
+                              ->where('check_in_status', 'pending')
+                              ->whereDate('check_in', '>=', $today);
+                    });
+                });
             }
         ])->orderBy('room_number')->get();
         
-        $today = Carbon::today();
-        
-        // Process rooms to get current booking info
+        // Process rooms to compute status flags consistently with Reception
         foreach ($allRooms as $room) {
-            // Get current active booking (checked in and within date range)
-            $room->currentBooking = $room->bookings->filter(function($booking) use ($today) {
+            // Compute active bookings (Occupied)
+            $activeBookings = $room->bookings->filter(function($booking) use ($today) {
                 if ($booking->check_in_status !== 'checked_in') {
                     return false;
                 }
-                $checkIn = Carbon::parse($booking->check_in)->startOfDay();
-                $checkOut = Carbon::parse($booking->check_out)->endOfDay();
+                $checkIn = Carbon::parse($booking->check_in);
+                $checkOut = Carbon::parse($booking->check_out);
                 return $today->gte($checkIn) && $today->lte($checkOut);
-            })->first();
+            });
+            $room->is_occupied = $activeBookings->count() > 0 || $room->status === 'occupied';
+            $room->currentBooking = $activeBookings->first();
             
-            // Get last checkout booking
+            // Upcoming bookings (Reserved)
+            $upcomingBookings = $room->bookings->filter(function($booking) use ($today) {
+                $checkInDate = \Carbon\Carbon::parse($booking->check_in);
+                return $checkInDate->gte($today) && 
+                       ($booking->check_in_status === 'pending' || 
+                        ($booking->status === 'pending' && $booking->payment_status === 'pending')) &&
+                       is_null($booking->cancelled_at);
+            })->sortBy('check_in')->first();
+            $room->upcoming_checkin = $upcomingBookings;
+            
+            // Check if room is "Reserved" for statistics (same as Reception logic)
+            $room->has_immediate_booking = ($room->status === 'reserved');
+            if ($room->upcoming_checkin) {
+                $checkInDate = \Carbon\Carbon::parse($room->upcoming_checkin->check_in);
+                $daysUntilCheckIn = $today->diffInDays($checkInDate, false);
+                if ($daysUntilCheckIn <= 3) {
+                    $room->has_immediate_booking = true;
+                }
+            }
+
+            // Get active issues
+            $room->activeIssues = $room->issues->where('status', '!=', 'resolved');
+            
+            // Get last checkout booking for cleaning context
             $room->lastCheckout = $room->bookings->where('check_in_status', 'checked_out')
                 ->sortByDesc('checked_out_at')
                 ->first();
-            
-            // Get active issues
-            $room->activeIssues = $room->issues->where('status', '!=', 'resolved');
         }
         
         // Get rooms needing cleaning
@@ -81,12 +125,17 @@ class HousekeeperController extends Controller
         
         // Get statistics
         $stats = [
-            'rooms_needing_cleaning' => $roomsNeedingCleaning->count(),
+            'rooms_needing_cleaning' => $allRooms->where('status', 'to_be_cleaned')->count(),
             'low_stock_items' => $lowStockItems->count(),
             'pending_issues' => RoomIssue::where('status', '!=', 'resolved')->count(),
-            'cleaned_today' => RoomCleaningLog::whereDate('cleaned_at', Carbon::today())
+            'cleaned_today' => RoomCleaningLog::whereDate('cleaned_at', $today)
                 ->where('status', 'cleaned')
                 ->count(),
+            'occupied' => $allRooms->where('is_occupied', true)->count(),
+            'reserved' => $allRooms->where('has_immediate_booking', true)->count(),
+            'available' => $allRooms->filter(function($r) {
+                return !$r->is_occupied && !$r->has_immediate_booking && !in_array($r->status, ['maintenance', 'to_be_cleaned', 'closed']);
+            })->count(),
         ];
         
         return view('dashboard.housekeeper-dashboard', compact(
