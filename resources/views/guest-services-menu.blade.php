@@ -771,7 +771,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/restaurant & pool bar.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('services_images/restaurant-pool-bar.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-cutlery"></i> Dining</span>
@@ -816,7 +816,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/service-03.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('services_images/airport-shuttle.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-car"></i> Transport</span>
