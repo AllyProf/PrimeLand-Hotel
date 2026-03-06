@@ -47,7 +47,7 @@ class BarKeeperController extends Controller
                     });
             })
             ->orderBy('requested_at', 'desc')
-            ->get();
+            ->paginate(5); // 5 items usually shows 2-3 guest groups
         
         $totalPendingOrders = $pendingOrders->whereIn('status', ['pending', 'approved', 'ready'])->count();
         $totalCancelledToday = \App\Models\ServiceRequest::where('status', 'cancelled')

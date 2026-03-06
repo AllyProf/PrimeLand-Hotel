@@ -71,14 +71,14 @@
       
       @if($pendingOrders->count() > 0)
       <div class="table-responsive">
-        <table class="table table-hover">
-          <thead class="bg-light">
+        <table class="table table-bordered table-hover shadow-sm" style="border: 2px solid #dee2e6;">
+          <thead class="bg-light text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
             <tr>
-              <th>Time</th>
-               <th>Staff</th>
-              <th>Guest / Room</th>
-              <th>Order Details</th>
-              <th class="text-center">Actions</th>
+              <th style="border: 1px solid #dee2e6;">Time</th>
+              <th style="border: 1px solid #dee2e6;">Staff</th>
+              <th style="border: 1px solid #dee2e6;">Guest / Room</th>
+              <th style="border: 1px solid #dee2e6;">Order Details</th>
+              <th class="text-center" style="border: 1px solid #dee2e6;">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -280,6 +280,10 @@
             @endforeach
           </tbody>
         </table>
+      </div>
+      
+      <div class="mt-4 d-flex justify-content-center">
+          {{ $pendingOrders->links() }}
       </div>
       @else
       <div class="text-center py-5">
@@ -576,6 +580,17 @@
 .badge-success { background-color: #d4edda; color: #155724; }
 .badge-warning { background-color: #fff3cd; color: #856404; }
 .badge-danger { background-color: #f8d7da; color: #721c24; }
+
+/* Enhanced Table Visibility */
+.table-bordered {
+    border: 2px solid #adb5bd !important;
+}
+.table-bordered th, .table-bordered td {
+    border: 1px solid #7c7c7c !important; /* Darker borders for rows and columns */
+}
+.table-hover tbody tr:hover {
+    background-color: #f1f4f6;
+}
 </style>
 
 <!-- Payment Modal HTML -->
@@ -622,8 +637,19 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('dashboard_assets/js/plugins/sweetalert.min.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer)
+        toast.addEventListener('mouseleave', Swal.resumeTimer)
+    }
+});
 
 
 function completeOrder(orderId, paymentMethod = 'room_charge') {
@@ -631,18 +657,17 @@ function completeOrder(orderId, paymentMethod = 'room_charge') {
     let text = paymentMethod === 'cash' ? "Record this walk-in sale as PAID (Cash)?" : "Mark this order as served and charge to the ROOM bill?";
     let btnColor = paymentMethod === 'cash' ? "#28a745" : "#007bff";
     
-    swal({
+    Swal.fire({
         title: title,
         text: text,
-        type: paymentMethod === 'cash' ? "success" : "info",
+        icon: paymentMethod === 'cash' ? "success" : "info",
         showCancelButton: true,
         confirmButtonColor: btnColor,
         cancelButtonColor: "#6c757d",
         confirmButtonText: "Yes, Proceed",
-        cancelButtonText: "Cancel",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
+        cancelButtonText: "Cancel"
+    }).then((result) => {
+        if (result.isConfirmed) {
             callApi(`{{ route("bar-keeper.orders.complete", ":id") }}`.replace(':id', orderId), 'POST', { payment_method: paymentMethod });
         }
     });
@@ -1003,7 +1028,7 @@ function openPaymentModal(orderId, amount, isWalkIn = 0, guestName = 'Guest', is
             if (opt.value !== 'room_charge') opt.style.display = 'none';
         });
         
-        swal({
+        Swal.fire({
             title: "Company Responsible",
             text: `Mandatory Room Charge for ${guestName}.`,
             icon: "info",
@@ -1039,7 +1064,7 @@ function submitPayment() {
     const reference = document.getElementById('paymentReference').value.trim();
     
     if (method !== 'cash' && method !== 'room_charge' && !reference) {
-        swal("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
+        Swal.fire("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
         return;
     }
     
@@ -1055,16 +1080,15 @@ function submitPayment() {
 }
 
 function settlePOSPayment(orderId, method, reference = '') {
-    swal({
+    Swal.fire({
         title: "Confirm Payment?",
         text: `Record ${method.toUpperCase()} payment of ${document.getElementById('paymentAmountDisplay').innerText}?`,
-        type: "success",
+        icon: "success",
         showCancelButton: true,
         confirmButtonColor: "#28a745",
-        confirmButtonText: "Yes, Paid!",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
+        confirmButtonText: "Yes, Paid!"
+    }).then((result) => {
+        if (result.isConfirmed) {
             const url = `/customer/pos/settle-payment/${orderId}`;
             fetch(url, {
                 method: 'POST',
@@ -1087,12 +1111,12 @@ function settlePOSPayment(orderId, method, reference = '') {
                     });
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    swal("Error!", data.message, "error");
+                    Swal.fire("Error!", data.message, "error");
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                swal("Error!", "Failed to record payment.", "error");
+                Swal.fire("Error!", "Failed to record payment.", "error");
             });
         }
     });
@@ -1112,18 +1136,17 @@ const Toast = Swal.mixin({
 });
 
 function serveOrder(orderId, itemName) {
-    swal({
+    Swal.fire({
         title: "Mark as Served?",
         text: "Confirm that '" + itemName + "' has been taken/served? Payment will remain PENDING.",
-        type: "info",
+        icon: "info",
         showCancelButton: true,
         confirmButtonColor: "#17a2b8",
         cancelButtonColor: "#6c757d",
         confirmButtonText: "Yes, Served!",
-        cancelButtonText: "Cancel",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
+        cancelButtonText: "Cancel"
+    }).then((result) => {
+        if (result.isConfirmed) {
             Toast.fire({
                 icon: 'info',
                 title: 'Updating status...'
@@ -1147,7 +1170,7 @@ function serveOrder(orderId, itemName) {
                     });
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    swal("Error!", data.message, "error");
+                    Swal.fire("Error!", data.message, "error");
                 }
             })
             .catch(error => {
@@ -1174,18 +1197,17 @@ function completeOrder(orderId, method, reference = '') {
         btnColor = "#007bff";
     }
 
-    swal({
+    Swal.fire({
         title: title,
         text: text,
-        type: icon,
+        icon: icon,
         showCancelButton: true,
         confirmButtonColor: btnColor,
         cancelButtonColor: "#6c757d",
         confirmButtonText: "Yes, Confirm!",
-        cancelButtonText: "No, Cancel",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
+        cancelButtonText: "No, Cancel"
+    }).then((result) => {
+        if (result.isConfirmed) {
             const url = `/bar-keeper/orders/${orderId}/complete`;
             fetch(url, {
                 method: 'POST',
@@ -1208,12 +1230,12 @@ function completeOrder(orderId, method, reference = '') {
                     });
                     setTimeout(() => location.reload(), 1500);
                 } else {
-                    swal("Error!", data.message, "error");
+                    Swal.fire("Error!", data.message, "error");
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                swal("Error!", "An error occurred. Please try again.", "error");
+                Swal.fire("Error!", "An error occurred. Please try again.", "error");
             });
         }
     });
@@ -1243,40 +1265,41 @@ function callApi(url, method, data) {
             });
             setTimeout(() => location.reload(), 1500);
         } else {
-            swal("Error!", data.message || "Action failed.", "error");
+            Swal.fire("Error!", data.message || "Action failed.", "error");
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        swal("Error!", "An error occurred. Please try again.", "error");
+        Swal.fire("Error!", "An error occurred. Please try again.", "error");
     });
 }
 
 function cancelOrderGroup(identifier, isWalkIn) {
-    swal({
+    Swal.fire({
         title: 'Cancel Entire Order?',
-        text: "This will cancel all pending items for this order. Please provide a reason:",
-        type: "input",
+        text: "This will cancel all pending items for this order.",
+        input: 'text',
+        inputPlaceholder: "Reason for cancellation",
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Yes, Cancel All',
-        inputPlaceholder: "Reason for cancellation",
-        closeOnConfirm: false
-    }, function(reason) {
-        if (reason === false) return false;
-        if (reason === "") {
-            swal.showInputError("You need to write a reason!");
-            return false
+        inputValidator: (value) => {
+            if (!value) {
+                return 'You need to write a reason!'
+            }
         }
-        
-        swal({
-            title: 'Processing...',
-            text: 'Please wait while we cancel the orders.',
-            showConfirmButton: false
-        });
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const reason = result.value;
+            Swal.fire({
+                title: 'Processing...',
+                text: 'Please wait while we cancel the orders.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
-        fetch('{{ route("admin.restaurants.kitchen.orders.cancel-group") }}', { 
+            fetch('{{ route("admin.restaurants.kitchen.orders.cancel-group") }}', { 
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1297,66 +1320,68 @@ function cancelOrderGroup(identifier, isWalkIn) {
                 });
                 setTimeout(() => location.reload(), 1500);
             } else {
-                swal('Error', data.message, 'error');
+                Swal.fire('Error', data.message, 'error');
             }
         })
         .catch(error => {
             console.error(error);
-            swal('Error', 'Server communication failed', 'error');
+            Swal.fire('Error', 'Server communication failed', 'error');
         });
     });
 }
 
 function cancelSingleOrder(orderId, itemName) {
-    swal({
+    Swal.fire({
         title: 'Cancel Item?',
-        text: `Are you sure you want to cancel "${itemName}"? Please provide a reason:`,
-        type: "input",
+        text: `Are you sure you want to cancel "${itemName}"?`,
+        input: 'text',
+        inputPlaceholder: "Reason for cancellation",
         showCancelButton: true,
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Yes, Cancel Item',
-        inputPlaceholder: "Reason for cancellation",
-        closeOnConfirm: false
-    }, function(reason) {
-        if (reason === false) return false;
-        if (reason === "") {
-            swal.showInputError("You need to write a reason!");
-            return false
-        }
-        
-        swal({
-            title: 'Processing...',
-            text: 'Please wait while we cancel the item.',
-            showConfirmButton: false
-        });
-
-        fetch(`{{ url('/restaurant/food/orders') }}/${orderId}/cancel`, { 
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                reason: reason
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Toast.fire({
-                    icon: 'success',
-                    title: data.message || 'Item cancelled successfully'
-                });
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                swal('Error', data.message, 'error');
+        inputValidator: (value) => {
+            if (!value) {
+                return 'You need to write a reason!'
             }
-        })
-        .catch(error => {
-            console.error(error);
-            swal('Error', 'Server communication failed', 'error');
-        });
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const reason = result.value;
+            Swal.fire({
+                title: 'Processing...',
+                text: 'Please wait while we cancel the item.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            fetch(`{{ url('/restaurant/food/orders') }}/${orderId}/cancel`, { 
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    reason: reason
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Toast.fire({
+                        icon: 'success',
+                        title: data.message || 'Item cancelled successfully'
+                    });
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                Swal.fire('Error', 'Server communication failed', 'error');
+            });
+        }
     });
 }
 </script>
