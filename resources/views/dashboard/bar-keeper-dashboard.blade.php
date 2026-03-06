@@ -107,19 +107,19 @@
                 $latestRequest     = $orderGroup->sortByDesc('requested_at')->first()->requested_at;
                 $isCompanyPaid = !$first->is_walk_in && $first->booking && $first->booking->payment_responsibility === 'company';
               @endphp
-              <tr style="border-left: 4px solid {{ $allCancelled ? '#6c757d' : ($guestTotal > 0 ? '#e67e22' : '#27ae60') }};">
-                 <td style="vertical-align: top;">
-                   <div class="font-weight-bold">{{ $latestRequest->format('H:i') }}</div>
-                   <small class="text-muted">{{ $latestRequest->diffForHumans() }}</small>
+              <tr style="border-left: 4px solid {{ $allCancelled ? '#6c757d' : ($guestTotal > 0 ? '#f39c12' : '#27ae60') }}; background: #fff; transition: all 0.3s ease;">
+                 <td style="vertical-align: top; width: 80px;">
+                   <div class="font-weight-bold" style="font-size: 1.1rem; color: #2c3e50;">{{ $latestRequest->format('H:i') }}</div>
+                   <small class="text-muted d-block" style="font-size: 0.75rem;">{{ $latestRequest->diffForHumans() }}</small>
                    @if($allCancelled)
-                     <br><span class="badge badge-secondary mt-1">CANCELLED</span>
+                     <span class="badge badge-secondary mt-1 shadow-sm"><i class="fa fa-times mr-1"></i>CANCELLED</span>
                    @elseif($guestTotal > 0)
-                     <br><span class="badge badge-warning mt-1 text-white" style="background:#e67e22;">DUE: {{ number_format($guestTotal) }}</span>
+                     <span class="badge badge-warning mt-1 text-white shadow-sm" style="background:#f39c12; font-size: 0.7rem;">DUE: {{ number_format($guestTotal) }}</span>
                    @else
-                     <br><span class="badge badge-success mt-1">SETTLED</span>
+                     <span class="badge badge-success mt-1 shadow-sm"><i class="fa fa-check mr-1"></i>SETTLED</span>
                    @endif
                  </td>
-                 <td style="vertical-align: top;">
+                 <td style="vertical-align: top; width: 120px;">
                    @php
                     $waiters = [];
                      foreach($orderGroup as $o) {
@@ -143,34 +143,54 @@
                     $waiters = array_unique($waiters);
                    @endphp
                    @foreach($waiters as $w)
-                     <span class="badge badge-light border mb-1">{{ $w }}</span><br>
+                     <div class="d-flex align-items-center mb-1">
+                        <i class="fa fa-id-badge text-info mr-1" style="font-size: 0.8rem;"></i>
+                        <span class="text-dark" style="font-size: 0.85rem; font-weight: 500;">{{ $w }}</span>
+                     </div>
                    @endforeach
                  </td>
-                <td style="vertical-align: top;">
-                  @if($first->is_walk_in)
-                      <span class="badge badge-secondary mb-1">WALK-IN</span><br>
-                      <strong>{{ $first->walk_in_name ?? 'General Walk-in' }}</strong>
-                  @elseif($first->day_service_id)
-                      <span class="badge badge-info mb-1">CEREMONY</span><br>
-                      <strong>{{ $first->dayService?->guest_name ?? 'Ceremony Guest' }}</strong>
-                  @else
-                      <span class="badge badge-primary mb-1">Room {{ $first->booking?->room?->room_number ?? 'N/A' }}</span><br>
-                      <strong>{{ $first->booking?->guest_name ?? 'Guest' }}</strong>
-                  @endif
+                <td style="vertical-align: top; width: 200px;">
+                  <div class="d-flex align-items-center mb-2">
+                    @if($first->is_walk_in)
+                        <div class="icon-circle bg-secondary text-white mr-2" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa fa-user"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Walk-In Guest</span>
+                            <strong class="text-dark">{{ $first->walk_in_name ?? 'General' }}</strong>
+                        </div>
+                    @elseif($first->day_service_id)
+                        <div class="icon-circle bg-info text-white mr-2" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa fa-birthday-cake"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Ceremony</span>
+                            <strong class="text-dark">{{ $first->dayService?->guest_name ?? 'Guest' }}</strong>
+                        </div>
+                    @else
+                        <div class="icon-circle bg-primary text-white mr-2" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa fa-bed"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Room {{ $first->booking?->room?->room_number ?? 'N/A' }}</span>
+                            <strong class="text-dark">{{ $first->booking?->guest_name ?? 'Guest' }}</strong>
+                        </div>
+                    @endif
+                  </div>
                   
-                  <div class="mt-2 bg-light p-2 rounded" style="font-size: 11px;">
-                      <div class="d-flex justify-content-between">
-                          <span class="text-muted">Total:</span>
-                          <strong>{{ number_format($guestTotalAll) }}</strong>
+                  <div class="bg-light p-2 rounded border" style="font-size: 0.8rem;">
+                      <div class="d-flex justify-content-between mb-1">
+                          <span class="text-muted">Session Bill:</span>
+                          <span class="font-weight-bold">{{ number_format($guestTotalAll) }} <small>TZS</small></span>
                       </div>
                       @if($guestAlreadyPaid > 0)
-                      <div class="d-flex justify-content-between text-success">
-                          <span>Paid:</span>
+                      <div class="d-flex justify-content-between text-success mb-1">
+                          <span>Settled:</span>
                           <span>-{{ number_format($guestAlreadyPaid) }}</span>
                       </div>
                       @endif
-                      <div class="d-flex justify-content-between border-top mt-1 pt-1 {{ $guestTotal > 0 ? 'text-danger font-weight-bold' : 'text-success' }}">
-                          <span>{{ $guestTotal > 0 ? 'Balance:' : 'Status:' }}</span>
+                      <div class="d-flex justify-content-between border-top mt-1 pt-1 {{ $guestTotal > 0 ? 'text-danger' : 'text-success' }}" style="font-weight: 700;">
+                          <span>{{ $guestTotal > 0 ? 'Balance Due:' : 'Status:' }}</span>
                           <span>{{ $guestTotal > 0 ? number_format($guestTotal) : 'Fully Paid' }}</span>
                       </div>
                   </div>
@@ -180,28 +200,39 @@
                     @foreach($orderGroup as $order)
                     @php
                       $isDimmed = ($order->status === 'cancelled') || ($order->status === 'completed') || in_array($order->payment_status, ['paid', 'room_charge']);
+                      $isServed = ($order->status === 'completed' || $order->status === 'ready') && !in_array($order->payment_status, ['paid', 'room_charge']);
                     @endphp
-                    <tr class="{{ $isDimmed ? 'opacity-50' : '' }}">
-                      <td style="width: 35%;">
-                        <div class="font-weight-bold">{{ $order->service_specific_data['item_name'] ?? $order->service->name }}</div>
-                        @if($order->status === 'cancelled')
-                            <span class="text-danger" style="font-size: 10px;"><i class="fa fa-times-circle"></i> CANCELLED</span>
-                        @elseif(in_array($order->payment_status, ['paid', 'room_charge']))
-                            <span class="text-success" style="font-size: 10px;"><i class="fa fa-check-circle"></i> PAID</span>
-                        @else
-                            <span class="text-warning" style="font-size: 10px;"><i class="fa fa-clock-o"></i> UNPAID</span>
-                        @endif
+                    <tr class="{{ $isDimmed ? 'opacity-50' : '' }}" style="border-bottom: 1px solid #f8f9fa;">
+                      <td style="width: 40%; padding: 8px;">
+                        <div class="font-weight-bold text-dark">{{ $order->service_specific_data['item_name'] ?? $order->service?->name }}</div>
+                        <div class="d-flex align-items-center mt-1">
+                            @if($order->status === 'cancelled')
+                                <span class="badge p-0" style="font-size: 0.7rem; color: #e74c3c;"><i class="fa fa-times-circle mr-1"></i>CANCELLED</span>
+                            @elseif(in_array($order->payment_status, ['paid', 'room_charge']))
+                                <span class="badge p-0" style="font-size: 0.7rem; color: #27ae60;"><i class="fa fa-check-circle mr-1"></i>PAID & CLOSED</span>
+                            @elseif($isServed)
+                                <span class="badge p-0 font-weight-bold" style="font-size: 0.7rem; color: #3498db;"><i class="fa fa-hand-holding-water mr-1"></i>SERVED - WAITING PAYMENT</span>
+                            @else
+                                <span class="badge p-0" style="font-size: 0.7rem; color: #f39c12;"><i class="fa fa-clock-o mr-1"></i>PENDING PREPARATION</span>
+                            @endif
+                        </div>
                       </td>
-                      <td style="width: 10%;">x{{ $order->quantity }}</td>
-                      <td style="width: 20%;">{{ number_format($order->total_price_tsh) }}</td>
-                      <td style="width: 35%;" class="text-right">
+                      <td style="width: 10%; padding: 8px;">
+                        <span class="badge badge-light border px-2">x{{ $order->quantity }}</span>
+                      </td>
+                      <td style="width: 20%; padding: 8px;" class="font-weight-bold">
+                        {{ number_format($order->total_price_tsh) }}
+                      </td>
+                      <td style="width: 30%; padding: 8px;" class="text-right">
                         @if($order->status !== 'cancelled' && !in_array($order->payment_status, ['paid', 'room_charge']))
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-info" onclick="serveOrder({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? 'Item') }}')" title="Mark Served">
-                                    <i class="fa fa-hand-holding-water"></i>
+                            <div class="d-flex justify-content-end">
+                                @if(!$isServed)
+                                <button class="btn btn-sm btn-info mr-1 hover-lift" onclick="serveOrder({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? 'Item') }}')" title="Mark Served">
+                                    <i class="fa fa-hand-holding-water mr-1"></i> Serve
                                 </button>
-                                <button class="btn btn-outline-danger" onclick="cancelSingleOrder({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? 'Item') }}')" title="Cancel Item">
-                                    <i class="fa fa-times"></i>
+                                @endif
+                                <button class="btn btn-sm btn-outline-danger hover-lift" onclick="cancelSingleOrder({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? 'Item') }}')" title="Cancel Item">
+                                    <i class="fa fa-trash"></i>
                                 </button>
                             </div>
                         @endif
@@ -521,11 +552,20 @@
 </div>
 
 <style>
+.hover-lift {
+    transition: transform 0.2s;
+}
+.hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
 .truncate {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .hover-shadow:hover {
     box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
     transform: translateY(-2px);
@@ -1041,7 +1081,10 @@ function settlePOSPayment(orderId, method, reference = '') {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    swal("Success!", data.message, "success");
+                    Toast.fire({
+                        icon: 'success',
+                        title: data.message
+                    });
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     swal("Error!", data.message, "error");
@@ -1054,6 +1097,19 @@ function settlePOSPayment(orderId, method, reference = '') {
         }
     });
 }
+
+
+const Toast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer)
+        toast.addEventListener('mouseleave', Swal.resumeTimer)
+    }
+});
 
 function serveOrder(orderId, itemName) {
     swal({
@@ -1068,6 +1124,11 @@ function serveOrder(orderId, itemName) {
         closeOnConfirm: false
     }, function(isConfirm) {
         if (isConfirm) {
+            Toast.fire({
+                icon: 'info',
+                title: 'Updating status...'
+            });
+            
             const url = `/bar-keeper/orders/${orderId}/serve`;
             fetch(url, {
                 method: 'POST',
@@ -1080,12 +1141,9 @@ function serveOrder(orderId, itemName) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    swal({
-                        title: "Served!",
-                        text: data.message,
-                        type: "success",
-                        timer: 1500,
-                        showConfirmButton: false
+                    Toast.fire({
+                        icon: 'success',
+                        title: data.message || 'Order marked as served!'
                     });
                     setTimeout(() => location.reload(), 1500);
                 } else {
@@ -1094,7 +1152,10 @@ function serveOrder(orderId, itemName) {
             })
             .catch(error => {
                 console.error('Error:', error);
-                swal("Error!", "Failed to update order. Please try again.", "error");
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Failed to update order.'
+                });
             });
         }
     });
@@ -1141,12 +1202,9 @@ function completeOrder(orderId, method, reference = '') {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    swal({
-                        title: "Success!",
-                        text: data.message,
-                        type: "success",
-                        timer: 2000,
-                        showConfirmButton: false
+                    Toast.fire({
+                        icon: 'success',
+                        title: data.message || 'Payment recorded successfully!'
                     });
                     setTimeout(() => location.reload(), 1500);
                 } else {
@@ -1179,12 +1237,9 @@ function callApi(url, method, data) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            swal({
-                title: "Success!",
-                text: data.message || "Action completed successfully!",
-                type: "success",
-                timer: 2000,
-                showConfirmButton: false
+            Toast.fire({
+                icon: 'success',
+                title: data.message || "Action completed successfully!"
             });
             setTimeout(() => location.reload(), 1500);
         } else {
@@ -1236,7 +1291,10 @@ function cancelOrderGroup(identifier, isWalkIn) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                swal('Cancelled!', data.message, 'success');
+                Toast.fire({
+                    icon: 'success',
+                    title: data.message || 'Orders cancelled successfully'
+                });
                 setTimeout(() => location.reload(), 1500);
             } else {
                 swal('Error', data.message, 'error');
@@ -1286,7 +1344,10 @@ function cancelSingleOrder(orderId, itemName) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                swal('Cancelled!', data.message, 'success');
+                Toast.fire({
+                    icon: 'success',
+                    title: data.message || 'Item cancelled successfully'
+                });
                 setTimeout(() => location.reload(), 1500);
             } else {
                 swal('Error', data.message, 'error');
