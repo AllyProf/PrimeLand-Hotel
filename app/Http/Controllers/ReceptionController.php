@@ -67,14 +67,17 @@ class ReceptionController extends Controller
                 $query->where('status', $request->status);
             }
         } elseif (!$request->has('status') || !$request->status || $request->status === 'all') {
-            // Exclude expired bookings from main list unless specifically requested
+            // Exclude only truly expired bookings (pending + pending payment + expired expires_at)
             $query->where(function($q) {
-                $q->where(function($subQ) {
-                    $subQ->where('status', '!=', 'pending')
-                         ->orWhere('payment_status', '!=', 'pending')
-                         ->orWhereNull('expires_at')
-                         ->orWhere('expires_at', '>', \Carbon\Carbon::now());
-                });
+                $q->where('status', '!=', 'pending')
+                  ->orWhere(function($subQ) {
+                      // Include pending bookings that have NOT expired
+                      $subQ->where('status', 'pending')
+                           ->where(function($inner) {
+                               $inner->whereNull('expires_at')
+                                     ->orWhere('expires_at', '>', \Carbon\Carbon::now());
+                           });
+                  });
             });
         }
 
@@ -124,12 +127,14 @@ class ReceptionController extends Controller
                     }
                 } else {
                     $companyBookings->where(function($q) {
-                        $q->where(function($subQ) {
-                            $subQ->where('status', '!=', 'pending')
-                                 ->orWhere('payment_status', '!=', 'pending')
-                                 ->orWhereNull('expires_at')
-                                 ->orWhere('expires_at', '>', \Carbon\Carbon::now());
-                        });
+                        $q->where('status', '!=', 'pending')
+                          ->orWhere(function($subQ) {
+                              $subQ->where('status', 'pending')
+                                   ->where(function($inner) {
+                                       $inner->whereNull('expires_at')
+                                             ->orWhere('expires_at', '>', \Carbon\Carbon::now());
+                                   });
+                          });
                     });
                 }
                 

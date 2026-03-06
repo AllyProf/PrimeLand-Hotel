@@ -538,6 +538,39 @@ $(document).ready(function() {
                 $('#usageTrackContent').html('<tr><td colspan="6" class="text-center text-danger">Failed to load tracking data.</td></tr>');
             }
         });
+    // Delete Stock Item
+    $(document).on('click', '.delete-stock-btn', function() {
+        var btn = $(this);
+        var variantId = btn.data('variant-id');
+        var productId = btn.data('product-id');
+        var itemName = btn.data('item-name');
+
+        swal({
+            title: 'Delete "' + itemName + '"?',
+            text: 'This will permanently remove this product from your inventory. This action cannot be undone.',
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Yes, Delete',
+            cancelButtonText: 'Cancel',
+            closeOnConfirm: false
+        }, function(isConfirm) {
+            if (!isConfirm) return;
+
+            $.ajax({
+                url: '/bar-keeper/products/variants/' + variantId,
+                method: 'POST',
+                data: { _method: 'DELETE', _token: '{{ csrf_token() }}' },
+                success: function(response) {
+                    swal('Deleted!', '"' + itemName + '" has been removed from your inventory.', 'success');
+                    setTimeout(function() { location.reload(); }, 1200);
+                },
+                error: function(xhr) {
+                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Could not delete this item. Please try again.';
+                    swal('Error', msg, 'error');
+                }
+            });
+        });
     });
 });
 </script>
