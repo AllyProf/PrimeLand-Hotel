@@ -391,7 +391,12 @@
                                     </span>
                                 </div>
                                 <div class="position-absolute" style="bottom: 0px; left: 0px; background: rgba(0,0,0,0.7); width: 100%; padding: 5px 15px;">
-                                    <h4 class="text-white mb-0">{{ $room->room_number }} <span class="badge badge-light ml-2" style="font-size: 0.6em; vertical-align: middle;">{{ $room->room_type }}</span></h4>
+                                    <h4 class="text-white mb-0">
+                                        <i class="fa fa-bed mr-2"></i>{{ $room->room_number }} 
+                                        <span class="badge badge-light ml-2" style="font-size: 0.6em; vertical-align: middle;">
+                                            <i class="fa fa-tag mr-1"></i>{{ $room->room_type }}
+                                        </span>
+                                    </h4>
                                 </div>
                                 
                                 <!-- Urgent Indicators Overlay -->
