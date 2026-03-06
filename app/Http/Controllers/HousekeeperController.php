@@ -743,6 +743,8 @@ class HousekeeperController extends Controller
             'occupied' => Room::where('status', 'occupied')->count(),
             'to_be_cleaned' => Room::where('status', 'to_be_cleaned')->count(),
             'maintenance' => Room::where('status', 'maintenance')->count(),
+            'reserved' => Room::where('status', 'reserved')->count(),
+            'closed' => Room::where('status', 'closed')->count(),
         ];
         
         return view('dashboard.housekeeper-room-status', compact('rooms', 'statusCounts'));

@@ -53,6 +53,27 @@
   </div>
 </div>
 
+<div class="row mb-3">
+  <div class="col-md-3 col-lg-3">
+    <div class="widget-small primary coloured-icon">
+      <i class="icon fa fa-calendar-check-o fa-2x"></i>
+      <div class="info">
+        <h4>Reserved</h4>
+        <p><b>{{ $statusCounts['reserved'] ?? 0 }}</b></p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 col-lg-3">
+    <div class="widget-small dark coloured-icon">
+      <i class="icon fa fa-ban fa-2x"></i>
+      <div class="info">
+        <h4>Closed</h4>
+        <p><b>{{ $statusCounts['closed'] ?? 0 }}</b></p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Rooms Table -->
 <div class="row mb-3">
   <div class="col-md-12">
@@ -80,11 +101,15 @@
                   @if($room->status === 'available')
                     <span class="badge badge-success">Available</span>
                   @elseif($room->status === 'occupied')
-                    <span class="badge badge-primary">Occupied</span>
+                    <span class="badge badge-danger">Occupied</span>
                   @elseif($room->status === 'to_be_cleaned')
                     <span class="badge badge-warning">Needs Cleaning</span>
                   @elseif($room->status === 'maintenance')
                     <span class="badge badge-danger">Maintenance</span>
+                  @elseif($room->status === 'reserved')
+                    <span class="badge badge-primary">Reserved</span>
+                  @elseif($room->status === 'closed')
+                    <span class="badge badge-dark">Closed</span>
                   @endif
                 </td>
                 <td>

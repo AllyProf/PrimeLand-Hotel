@@ -69,6 +69,8 @@
           <button class="btn btn-sm btn-warning" id="filterNeedsCleaning" onclick="filterRooms('needs_cleaning')">Needs Cleaning</button>
           <button class="btn btn-sm btn-success" id="filterAvailable" onclick="filterRooms('available')">Available</button>
           <button class="btn btn-sm btn-info" id="filterOccupied" onclick="filterRooms('occupied')">Occupied</button>
+          <button class="btn btn-sm btn-primary" id="filterReserved" onclick="filterRooms('reserved')">Reserved</button>
+          <button class="btn btn-sm btn-dark" id="filterClosed" onclick="filterRooms('closed')">Closed</button>
         </div>
       </div>
       <div class="tile-body">
@@ -81,7 +83,12 @@
             $bgClass = 'status-bg-available';
             $statusText = 'Available';
             
-            if ($roomStatus === 'maintenance') {
+            if ($roomStatus === 'closed') {
+              $statusBadge = 'dark';
+              $statusIcon = 'fa-ban';
+              $statusText = 'Closed';
+              $bgClass = 'status-bg-closed';
+            } elseif ($roomStatus === 'maintenance') {
               $statusBadge = 'danger';
               $statusIcon = 'fa-wrench';
               $statusText = 'Maintenance';
@@ -96,6 +103,11 @@
               $statusIcon = 'fa-user';
               $statusText = 'Occupied';
               $bgClass = 'status-bg-occupied';
+            } elseif ($roomStatus === 'reserved') {
+              $statusBadge = 'primary';
+              $statusIcon = 'fa-calendar-check-o';
+              $statusText = 'Reserved';
+              $bgClass = 'status-bg-reserved';
             }
             
             // Check for active issues
@@ -151,6 +163,8 @@
             if ($roomStatus === 'maintenance') $statusClass = 'maintenance';
             if ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning') $statusClass = 'needs_cleaning';
             if ($room->currentBooking) $statusClass = 'occupied';
+            if ($roomStatus === 'closed') $statusClass = 'closed';
+            if ($roomStatus === 'reserved') $statusClass = 'reserved';
           @endphp
           <div class="col-md-3 col-sm-6 mb-4 room-card" data-status="{{ $statusClass }}">
             <div class="card shadow-sm room-card-status {{ $bgClass }} h-100">
@@ -680,6 +694,10 @@ $(document).ready(function() {
             $('#filterAvailable').addClass('filter-active');
         } else if (status === 'occupied') {
             $('#filterOccupied').addClass('filter-active');
+        } else if (status === 'reserved') {
+            $('#filterReserved').addClass('filter-active');
+        } else if (status === 'closed') {
+            $('#filterClosed').addClass('filter-active');
         }
     };
     
