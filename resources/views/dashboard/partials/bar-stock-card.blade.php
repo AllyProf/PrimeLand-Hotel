@@ -70,14 +70,6 @@
                             style="width: 22px; height: 22px; font-size: 10px;">
                         <i class="fa fa-cog"></i>
                     </button>
-                    <button class="btn btn-xs btn-danger delete-stock-btn p-1"
-                            data-variant-id="{{ $item['variant_id'] }}"
-                            data-product-id="{{ $item['product_id'] }}"
-                            data-item-name="{{ $item['product_name'] }}"
-                            title="Delete from inventory"
-                            style="width: 22px; height: 22px; font-size: 10px;">
-                        <i class="fa fa-trash"></i>
-                    </button>
                 </div>
             </div>
         </div>

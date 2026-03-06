@@ -113,11 +113,6 @@
         <div class="tile">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="tile-title mb-0"><i class="fa fa-cubes"></i> Inventory Balance</h3>
-                @if(in_array($role, ['bar_keeper', 'manager', 'owner', 'super_admin']))
-                <button class="btn btn-danger btn-sm" id="wipeInventoryBtn">
-                    <i class="fa fa-refresh"></i> Reset All Inventory
-                </button>
-                @endif
             </div>
 
             <div class="tile-body">
@@ -542,72 +537,6 @@ $(document).ready(function() {
             error: function() {
                 $('#usageTrackContent').html('<tr><td colspan="6" class="text-center text-danger">Failed to load tracking data.</td></tr>');
             }
-        });
-    // Delete Stock Item
-    $(document).on('click', '.delete-stock-btn', function() {
-        var btn = $(this);
-        var variantId = btn.data('variant-id');
-        var productId = btn.data('product-id');
-        var itemName = btn.data('item-name');
-
-        swal({
-            title: 'Delete "' + itemName + '"?',
-            text: 'This will permanently remove this product from your inventory. This action cannot be undone.',
-            type: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            confirmButtonText: 'Yes, Delete',
-            cancelButtonText: 'Cancel',
-            closeOnConfirm: false
-        }, function(isConfirm) {
-            if (!isConfirm) return;
-
-            $.ajax({
-                url: '/bar-keeper/products/variants/' + variantId,
-                method: 'POST',
-                data: { _method: 'DELETE', _token: '{{ csrf_token() }}' },
-                success: function(response) {
-                    swal('Deleted!', '"' + itemName + '" has been removed from your inventory.', 'success');
-                    setTimeout(function() { location.reload(); }, 1200);
-                },
-                error: function(xhr) {
-                    var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Could not delete this item. Please try again.';
-                    swal('Error', msg, 'error');
-                }
-            });
-        });
-    });
-
-    // Wipe All Inventory
-    $('#wipeInventoryBtn').on('click', function() {
-        swal({
-            title: "Reset Bar Inventory?",
-            text: "This will DELETE ALL bar products, variants, and stock history! This is irreversible and should only be used to start with fresh data.",
-            type: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#dc3545",
-            confirmButtonText: "Yes, WIPE EVERYTHING",
-            cancelButtonText: "No, Cancel",
-            closeOnConfirm: false
-        }, function(isConfirm) {
-            if (!isConfirm) return;
-
-            $.ajax({
-                url: "{{ route('bar-keeper.stock.wipe-all') }}",
-                method: "POST",
-                data: { _token: "{{ csrf_token() }}" },
-                success: function(response) {
-                    if (response.success) {
-                        swal("Wiped!", response.message, "success");
-                        setTimeout(function() { location.reload(); }, 2000);
-                    } else {
-                        swal("Error", response.message, "error");
-                    }
-                },
-                error: function(xhr) {
-                    swal("Error", "System error or unauthorized access.", "error");
-                }
-            });
         });
     });
 });
