@@ -12,7 +12,7 @@
   </ul>
 </div>
 
-<!-- Main Statistics Cards (4 Cards) -->
+<!-- Main Statistics Cards -->
 <div class="row mb-3">
   <div class="col-md-6 col-lg-3">
     <div class="widget-small primary coloured-icon">
@@ -43,11 +43,10 @@
   </div>
   <div class="col-md-6 col-lg-3">
     <div class="widget-small success coloured-icon">
-      <i class="icon fa fa-money fa-3x"></i>
+      <i class="icon fa fa-sign-in fa-3x"></i>
       <div class="info">
-        <h4>Today's Revenue</h4>
-        <p><b>{{ number_format($stats['today_revenue'] ?? 0, 0) }} TZS</b></p>
-        <small style="font-size: 11px; color: #666;"><b>≈ ${{ number_format(($stats['today_revenue'] ?? 0) / ($exchangeRate ?? 2500), 2) }}</b></small>
+        <h4>Today's Check-ins</h4>
+        <p><b>{{ $stats['todays_checkins'] ?? 0 }}</b></p>
       </div>
     </div>
   </div>
@@ -187,15 +186,16 @@
 <div class="row">
   <div class="col-md-6">
     <div class="tile">
-      <h3 class="tile-title">Revenue Trend (Last 6 Months)</h3>
+      <h3 class="tile-title"><i class="fa fa-bar-chart text-primary mr-1"></i> Room Occupancy This Week</h3>
+      <p class="text-muted small pl-2">Daily check-ins vs check-outs over the last 7 days</p>
       <div class="embed-responsive embed-responsive-16by9">
-        <canvas class="embed-responsive-item" id="revenueChart"></canvas>
+        <canvas class="embed-responsive-item" id="occupancyChart"></canvas>
       </div>
     </div>
   </div>
   <div class="col-md-6">
     <div class="tile">
-      <h3 class="tile-title">Booking Status Distribution</h3>
+      <h3 class="tile-title"><i class="fa fa-pie-chart text-info mr-1"></i> Booking Status Distribution</h3>
       <div class="embed-responsive embed-responsive-16by9">
         <canvas class="embed-responsive-item" id="bookingStatusChart"></canvas>
       </div>
@@ -400,19 +400,40 @@
         $('#toggleStatsBtn').html('<i class="fa fa-bar-chart"></i> Show Operational Stats');
     });
 
-    // Charts
-    var revenueData = {
-        labels: {!! json_encode(array_column($revenueData, 'month')) !!},
-        datasets: [{
-            label: "Revenue (TZS)",
-            fillColor: "rgba(151,187,205,0.2)",
-            strokeColor: "rgba(151,187,205,1)",
-            pointColor: "rgba(151,187,205,1)",
-            pointStrokeColor: "#fff",
-            data: {!! json_encode(array_column($revenueData, 'revenue')) !!}
-        }]
-    };
-    
+    // Room Occupancy Chart (Check-ins vs Check-outs per day this week)
+    var occupancyCtx = document.getElementById('occupancyChart').getContext('2d');
+    var occupancyChart = new Chart(occupancyCtx, {
+        type: 'bar',
+        data: {
+            labels: {!! json_encode(array_column($occupancyData, 'day')) !!},
+            datasets: [
+                {
+                    label: 'Check-ins',
+                    data: {!! json_encode(array_column($occupancyData, 'checkins')) !!},
+                    backgroundColor: 'rgba(70, 191, 189, 0.7)',
+                    borderColor: 'rgba(70, 191, 189, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Check-outs',
+                    data: {!! json_encode(array_column($occupancyData, 'checkouts')) !!},
+                    backgroundColor: 'rgba(247, 70, 74, 0.7)',
+                    borderColor: 'rgba(247, 70, 74, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                yAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }]
+            },
+            legend: { position: 'bottom' }
+        }
+    });
+
+    // Booking Status Pie Chart
     var bookingStatusData = [
         @foreach($bookingStatusData as $status => $count)
         {
@@ -422,8 +443,6 @@
         }@if(!$loop->last),@endif
         @endforeach
     ];
-    
-    new Chart($("#revenueChart").get(0).getContext("2d")).Line(revenueData);
     new Chart($("#bookingStatusChart").get(0).getContext("2d")).Pie(bookingStatusData);
 
     // Quick Actions

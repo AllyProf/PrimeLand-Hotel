@@ -494,21 +494,20 @@ class ServiceRequestController extends Controller
             
             // Statistics
             $stats = [
-                'total_rooms' => \App\Models\Room::count(),
-                'total_bookings' => Booking::count(),
-                'total_revenue' => $totalRevenueTZS,
-                'today_revenue' => $todayRevenueTZS,
-                'total_active_guests' => Booking::where('check_in_status', 'checked_in')
+                'total_rooms'          => \App\Models\Room::count(),
+                'total_bookings'       => Booking::count(),
+                'total_active_guests'  => Booking::where('check_in_status', 'checked_in')
                     ->where('check_out', '>=', $today)
                     ->sum('number_of_guests') ?: Booking::where('check_in_status', 'checked_in')->count(),
-                'active_orders_count' => ServiceRequest::whereIn('status', ['pending', 'approved', 'preparing', 'ready'])
+                'todays_checkins'      => Booking::whereDate('checked_in_at', $today)->count(),
+                'active_orders_count'  => ServiceRequest::whereIn('status', ['pending', 'approved', 'preparing', 'ready'])
                     ->orWhere(function($q) {
                         $q->where('status', 'completed')->whereIn('payment_status', ['pending', 'unpaid']);
                     })->count(),
                 'preparing_ready_count' => ServiceRequest::whereIn('status', ['approved', 'preparing', 'ready'])->count(),
-                'today_orders_count' => ServiceRequest::whereDate('requested_at', $today)->count(),
-                'pending_extensions' => Booking::where('extension_status', 'pending')->count(),
-                'room_issues' => \App\Models\IssueReport::where('status', '!=', 'resolved')->count(),
+                'today_orders_count'   => ServiceRequest::whereDate('requested_at', $today)->count(),
+                'pending_extensions'   => Booking::where('extension_status', 'pending')->count(),
+                'room_issues'          => \App\Models\IssueReport::where('status', '!=', 'resolved')->count(),
             ];
             
             // Recent bookings
@@ -542,35 +541,20 @@ class ServiceRequestController extends Controller
                 ->orderBy('extension_requested_at', 'asc')
                 ->get();
 
-            // Revenue chart data (last 6 months)
-            $revenueData = [];
-            for ($i = 5; $i >= 0; $i--) {
-                $month = Carbon::now()->subMonths($i);
-                $monthStart = $month->copy()->startOfMonth();
-                $monthEnd = $month->copy()->endOfMonth();
-                
-                $mBookingRevUSD = Booking::whereBetween('created_at', [$monthStart, $monthEnd])
-                    ->where('payment_status', 'paid')
-                    ->get()->sum(fn($b) => $b->amount_paid ?? $b->total_price ?? 0);
-                $mServiceRevTZS = ServiceRequest::where('status', 'completed')
-                    ->whereBetween('completed_at', [$monthStart, $monthEnd])
-                    ->sum('total_price_tsh');
-                $mDayServiceRevTZS = \App\Models\DayService::where('payment_status', 'paid')
-                    ->whereBetween('paid_at', [$monthStart, $monthEnd])
-                    ->get()->sum(function($s) use ($exchangeRate) {
-                        $amount = $s->amount_paid ?? $s->amount ?? 0;
-                        return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
-                    });
-                
-                $revenueData[] = [
-                    'month' => $month->format('M Y'),
-                    'revenue' => ($mBookingRevUSD * $exchangeRate) + $mServiceRevTZS + $mDayServiceRevTZS
+            // Room Occupancy chart data (last 7 days check-ins vs check-outs)
+            $occupancyData = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $day = Carbon::now()->subDays($i);
+                $occupancyData[] = [
+                    'day'       => $day->format('D d/m'),
+                    'checkins'  => Booking::whereDate('checked_in_at', $day)->count(),
+                    'checkouts' => Booking::whereDate('checked_out_at', $day)->count(),
                 ];
             }
 
             // Booking status chart data
             $bookingStatusData = [
-                'Pending' => Booking::where('status', 'pending')->count(),
+                'Pending'   => Booking::where('status', 'pending')->count(),
                 'Confirmed' => Booking::where('status', 'confirmed')->count(),
                 'Completed' => Booking::where('status', 'completed')->count(),
                 'Cancelled' => Booking::where('status', 'cancelled')->count(),
@@ -578,17 +562,17 @@ class ServiceRequestController extends Controller
             
             $role = $this->getRole();
             return view('dashboard.reception-dashboard', [
-                'role' => $role,
-                'userName' => $user->name ?? 'Reception Staff',
-                'userRole' => $role === 'manager' ? 'Manager' : 'Reception',
-                'stats' => $stats,
-                'recentBookings' => $recentBookings,
-                'activeOrders' => $activeOrders,
-                'todayRequests' => $todayRequests,
-                'pendingExtensions' => $pendingExtensions,
-                'revenueData' => $revenueData,
-                'bookingStatusData' => $bookingStatusData,
-                'exchangeRate' => $exchangeRate,
+                'role'             => $role,
+                'userName'         => $user->name ?? 'Reception Staff',
+                'userRole'         => $role === 'manager' ? 'Manager' : 'Reception',
+                'stats'            => $stats,
+                'recentBookings'   => $recentBookings,
+                'activeOrders'     => $activeOrders,
+                'todayRequests'    => $todayRequests,
+                'pendingExtensions'=> $pendingExtensions,
+                'occupancyData'    => $occupancyData,
+                'bookingStatusData'=> $bookingStatusData,
+                'exchangeRate'     => $exchangeRate,
             ]);
             
         } catch (\Exception $e) {
