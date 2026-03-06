@@ -59,7 +59,210 @@
 </style>
 
 
+
+<!-- Pending Guest Orders -->
+<div class="row mb-4" id="orders">
+  <div class="col-md-12">
+    <div class="tile shadow-sm border-0">
+      <div class="tile-title-w-btn">
+        <h3 class="title"><i class="fa fa-shopping-basket mr-2 text-primary"></i> Pending Guest Orders</h3>
+        <button class="btn btn-primary rounded-pill px-4" onclick="openWalkInModal()"><i class="fa fa-plus-circle mr-1"></i> New Walk-in Sale</button>
+      </div>
+      
+      @if($pendingOrders->count() > 0)
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="bg-light">
+            <tr>
+              <th>Time</th>
+               <th>Staff</th>
+              <th>Guest / Room</th>
+              <th>Order Details</th>
+              <th class="text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @php
+              $groupedOrders = $pendingOrders->groupBy(function($item) {
+                  if ($item->is_walk_in) {
+                      return 'w_' . ($item->walk_in_name ?? 'General');
+                  }
+                  if ($item->day_service_id) {
+                      return 'c_' . $item->day_service_id;
+                  }
+                  return 'b_' . ($item->booking_id ?? 'unknown');
+              });
+            @endphp
+            
+            @foreach($groupedOrders as $groupKey => $orderGroup)
+              @php
+                $first = $orderGroup->first();
+                $activeItems    = $orderGroup->filter(fn($o) => $o->status !== 'cancelled');
+                $paidItems      = $activeItems->filter(fn($o) => in_array($o->payment_status, ['paid', 'room_charge']));
+                $unpaidItems    = $activeItems->filter(fn($o) => !in_array($o->payment_status, ['paid', 'room_charge']));
+                $allCancelled      = $activeItems->isEmpty();
+                $guestTotal        = $unpaidItems->sum('total_price_tsh');
+                $guestTotalAll     = $activeItems->sum('total_price_tsh');
+                $guestAlreadyPaid  = $paidItems->sum('total_price_tsh');
+                $latestRequest     = $orderGroup->sortByDesc('requested_at')->first()->requested_at;
+                $isCompanyPaid = !$first->is_walk_in && $first->booking && $first->booking->payment_responsibility === 'company';
+              @endphp
+              <tr style="border-left: 4px solid {{ $allCancelled ? '#6c757d' : ($guestTotal > 0 ? '#e67e22' : '#27ae60') }};">
+                 <td style="vertical-align: top;">
+                   <div class="font-weight-bold">{{ $latestRequest->format('H:i') }}</div>
+                   <small class="text-muted">{{ $latestRequest->diffForHumans() }}</small>
+                   @if($allCancelled)
+                     <br><span class="badge badge-secondary mt-1">CANCELLED</span>
+                   @elseif($guestTotal > 0)
+                     <br><span class="badge badge-warning mt-1 text-white" style="background:#e67e22;">DUE: {{ number_format($guestTotal) }}</span>
+                   @else
+                     <br><span class="badge badge-success mt-1">SETTLED</span>
+                   @endif
+                 </td>
+                 <td style="vertical-align: top;">
+                   @php
+                    $waiters = [];
+                     foreach($orderGroup as $o) {
+                         $requestedBy = 'Staff';
+                         if ($o->reception_notes) {
+                             $notes = $o->reception_notes;
+                             if (str_contains($notes, 'Order by Waiter:')) {
+                                 $prefix = str_contains($notes, 'POS Order by Waiter:') ? 'POS Order by Waiter:' : 'Order by Waiter:';
+                                 $parts = explode($prefix, $notes);
+                                 $requestedBy = trim(explode('|', explode('[', explode(' - Msg:', $parts[1] ?? '')[0])[0])[0] ?? 'Staff');
+                             } elseif (str_contains($notes, 'Recorded by: ')) {
+                                 $parts = explode('Recorded by: ', $notes);
+                                 $requestedBy = trim(explode('|', explode('[', explode(' - Msg:', $parts[1] ?? '')[0])[0])[0]);
+                             }
+                         }
+                         if (($requestedBy === 'Staff' || $requestedBy === 'N/A') && $o->approvedBy) {
+                             $requestedBy = $o->approvedBy->name;
+                         }
+                         $waiters[] = trim($requestedBy);
+                     }
+                    $waiters = array_unique($waiters);
+                   @endphp
+                   @foreach($waiters as $w)
+                     <span class="badge badge-light border mb-1">{{ $w }}</span><br>
+                   @endforeach
+                 </td>
+                <td style="vertical-align: top;">
+                  @if($first->is_walk_in)
+                      <span class="badge badge-secondary mb-1">WALK-IN</span><br>
+                      <strong>{{ $first->walk_in_name ?? 'General Walk-in' }}</strong>
+                  @elseif($first->day_service_id)
+                      <span class="badge badge-info mb-1">CEREMONY</span><br>
+                      <strong>{{ $first->dayService?->guest_name ?? 'Ceremony Guest' }}</strong>
+                  @else
+                      <span class="badge badge-primary mb-1">Room {{ $first->booking?->room?->room_number ?? 'N/A' }}</span><br>
+                      <strong>{{ $first->booking?->guest_name ?? 'Guest' }}</strong>
+                  @endif
+                  
+                  <div class="mt-2 bg-light p-2 rounded" style="font-size: 11px;">
+                      <div class="d-flex justify-content-between">
+                          <span class="text-muted">Total:</span>
+                          <strong>{{ number_format($guestTotalAll) }}</strong>
+                      </div>
+                      @if($guestAlreadyPaid > 0)
+                      <div class="d-flex justify-content-between text-success">
+                          <span>Paid:</span>
+                          <span>-{{ number_format($guestAlreadyPaid) }}</span>
+                      </div>
+                      @endif
+                      <div class="d-flex justify-content-between border-top mt-1 pt-1 {{ $guestTotal > 0 ? 'text-danger font-weight-bold' : 'text-success' }}">
+                          <span>{{ $guestTotal > 0 ? 'Balance:' : 'Status:' }}</span>
+                          <span>{{ $guestTotal > 0 ? number_format($guestTotal) : 'Fully Paid' }}</span>
+                      </div>
+                  </div>
+                </td>
+                <td class="p-0">
+                  <table class="table table-sm mb-0 table-borderless" style="background: transparent; font-size: 0.85rem;">
+                    @foreach($orderGroup as $order)
+                    @php
+                      $isDimmed = ($order->status === 'cancelled') || ($order->status === 'completed') || in_array($order->payment_status, ['paid', 'room_charge']);
+                    @endphp
+                    <tr class="{{ $isDimmed ? 'opacity-50' : '' }}">
+                      <td style="width: 35%;">
+                        <div class="font-weight-bold">{{ $order->service_specific_data['item_name'] ?? $order->service->name }}</div>
+                        @if($order->status === 'cancelled')
+                            <span class="text-danger" style="font-size: 10px;"><i class="fa fa-times-circle"></i> CANCELLED</span>
+                        @elseif(in_array($order->payment_status, ['paid', 'room_charge']))
+                            <span class="text-success" style="font-size: 10px;"><i class="fa fa-check-circle"></i> PAID</span>
+                        @else
+                            <span class="text-warning" style="font-size: 10px;"><i class="fa fa-clock-o"></i> UNPAID</span>
+                        @endif
+                      </td>
+                      <td style="width: 10%;">x{{ $order->quantity }}</td>
+                      <td style="width: 20%;">{{ number_format($order->total_price_tsh) }}</td>
+                      <td style="width: 35%;" class="text-right">
+                        @if($order->status !== 'cancelled' && !in_array($order->payment_status, ['paid', 'room_charge']))
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-info" onclick="serveOrder({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? 'Item') }}')" title="Mark Served">
+                                    <i class="fa fa-hand-holding-water"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="cancelSingleOrder({{ $order->id }}, '{{ addslashes($order->service_specific_data['item_name'] ?? 'Item') }}')" title="Cancel Item">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        @endif
+                      </td>
+                    </tr>
+                    @endforeach
+                  </table>
+                </td>
+                <td class="text-center" style="vertical-align: top;">
+                  <div class="btn-group-vertical btn-group-sm w-100">
+                    @php
+                        $printUrl = route('bar-keeper.orders.print-group', [
+                            'is_walk_in' => $first->is_walk_in ? 1 : 0,
+                            'identifier' => $first->is_walk_in ? $first->walk_in_name : $first->booking_id
+                        ]);
+                    @endphp
+                    <button class="btn btn-outline-info mb-1" onclick="window.open('{{ $printUrl }}', 'Print', 'width=800,height=600')">
+                      <i class="fa fa-print"></i> Bill
+                    </button>
+                    <button class="btn btn-outline-primary mb-1" onclick="openWalkInModal('{{ $first->is_walk_in ? ($first->walk_in_name ?? 'Walk-in') : ($first->booking->guest_name ?? 'Guest') }}', null, null)">
+                      <i class="fa fa-plus"></i> Add
+                    </button>
+                    @if($guestTotal > 0 && !$first->day_service_id)
+                        @if($isCompanyPaid)
+                        <button class="btn btn-outline-success mb-1" onclick="openPaymentModal({{ $first->id }}, {{ $guestTotal }}, 0, '{{ $first->booking->guest_name }}', 1)">
+                          <i class="fa fa-bed"></i> Charge
+                        </button>
+                        @else
+                        <button class="btn btn-success mb-1" onclick="openPaymentModal({{ $first->id }}, {{ $guestTotal }}, {{ $first->is_walk_in ? 1 : 0 }}, '{{ $first->is_walk_in ? ($first->walk_in_name ?? 'Walk-in') : ($first->booking->guest_name ?? 'Guest') }}')">
+                          <i class="fa fa-money"></i> PAY
+                        </button>
+                        @endif
+                    @endif
+                    @php
+                        $canCancelAll = $orderGroup->contains(fn($o) => $o->status !== 'cancelled' && !in_array($o->payment_status, ['paid', 'room_charge']));
+                    @endphp
+                    @if($canCancelAll)
+                    <button class="btn btn-outline-danger" onclick="cancelOrderGroup('{{ $first->is_walk_in ? ($first->walk_in_name ?? 'General') : ($first->booking_id ?? 'unknown') }}', {{ $first->is_walk_in ? 1 : 0 }})">
+                      <i class="fa fa-times"></i> All
+                    </button>
+                    @endif
+                  </div>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+      @else
+      <div class="text-center py-5">
+        <i class="fa fa-coffee fa-4x text-muted mb-3 opacity-25"></i>
+        <h3>No Pending Orders</h3>
+        <p class="text-muted">Waiter orders for the bar will appear here automatically.</p>
+      </div>
+      @endif
+    </div>
+  </div>
+</div>
+
 {{-- Active Ceremonies Section --}}
+
 <div class="row mt-4">
   <div class="col-md-12">
     <div class="tile shadow-sm border-0 mb-4">
