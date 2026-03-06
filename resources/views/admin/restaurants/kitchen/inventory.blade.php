@@ -58,8 +58,8 @@
 
       <div class="tile-body">
         <!-- Search & Filter Area -->
-        <div class="row mb-4">
-          <div class="col-md-6">
+        <div class="row mb-4 align-items-center">
+          <div class="col-md-5">
             <div class="input-group">
               <div class="input-group-prepend">
                 <span class="input-group-text"><i class="fa fa-search"></i></span>
@@ -75,175 +75,281 @@
               @endforeach
             </select>
           </div>
-          <div class="col-md-3 text-right">
-            <div id="searchResults" class="text-muted pt-2 text-capitalize">
+          <div class="col-md-4 text-right">
+            <div class="btn-group mr-3" role="group">
+                <button type="button" class="btn btn-primary" id="btnCardView" title="Card View">
+                    <i class="fa fa-th-large"></i>
+                </button>
+                <button type="button" class="btn btn-outline-primary" id="btnListView" title="List View">
+                    <i class="fa fa-list"></i>
+                </button>
+            </div>
+            <div id="searchResults" class="text-muted d-inline-block text-capitalize">
               <span id="resultCount">{{ $inventoryItems->total() }}</span> items found
             </div>
           </div>
         </div>
         
-        <div class="row" id="inventoryCards">
-          @foreach($inventoryItems as $item)
-          <div class="col-md-4 col-sm-6 mb-4 inventory-card" 
-               data-name="{{ strtolower($item->name) }}" 
-               data-category="{{ strtolower($item->category) }}"
-               data-item-id="{{ $item->id }}"
-               data-current-stock="{{ $item->current_stock }}"
-               data-minimum-stock="{{ $item->minimum_stock }}">
-            
-            @php
-              $stockStatus = $item->current_stock <= 0 ? 'critical' : ($item->current_stock <= $item->minimum_stock ? 'low' : 'normal');
-              $statusColor = $stockStatus === 'critical' ? 'danger' : ($stockStatus === 'low' ? 'warning' : 'success');
-              $borderClass = $stockStatus === 'critical' ? 'border-danger' : ($stockStatus === 'low' ? 'border-warning' : 'border-success');
-              $headerClass = $stockStatus === 'critical' ? 'bg-danger text-white' : ($stockStatus === 'low' ? 'bg-warning text-dark' : 'bg-success text-white');
-            @endphp
-
-            <div class="card h-100 {{ $borderClass }}" id="card-{{ $item->id }}" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-              <div class="card-header {{ $headerClass }}" id="card-header-{{ $item->id }}">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div class="d-flex align-items-center">
-                    <div class="custom-control custom-checkbox mr-2">
-                        <input type="checkbox" class="custom-control-input stock-checkbox" id="check-{{ $item->id }}" value="{{ $item->id }}" data-category="{{ $item->category }}" data-name="{{ $item->name }}">
-                        <label class="custom-control-label" for="check-{{ $item->id }}"></label>
-                    </div>
-                    <h5 class="card-title mb-0">
-                      <i class="fa fa-cube"></i> {{ $item->name }}
-                    </h5>
-                  </div>
-                  <div class="btn-group">
-                    <a href="{{ route('chef-master.purchase-requests.create', ['kitchen_ids' => $item->id]) }}" 
-                       class="btn btn-sm btn-light" 
-                       title="Request Restock">
-                      <i class="fa fa-shopping-cart text-warning"></i>
-                    </a>
-                    <button class="btn btn-sm btn-light view-track-btn" 
-                            data-item-id="{{ $item->id }}" 
-                            data-item-name="{{ $item->name }}"
-                            title="View Track">
-                      <i class="fa fa-history"></i>
-                    </button>
-                    @if(!$isReadOnly)
-                    <button class="btn btn-sm btn-light settings-stock-btn" 
-                            data-item-id="{{ $item->id }}" 
-                            data-item-name="{{ $item->name }}" 
-                            data-minimum-stock="{{ $item->minimum_stock }}"
-                            title="Stock Settings">
-                      <i class="fa fa-cog"></i>
-                    </button>
-                    @endif
-                  </div>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-6">
-                    <div class="mb-3">
-                      <small class="text-muted d-block">Total Received</small>
-                      <h5 class="mb-0 text-info">
-                        {{ number_format($item->total_received ?? 0, 0) }} <small class="text-muted">{{ $item->unit }}</small>
-                      </h5>
-                    </div>
-
-                    <div class="mb-3">
-                      <small class="text-muted d-block">Total Consumed</small>
-                      <h5 class="mb-0 text-secondary">
-                        {{ number_format($item->total_consumed ?? 0, 0) }} <small class="text-muted">{{ $item->unit }}</small>
-                      </h5>
-                    </div>
-                    
-                    <div class="mb-3">
-                      <small class="text-muted d-block">Available Stock</small>
-                      <h5 class="mb-0 font-weight-bold text-{{ $statusColor }}" id="current-stock-text-{{ $item->id }}">
-                        {{ number_format($item->current_stock, 0) }} <small class="text-muted">{{ $item->unit }}</small>
-                      </h5>
+        <!-- Card View Container -->
+        <div id="viewCardContainer">
+            <div class="row" id="inventoryCards">
+              @foreach($inventoryItems as $item)
+              <div class="col-md-4 col-sm-6 mb-4 inventory-card" 
+                   data-name="{{ strtolower($item->name) }}" 
+                   data-category="{{ strtolower($item->category) }}"
+                   data-item-id="{{ $item->id }}"
+                   data-current-stock="{{ $item->current_stock }}"
+                   data-minimum-stock="{{ $item->minimum_stock }}">
+                
+                @php
+                  $stockStatus = $item->current_stock <= 0 ? 'critical' : ($item->current_stock <= $item->minimum_stock ? 'low' : 'normal');
+                  $statusColor = $stockStatus === 'critical' ? 'danger' : ($stockStatus === 'low' ? 'warning' : 'success');
+                  $borderClass = $stockStatus === 'critical' ? 'border-danger' : ($stockStatus === 'low' ? 'border-warning' : 'border-success');
+                  $headerClass = $stockStatus === 'critical' ? 'bg-danger text-white' : ($stockStatus === 'low' ? 'bg-warning text-dark' : 'bg-success text-white');
+                @endphp
+    
+                <div class="card h-100 {{ $borderClass }}" id="card-{{ $item->id }}" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                  <div class="card-header {{ $headerClass }}" id="card-header-{{ $item->id }}">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div class="d-flex align-items-center">
+                        <div class="custom-control custom-checkbox mr-2">
+                            <input type="checkbox" class="custom-control-input stock-checkbox" id="check-{{ $item->id }}" value="{{ $item->id }}" data-category="{{ $item->category }}" data-name="{{ $item->name }}">
+                            <label class="custom-control-label" for="check-{{ $item->id }}"></label>
+                        </div>
+                        <h5 class="card-title mb-0">
+                          <i class="fa fa-cube"></i> {{ $item->name }}
+                        </h5>
+                      </div>
+                      <div class="btn-group">
+                        <a href="{{ route('chef-master.purchase-requests.create', ['kitchen_ids' => $item->id]) }}" 
+                           class="btn btn-sm btn-light" 
+                           title="Request Restock">
+                          <i class="fa fa-shopping-cart text-warning"></i>
+                        </a>
+                        <button class="btn btn-sm btn-light view-track-btn" 
+                                data-item-id="{{ $item->id }}" 
+                                data-item-name="{{ $item->name }}"
+                                title="View Track">
+                          <i class="fa fa-history"></i>
+                        </button>
+                        @if(!$isReadOnly)
+                        <button class="btn btn-sm btn-light settings-stock-btn" 
+                                data-item-id="{{ $item->id }}" 
+                                data-item-name="{{ $item->name }}" 
+                                data-minimum-stock="{{ $item->minimum_stock }}"
+                                title="Stock Settings">
+                          <i class="fa fa-cog"></i>
+                        </button>
+                        @endif
+                      </div>
                     </div>
                   </div>
-                  
-                  <div class="col-6 border-left">
-                    <div class="mb-3">
-                      <small class="text-muted d-block">Category</small>
-                      <strong class="text-capitalize">{{ $item->category_name }}</strong>
-                    </div>
-                    
-                    <div class="mb-3">
-                      <small class="text-muted d-block">Min. Level</small>
-                      <strong id="minimum-stock-display-{{ $item->id }}">{{ number_format($item->minimum_stock, 0) }} {{ $item->unit }}</strong>
-                    </div>
-
-                    @if($item->expiry_date)
-                    <div class="mb-0">
-                      <small class="text-muted d-block">Expires On</small>
-                      @php
-                        $daysToExpiry = now()->diffInDays($item->expiry_date, false);
-                        $isExpiringSoon = $daysToExpiry <= 10 && $daysToExpiry >= 0;
-                        $isExpired = $daysToExpiry < 0;
-                      @endphp
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-6">
+                        <div class="mb-3">
+                          <small class="text-muted d-block">Total Received</small>
+                          <h5 class="mb-0 text-info">
+                            {{ number_format($item->total_received ?? 0, 0) }} <small class="text-muted">{{ $item->unit }}</small>
+                          </h5>
+                        </div>
+    
+                        <div class="mb-3">
+                          <small class="text-muted d-block">Total Consumed</small>
+                          <h5 class="mb-0 text-secondary">
+                            {{ number_format($item->total_consumed ?? 0, 0) }} <small class="text-muted">{{ $item->unit }}</small>
+                          </h5>
+                        </div>
+                        
+                        <div class="mb-3">
+                          <small class="text-muted d-block">Available Stock</small>
+                          <h5 class="mb-0 font-weight-bold text-{{ $statusColor }}" id="current-stock-text-{{ $item->id }}">
+                            {{ number_format($item->current_stock, 0) }} <small class="text-muted">{{ $item->unit }}</small>
+                          </h5>
+                        </div>
+                      </div>
                       
-                      @if($isExpired)
-                        <span class="badge badge-danger" style="font-size: 0.65rem; white-space: normal;">EXPIRED ({{ $item->expiry_date->format('d M, Y') }})</span>
-                      @elseif($isExpiringSoon)
-                        <span class="text-danger font-weight-bold animated pulse infinite" style="font-size: 0.75rem; display: block;">
-                          <i class="fa fa-clock-o"></i> EXPIRING SOON ({{ $item->expiry_date->format('d M, Y') }})
-                        </span>
+                      <div class="col-6 border-left">
+                        <div class="mb-3">
+                          <small class="text-muted d-block">Category</small>
+                          <strong class="text-capitalize">{{ $item->category_name }}</strong>
+                        </div>
+                        
+                        <div class="mb-3">
+                          <small class="text-muted d-block">Min. Level</small>
+                          <strong id="minimum-stock-display-{{ $item->id }}">{{ number_format($item->minimum_stock, 0) }} {{ $item->unit }}</strong>
+                        </div>
+    
+                        @if($item->expiry_date)
+                        <div class="mb-0">
+                          <small class="text-muted d-block">Expires On</small>
+                          @php
+                            $daysToExpiry = now()->diffInDays($item->expiry_date, false);
+                            $isExpiringSoon = $daysToExpiry <= 10 && $daysToExpiry >= 0;
+                            $isExpired = $daysToExpiry < 0;
+                          @endphp
+                          
+                          @if($isExpired)
+                            <span class="badge badge-danger" style="font-size: 0.65rem; white-space: normal;">EXPIRED ({{ $item->expiry_date->format('d M, Y') }})</span>
+                          @elseif($isExpiringSoon)
+                            <span class="text-danger font-weight-bold animated pulse infinite" style="font-size: 0.75rem; display: block;">
+                              <i class="fa fa-clock-o"></i> EXPIRING SOON ({{ $item->expiry_date->format('d M, Y') }})
+                            </span>
+                          @else
+                            <span class="text-warning font-weight-bold" style="font-size: 0.8rem;">{{ $item->expiry_date->format('d M, Y') }}</span>
+                          @endif
+                        </div>
+                        @endif
+                      </div>
+                    </div>
+                    
+                    <div class="mt-2" id="status-badge-{{ $item->id }}">
+                      @if($stockStatus === 'critical')
+                        <span class="badge badge-danger w-100 py-2"><i class="fa fa-exclamation-circle"></i> Out of Stock</span>
+                      @elseif($stockStatus === 'low')
+                        <span class="badge badge-warning w-100 py-2"><i class="fa fa-warning"></i> Low Stock</span>
                       @else
-                        <span class="text-warning font-weight-bold" style="font-size: 0.8rem;">{{ $item->expiry_date->format('d M, Y') }}</span>
+                        <span class="badge badge-success w-100 py-2"><i class="fa fa-check-circle"></i> healthy Balance</span>
                       @endif
                     </div>
-                    @endif
                   </div>
-                </div>
-                
-                <div class="mt-2" id="status-badge-{{ $item->id }}">
-                  @if($stockStatus === 'critical')
-                    <span class="badge badge-danger w-100 py-2"><i class="fa fa-exclamation-circle"></i> Out of Stock</span>
-                  @elseif($stockStatus === 'low')
-                    <span class="badge badge-warning w-100 py-2"><i class="fa fa-warning"></i> Low Stock</span>
-                  @else
-                    <span class="badge badge-success w-100 py-2"><i class="fa fa-check-circle"></i> healthy Balance</span>
+                  @if(!$isReadOnly)
+                  <div class="card-footer bg-transparent p-2">
+                    <div class="row">
+                      <div class="col-7 pr-1">
+                        <button class="btn btn-primary btn-block update-stock-btn shadow-sm" 
+                                data-item-id="{{ $item->id }}" 
+                                data-item-name="{{ $item->name }}" 
+                                data-current-stock="{{ $item->current_stock }}"
+                                data-unit="{{ $item->unit }}"
+                                data-default-type="guest_use">
+                          <i class="fa fa-cutlery"></i> Use
+                        </button>
+                      </div>
+                      <div class="col-5 pl-1">
+                        <button class="btn btn-warning btn-block update-stock-btn shadow-sm" 
+                                style="background: #e77a31; border-color: #e77a31; color: white;"
+                                data-item-id="{{ $item->id }}" 
+                                data-item-name="{{ $item->name }}" 
+                                data-current-stock="{{ $item->current_stock }}"
+                                data-unit="{{ $item->unit }}"
+                                data-default-type="destroyed">
+                          <i class="fa fa-trash"></i> Lost
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                   @endif
                 </div>
               </div>
-              @if(!$isReadOnly)
-              <div class="card-footer bg-transparent p-2">
-                <div class="row">
-                  <div class="col-7 pr-1">
-                    <button class="btn btn-primary btn-block update-stock-btn shadow-sm" 
-                            data-item-id="{{ $item->id }}" 
-                            data-item-name="{{ $item->name }}" 
-                            data-current-stock="{{ $item->current_stock }}"
-                            data-unit="{{ $item->unit }}"
-                            data-default-type="guest_use">
-                      <i class="fa fa-cutlery"></i> Use
-                    </button>
-                  </div>
-                  <div class="col-5 pl-1">
-                    <button class="btn btn-warning btn-block update-stock-btn shadow-sm" 
-                            style="background: #e77a31; border-color: #e77a31; color: white;"
-                            data-item-id="{{ $item->id }}" 
-                            data-item-name="{{ $item->name }}" 
-                            data-current-stock="{{ $item->current_stock }}"
-                            data-unit="{{ $item->unit }}"
-                            data-default-type="destroyed">
-                      <i class="fa fa-trash"></i> Lost
-                    </button>
-                  </div>
-                </div>
-              </div>
-              @endif
+              @endforeach
             </div>
-          </div>
-          @endforeach
+        </div>
 
-          @if($inventoryItems->count() === 0)
-          <div class="col-md-12">
+        <!-- List View Container (Hidden by default) -->
+        <div id="viewListContainer" style="display: none;">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered" id="inventoryTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th width="30">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="selectAllList">
+                                    <label class="custom-control-label" for="selectAllList"></label>
+                                </div>
+                            </th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Current Stock</th>
+                            <th>Min. Level</th>
+                            <th>Status</th>
+                            <th>Expiry</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($inventoryItems as $item)
+                        @php
+                            $stockStatus = $item->current_stock <= 0 ? 'critical' : ($item->current_stock <= $item->minimum_stock ? 'low' : 'normal');
+                            $statusBadge = $stockStatus === 'critical' ? 'badge-danger' : ($stockStatus === 'low' ? 'badge-warning' : 'badge-success');
+                            $statusText = $stockStatus === 'critical' ? 'Out of Stock' : ($stockStatus === 'low' ? 'Low Stock' : 'Healthy');
+                        @endphp
+                        <tr class="inventory-card" 
+                            data-name="{{ strtolower($item->name) }}" 
+                            data-category="{{ strtolower($item->category) }}">
+                            <td>
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input stock-checkbox" id="check-list-{{ $item->id }}" value="{{ $item->id }}" data-category="{{ $item->category }}" data-name="{{ $item->name }}">
+                                    <label class="custom-control-label" for="check-list-{{ $item->id }}"></label>
+                                </div>
+                            </td>
+                            <td>
+                                <strong>{{ $item->name }}</strong>
+                            </td>
+                            <td class="text-capitalize">{{ $item->category_name }}</td>
+                            <td>
+                                <span class="font-weight-bold {{ $stockStatus !== 'normal' ? 'text-danger' : '' }}">
+                                    {{ number_format($item->current_stock, 0) }} {{ $item->unit }}
+                                </span>
+                            </td>
+                            <td>{{ number_format($item->minimum_stock, 0) }} {{ $item->unit }}</td>
+                            <td>
+                                <span class="badge {{ $statusBadge }}">{{ $statusText }}</span>
+                            </td>
+                            <td>
+                                @if($item->expiry_date)
+                                    @php
+                                        $daysToExpiry = now()->diffInDays($item->expiry_date, false);
+                                    @endphp
+                                    <span class="{{ $daysToExpiry <= 10 ? 'text-danger font-weight-bold' : '' }}">
+                                        {{ $item->expiry_date->format('d M, Y') }}
+                                    </span>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-primary update-stock-btn" 
+                                            data-item-id="{{ $item->id }}" 
+                                            data-item-name="{{ $item->name }}" 
+                                            data-current-stock="{{ $item->current_stock }}"
+                                            data-unit="{{ $item->unit }}"
+                                            data-default-type="guest_use"
+                                            title="Use Item">
+                                        <i class="fa fa-cutlery"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-info view-track-btn" 
+                                            data-item-id="{{ $item->id }}" 
+                                            data-item-name="{{ $item->name }}"
+                                            title="View Track">
+                                        <i class="fa fa-history"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-secondary settings-stock-btn" 
+                                            data-item-id="{{ $item->id }}" 
+                                            data-item-name="{{ $item->name }}" 
+                                            data-minimum-stock="{{ $item->minimum_stock }}"
+                                            title="Settings">
+                                        <i class="fa fa-cog"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if($inventoryItems->count() === 0)
+        <div class="col-md-12">
             <div class="alert alert-info text-center py-5">
               <i class="fa fa-info-circle fa-3x d-block mb-3"></i>
               <h3>No Inventory Items Found</h3>
               <p>Items will appear here once they are received from Shopping Lists.</p>
             </div>
-          </div>
-          @endif
         </div>
+        @endif
         
         <div class="d-flex justify-content-center mt-4">
           {{ $inventoryItems->appends(request()->input())->links() }}
@@ -421,41 +527,84 @@
 $(document).ready(function() {
     $('.select2').select2();
 
+    // View Switching
+    $('#btnCardView').on('click', function() {
+        $('#viewCardContainer').show();
+        $('#viewListContainer').hide();
+        $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+        $('#btnListView').removeClass('btn-primary').addClass('btn-outline-primary');
+    });
+
+    $('#btnListView').on('click', function() {
+        $('#viewCardContainer').hide();
+        $('#viewListContainer').show();
+        $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+        $('#btnCardView').removeClass('btn-primary').addClass('btn-outline-primary');
+    });
+
     // Selection Logic
     function updateBulkBar() {
         var checkedCount = $('.stock-checkbox:checked').length;
-        if (checkedCount > 0) {
+        // Since we have items duplicated in both views, we need to count unique IDs
+        var selectedIds = new Set();
+        $('.stock-checkbox:checked').each(function() {
+            selectedIds.add($(this).val());
+        });
+        
+        var uniqueCount = selectedIds.size;
+        
+        if (uniqueCount > 0) {
             $('#bulkActionBar').fadeIn();
-            $('#selectedCount').text(checkedCount);
+            $('#selectedCount').text(uniqueCount);
         } else {
             $('#bulkActionBar').fadeOut();
         }
     }
 
     $(document).on('change', '.stock-checkbox', function() {
-        if ($(this).is(':checked')) {
-            $(this).closest('.inventory-card').find('.card').css('border-color', '#e77a31');
-            $(this).closest('.inventory-card').find('.card').addClass('shadow-lg');
-        } else {
-            $(this).closest('.inventory-card').find('.card').css('border-color', '');
-            $(this).closest('.inventory-card').find('.card').removeClass('shadow-lg');
-        }
+        var itemId = $(this).val();
+        var isChecked = $(this).is(':checked');
+        
+        // Sync checkboxes for the same item in different views
+        $('.stock-checkbox[value="' + itemId + '"]').prop('checked', isChecked);
+        
+        // Update visual state for cards
+        $('.stock-checkbox[value="' + itemId + '"]').each(function() {
+            var $card = $(this).closest('.inventory-card').find('.card');
+            if (isChecked) {
+                $card.css('border-color', '#e77a31').addClass('shadow-lg');
+            } else {
+                $card.css('border-color', '').removeClass('shadow-lg');
+            }
+        });
+        
         updateBulkBar();
     });
 
     $('#selectAllBtn').on('click', function() {
-        var visibleCheckboxes = $('.inventory-card:not([style*="display: none"]) .stock-checkbox');
+        var visibleCheckboxes = $('.inventory-card:visible .stock-checkbox');
         visibleCheckboxes.prop('checked', true).trigger('change');
+    });
+
+    $('#selectAllList').on('change', function() {
+        var isChecked = $(this).is(':checked');
+        $('#viewListContainer .inventory-card:visible .stock-checkbox').prop('checked', isChecked).trigger('change');
     });
 
     $('#clearSelectionBtn').on('click', function() {
         $('.stock-checkbox').prop('checked', false).trigger('change');
+        $('#selectAllList').prop('checked', false);
     });
 
     $('#bulkRequestBtn').on('click', function() {
-        var selectedIds = $('.stock-checkbox:checked').map(function() {
-            return $(this).val();
-        }).get().join(',');
+        var selectedIdsArray = [];
+        var selectedIdsSet = new Set();
+        $('.stock-checkbox:checked').each(function() {
+            selectedIdsSet.add($(this).val());
+        });
+        
+        selectedIdsArray = Array.from(selectedIdsSet);
+        var selectedIds = selectedIdsArray.join(',');
         
         if (selectedIds) {
             window.location.href = "{{ route('chef-master.purchase-requests.create') }}?kitchen_ids=" + selectedIds;
@@ -466,7 +615,6 @@ $(document).ready(function() {
     function filterCards() {
         var searchTerm = $('#inventorySearch').val().toLowerCase().trim();
         var categoryTerm = $('#categoryFilter').val().toLowerCase();
-        var visibleCount = 0;
         
         $('.inventory-card').each(function() {
             var $card = $(this);
@@ -478,11 +626,13 @@ $(document).ready(function() {
             
             if (matchesSearch && matchesCategory) {
                 $card.show();
-                visibleCount++;
             } else {
                 $card.hide();
             }
         });
+        
+        // Count unique visible items by checking only one container
+        var visibleCount = $('#viewCardContainer .inventory-card:visible').length;
         $('#resultCount').text(visibleCount);
     }
 
