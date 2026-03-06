@@ -1300,9 +1300,16 @@ class ReceptionController extends Controller
         $status = $request->status;
         $statusUntil = $request->status_until;
 
-        // Reset status_until if making room available
-        if ($status === 'available') {
+        // Reset status_until if making room available or if not provided
+        if ($status === 'available' || empty($statusUntil)) {
             $statusUntil = null;
+        } else {
+            // Parse for database compatibility if provided
+            try {
+                $statusUntil = \Carbon\Carbon::parse($statusUntil);
+            } catch (\Exception $e) {
+                $statusUntil = null;
+            }
         }
 
         $room->update([

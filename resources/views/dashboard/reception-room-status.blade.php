@@ -1,6 +1,66 @@
 @extends('dashboard.layouts.app')
 
 @section('content')
+<style>
+    /* Status Card Styles */
+    .room-card-status {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none !important;
+        color: #fff !important;
+    }
+    .room-card-status:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+    
+    .room-card-status .card-body {
+        padding: 1.25rem !important;
+    }
+    
+    .room-card-status .text-muted {
+        color: rgba(255,255,255,0.8) !important;
+    }
+    
+    .room-card-status .text-dark {
+        color: #fff !important;
+    }
+    
+    .status-bg-available { background-color: #28a745 !important; }
+    .status-bg-occupied { background-color: #dc3545 !important; }
+    .status-bg-reserved { background-color: #007bff !important; }
+    .status-bg-cleaning { background-color: #ffc107 !important; color: #333 !important; }
+    .status-bg-maintenance { background-color: #6c757d !important; }
+    .status-bg-closed { background-color: #343a40 !important; }
+    
+    .room-card-status.status-bg-cleaning .text-muted,
+    .room-card-status.status-bg-cleaning .text-dark,
+    .room-card-status.status-bg-cleaning .small {
+        color: #333 !important;
+    }
+    
+    .room-card-status .btn-outline-primary, 
+    .room-card-status .btn-outline-danger,
+    .room-card-status .btn-outline-success,
+    .room-card-status .btn-outline-info {
+        background: rgba(255,255,255,0.2);
+        border-color: rgba(255,255,255,0.5);
+        color: #fff !important;
+    }
+    
+    .room-card-status .btn-outline-primary:hover, 
+    .room-card-status .btn-outline-danger:hover,
+    .room-card-status .btn-outline-success:hover,
+    .room-card-status .btn-outline-info:hover {
+        background: rgba(255,255,255,0.4);
+        border-color: #fff;
+    }
+    
+    .room-card-status.status-bg-cleaning .btn-outline-secondary {
+        border-color: #333;
+        color: #333 !important;
+    }
+</style>
+
 <div class="app-title">
   <div>
     <h1><i class="fa fa-th"></i> Room Status & Occupancy</h1>
@@ -186,48 +246,42 @@
                 @foreach($rooms as $room)
                     @php
                         // Determine card class and status text based on logic
-                        $cardClass = 'border-secondary';
-                        $statusBadge = 'badge-secondary';
-                        $statusText = 'Unknown';
-                        $filterStatus = 'all';
-                        $statusIcon = 'fa-question-circle';
+                        $bgClass = 'status-bg-available';
+                        $statusBadge = 'badge-success';
+                        $statusText = 'Available';
+                        $filterStatus = 'available';
+                        $statusIcon = 'fa-check-circle';
 
                         if ($room->status === 'closed') {
-                            $cardClass = 'border-dark';
+                            $bgClass = 'status-bg-closed';
                             $statusBadge = 'badge-dark';
                             $statusText = 'Closed';
                             $filterStatus = 'all';
                             $statusIcon = 'fa-ban';
                         } elseif ($room->status === 'maintenance') {
-                            $cardClass = 'border-danger';
+                            $bgClass = 'status-bg-maintenance';
                             $statusBadge = 'badge-danger';
                             $statusText = 'Maintenance';
                             $filterStatus = 'maintenance';
                             $statusIcon = 'fa-wrench';
                         } elseif ($room->status === 'to_be_cleaned') {
-                            $cardClass = 'border-warning';
+                            $bgClass = 'status-bg-cleaning';
                             $statusBadge = 'badge-warning';
                             $statusText = 'Needs Cleaning';
                             $filterStatus = 'dirty';
                             $statusIcon = 'fa-broom';
                         } elseif ($room->is_occupied) {
-                            $cardClass = 'border-danger';
+                            $bgClass = 'status-bg-occupied';
                             $statusBadge = 'badge-danger';
                             $statusText = 'Occupied';
                             $filterStatus = 'occupied';
                             $statusIcon = 'fa-user';
                         } elseif ($room->has_immediate_booking) {
-                            $cardClass = 'border-primary';
+                            $bgClass = 'status-bg-reserved';
                             $statusBadge = 'badge-primary';
                             $statusText = 'Reserved';
                             $filterStatus = 'reserved';
                             $statusIcon = 'fa-calendar-check-o';
-                        } else {
-                            $cardClass = 'border-success';
-                            $statusBadge = 'badge-success';
-                            $statusText = 'Available';
-                            $filterStatus = 'available';
-                            $statusIcon = 'fa-check-circle';
                         }
 
                         // Check specific flags for urgent indicators
@@ -299,7 +353,7 @@
                          data-status="{{ $filterStatus }}" 
                          data-type="{{ $room->room_type }}" 
                          data-number="{{ $room->room_number }}">
-                        <div class="card shadow-sm {{ $cardClass }}" style="border-width: 0 0 4px 0; overflow: hidden; transition: transform 0.2s;">
+                        <div class="card shadow-sm room-card-status {{ $bgClass }} h-100">
                            <!-- Info Button Overlay -->
                            <div class="position-absolute d-flex flex-column" style="top: 10px; left: 10px; z-index: 10;">
                                 <button type="button" class="btn btn-sm btn-light shadow-sm rounded-circle mb-2" 
