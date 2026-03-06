@@ -1388,4 +1388,49 @@ class BarKeeperController extends Controller
             \Log::error('[BarLowStockSMS] Error: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Wipe all bar inventory data to start fresh
+     */
+    public function wipeInventory(Request $request)
+    {
+        $user = Auth::guard('staff')->user();
+        if (!in_array($user->role, ['bar_keeper', 'manager', 'admin', 'super_admin'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages', 'bar'];
+
+        try {
+            \DB::beginTransaction();
+            \DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+            // 1. Get all bar products
+            $productIds = \App\Models\Product::whereIn('category', $barCategories)->pluck('id')->toArray();
+            $variantIds = \App\Models\ProductVariant::whereIn('product_id', $productIds)->pluck('id')->toArray();
+
+            // 2. Delete related records
+            \App\Models\StockTransfer::whereIn('product_id', $productIds)->delete();
+            \App\Models\StockReceipt::whereIn('product_id', $productIds)->delete();
+            
+            // 3. Delete Variants and Products
+            \App\Models\ProductVariant::whereIn('id', $variantIds)->delete();
+            \App\Models\Product::whereIn('id', $productIds)->delete();
+
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            \DB::commit();
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Bar inventory has been completely reset. You can now start feeding new data.'
+            ]);
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            return response()->json([
+                'success' => false, 
+                'message' => 'Failed to reset inventory: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

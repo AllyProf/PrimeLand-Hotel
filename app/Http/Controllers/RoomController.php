@@ -16,43 +16,81 @@ class RoomController extends Controller
      */
     public function index()
     {
-        $rooms = Room::orderBy('created_at', 'desc')->get();
-        
-        // Calculate statistics
+        $now = now();
+        $today = $now->copy()->startOfDay();
+
+        // Load rooms with their active/upcoming bookings for today (similar logic to ReceptionController)
+        $rooms = Room::with(['bookings' => function($query) use ($today) {
+            $query->whereIn('status', ['confirmed', 'pending'])
+                  ->where('check_in_status', '!=', 'checked_out')
+                  ->whereDate('check_in', '<=', $today)
+                  ->whereDate('check_out', '>=', $today);
+        }])->orderBy('room_number')->get();
+
+        // Calculate current status for each room and build stats
         $stats = [
             'total' => $rooms->count(),
-            'available' => $rooms->where('status', 'available')->count(),
-            'occupied' => $rooms->where('status', 'occupied')->count(),
-            'to_be_cleaned' => $rooms->where('status', 'to_be_cleaned')->count(),
-            'maintenance' => $rooms->where('status', 'maintenance')->count(),
+            'available' => 0,
+            'occupied' => 0,
+            'reserved' => 0,
+            'to_be_cleaned' => 0,
+            'maintenance' => 0,
         ];
-        
-        // Calculate statistics by room type
+
         $statsByType = [];
         $roomTypes = ['Single', 'Double', 'Twins'];
-        
         foreach ($roomTypes as $type) {
-            $typeRooms = $rooms->where('room_type', $type);
-            $statsByType[$type] = [
-                'total' => $typeRooms->count(),
-                'available' => $typeRooms->where('status', 'available')->count(),
-                'occupied' => $typeRooms->where('status', 'occupied')->count(),
-                'to_be_cleaned' => $typeRooms->where('status', 'to_be_cleaned')->count(),
-                'maintenance' => $typeRooms->where('status', 'maintenance')->count(),
-            ];
+            $statsByType[$type] = ['total' => 0, 'available' => 0, 'occupied' => 0, 'reserved' => 0, 'to_be_cleaned' => 0, 'maintenance' => 0];
         }
-        
+
+        $rooms = $rooms->map(function($room) use (&$stats, &$statsByType) {
+            // Determine dynamic status based on bookings today
+            $activeBooking = $room->bookings->where('check_in_status', 'checked_in')->first();
+            $reservedBooking = $room->bookings->where('check_in_status', 'pending')->where('status', '!=', 'cancelled')->first();
+
+            if ($activeBooking) {
+                $room->effective_status = 'occupied';
+                $room->current_guest = $activeBooking->guest_name;
+            } elseif ($reservedBooking) {
+                $room->effective_status = 'reserved';
+                $room->current_guest = $reservedBooking->guest_name;
+            } else {
+                $room->effective_status = $room->status;
+                $room->current_guest = null;
+            }
+
+            // Update stats
+            $statusKey = $room->effective_status;
+            if (isset($stats[$statusKey])) {
+                $stats[$statusKey]++;
+            } else {
+                $stats['available']++; // Fallback
+            }
+
+            $type = $room->room_type;
+            if (isset($statsByType[$type])) {
+                $statsByType[$type]['total']++;
+                if (isset($statsByType[$type][$statusKey])) {
+                    $statsByType[$type][$statusKey]++;
+                } else {
+                    $statsByType[$type]['available']++;
+                }
+            }
+
+            return $room;
+        });
+
         // Get exchange rate from API
         $currencyService = new CurrencyExchangeService();
         $exchangeRate = $currencyService->getUsdToTshRate();
-        
+
         // Detect user role
         $user = auth()->user();
         $userRole = $user->role ?? 'manager';
         $role = $userRole === 'super_admin' ? 'super_admin' : 'manager';
         $userName = $user->name ?? 'Manager';
         $userRoleDisplay = $userRole === 'super_admin' ? 'Super Administrator' : 'Manager';
-        
+
         return view('dashboard.rooms-list', [
             'rooms' => $rooms,
             'stats' => $stats,

@@ -15,34 +15,16 @@
 
 <!-- Statistics Cards -->
 <div class="row mb-3">
-  <div class="col-md-3 col-sm-6 mb-3">
+  <div class="col-md-2 col-sm-4 mb-3">
     <div class="widget-small info coloured-icon">
-      <i class="icon fa fa-bed fa-2x"></i>
+      <i class="icon fa fa-calendar-check-o fa-2x"></i>
       <div class="info">
-        <h4>Total Rooms</h4>
-        <p><b>{{ $stats['total'] ?? 0 }}</b></p>
+        <h4>Reserved</h4>
+        <p><b>{{ $stats['reserved'] ?? 0 }}</b></p>
       </div>
     </div>
   </div>
-  <div class="col-md-3 col-sm-6 mb-3">
-    <div class="widget-small success coloured-icon">
-      <i class="icon fa fa-check-circle fa-2x"></i>
-      <div class="info">
-        <h4>Available</h4>
-        <p><b>{{ $stats['available'] ?? 0 }}</b></p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 col-sm-6 mb-3">
-    <div class="widget-small danger coloured-icon">
-      <i class="icon fa fa-user fa-2x"></i>
-      <div class="info">
-        <h4>Occupied</h4>
-        <p><b>{{ $stats['occupied'] ?? 0 }}</b></p>
-      </div>
-    </div>
-  </div>
-  <div class="col-md-3 col-sm-6 mb-3">
+  <div class="col-md-2 col-sm-4 mb-3">
     <div class="widget-small warning coloured-icon">
       <i class="icon fa fa-broom fa-2x"></i>
       <div class="info">
@@ -87,6 +69,9 @@
                       <small>
                         <span class="badge badge-success">{{ $typeStats['available'] }} available</span>
                         <span class="badge badge-danger">{{ $typeStats['occupied'] }} occupied</span>
+                        @if($typeStats['reserved'] > 0)
+                          <span class="badge badge-info">{{ $typeStats['reserved'] }} reserved</span>
+                        @endif
                         @if($typeStats['to_be_cleaned'] > 0)
                           <span class="badge badge-warning">{{ $typeStats['to_be_cleaned'] }} to clean</span>
                         @endif
@@ -287,16 +272,25 @@
                 </span>
               </td>
               <td>
-                @if($room->status === 'available')
+                @php $status = $room->effective_status ?? $room->status; @endphp
+                @if($status === 'available')
                   <span class="badge badge-success">Available</span>
-                @elseif($room->status === 'occupied')
+                @elseif($status === 'occupied')
                   <span class="badge badge-danger">Occupied</span>
-                @elseif($room->status === 'to_be_cleaned')
+                  @if($room->current_guest)
+                    <div class="small text-muted mt-1"><i class="fa fa-user"></i> {{ $room->current_guest }}</div>
+                  @endif
+                @elseif($status === 'reserved')
+                  <span class="badge badge-info">Reserved</span>
+                  @if($room->current_guest)
+                    <div class="small text-muted mt-1"><i class="fa fa-calendar-check-o"></i> {{ $room->current_guest }}</div>
+                  @endif
+                @elseif($status === 'to_be_cleaned')
                   <span class="badge badge-warning">To Be Cleaned</span>
-                @elseif($room->status === 'maintenance')
+                @elseif($status === 'maintenance')
                   <span class="badge badge-secondary">Maintenance</span>
                 @else
-                  <span class="badge badge-secondary">{{ ucfirst($room->status) }}</span>
+                  <span class="badge badge-secondary">{{ ucfirst($status) }}</span>
                 @endif
               </td>
               <td>{{ $room->capacity }} Guest(s)</td>

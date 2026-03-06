@@ -829,6 +829,7 @@ Route::prefix('bar-keeper')->group(function () {
         Route::post('/stock/update-minimum/{variant}', [\App\Http\Controllers\BarKeeperController::class, 'updateMinimumStock'])->name('bar-keeper.stock.update-minimum');
         Route::post('/stock/update-prices/{variant}', [\App\Http\Controllers\BarKeeperController::class, 'updatePrices'])->name('bar-keeper.stock.update-prices');
         Route::get('/stock/{variant}/usage-track', [\App\Http\Controllers\BarKeeperController::class, 'getBarItemUsageTrack'])->name('bar-keeper.stock.usage-track');
+        Route::post('/stock/wipe-all', [\App\Http\Controllers\BarKeeperController::class, 'wipeInventory'])->name('bar-keeper.stock.wipe-all');
         
         // Guest Orders
         Route::get('/orders', [\App\Http\Controllers\BarKeeperController::class, 'completedOrders'])->name('bar-keeper.orders.index');
