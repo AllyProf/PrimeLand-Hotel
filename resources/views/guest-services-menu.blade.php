@@ -436,10 +436,10 @@
     <!-- Navigation -->
     <div class="sticky-wrapper">
         <nav class="main-nav">
-            <div class="nav-link-btn active" onclick="navTo('food', this)" data-en="🍳 FOOD MENU" data-sw="🍳 ORODHA YA CHAKULA">🍳 FOOD MENU</div>
+            <div class="nav-link-btn active" onclick="navTo('services', this)" data-en="🛎️ SERVICES" data-sw="🛎️ HUDUMA">🛎️ SERVICES</div>
+            <div class="nav-link-btn" onclick="navTo('food', this)" data-en="🍳 FOOD MENU" data-sw="🍳 ORODHA YA CHAKULA">🍳 FOOD MENU</div>
             <div class="nav-link-btn" onclick="navTo('drinks', this)" data-en="🍷 DRINKS" data-sw="🍷 VINYWAJI">🍷 DRINKS</div>
-            <div class="nav-link-btn" onclick="navTo('discover', this)" data-en="⛰️ DISCOVER" data-sw="⛰️ TEMBELEA">⛰️ DISCOVER</div>
-            <div class="nav-link-btn" onclick="navTo('services', this)" data-en="🛎️ SERVICES" data-sw="🛎️ HUDUMA">🛎️ SERVICES</div>
+            <div class="nav-link-btn" onclick="navTo('discover', this)" data-en="⛰️ DISCOVER KILIMANJARO" data-sw="⛰️ TEMBELEA KILIMANJARO">⛰️ DISCOVER KILIMANJARO</div>
             <div class="nav-link-btn" onclick="navTo('info', this)" data-en="ℹ️ INFO" data-sw="ℹ️ TAARIFA">ℹ️ INFO</div>
         </nav>
 
@@ -452,7 +452,7 @@
     </div>
 
     <!-- FOOD -->
-    <div id="page-food" class="content-container active">
+    <div id="page-food" class="content-container">
         <div class="category-tabs" id="foodCatTabs">
             <div class="cat-pill active" data-cat="all" onclick="tabFilter('food','all',this)" data-en="All" data-sw="Vyote">All</div>
             @foreach($foodCategories as $cat)
@@ -648,50 +648,156 @@
     </div>
 
     <!-- SERVICES -->
-    <div id="page-services" class="content-container">
-        <div class="info-card">
-            <div class="info-header" data-en="Premium Facilities" data-sw="Huduma Bora">Premium Facilities</div>
-            
-            <div class="item-grid">
-                @foreach($services->filter(function($s) { return !in_array(strtolower($s->service_name), ['ceremony', 'ceremory']); }) as $svc)
-                    @php
-                        $icon = '⭐';
-                        $lowName = strtolower($svc->service_name);
-                        if(str_contains($lowName, 'swim')) $icon = '🏊';
-                        elseif(str_contains($lowName, 'laundry')) $icon = '👕';
-                        elseif(str_contains($lowName, 'wifi')) $icon = '📶';
-                        elseif(str_contains($lowName, 'parking')) $icon = '🚗';
-                        elseif(str_contains($lowName, 'gym')) $icon = '🏋️';
-                        elseif(str_contains($lowName, 'spa')) $icon = '🧖';
-                        elseif(str_contains($lowName, 'room')) $icon = '🛏️';
+    <div id="page-services" class="content-container active">
+        <div class="info-card mb-4 text-center pb-4 border-0 bg-transparent shadow-none" style="padding-top: 10px;">
+            <div class="splash-icon mb-2 position-relative d-inline-block text-primary" style="font-size:38px; animation: none;">🏨</div>
+            <h4 class="font-weight-bold" data-en="Welcome to Primeland Hotel!" data-sw="Karibu Primeland Hotel!">Welcome to Primeland Hotel!</h4>
+            <p class="text-muted small px-3 mt-2" data-en="We are delighted to have you onboard. Here is a quick information about our hotel to help you navigate smoothly on your stay with us:" data-sw="Tunafurahi kuwa nawe. Hapa kuna maelezo mafupi kuhusu hoteli yetu ili kukusaidia katika kukaa kwako:">We are delighted to have you onboard. Here is a quick information about our hotel to help you navigate smoothly on your stay with us:</p>
+        </div>
 
-                        // Use standard pricing
-                        $displayPrice = $svc->price_tanzanian;
-                    @endphp
-                    <div class="service-card" onclick="requestItem('{{ addslashes($svc->service_name) }}')">
-                        <div class="service-icon-box">{{ $icon }}</div>
-                        <div class="service-name">{{ $svc->service_name }}</div>
-                        <div class="service-price">
-                             @if($displayPrice > 0)
-                                {!! formatPrice($displayPrice, $usdRate) !!}
-                             @else 
-                                <span data-en="Complimentary" data-sw="Bure">Complimentary</span>
-                             @endif
-                        </div>
-                        @if($lowName === 'swimming')
-                            <div style="font-size: 10px; color: #28a745; font-weight: bold; margin-top: 5px; background: rgba(40, 167, 69, 0.1); padding: 3px 8px; border-radius: 10px;" data-en="Free for Internal Guests" data-sw="Bure kwa wageni wa hotelini">Free for Internal Guests</div>
-                        @endif
-                    </div>
-                @endforeach
+        <div class="info-header mb-3" data-en="OUR SERVICES" data-sw="HUDUMA ZETU">OUR SERVICES</div>
 
-                <!-- Static Laundry Service -->
-                <div class="service-card" onclick="requestItem('Laundry Services')">
-                    <div class="service-icon-box">👕</div>
-                    <div class="service-name">Laundry Services</div>
-                    <div class="service-price">
-                        <span data-en="Provided upon request" data-sw="Inatolewa ukiomba">Provided upon request</span>
+        <div class="discover-card">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/executive suite.jpg') }}'); height: 150px;">
+                <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
+                    <div>
+                        <span class="discover-tag"><i class="fa fa-bed"></i> Comfort</span>
+                        <h5 class="discover-title" data-en="Accommodation" data-sw="Malazi">Accommodation</h5>
                     </div>
                 </div>
+            </div>
+            <div class="discover-body pt-3 pb-4">
+                <p class="discover-text mt-0 text-white font-weight-bold" data-en="Welcome to our accommodation service." data-sw="Karibu kwenye huduma yetu ya malazi.">Welcome to our accommodation service.</p>
+                <div class="text-muted small" style="line-height: 1.7;">
+                    <ul class="pl-3 mb-0">
+                        <li data-en="Check-in time is 1400hrs; check out time is 10:00am">Check-in time is 1400hrs; check out time is 10:00am</li>
+                        <li class="mt-1" data-en="Late checkout depends on availability and may be subject to an extra fee of 50% of room rate. Kindly inquire with front office receptionist.">Late checkout depends on availability and may be subject to an extra fee of 50% of room rate. Kindly inquire with front office receptionist.</li>
+                        <li class="mt-1" data-en="Late checkout later than 1600hrs is subject to a full room rate.">Late checkout later than 1600hrs is subject to a full room rate.</li>
+                        <li class="mt-1" data-en="Maximum guests occupancy per room is 2 adults.">Maximum guests occupancy per room is 2 adults.</li>
+                        <li class="mt-1" data-en="All our rooms are non-smoking. We kindly request you to use the public areas for smoking to ensure comfort of fellow guests.">All our rooms are non-smoking. We kindly request you to use the public areas for smoking to ensure comfort of fellow guests.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="discover-card">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/service-02.jpg') }}'); height: 150px;">
+                <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
+                    <div>
+                        <span class="discover-tag"><i class="fa fa-phone"></i> Support</span>
+                        <h5 class="discover-title" data-en="24/7 Front Desk Service" data-sw="Huduma ya Mapokezi 24/7">24/7 Front Desk Service</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="discover-body pt-3 pb-4">
+                <p class="discover-text mt-0 text-white font-weight-bold" data-en="Our front office reception is open to check in/out guests through the day." data-sw="Mapokezi yetu yako wazi siku nzima kwa kuingiza/kutoa wageni.">Our front office reception is open to check in/out guests through the day.</p>
+                <p class="text-muted small mt-2 mb-3" data-en="Please use the following telephone extension to make inquiry for specific service:" data-sw="Tafadhali tumia namba zifuatazo kuulizia huduma maalum:">Please use the following telephone extension to make inquiry for specific service:</p>
+                
+                <div class="row text-center mx-0 rounded" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);">
+                    <div class="col-4 p-2 border-right" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <small class="d-block text-muted font-weight-bold mb-1" data-en="Reception" data-sw="Mapokezi">Reception</small>
+                        <b class="text-primary" style="font-size: 16px;">601</b>
+                    </div>
+                    <div class="col-4 p-2 border-right" style="border-color: rgba(255,255,255,0.1) !important;">
+                        <small class="d-block text-muted font-weight-bold mb-1" data-en="Kitchen" data-sw="Jikoni">Kitchen</small>
+                        <b class="text-primary" style="font-size: 16px;">601</b>
+                    </div>
+                    <div class="col-4 p-2">
+                        <small class="d-block text-muted font-weight-bold mb-1" data-en="Bar" data-sw="Baa">Bar</small>
+                        <b class="text-primary" style="font-size: 16px;">619</b>
+                    </div>
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted"><span data-en="Laundry:" data-sw="Dobi:">Laundry:</span> <b class="text-white">601</b></small>
+                </div>
+            </div>
+        </div>
+
+        <div class="discover-card">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/enjoy-your-day-01.jpg') }}'); height: 130px;">
+                <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
+                    <div>
+                        <span class="discover-tag"><i class="fa fa-life-ring"></i> Leisure</span>
+                        <h5 class="discover-title" data-en="Swimming Pool" data-sw="Bwawa la Kuogelea">Swimming Pool</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="discover-body pt-3 pb-3">
+                <p class="discover-text my-0 text-white font-weight-bold" data-en="Open daily free of charge for in-house guests from 6:00am - 6:30pm" data-sw="Wazi kila siku bure kwa wageni wa ndani kuanzia 6:00 asubuhi hadi 6:30 jioni">Open daily free of charge for in-house guests from 6:00am - 6:30pm</p>
+            </div>
+        </div>
+
+        <div class="discover-card">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/service-o1.jpg') }}'); height: 130px;">
+                <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
+                    <div>
+                        <span class="discover-tag"><i class="fa fa-cutlery"></i> Dining</span>
+                        <h5 class="discover-title" data-en="Restaurant & Pool Bar" data-sw="Mkahawa na Baa">Restaurant & Pool Bar</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="discover-body pt-3 pb-4">
+                <p class="discover-text mt-0 mb-2 text-white font-weight-bold" data-en="Open for service from 07:00 to 2100hrs" data-sw="Wazi kuanzia saa 07:00 hadi 21:00">Open for service from 07:00 to 2100hrs</p>
+                <p class="text-muted small my-0" data-en="Kindly navigate to our Food & Drinks section to explore available options to order." data-sw="Tafadhali nenda kwenye sehemu yetu ya Chakula na Vinywaji ili kuchunguza chaguzi zinazopatikana ili kuagiza.">Kindly navigate to our Food Menu section to explore available options to order.</p>
+                <button class="btn btn-sm btn-outline-primary mt-3 font-weight-bold w-100" onclick="navTo('food', document.querySelectorAll('.nav-link-btn')[1])"><i class="fa fa-arrow-right mr-1"></i> View Menu</button>
+            </div>
+        </div>
+
+        <div class="discover-card">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/room-01.jpg') }}'); height: 130px;">
+                <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
+                    <div>
+                        <span class="discover-tag"><i class="fa fa-wifi"></i> Connectivity</span>
+                        <h5 class="discover-title" data-en="Free WI-FI" data-sw="WI-FI Bure">Free WI-FI</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="discover-body pt-3 pb-3">
+                <p class="discover-text my-0 text-white font-weight-bold" data-en="Enjoy high speed free WI-FI, the passkey is on your room card." data-sw="Furahia WI-FI ya kasi bila malipo, nenosiri liko kwenye kadi yako ya chumba.">Enjoy high speed free WI-FI, the passkey is on your room card.</p>
+            </div>
+        </div>
+
+        <div class="discover-card">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/room-03.jpg') }}'); height: 130px;">
+                <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
+                    <div>
+                        <span class="discover-tag"><i class="fa fa-shirtsinbulk"></i> Care</span>
+                        <h5 class="discover-title" data-en="Laundry Service" data-sw="Huduma ya Dobi">Laundry Service</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="discover-body pt-3 pb-3">
+                <p class="discover-text my-0 text-white font-weight-bold mb-2" data-en="Laundry service is available daily from 08:00hrs to 1600hrs" data-sw="Huduma ya dobi inapatikana kila siku kutoka 08:00 hadi 16:00">Laundry service is available daily from 08:00hrs to 1600hrs</p>
+                <p class="text-muted small my-0" data-en="Please fill in the laundry list in your room." data-sw="Tafadhali jaza orodha ya dobi chumbani kwako.">Please fill in the laundry list in your room.</p>
+            </div>
+        </div>
+
+        <div class="discover-card">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/service-03.jpg') }}'); height: 130px;">
+                <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
+                    <div>
+                        <span class="discover-tag"><i class="fa fa-car"></i> Transport</span>
+                        <h5 class="discover-title" data-en="Airport Shuttle" data-sw="Usafiri wa Uwanja wa Ndege">Airport Shuttle</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="discover-body pt-3 pb-4">
+                <p class="discover-text mt-0 mb-2 text-white font-weight-bold" data-en="Available at an extra fee of 50USD / 125,000TSh per vehicle per trip (maximum passage 4 pax)." data-sw="Inapatikana kwa ada ya ziada ya USD 50 / 125,000TSh kwa kila gari kwa safari (kiwango cha juu abiria 4).">Available at an extra fee of 50USD / 125,000TSh per vehicle per trip (maximum passage 4 pax).</p>
+                <p class="text-muted small my-0" data-en="Kindly communicate with receptionist for reservations." data-sw="Tafadhali wasiliana na mapokezi kwa ajili ya uwekaji nafasi.">Kindly communicate with receptionist for reservations.</p>
+            </div>
+        </div>
+
+        <div class="discover-card mb-2">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/room-02.jpg') }}'); height: 130px;">
+                <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
+                    <div>
+                        <span class="discover-tag"><i class="fa fa-shield"></i> Safety & Security</span>
+                        <h5 class="discover-title" data-en="24/7 Security" data-sw="Ulinzi 24/7">24/7 Security</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="discover-body pt-3 pb-4">
+                <p class="discover-text my-0 text-white font-weight-bold" data-en="At Primeland hotel, we put high regard about safety and security of our guests." data-sw="Katika hoteli ya Primeland, tunazingatia sana usalama na ulinzi wa wageni wetu.">At Primeland hotel, we put high regard about safety and security of our guests.</p>
             </div>
         </div>
     </div>
@@ -786,7 +892,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        let curPage = 'food', curLang = 'en';
+        let curPage = 'services', curLang = 'en';
 
         function setLang(lang) {
             curLang = lang;
