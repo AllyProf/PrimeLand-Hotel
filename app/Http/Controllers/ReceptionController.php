@@ -1137,7 +1137,7 @@ class ReceptionController extends Controller
             'total' => $rooms->count(),
             'available' => $rooms->filter(function($room) {
                 // Room is available if not occupied, doesn't have immediate bookings, AND not in maintenance or needing cleaning
-                return !in_array($room->status, ['maintenance', 'to_be_cleaned']) && 
+                return !in_array($room->status, ['maintenance', 'to_be_cleaned', 'closed']) && 
                        !$room->is_occupied && 
                        !$room->has_immediate_booking;
             })->count(),

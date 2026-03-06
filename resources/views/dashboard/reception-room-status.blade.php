@@ -451,6 +451,10 @@
                                                 @endif
                                             </div>
                                         </div>
+                                    @elseif($room->status === 'closed')
+                                         <div class="small text-dark font-weight-bold">
+                                            <i class="fa fa-ban"></i> Room Closed
+                                        </div>
                                     @else
                                         <div class="small text-success">
                                             <i class="fa fa-check-circle"></i> Ready for booking
