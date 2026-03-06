@@ -448,19 +448,16 @@
                 <div class="row">
                   @foreach($drinks as $drink)
                   @php
+                    // Skip out of stock products
+                    if ($drink->is_product && $drink->current_stock <= 0) continue;
+                    
                     $catClass = strtolower($drink->category ?? 'other');
                   @endphp
                   <div class="col-6 mb-3 pos-item-card" 
                        data-name="{{ strtolower($drink->name) }}" 
                        data-category="{{ $catClass }}">
-                    <div class="card h-100 border-0 shadow-sm rounded-lg transition-all {{ $drink->current_stock <= 0 && $drink->is_product ? 'opacity-75' : '' }}" 
+                    <div class="card h-100 border-0 shadow-sm rounded-lg transition-all" 
                          style="background: #fff; overflow: hidden; position: relative; border: 1px solid #eee !important;">
-                      
-                      @if($drink->current_stock <= 0 && $drink->is_product)
-                      <div class="out-of-stock-overlay d-flex align-items-center justify-content-center" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.7); z-index: 5;">
-                        <span class="badge badge-danger px-3 py-2 shadow-sm">OUT OF STOCK</span>
-                      </div>
-                      @endif
 
                       <div class="card-body p-3 d-flex flex-column h-100">
                         <div class="bg-light rounded p-2 mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
