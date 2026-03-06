@@ -376,13 +376,13 @@
                            </div>
 
                             <!-- Room Image Section -->
-                            <div class="position-relative" style="height: 160px; overflow: hidden; background-color: #f8f9fa;">
+                            <div class="position-relative" style="height: 160px; overflow: hidden; background-color: rgba(255,255,255,0.05);">
                                 @if($bgImage)
                                     <img src="{{ $bgImage }}" alt="Room {{ $room->room_number }}" class="w-100 h-100" style="object-fit: cover; transition: transform 0.5s;">
                                 @else
-                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted">
-                                        <i class="fa fa-bed fa-4x mb-2" style="opacity: 0.3;"></i>
-                                        <span class="small" style="font-size: 10px; letter-spacing: 1px; opacity: 0.5;">NO IMAGE</span>
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column" style="color: rgba(255,255,255,0.7) !important;">
+                                        <i class="fa fa-bed fa-4x mb-2" style="opacity: 0.5;"></i>
+                                        <span class="small font-weight-bold" style="font-size: 10px; letter-spacing: 2px; opacity: 0.8;">PRIME LAND HOTEL</span>
                                     </div>
                                 @endif
                                 <div class="position-absolute" style="top: 10px; right: 10px;">
@@ -390,7 +390,7 @@
                                         <i class="fa {{ $statusIcon }}"></i> {{ $statusText }}
                                     </span>
                                 </div>
-                                <div class="position-absolute" style="bottom: 0px; left: 0px; background: rgba(0,0,0,0.7); width: 100%; padding: 5px 15px;">
+                                <div class="position-absolute" style="bottom: 0px; left: 0px; background: {{ $bgImage ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.2)' }}; width: 100%; padding: 8px 15px;">
                                     <h4 class="text-white mb-0">
                                         <i class="fa fa-bed mr-2"></i>{{ $room->room_number }} 
                                         <span class="badge badge-light ml-2" style="font-size: 0.6em; vertical-align: middle;">
