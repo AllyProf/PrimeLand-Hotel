@@ -651,47 +651,19 @@ const Toast = Swal.mixin({
     }
 });
 
-
-function completeOrder(orderId, paymentMethod = 'room_charge') {
-    let title = paymentMethod === 'cash' ? "Record Cash Payment" : "Charge to Room";
-    let text = paymentMethod === 'cash' ? "Record this walk-in sale as PAID (Cash)?" : "Mark this order as served and charge to the ROOM bill?";
-    let btnColor = paymentMethod === 'cash' ? "#28a745" : "#007bff";
-    
-    Swal.fire({
-        title: title,
-        text: text,
-        icon: paymentMethod === 'cash' ? "success" : "info",
-        showCancelButton: true,
-        confirmButtonColor: btnColor,
-        cancelButtonColor: "#6c757d",
-        confirmButtonText: "Yes, Proceed",
-        cancelButtonText: "Cancel"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            callApi(`{{ route("bar-keeper.orders.complete", ":id") }}`.replace(':id', orderId), 'POST', { payment_method: paymentMethod });
-        }
-    });
-}
-
 // POS Logic
 let posCart = [];
-
-
 
 function addToPosCart(name, price, pid, vid, type, foodId = null, image = null, unit = 'pic', currentStock = null, servingsPerPic = 1) {
     const key = foodId ? foodId : `${pid}_${vid}_${unit}`;
     const existing = posCart.find(item => item.key === key);
     
-    // Calculate how much we're trying to add
     let newQty = existing ? existing.qty + 1 : 1;
-    
-    // Convert to bottles if selling by serving/glass
     let bottlesNeeded = newQty;
     if (unit === 'serving' && servingsPerPic > 0) {
         bottlesNeeded = newQty / servingsPerPic;
     }
     
-    // Check stock availability (only for products with stock tracking)
     if (currentStock !== null && currentStock > 0 && bottlesNeeded > currentStock) {
         const maxAllowed = unit === 'serving' ? Math.floor(currentStock * servingsPerPic) : Math.floor(currentStock);
         Swal.fire({
@@ -735,14 +707,11 @@ function updatePosQty(key, delta) {
     const item = posCart.find(i => i.key === key);
     if (item) {
         const newQty = item.qty + delta;
-        
-        // If increasing quantity, check stock
         if (delta > 0 && item.currentStock !== null && item.currentStock !== undefined) {
             let bottlesNeeded = newQty;
             if (item.unit === 'serving' && item.servingsPerPic > 0) {
                 bottlesNeeded = newQty / item.servingsPerPic;
             }
-            
             if (bottlesNeeded > item.currentStock) {
                 const maxAllowed = item.unit === 'serving' ? Math.floor(item.currentStock * item.servingsPerPic) : Math.floor(item.currentStock);
                 Swal.fire({
@@ -756,7 +725,6 @@ function updatePosQty(key, delta) {
                 return;
             }
         }
-        
         item.qty = newQty;
         if (item.qty <= 0) removeFromPosCart(key);
         else renderPosCart();
@@ -814,8 +782,6 @@ let currentCategory = 'all';
 
 function filterByCategory(category, btn) {
     currentCategory = category;
-    
-    // Update UI active state
     const tabs = document.getElementById('posCategoryTabs').querySelectorAll('button');
     tabs.forEach(t => {
         t.classList.remove('btn-primary', 'active');
@@ -823,30 +789,21 @@ function filterByCategory(category, btn) {
     });
     btn.classList.remove('btn-outline-primary');
     btn.classList.add('btn-primary', 'active');
-    
     filterPosItems();
 }
 
 function filterPosItems() {
     const query = document.getElementById('itemSearch').value.toLowerCase();
     const cards = document.querySelectorAll('.pos-item-card');
-    
     cards.forEach(card => {
         const name = card.dataset.name;
         const category = card.dataset.category;
-        
         const matchesQuery = name.includes(query);
         const matchesCategory = currentCategory === 'all' || category === currentCategory;
-        
-        if (matchesQuery && matchesCategory) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
+        card.style.display = (matchesQuery && matchesCategory) ? '' : 'none';
     });
 }
 
-// Global state
 let currentCustomerType = 'walk-in';
 window.currentDayServiceId = null;
 
@@ -861,11 +818,9 @@ function setCustomerType(type) {
     const btnCeremony = document.getElementById('btnTypeCeremony');
     
     [btnWalkIn, btnResident, btnCeremony].forEach(b => { if(b) { b.classList.remove('btn-primary', 'active'); b.classList.add('btn-outline-primary'); } });
-    
     const activeBtn = type === 'resident' ? btnResident : type === 'ceremony' ? btnCeremony : btnWalkIn;
     if (activeBtn) { activeBtn.classList.remove('btn-outline-primary'); activeBtn.classList.add('btn-primary', 'active'); }
     
-    // Update button label
     const confirmBtn = document.getElementById('btnConfirmSale');
     if (type === 'ceremony') {
         confirmBtn.innerHTML = '<i class="fa fa-check-circle mr-1"></i> <strong>RECORD CEREMONY DRINKS</strong>';
@@ -881,7 +836,6 @@ function openWalkInModal(guestName = null, existingName = null, dayServiceId = n
     renderPosCart();
     window.currentDayServiceId = dayServiceId;
     
-    // Reset modal state
     document.getElementById('walkInGuestName').value = '';
     document.getElementById('posResidentBooking').value = '';
     document.getElementById('itemSearch').value = '';
@@ -890,12 +844,10 @@ function openWalkInModal(guestName = null, existingName = null, dayServiceId = n
     const titleEl = document.getElementById('posModalTitle');
     
     if (dayServiceId) {
-        // Ceremony mode
         setCustomerType('ceremony');
         document.getElementById('ceremonyGuestLabel').textContent = existingName || 'Ceremony Guest';
         titleEl.innerHTML = '<i class="fa fa-birthday-cake mr-2"></i> Add Drinks: ' + (existingName || 'Ceremony');
     } else if (existingName && !guestName) {
-        // Pre-fill name for add-item flow
         setCustomerType('walk-in');
         document.getElementById('walkInGuestName').value = existingName;
         titleEl.innerHTML = '<i class="fa fa-shopping-cart mr-2"></i> Add Drinks: ' + existingName;
@@ -904,7 +856,6 @@ function openWalkInModal(guestName = null, existingName = null, dayServiceId = n
         if (guestName) document.getElementById('walkInGuestName').value = guestName;
         titleEl.innerHTML = '<i class="fa fa-shopping-cart mr-2"></i> New Walk-in Order';
     }
-    
     $('#walkInModal').modal('show');
 }
 
@@ -928,12 +879,10 @@ async function processWalkInCheckout() {
         Swal.fire("Error", "No ceremony selected.", "error");
         return;
     }
-
     if (!isWalkIn && !isCeremony && !residentBookingId) {
         Swal.fire("Incomplete", "Please select a resident room/guest.", "warning");
         return;
     }
-
     if (isCeremony) {
         guestName = document.getElementById('ceremonyGuestLabel').textContent || 'Ceremony Guest';
     } else if (!guestName) {
@@ -951,10 +900,7 @@ async function processWalkInCheckout() {
     if (!confirm.isConfirmed) return;
 
     $('#walkInModal').modal('hide');
-    Swal.fire({
-        title: 'Processing...',
-        didOpen: () => { Swal.showLoading(); }
-    });
+    Swal.fire({ title: 'Processing...', didOpen: () => { Swal.showLoading(); } });
     
     let successCount = 0;
     for (const item of posCart) {
@@ -996,13 +942,7 @@ async function processWalkInCheckout() {
     }
 
     if (successCount === posCart.length) {
-        await Swal.fire({
-            title: "Success!",
-            text: "Walk-in sale recorded successfully!",
-            icon: "success",
-            timer: 2000,
-            showConfirmButton: false
-        });
+        await Swal.fire({ title: "Success!", text: "Walk-in sale recorded successfully!", icon: "success", timer: 2000, showConfirmButton: false });
         location.reload();
     } else {
         await Swal.fire("Completed with issues", `Only ${successCount} of ${posCart.length} items were recorded.`, "warning");
@@ -1016,33 +956,18 @@ function openPaymentModal(orderId, amount, isWalkIn = 0, guestName = 'Guest', is
     
     const methodSelect = document.getElementById('paymentMethod');
     const roomChargeOption = methodSelect.querySelector('option[value="room_charge"]');
-    
-    // Reset options visibility
     Array.from(methodSelect.options).forEach(opt => opt.style.display = 'block');
 
     if (isCompany === 1) {
-        // FORCE ROOM CHARGE
         methodSelect.value = 'room_charge';
-        // Hide others
-        Array.from(methodSelect.options).forEach(opt => {
-            if (opt.value !== 'room_charge') opt.style.display = 'none';
-        });
-        
-        Swal.fire({
-            title: "Company Responsible",
-            text: `Mandatory Room Charge for ${guestName}.`,
-            icon: "info",
-            timer: 2000,
-            showConfirmButton: false
-        });
+        Array.from(methodSelect.options).forEach(opt => { if (opt.value !== 'room_charge') opt.style.display = 'none'; });
+        Swal.fire({ title: "Company Responsible", text: `Mandatory Room Charge for ${guestName}.`, icon: "info", timer: 2000, showConfirmButton: false });
     } else if (isWalkIn) {
         if (roomChargeOption) roomChargeOption.style.display = 'none';
-        if (methodSelect.value === 'room_charge') methodSelect.value = 'cash';
-        else methodSelect.value = 'cash';
+        methodSelect.value = 'cash';
     } else {
         methodSelect.value = 'cash';
     }
-
     document.getElementById('paymentReference').value = '';
     toggleRefField();
     $('#paymentModal').modal('show');
@@ -1051,11 +976,7 @@ function openPaymentModal(orderId, amount, isWalkIn = 0, guestName = 'Guest', is
 function toggleRefField() {
     const method = document.getElementById('paymentMethod').value;
     const container = document.getElementById('refFieldContainer');
-    if (method === 'cash' || method === 'room_charge') { // Room charge also doesn't need a ref
-        container.style.display = 'none';
-    } else {
-        container.style.display = 'block';
-    }
+    container.style.display = (method === 'cash' || method === 'room_charge') ? 'none' : 'block';
 }
 
 function submitPayment() {
@@ -1067,14 +988,10 @@ function submitPayment() {
         Swal.fire("Missing Info", "Please enter a reference number for " + method.replace('_', ' ').toUpperCase(), "warning");
         return;
     }
-    
     $('#paymentModal').modal('hide');
-    
-    // If it's a room charge, use the legacy completeOrder
     if (method === 'room_charge') {
         completeOrder(orderId, method, reference);
     } else {
-        // Use the new POS settlement route
         settlePOSPayment(orderId, method, reference);
     }
 }
@@ -1097,18 +1014,12 @@ function settlePOSPayment(orderId, method, reference = '') {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    payment_method: method,
-                    payment_reference: reference
-                })
+                body: JSON.stringify({ payment_method: method, payment_reference: reference })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Toast.fire({
-                        icon: 'success',
-                        title: data.message
-                    });
+                    Toast.fire({ icon: 'success', title: data.message });
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     Swal.fire("Error!", data.message, "error");
@@ -1122,8 +1033,6 @@ function settlePOSPayment(orderId, method, reference = '') {
     });
 }
 
-
-
 function serveOrder(orderId, itemName) {
     Swal.fire({
         title: "Mark as Served?",
@@ -1136,11 +1045,7 @@ function serveOrder(orderId, itemName) {
         cancelButtonText: "Cancel"
     }).then((result) => {
         if (result.isConfirmed) {
-            Toast.fire({
-                icon: 'info',
-                title: 'Updating status...'
-            });
-            
+            Toast.fire({ icon: 'info', title: 'Updating status...' });
             const url = `/bar-keeper/orders/${orderId}/serve`;
             fetch(url, {
                 method: 'POST',
@@ -1153,10 +1058,7 @@ function serveOrder(orderId, itemName) {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Toast.fire({
-                        icon: 'success',
-                        title: data.message || 'Order marked as served!'
-                    });
+                    Toast.fire({ icon: 'success', title: data.message || 'Order marked as served!' });
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     Swal.fire("Error!", data.message, "error");
@@ -1164,10 +1066,7 @@ function serveOrder(orderId, itemName) {
             })
             .catch(error => {
                 console.error('Error:', error);
-                Toast.fire({
-                    icon: 'error',
-                    title: 'Failed to update order.'
-                });
+                Toast.fire({ icon: 'error', title: 'Failed to update order.' });
             });
         }
     });
@@ -1205,18 +1104,12 @@ function completeOrder(orderId, method, reference = '') {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    payment_method: method,
-                    payment_reference: reference
-                })
+                body: JSON.stringify({ payment_method: method, payment_reference: reference })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Toast.fire({
-                        icon: 'success',
-                        title: data.message || 'Payment recorded successfully!'
-                    });
+                    Toast.fire({ icon: 'success', title: data.message || 'Payment recorded successfully!' });
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     Swal.fire("Error!", data.message, "error");
@@ -1248,10 +1141,7 @@ function callApi(url, method, data) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            Toast.fire({
-                icon: 'success',
-                title: data.message || "Action completed successfully!"
-            });
+            Toast.fire({ icon: 'success', title: data.message || "Action completed successfully!" });
             setTimeout(() => location.reload(), 1500);
         } else {
             Swal.fire("Error!", data.message || "Action failed.", "error");
@@ -1273,49 +1163,27 @@ function cancelOrderGroup(identifier, isWalkIn) {
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Yes, Cancel All',
-        inputValidator: (value) => {
-            if (!value) {
-                return 'You need to write a reason!'
-            }
-        }
+        inputValidator: (value) => { if (!value) return 'You need to write a reason!'; }
     }).then((result) => {
         if (result.isConfirmed) {
             const reason = result.value;
-            Swal.fire({
-                title: 'Processing...',
-                text: 'Please wait while we cancel the orders.',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-
+            Swal.fire({ title: 'Processing...', text: 'Please wait while we cancel the orders.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
             fetch('{{ route("admin.restaurants.kitchen.orders.cancel-group") }}', { 
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                identifier: identifier,
-                is_walk_in: isWalkIn,
-                reason: reason
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ identifier: identifier, is_walk_in: isWalkIn, reason: reason })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                Toast.fire({
-                    icon: 'success',
-                    title: data.message || 'Orders cancelled successfully'
-                });
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                Swal.fire('Error', data.message, 'error');
-            }
-        })
-        .catch(error => {
-            console.error(error);
-            Swal.fire('Error', 'Server communication failed', 'error');
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Toast.fire({ icon: 'success', title: data.message || 'Orders cancelled successfully' });
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => { console.error(error); Swal.fire('Error', 'Server communication failed', 'error'); });
+        }
     });
 }
 
@@ -1329,47 +1197,26 @@ function cancelSingleOrder(orderId, itemName) {
         confirmButtonColor: '#d33',
         cancelButtonColor: '#3085d6',
         confirmButtonText: 'Yes, Cancel Item',
-        inputValidator: (value) => {
-            if (!value) {
-                return 'You need to write a reason!'
-            }
-        }
+        inputValidator: (value) => { if (!value) return 'You need to write a reason!'; }
     }).then((result) => {
         if (result.isConfirmed) {
             const reason = result.value;
-            Swal.fire({
-                title: 'Processing...',
-                text: 'Please wait while we cancel the item.',
-                allowOutsideClick: false,
-                didOpen: () => { Swal.showLoading(); }
-            });
-
+            Swal.fire({ title: 'Processing...', text: 'Please wait while we cancel the item.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
             fetch(`{{ url('/restaurant/food/orders') }}/${orderId}/cancel`, { 
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    reason: reason
-                })
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ reason: reason })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Toast.fire({
-                        icon: 'success',
-                        title: data.message || 'Item cancelled successfully'
-                    });
+                    Toast.fire({ icon: 'success', title: data.message || 'Item cancelled successfully' });
                     setTimeout(() => location.reload(), 1500);
                 } else {
                     Swal.fire('Error', data.message, 'error');
                 }
             })
-            .catch(error => {
-                console.error(error);
-                Swal.fire('Error', 'Server communication failed', 'error');
-            });
+            .catch(error => { console.error(error); Swal.fire('Error', 'Server communication failed', 'error'); });
         }
     });
 }
