@@ -375,6 +375,50 @@
         }
         @keyframes progressFill { to { width: 100%; } }
 
+        /* Theme Toggle & Light Mode Overrides */
+        .theme-toggle-btn {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            border-radius: 50%; width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center; z-index: 1100;
+            cursor: pointer; color: var(--text-dim); transition: 0.3s;
+        }
+        .theme-toggle-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        body.light-theme {
+            --bg-dark: #f0f2f5;
+            --card-bg: #ffffff;
+            --glass-border: rgba(0,0,0,0.1);
+            --text-main: #1c1c1e;
+            --text-dim: #6c757d;
+        }
+        body.light-theme .search-bar input { color: var(--text-main); }
+        body.light-theme .hero-title { background: none; -webkit-text-fill-color: var(--text-main); }
+        body.light-theme .cat-pill { background: #fff; border-color: rgba(0,0,0,0.1); color: var(--text-dim); }
+        body.light-theme .cat-pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        body.light-theme .discover-card { box-shadow: 0 8px 20px rgba(0,0,0,0.06); background: #fff; }
+        body.light-theme .discover-text { color: var(--text-main) !important; }
+        body.light-theme .discover-body p.text-muted { color: var(--text-dim) !important; }
+        body.light-theme .discover-body .text-white { color: var(--text-main) !important; }
+        body.light-theme .info-card { background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
+        body.light-theme .sticky-wrapper { background: rgba(240, 242, 245, 0.9); border-bottom-color: rgba(0,0,0,0.05); }
+        body.light-theme .rich-card { background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.05); }
+        body.light-theme .rich-title { color: var(--text-main); }
+        body.light-theme .opt-row { background: #f8f9fa; border-color: rgba(0,0,0,0.05); }
+        body.light-theme .price-usd { color: var(--text-dim); }
+        body.light-theme .modal-content { background: #fff; color: var(--text-main); }
+        body.light-theme .desc-modal-title { color: var(--text-main); }
+        body.light-theme .theme-toggle-btn { background: #fff; color: var(--text-main); border-color: rgba(0,0,0,0.1); }
+        body.light-theme .nav-link-btn { color: var(--text-dim); }
+        body.light-theme .nav-link-btn.active { color: var(--text-main); }
+        body.light-theme .nav-link-btn.active::after { background: var(--primary); }
+        body.light-theme .info-card h4.text-white { color: var(--text-main) !important; }
+        body.light-theme .discover-body ul li { color: var(--text-dim) !important; }
+        body.light-theme .info-row .value { color: var(--text-main); }
+        body.light-theme .lang-item.active { background: var(--primary); color: #fff; }
+        body.light-theme .lang-item { color: var(--text-dim); background: #f8f9fa; }
+        body.light-theme .info-card .text-white i { color: var(--text-main) !important; }
+
     </style>
 </head>
 <body>
@@ -393,8 +437,8 @@
             </div>
 
             <div class="splash-brand">PrimeLand Hotel</div>
-            <h2 class="splash-title">Welcome, Valued Guest</h2>
-            <p class="splash-sub">Your comfort is our pride.<br>Everything you need — right here.</p>
+            <h2 class="splash-title" style="font-size:20px; line-height: 1.3;">Welcome to Primeland Hotel!</h2>
+            <p class="splash-sub mb-3" style="font-size:12px;">We are delighted to have you onboard.<br>Here is a quick information about our hotel to help you<br>navigate smoothly on your stay with us:</p>
 
             <!-- Feature pills -->
             <div class="splash-pills">
@@ -423,6 +467,9 @@
 
     <!-- Header -->
     <section class="hero-section">
+        <div class="theme-toggle-btn" onclick="toggleTheme()">
+            <i class="fa fa-sun-o" id="themeIcon"></i>
+        </div>
         <div class="hotel-brand">PrimeLand Hotel</div>
         <h1 class="hero-title" data-en="Comfort in every stay" data-sw="Faraja katika kila kukaa">Comfort in every stay</h1>
         
@@ -658,7 +705,7 @@
         <div class="info-header mb-3" data-en="OUR SERVICES" data-sw="HUDUMA ZETU">OUR SERVICES</div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/executive suite.jpg') }}'); height: 150px;">
+            <div class="discover-img" style="background-image: url('{{ asset('dashboard_assets/images/accomodation.jpg') }}'); height: 150px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-bed"></i> Comfort</span>
@@ -681,7 +728,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/service-02.jpg') }}'); height: 150px;">
+            <div class="discover-img" style="background-image: url('{{ asset('dashboard_assets/images/front-desk-service.jpg') }}'); height: 150px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-phone"></i> Support</span>
@@ -714,7 +761,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/enjoy-your-day-01.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('dashboard_assets/images/swimming.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-life-ring"></i> Leisure</span>
@@ -728,7 +775,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/service-o1.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('dashboard_assets/images/restaurant & pool bar.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-cutlery"></i> Dining</span>
@@ -744,7 +791,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/room-01.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('dashboard_assets/images/free-wifi.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-wifi"></i> Connectivity</span>
@@ -758,7 +805,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/room-03.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('dashboard_assets/images/laundry-service.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-shirtsinbulk"></i> Care</span>
@@ -788,7 +835,7 @@
         </div>
 
         <div class="discover-card mb-2">
-            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/new_images_assets/room-02.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('dashboard_assets/images/security.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-shield"></i> Safety & Security</span>
@@ -949,8 +996,22 @@
         window.addEventListener('load', function() {
             setTimeout(function() {
                 document.getElementById('splashScreen').classList.add('hidden');
-            }, 2600);
+            }, 3000); // Give them slightly longer to read
         });
+
+        // Theme Toggle
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            const icon = document.getElementById('themeIcon');
+            if(document.body.classList.contains('light-theme')) {
+                icon.className = 'fa fa-moon-o';
+                localStorage.setItem('theme', 'light');
+            } else {
+                icon.className = 'fa fa-sun-o';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        if(localStorage.getItem('theme') === 'light') toggleTheme();
     </script>
 </body>
 </html>
