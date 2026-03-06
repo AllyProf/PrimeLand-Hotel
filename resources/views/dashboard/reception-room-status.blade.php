@@ -13,6 +13,107 @@
   </ul>
 </div>
 
+<!-- Modals moved to top for better z-index handling -->
+<div class="modal fade" id="quickInfoModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalRoomTitle">Room Details</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-0">
+         <table class="table table-striped mb-0">
+             <tbody>
+                 <tr>
+                     <th width="40%" class="text-right pr-4">Room Type:</th>
+                     <td width="60%" id="modalRoomType">-</td>
+                 </tr>
+                 <tr>
+                     <th class="text-right pr-4">Status:</th>
+                     <td id="modalStatus">-</td>
+                 </tr>
+                 <tr id="rowStatusUntil" style="display:none">
+                     <th class="text-right pr-4">Manual Status Until:</th>
+                     <td id="modalStatusUntil" class="text-primary font-weight-bold">-</td>
+                 </tr>
+                 <tr>
+                     <th class="text-right pr-4">Price / Night:</th>
+                     <td id="modalPrice">-</td>
+                 </tr>
+                 <tr>
+                     <th class="text-right pr-4">Capacity:</th>
+                     <td id="modalCapacity">-</td>
+                 </tr>
+                 <tr id="rowGuest" style="display:none">
+                     <th class="text-right pr-4">Current Guest:</th>
+                     <td id="modalGuest" class="font-weight-bold">-</td>
+                 </tr>
+                 <tr id="rowCheckin" style="display:none">
+                     <th class="text-right pr-4">Check-In:</th>
+                     <td id="modalCheckin">-</td>
+                 </tr>
+                 <tr id="rowCheckout" style="display:none">
+                     <th class="text-right pr-4">Check-Out:</th>
+                     <td id="modalCheckout">-</td>
+                 </tr>
+                 <tr id="rowPayment" style="display:none">
+                     <th class="text-right pr-4">Payment:</th>
+                     <td>
+                         <span class="badge badge-info" id="modalPayment"></span>
+                     </td>
+                 </tr>
+             </tbody>
+         </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+        <a href="#" id="modalViewBookingBtn" class="btn btn-primary btn-sm" style="display:none">Full Details</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="statusUpdateModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="statusModalTitle">Update Room Status</h5>
+        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="statusUpdateForm">
+        @csrf
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="newStatus">Room Status</label>
+                <select class="form-control" id="newStatus" name="status" required>
+                    <option value="available">Available</option>
+                    <option value="to_be_cleaned">Needs Cleaning</option>
+                    <option value="maintenance">Maintenance</option>
+                    <option value="occupied">Occupied (Manual)</option>
+                    <option value="reserved">Reserved (Manual)</option>
+                    <option value="closed">Closed / Out of Service</option>
+                </select>
+            </div>
+            <div id="untilGroup" class="form-group" style="display:none">
+                <label for="statusUntil">Available Again At (Optional)</label>
+                <input type="datetime-local" class="form-control" id="statusUntil" name="status_until">
+                <small class="form-text text-muted">Leave empty if status is indefinite (manual reset required).</small>
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveStatusBtn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
 <!-- Statistics Cards -->
 <div class="row mb-4">
   <div class="col-md-3 col-lg-3">
@@ -202,11 +303,20 @@
                            <!-- Info Button Overlay -->
                            <div class="position-absolute d-flex flex-column" style="top: 10px; left: 10px; z-index: 10;">
                                 <button type="button" class="btn btn-sm btn-light shadow-sm rounded-circle mb-2" 
-                                        onclick="showRoomDetails({{ json_encode($roomData) }})" title="Quick Info">
+                                        data-toggle="modal" 
+                                        data-target="#quickInfoModal"
+                                        data-room-info="{{ json_encode($roomData) }}"
+                                        title="Quick Info">
                                     <i class="fa fa-info" style="width: 10px;"></i>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-light shadow-sm rounded-circle" 
-                                        onclick="openStatusUpdateModal({{ json_encode($roomData) }})" title="Manual Status Update">
+                                        data-toggle="modal" 
+                                        data-target="#statusUpdateModal"
+                                        data-room-id="{{ $room->id }}"
+                                        data-room-number="{{ $room->room_number }}"
+                                        data-status="{{ $room->status }}"
+                                        data-until="{{ $room->status_until ? $room->status_until->format('Y-m-d\TH:i') : '' }}"
+                                        title="Manual Status Update">
                                     <i class="fa fa-cog" style="width: 10px;"></i>
                                 </button>
                            </div>
@@ -316,102 +426,6 @@
     </div>
 </div>
 
-<!-- Quick Info Modal -->
-<div class="modal fade" id="quickInfoModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="modalRoomTitle">Room Details</h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body p-0">
-         <table class="table table-striped mb-0">
-             <tbody>
-                 <tr>
-                     <th width="40%" class="text-right pr-4">Room Type:</th>
-                     <td width="60%" id="modalRoomType">-</td>
-                 </tr>
-                 <tr>
-                     <th class="text-right pr-4">Status:</th>
-                     <td id="modalStatus">-</td>
-                 </tr>
-                 <tr>
-                     <th class="text-right pr-4">Price / Night:</th>
-                     <td id="modalPrice">-</td>
-                 </tr>
-                 <tr>
-                     <th class="text-right pr-4">Capacity:</th>
-                     <td id="modalCapacity">-</td>
-                 </tr>
-                 <tr id="rowGuest" style="display:none">
-                     <th class="text-right pr-4">Current Guest:</th>
-                     <td id="modalGuest" class="font-weight-bold">-</td>
-                 </tr>
-                 <tr id="rowCheckin" style="display:none">
-                     <th class="text-right pr-4">Check-In:</th>
-                     <td id="modalCheckin">-</td>
-                 </tr>
-                 <tr id="rowCheckout" style="display:none">
-                     <th class="text-right pr-4">Check-Out:</th>
-                     <td id="modalCheckout">-</td>
-                 </tr>
-                 <tr id="rowPayment" style="display:none">
-                     <th class="text-right pr-4">Payment:</th>
-                     <td>
-                         <span class="badge badge-info" id="modalPayment"></span>
-                     </td>
-                 </tr>
-             </tbody>
-         </table>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
-        <a href="#" id="modalViewBookingBtn" class="btn btn-primary btn-sm" style="display:none">Full Details</a>
-      </div>
-    </div>
-  </div>
-<!-- Status Update Modal -->
-<div class="modal fade" id="statusUpdateModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content">
-      <div class="modal-header bg-dark text-white">
-        <h5 class="modal-title" id="statusModalTitle">Update Room Status</h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <form id="statusUpdateForm">
-        @csrf
-        <div class="modal-body">
-            <div class="form-group">
-                <label for="newStatus">Room Status</label>
-                <select class="form-control" id="newStatus" name="status" required>
-                    <option value="available">Available</option>
-                    <option value="to_be_cleaned">Needs Cleaning</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="occupied">Occupied (Manual)</option>
-                    <option value="reserved">Reserved (Manual)</option>
-                    <option value="closed">Closed / Out of Service</option>
-                </select>
-            </div>
-            <div id="untilGroup" class="form-group" style="display:none">
-                <label for="statusUntil">Available Again At (Optional)</label>
-                <input type="datetime-local" class="form-local form-control" id="statusUntil" name="status_until">
-                <small class="form-text text-muted">Leave empty if status is indefinite (manual reset required).</small>
-            </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="saveStatusBtn">Save Changes</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-
 @endsection
 
 @section('scripts')
@@ -447,66 +461,67 @@
         searchInput.addEventListener('keyup', filterRooms);
     });
 
-    function showRoomDetails(data) {
+    $('#quickInfoModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const data = button.data('room-info');
+        const modal = $(this);
+        
         // Set basic info
-        document.getElementById('modalRoomTitle').innerText = 'Room ' + data.number;
-        document.getElementById('modalRoomType').innerText = data.type;
-        document.getElementById('modalStatus').innerHTML = '<span class="badge badge-secondary">' + data.status + '</span>';
-        document.getElementById('modalPrice').innerText = '$' + data.price;
-        document.getElementById('modalCapacity').innerText = data.capacity + ' Person(s)';
+        modal.find('#modalRoomTitle').text('Room ' + data.number);
+        modal.find('#modalRoomType').text(data.type);
+        modal.find('#modalStatus').html('<span class="badge badge-secondary">' + data.status + '</span>');
+        modal.find('#modalPrice').text('$' + data.price);
+        modal.find('#modalCapacity').text(data.capacity + ' Person(s)');
 
         // Reset visibility
-        document.getElementById('rowGuest').style.display = 'none';
-        document.getElementById('rowCheckin').style.display = 'none';
-        document.getElementById('rowCheckout').style.display = 'none';
-        document.getElementById('rowPayment').style.display = 'none';
-        document.getElementById('rowStatusUntil').style.display = 'none';
-        document.getElementById('modalViewBookingBtn').style.display = 'none';
+        modal.find('#rowGuest, #rowCheckin, #rowCheckout, #rowPayment, #rowStatusUntil, #modalViewBookingBtn').hide();
 
         // Set manual status info
         if (data.status_until) {
             const date = new Date(data.status_until);
-            document.getElementById('modalStatusUntil').innerText = date.toLocaleString();
-            document.getElementById('rowStatusUntil').style.display = 'table-row';
+            modal.find('#modalStatusUntil').text(date.toLocaleString());
+            modal.find('#rowStatusUntil').show();
         }
 
         // Set detailed booking info if available
         if (data.guest) {
-            document.getElementById('modalGuest').innerText = data.guest;
-            document.getElementById('rowGuest').style.display = 'table-row';
+            modal.find('#modalGuest').text(data.guest);
+            modal.find('#rowGuest').show();
             
-            document.getElementById('modalCheckin').innerText = data.checkin;
-            document.getElementById('rowCheckin').style.display = 'table-row';
+            modal.find('#modalCheckin').text(data.checkin);
+            modal.find('#rowCheckin').show();
 
-            document.getElementById('modalCheckout').innerText = data.checkout;
-            document.getElementById('rowCheckout').style.display = 'table-row';
+            modal.find('#modalCheckout').text(data.checkout);
+            modal.find('#rowCheckout').show();
 
             if (data.paid !== null) {
-                 document.getElementById('modalPayment').innerText = 'Paid: $' + data.paid + ' / Total: $' + data.total;
-                 document.getElementById('rowPayment').style.display = 'table-row';
+                 modal.find('#modalPayment').text('Paid: $' + data.paid + ' / Total: $' + data.total);
+                 modal.find('#rowPayment').show();
             }
             
             if(data.booking_ref) {
-                const btn = document.getElementById('modalViewBookingBtn');
-                btn.href = '{{ route("reception.bookings") }}?search=' + data.booking_ref;
-                btn.style.display = 'inline-block';
+                const btn = modal.find('#modalViewBookingBtn');
+                btn.attr('href', '{{ route("reception.bookings") }}?search=' + data.booking_ref);
+                btn.show();
             }
         }
-        
-        $('#quickInfoModal').modal('show');
-    }
+    });
 
-    function openStatusUpdateModal(data) {
-        window.currentRoomIdForStatus = data.id;
-        document.getElementById('statusModalTitle').innerText = 'Room ' + data.number + ' Status';
-        document.getElementById('newStatus').value = data.db_status || 'available';
-        document.getElementById('statusUntil').value = data.status_until || '';
+    $('#statusUpdateModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const roomId = button.data('room-id');
+        const roomNumber = button.data('room-number');
+        const status = button.data('status');
+        const until = button.data('until');
         
-        // Show/hide until field based on status
+        window.currentRoomIdForStatus = roomId;
+        const modal = $(this);
+        modal.find('#statusModalTitle').text('Room ' + roomNumber + ' Status');
+        modal.find('#newStatus').val(status || 'available');
+        modal.find('#statusUntil').val(until || '');
+        
         toggleUntilField();
-        
-        $('#statusUpdateModal').modal('show');
-    }
+    });
 
     function toggleUntilField() {
         const status = document.getElementById('newStatus').value;
