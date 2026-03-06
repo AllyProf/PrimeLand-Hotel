@@ -76,242 +76,175 @@
           @foreach($allRooms as $room)
           @php
             $roomStatus = $room->status;
-            $statusClass = '';
-            $statusBadge = '';
-            $statusIcon = '';
-            $cardBgColor = '';
-            $cardBorderColor = '';
+            $statusBadge = 'badge-success';
+            $statusIcon = 'fa-check-circle';
+            $bgClass = 'status-bg-available';
+            $statusText = 'Available';
             
             if ($roomStatus === 'maintenance') {
-              $statusClass = 'maintenance';
               $statusBadge = 'danger';
               $statusIcon = 'fa-wrench';
               $statusText = 'Maintenance';
-              $cardBgColor = '#f8d7da'; // Light red background
-              $cardBorderColor = '#dc3545'; // Red border
+              $bgClass = 'status-bg-maintenance';
             } elseif ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning') {
-              $statusClass = 'needs-cleaning';
               $statusBadge = 'warning';
-              $statusIcon = 'fa-exclamation-circle';
+              $statusIcon = 'fa-broom';
               $statusText = 'Needs Cleaning';
-              $cardBgColor = '#fff3cd'; // Light yellow background
-              $cardBorderColor = '#ffc107'; // Yellow border
+              $bgClass = 'status-bg-cleaning';
             } elseif ($room->currentBooking) {
-              $statusClass = 'occupied';
               $statusBadge = 'info';
               $statusIcon = 'fa-user';
               $statusText = 'Occupied';
-              $cardBgColor = '#d1ecf1'; // Light blue background
-              $cardBorderColor = '#17a2b8'; // Blue border
-            } else {
-              $statusClass = 'available';
-              $statusBadge = 'success';
-              $statusIcon = 'fa-check-circle';
-              $statusText = 'Available';
-              $cardBgColor = '#d4edda'; // Light green background
-              $cardBorderColor = '#28a745'; // Green border
+              $bgClass = 'status-bg-occupied';
             }
             
-            // Get room image - just take the first one and let browser handle 404 via onerror
-            $roomImage = null;
+            // Check for active issues
+            $hasIssues = $room->activeIssues && $room->activeIssues->count() > 0;
+            if ($hasIssues) {
+                $statusText = 'Issue Reported';
+                $bgClass = 'status-bg-maintenance'; // Maintain red/grey look
+                $statusIcon = 'fa-exclamation-triangle';
+            }
+
+            // Get room image
+            $bgImage = null;
             if ($room->images && is_array($room->images) && count($room->images) > 0) {
                 $firstImage = $room->images[0];
-                $roomImage = asset('storage/' . ltrim($firstImage, '/'));
+                $bgImage = asset('storage/' . ltrim($firstImage, '/'));
             }
             
             // Get check-in/check-out info
             $checkInTime = null;
             $checkOutTime = null;
-            $checkOutDateTime = null;
             $guestName = null;
-            $isAboutToCheckOut = false;
-            $hoursUntilCheckout = null;
+            $isUrgent = false;
             
             if ($room->currentBooking) {
-              $checkInTime = $room->currentBooking->checked_in_at ? \Carbon\Carbon::parse($room->currentBooking->checked_in_at)->format('M d, Y H:i') : ($room->currentBooking->check_in ? \Carbon\Carbon::parse($room->currentBooking->check_in)->format('M d, Y') : null);
+              $checkInTime = $room->currentBooking->checked_in_at ? \Carbon\Carbon::parse($room->currentBooking->checked_in_at)->format('M d, H:i') : ($room->currentBooking->check_in ? \Carbon\Carbon::parse($room->currentBooking->check_in)->format('M d') : null);
               if ($room->currentBooking->check_out) {
-                // Parse check-out date and set time to checkout_time if available, otherwise default to 11:00 AM
                 $checkOutDate = \Carbon\Carbon::parse($room->currentBooking->check_out);
                 if ($room->checkout_time) {
                   $timeParts = explode(':', $room->checkout_time);
                   $checkOutDate->setTime($timeParts[0] ?? 11, $timeParts[1] ?? 0);
                 } else {
-                  $checkOutDate->setTime(11, 0); // Default checkout time 11:00 AM
+                  $checkOutDate->setTime(11, 0); 
                 }
-                $checkOutDateTime = $checkOutDate;
-                $checkOutTime = $checkOutDateTime->format('M d, Y H:i');
+                $checkOutTime = $checkOutDate->format('M d, H:i');
                 
-                // Check if guest is about to check out (within 24 hours or today)
-                $now = \Carbon\Carbon::now();
-                $hoursUntilCheckout = $now->floatDiffInHours($checkOutDateTime, false);
-                $isAboutToCheckOut = $hoursUntilCheckout >= 0 && $hoursUntilCheckout <= 24;
+                // Urgent if checking out today
+                if ($checkOutDate->isToday()) {
+                  $isUrgent = true;
+                  $bgClass = 'status-bg-urgent';
+                  $statusText = 'Checkout Today!';
+                }
               }
               $guestName = $room->currentBooking->guest_name;
             } elseif ($room->lastCheckout && ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning')) {
-              // Only show last checkout info if the room is NOT yet available (i.e., it needs cleaning)
-              if ($room->lastCheckout->checked_out_at) {
-                $checkOutDateTime = \Carbon\Carbon::parse($room->lastCheckout->checked_out_at);
-                $checkOutTime = $checkOutDateTime->format('M d, Y H:i');
-              } elseif ($room->lastCheckout->check_out) {
-                $checkOutDateTime = \Carbon\Carbon::parse($room->lastCheckout->check_out);
-                $checkOutTime = $checkOutDateTime->format('M d, Y');
-              }
-              $guestName = $room->lastCheckout->guest_name;
+                $guestName = $room->lastCheckout->guest_name;
+                if ($room->lastCheckout->checked_out_at) {
+                    $checkOutTime = \Carbon\Carbon::parse($room->lastCheckout->checked_out_at)->format('H:i');
+                }
             }
-            
-            // Get last cleaned time
-            $lastCleaned = null;
-            if ($room->latestCleaningLog && $room->latestCleaningLog->cleaned_at) {
-              $lastCleaned = \Carbon\Carbon::parse($room->latestCleaningLog->cleaned_at)->format('M d, Y H:i');
-            }
-            
-            // Check for active issues
-            $hasIssues = $room->activeIssues && $room->activeIssues->count() > 0;
-            
-            // Rooms about to check out get their own distinct color (priority over status)
-            if ($isAboutToCheckOut) {
-              $cardBgColor = '#ffeaa7'; // Light orange/yellow background
-              $cardBorderColor = '#f39c12'; // Orange border
-              $statusText = 'Checking Out Soon';
-            }
-            
-            // Override colors if room has issues (highest priority - overrides everything)
-            if ($hasIssues) {
-              $cardBgColor = '#f8d7da'; // Light red background
-              $cardBorderColor = '#dc3545'; // Red border
-            }
+
+            // Status string for JS filtering
+            $statusClass = 'available';
+            if ($roomStatus === 'maintenance') $statusClass = 'maintenance';
+            if ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning') $statusClass = 'needs_cleaning';
+            if ($room->currentBooking) $statusClass = 'occupied';
           @endphp
           <div class="col-md-3 col-sm-6 mb-4 room-card" data-status="{{ $statusClass }}">
-            <div class="card room-status-card h-100" 
-                 style="box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; background-color: {{ $cardBgColor }}; border: 3px solid {{ $cardBorderColor }} !important;">
-              <!-- Room Image -->
-              <div class="room-image-container" style="height: 180px; overflow: hidden; position: relative; background: #f8f9fa;">
-                @if($roomImage)
-                  <img src="{{ $roomImage }}" alt="Room {{ $room->room_number }}" 
-                       style="width: 100%; height: 100%; object-fit: cover;"
-                       onerror="this.parentElement.innerHTML += '<div class=\'w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted\'><i class=\'fa fa-bed fa-4x mb-2\' style=\'opacity: 0.3;\'></i><span class=\'small\' style=\'font-size: 10px; letter-spacing: 1px; opacity: 0.5;\'>NO IMAGE</span></div>'; this.style.display=\'none\';">
-                @else
-                  <div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column text-muted">
-                    <i class="fa fa-bed fa-4x mb-2" style="opacity: 0.3;"></i>
-                    <span class="small" style="font-size: 10px; letter-spacing: 1px; opacity: 0.5;">NO IMAGE</span>
-                  </div>
-                @endif
-                <!-- Status Badge Overlay -->
-                <div class="room-status-badge" style="position: absolute; top: 10px; right: 10px;">
-                  @if($isAboutToCheckOut)
-                  <span class="badge badge-warning badge-lg" style="font-size: 11px; padding: 6px 10px;">
-                    <i class="fa fa-clock"></i> {{ $statusText }}
-                  </span>
-                  @else
-                  <span class="badge badge-{{ $statusBadge }} badge-lg" style="font-size: 11px; padding: 6px 10px;">
-                    <i class="fa {{ $statusIcon }}"></i> {{ $statusText }}
-                  </span>
-                  @endif
-                </div>
-                @if($hasIssues)
-                <div style="position: absolute; top: 10px; left: 10px;">
-                  <span class="badge badge-danger badge-lg" style="font-size: 11px; padding: 6px 10px;">
-                    <i class="fa fa-exclamation-triangle"></i> Issue
-                  </span>
-                </div>
-                @endif
-                @if($isAboutToCheckOut)
-                <div style="position: absolute; bottom: 10px; left: 10px; right: 10px;">
-                  <span class="badge badge-warning badge-lg" style="font-size: 11px; padding: 6px 10px; width: 100%; display: block; text-align: center;">
-                    <i class="fa fa-clock"></i> Checking Out Soon
-                    @if($hoursUntilCheckout !== null)
-                      <br><small>(
-                        @if($hoursUntilCheckout > 0)
-                          @php
-                            $fullHours = floor($hoursUntilCheckout);
-                            $remainingMinutes = round(($hoursUntilCheckout - $fullHours) * 60);
-                            if ($remainingMinutes == 60) {
-                                $fullHours++;
-                                $remainingMinutes = 0;
-                            }
-                          @endphp
-                          {{ $fullHours > 0 ? $fullHours . 'h ' : '' }}{{ $remainingMinutes }}m
-                        @else
-                          Today
-                        @endif
-                      )</small>
+            <div class="card shadow-sm room-card-status {{ $bgClass }} h-100">
+               <!-- Room Image Section -->
+               <div class="room-image-container" style="background-color: rgba(255,255,255,0.05);">
+                   @if($bgImage)
+                       <img src="{{ $bgImage }}" alt="Room {{ $room->room_number }}" class="w-100 h-100" style="object-fit: cover; transition: transform 0.5s;">
+                   @else
+                       <div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column" style="color: rgba(255,255,255,0.7) !important;">
+                           <i class="fa fa-bed fa-4x mb-2" style="opacity: 0.5;"></i>
+                           <span class="small font-weight-bold" style="font-size: 10px; letter-spacing: 2px; opacity: 0.8;">PRIME LAND HOTEL</span>
+                       </div>
+                   @endif
+                   <div class="position-absolute" style="top: 10px; right: 10px;">
+                       <span class="badge badge-light p-2 shadow-sm" style="color: #333 !important;">
+                           <i class="fa {{ $statusIcon }}"></i> {{ $statusText }}
+                       </span>
+                   </div>
+                   <div class="position-absolute" style="bottom: 0px; left: 0px; background: {{ $bgImage ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.2)' }}; width: 100%; padding: 8px 15px;">
+                       <h4 class="text-white mb-0" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
+                           <i class="fa fa-bed mr-2"></i>{{ $room->room_number }} 
+                           <span class="badge badge-light ml-2" style="font-size: 0.6em; vertical-align: middle;">
+                               <i class="fa fa-tag mr-1 text-muted"></i>{{ $room->room_type }}
+                           </span>
+                       </h4>
+                   </div>
+               </div>
+               
+               <!-- Room Info -->
+               <div class="card-body">
+                 <div class="room-details mb-3" style="min-height: 60px;">
+                    @if($hasIssues)
+                        <div class="small font-weight-bold text-white">
+                            <i class="fa fa-wrench"></i> Issue: {{ Str::limit($room->activeIssues->first()->issue_type, 25) }}
+                        </div>
                     @endif
-                  </span>
-                </div>
-                @endif
-              </div>
-              
-              <!-- Room Info -->
-              <div class="card-body" style="padding: 15px;">
-                <h5 class="card-title mb-2" style="font-size: 18px; font-weight: bold; color: #333;">
-                  <i class="fa fa-bed"></i> Room {{ $room->room_number }}
-                </h5>
-                <p class="text-muted mb-2" style="font-size: 13px;">
-                  <i class="fa fa-tag"></i> {{ $room->room_type }} | 
-                  <i class="fa fa-users"></i> {{ $room->capacity }} Guests
-                </p>
-                
-                <!-- Guest Info -->
-                @if($guestName)
-                <div class="mb-2" style="padding: 8px; background: #f8f9fa; border-radius: 4px;">
-                  <small class="text-muted d-block"><i class="fa fa-user"></i> Guest:</small>
-                  <strong style="font-size: 13px;">{{ $guestName }}</strong>
-                </div>
-                @endif
-                
-                <!-- Check-in/Check-out Times -->
-                <div class="room-timeline mb-2" style="font-size: 12px;">
-                  @if($checkInTime)
-                  <div class="mb-1">
-                    <i class="fa fa-sign-in text-success"></i> 
-                    <strong>Check-in:</strong> {{ $checkInTime }}
-                  </div>
-                  @endif
-                  @if($checkOutTime)
-                  <div class="mb-1">
-                    <i class="fa fa-sign-out text-danger"></i> 
-                    <strong>Check-out:</strong> <span class="text-danger" style="font-weight: bold;">{{ $checkOutTime }}</span>
-                  </div>
-                  @endif
-                  @if($lastCleaned && !$room->currentBooking)
-                  <div class="mb-1">
-                    <i class="fa fa-check-circle text-info"></i> 
-                    <strong>Last cleaned:</strong> {{ $lastCleaned }}
-                  </div>
-                  @endif
-                </div>
-                
-                <!-- Actions -->
-                <div class="room-actions mt-3">
-                  @if(!$isObserver && ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning'))
-                  <button class="btn btn-sm btn-success btn-block mark-cleaned-btn" 
-                          data-room-id="{{ $room->id }}" 
-                          data-room-number="{{ $room->room_number }}">
-                    <i class="fa fa-check"></i> Mark Cleaned
-                  </button>
-                  @endif
-                  @if($hasIssues)
-                  <a href="{{ route('housekeeper.room-issues') }}" class="btn btn-sm btn-danger btn-block mt-1">
-                    <i class="fa fa-exclamation-triangle"></i> View Issues
-                  </a>
-                  @endif
-                  <button class="btn btn-sm btn-info btn-block mt-1 view-details-btn" 
-                          data-room-id="{{ $room->id }}"
-                          data-room-number="{{ $room->room_number }}"
-                          data-room-type="{{ $room->room_type }}"
-                          data-capacity="{{ $room->capacity }}"
-                          data-bed-type="{{ $room->bed_type ?? 'N/A' }}"
-                          data-floor="{{ $room->floor_location ?? 'N/A' }}"
-                          data-status="{{ $statusText }}"
-                          data-guest-name="{{ $guestName ?? 'N/A' }}"
-                          data-check-in="{{ $checkInTime ?? 'N/A' }}"
-                          data-check-out="{{ $checkOutTime ?? 'N/A' }}"
-                          data-last-cleaned="{{ $lastCleaned ?? 'Never' }}"
-                          data-has-issues="{{ $hasIssues ? 'Yes' : 'No' }}">
-                    <i class="fa fa-info-circle"></i> View Details
-                  </button>
-                </div>
-              </div>
+
+                    @if($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning')
+                        <div class="small font-weight-bold">
+                            <i class="fa fa-broom"></i> Needs Cleaning
+                            @if($checkOutTime)
+                                <span class="d-block mt-1 opacity-75">Checked out at {{ $checkOutTime }}</span>
+                            @endif
+                        </div>
+                    @elseif($room->currentBooking)
+                        <div class="small">
+                            <strong class="text-white"><i class="fa fa-user"></i> {{ Str::limit($guestName, 18) }}</strong>
+                            <div class="d-flex justify-content-between mt-1 opacity-75">
+                                <span>Out: {{ $checkOutTime }}</span>
+                                @if($isUrgent)
+                                    <span class="font-weight-bold">Today!</span>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        <div class="small">
+                            <i class="fa fa-check-circle"></i> Ready for Guests
+                        </div>
+                    @endif
+                 </div>
+                 
+                 <!-- Actions -->
+                 <div class="room-actions">
+                   @if(!$isObserver && ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning'))
+                   <button class="btn btn-sm btn-outline-success btn-block mark-cleaned-btn" 
+                           data-room-id="{{ $room->id }}" 
+                           data-room-number="{{ $room->room_number }}">
+                     <i class="fa fa-check"></i> Mark Cleaned
+                   </button>
+                   @endif
+                   
+                   @if($hasIssues)
+                   <a href="{{ route('housekeeper.room-issues') }}" class="btn btn-sm btn-outline-danger btn-block mt-1">
+                     <i class="fa fa-exclamation-triangle"></i> View Issues
+                   </a>
+                   @endif
+
+                   <button class="btn btn-sm btn-outline-secondary btn-block mt-1 view-details-btn" 
+                           data-room-id="{{ $room->id }}"
+                           data-room-number="{{ $room->room_number }}"
+                           data-room-type="{{ $room->room_type }}"
+                           data-capacity="{{ $room->capacity }}"
+                           data-bed-type="{{ $room->bed_type ?? 'N/A' }}"
+                           data-floor="{{ $room->floor_location ?? 'N/A' }}"
+                           data-status="{{ $statusText }}"
+                           data-guest-name="{{ $guestName ?? 'N/A' }}"
+                           data-check-in="{{ $checkInTime ?? 'N/A' }}"
+                           data-check-out="{{ $checkOutTime ?? 'N/A' }}"
+                           data-last-cleaned="{{ $lastCleaned ?? 'Never' }}"
+                           data-has-issues="{{ $hasIssues ? 'Yes' : 'No' }}">
+                     <i class="fa fa-info-circle"></i> Details
+                   </button>
+                 </div>
+               </div>
             </div>
           </div>
           @endforeach
@@ -642,43 +575,79 @@
 
 @section('styles')
 <style>
-.room-card {
-  transition: transform 0.2s, box-shadow 0.2s;
+/* Status Card Styles */
+.room-card-status {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none !important;
+    color: #fff !important;
 }
-.room-card:hover {
-  transform: translateY(-5px);
+.room-card-status:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
 }
-.room-status-card {
-  transition: all 0.3s ease;
+
+.room-card-status .card-body {
+    padding: 1.25rem !important;
 }
-.room-status-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+
+.room-card-status .text-muted {
+    color: rgba(255,255,255,0.8) !important;
 }
+
+.room-card-status .text-dark {
+    color: #fff !important;
+}
+
+.status-bg-available { background-color: #28a745 !important; }
+.status-bg-occupied { background-color: #dc3545 !important; }
+.status-bg-reserved { background-color: #007bff !important; }
+.status-bg-cleaning { background-color: #ffc107 !important; color: #333 !important; }
+.status-bg-maintenance { background-color: #6c757d !important; }
+.status-bg-closed { background-color: #343a40 !important; }
+.status-bg-urgent { background-color: #f39c12 !important; } /* Orange for urgent checkout */
+
+.room-card-status.status-bg-cleaning .text-muted,
+.room-card-status.status-bg-cleaning .text-dark,
+.room-card-status.status-bg-cleaning .small,
+.room-card-status.status-bg-cleaning h5,
+.room-card-status.status-bg-cleaning .card-title {
+    color: #333 !important;
+}
+
+.room-card-status .btn-outline-primary, 
+.room-card-status .btn-outline-danger,
+.room-card-status .btn-outline-success,
+.room-card-status .btn-outline-info,
+.room-card-status .btn-outline-secondary {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+    color: #fff !important;
+}
+
+.room-card-status .btn-outline-primary:hover, 
+.room-card-status .btn-outline-danger:hover,
+.room-card-status .btn-outline-success:hover,
+.room-card-status .btn-outline-info:hover,
+.room-card-status .btn-outline-secondary:hover {
+    background: rgba(255,255,255,0.4);
+    border-color: #fff;
+}
+
+.room-card-status.status-bg-cleaning .btn-outline-success,
+.room-card-status.status-bg-cleaning .btn-outline-info,
+.room-card-status.status-bg-cleaning .btn-outline-danger,
+.room-card-status.status-bg-cleaning .btn-outline-secondary {
+    border-color: #333;
+    color: #333 !important;
+    background: rgba(0,0,0,0.05);
+}
+
 .room-image-container {
-  position: relative;
+    position: relative;
+    height: 160px;
+    overflow: hidden;
 }
-.room-image-container::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 30px;
-  background: linear-gradient(to top, rgba(0,0,0,0.1), transparent);
-}
-.badge-lg {
-  font-size: 11px;
-  padding: 6px 10px;
-  font-weight: 600;
-}
-.room-timeline {
-  border-left: 2px solid #e0e0e0;
-  padding-left: 10px;
-  margin-left: 5px;
-}
-.room-timeline div {
-  margin-bottom: 5px;
-}
+
 .filter-active {
   background-color: #007bff !important;
   color: white !important;
