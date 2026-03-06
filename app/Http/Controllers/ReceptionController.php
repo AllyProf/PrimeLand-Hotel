@@ -1297,19 +1297,22 @@ class ReceptionController extends Controller
      */
     public function updateRoomManualStatus(Request $request, Room $room)
     {
-        $request->validate([
-            'status' => 'required|in:available,to_be_cleaned,maintenance,occupied,reserved,closed',
-            'status_until' => 'nullable|date_format:Y-m-d\TH:i|after:now',
-        ]);
+        $status = $request->status;
+        $statusUntil = $request->status_until;
+
+        // Reset status_until if making room available
+        if ($status === 'available') {
+            $statusUntil = null;
+        }
 
         $room->update([
-            'status' => $request->status,
-            'status_until' => ($request->status === 'available') ? null : $request->status_until,
+            'status' => $status,
+            'status_until' => $statusUntil,
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Room status updated successfully until ' . ($request->status_until ?? 'specified otherwise.'),
+            'message' => 'Room status updated successfully.',
             'room' => $room->fresh(),
         ]);
     }
