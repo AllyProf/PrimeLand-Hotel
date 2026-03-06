@@ -701,7 +701,7 @@
         <div class="info-header mb-3" data-en="OUR SERVICES" data-sw="HUDUMA ZETU">OUR SERVICES</div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/accomodation.jpg') }}'); height: 150px;">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/services_images/accomodation.jpg') }}'); height: 150px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-bed"></i> Comfort</span>
@@ -724,7 +724,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/front-desk-service.jpg') }}'); height: 150px;">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/services_images/front-desk-service.jpg') }}'); height: 150px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-phone"></i> Support</span>
@@ -757,7 +757,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/swimming.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/services_images/swimming.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-life-ring"></i> Leisure</span>
@@ -771,7 +771,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/restaurant-pool-bar.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/services_images/restaurant-pool-bar.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-cutlery"></i> Dining</span>
@@ -787,7 +787,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/free-wifi.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/services_images/free-wifi.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-wifi"></i> Connectivity</span>
@@ -801,7 +801,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/laundry-service.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/services_images/laundry-service.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-shirtsinbulk"></i> Care</span>
@@ -816,7 +816,7 @@
         </div>
 
         <div class="discover-card">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/airport-shuttle.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/services_images/airport-shuttle.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-car"></i> Transport</span>
@@ -831,7 +831,7 @@
         </div>
 
         <div class="discover-card mb-2">
-            <div class="discover-img" style="background-image: url('{{ asset('services_images/security.jpg') }}'); height: 130px;">
+            <div class="discover-img" style="background-image: url('{{ asset('landing-assets/services_images/security.jpg') }}'); height: 130px;">
                 <div class="discover-overlay pb-2 pt-4" style="background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.9));">
                     <div>
                         <span class="discover-tag"><i class="fa fa-shield"></i> Safety & Security</span>
