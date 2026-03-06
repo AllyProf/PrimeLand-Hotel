@@ -1151,55 +1151,6 @@ class BarKeeperController extends Controller
         ]);
     }
 
-    /**
-     * Display all recorded items (walk-in sales and ceremony consumption)
-     */
-    public function recordedItems(Request $request)
-    {
-        $user = Auth::guard('staff')->user();
-        $role = strtolower($user->role ?? 'bar_keeper');
-
-        $query = ServiceRequest::with(['service', 'dayService'])
-            ->where('is_walk_in', true)
-            ->whereNotIn('status', ['cancelled', 'billed'])
-            ->orderBy('created_at', 'desc');
-
-        // Filter by date range
-        if ($request->filled('start_date')) {
-            $query->whereDate('created_at', '>=', $request->start_date);
-        }
-        if ($request->filled('end_date')) {
-            $query->whereDate('created_at', '<=', $request->end_date);
-        }
-
-        // Filter by payment status
-        if ($request->filled('payment_status')) {
-            $query->where('payment_status', $request->payment_status);
-        }
-
-        // Filter by type (ceremony vs walk-in)
-        if ($request->filled('item_type')) {
-            if ($request->item_type === 'ceremony') {
-                $query->whereNotNull('day_service_id');
-            } elseif ($request->item_type === 'walk_in') {
-                $query->whereNull('day_service_id');
-            }
-        }
-
-        $recordedItems = $query->paginate(20);
-
-        // Calculate statistics
-        $stats = [
-            'total_items' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->count(),
-            'total_paid' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->where('payment_status', 'paid')->count(),
-            'total_unpaid' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->where('payment_status', 'pending')->count(),
-            'total_revenue' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->where('payment_status', 'paid')->sum('total_price_tsh'),
-            'ceremony_items' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->whereNotNull('day_service_id')->count(),
-            'walk_in_items' => ServiceRequest::where('is_walk_in', true)->whereNotIn('status', ['cancelled', 'billed'])->whereNull('day_service_id')->count(),
-        ];
-
-        return view('dashboard.bar-keeper-recorded-items', compact('recordedItems', 'stats', 'role'));
-    }
 
     /**
      * Update minimum stock level for a product variant

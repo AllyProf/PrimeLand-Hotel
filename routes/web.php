@@ -851,7 +851,6 @@ Route::prefix('bar-keeper')->group(function () {
         // Reports
         Route::get('/reports', [\App\Http\Controllers\BarKeeperController::class, 'reports'])->name('bar-keeper.reports');
         
-        // Recorded Items
         // Product Management
         Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index'])->name('bar-keeper.products.index');
         Route::get('/products/create', [\App\Http\Controllers\ProductController::class, 'create'])->name('bar-keeper.products.create');
@@ -862,7 +861,6 @@ Route::prefix('bar-keeper')->group(function () {
         Route::delete('/products/{product}', [\App\Http\Controllers\ProductController::class, 'destroy'])->name('bar-keeper.products.destroy');
         Route::delete('/products/variants/{variant}', [\App\Http\Controllers\ProductController::class, 'destroyVariant'])->name('bar-keeper.products.variants.destroy');
 
-        Route::get('/recorded-items', [\App\Http\Controllers\BarKeeperController::class, 'recordedItems'])->name('bar-keeper.recorded-items');
         
         // Purchase Request Routes
         Route::get('/purchase-requests/create', [\App\Http\Controllers\PurchaseRequestController::class, 'create'])->name('bar-keeper.purchase-requests.create');
