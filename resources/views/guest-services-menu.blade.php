@@ -279,15 +279,15 @@
 
         /* Logo wrapper with dual orbit rings */
         .splash-logo-wrap {
-            position: relative; width: 150px; height: 150px; margin-bottom: 26px;
+            position: relative; width: 100px; height: 100px; margin-bottom: 22px;
         }
         .orbit-ring {
             position: absolute; inset: 0; border-radius: 50%;
-            border: 2px dashed rgba(231,122,58,0.3);
+            border: 1.5px dashed rgba(231,122,58,0.3);
             animation: orbitSpin 6s linear infinite;
         }
         .orbit-ring:nth-child(2) {
-            inset: 12px;
+            inset: 8px;
             border-color: rgba(231,122,58,0.18);
             animation-direction: reverse;
             animation-duration: 4s;
@@ -295,25 +295,27 @@
         /* Dot on outer ring */
         .orbit-ring::after {
             content: '';
-            position: absolute; top: -4px; left: 50%; margin-left: -4px;
-            width: 8px; height: 8px;
+            position: absolute; top: -3px; left: 50%; margin-left: -3px;
+            width: 6px; height: 6px;
             background: var(--primary); border-radius: 50%;
-            box-shadow: 0 0 8px var(--primary);
+            box-shadow: 0 0 6px var(--primary);
         }
         @keyframes orbitSpin { to { transform: rotate(360deg); } }
 
         .splash-logo-img {
             position: absolute;
-            inset: 20px;
+            inset: 14px;
             object-fit: contain;
             border-radius: 50%;
-            background: rgba(255,255,255,0.08);
-            padding: 10px;
+            background: rgba(255,255,255,0.06);
+            padding: 8px;
             animation: logoPulse 2s ease-in-out infinite alternate;
+            width: calc(100% - 28px);
+            height: calc(100% - 28px);
         }
         @keyframes logoPulse {
             from { transform: scale(0.96); filter: drop-shadow(0 0 0px rgba(231,122,58,0)); }
-            to   { transform: scale(1.04); filter: drop-shadow(0 0 14px rgba(231,122,58,0.7)); }
+            to   { transform: scale(1.04); filter: drop-shadow(0 0 10px rgba(231,122,58,0.6)); }
         }
 
         /* Shimmer tagline */
