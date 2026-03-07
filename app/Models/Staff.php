@@ -265,4 +265,12 @@ class Staff extends Authenticatable
     {
         return $this->hasMany(ActivityLog::class, 'user_id')->where('user_type', 'staff');
     }
+
+    /**
+     * Get the current active shift for this staff member
+     */
+    public function currentShift()
+    {
+        return $this->hasOne(Shift::class, 'staff_id')->where('status', 'open')->latest();
+    }
 }

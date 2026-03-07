@@ -73,6 +73,12 @@
       <div class="tile-title-w-btn">
         <h3 class="title">Live Food Orders</h3>
         <div class="btn-group">
+            @php $activeShift = Auth::guard('staff')->user()->currentShift; @endphp
+            @if($activeShift)
+                <a href="{{ route('chef-master.shift.close') }}" class="btn btn-danger mr-2 shadow-sm"><i class="fa fa-sign-out"></i> CLOSE SHIFT</a>
+            @else
+                <a href="{{ route('chef-master.shift.open') }}" class="btn btn-success mr-2 shadow-sm"><i class="fa fa-sign-in"></i> OPEN SHIFT</a>
+            @endif
             <a href="{{ route('chef-master.kds') }}" class="btn btn-dark mr-2"><i class="fa fa-desktop"></i> KDS MONITOR</a>
             @if(!$isChef)
             <button class="btn btn-primary" onclick="openWalkInModal()"><i class="fa fa-plus"></i> New Walk-in Order</button>

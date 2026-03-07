@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\StockTransfer;
 use App\Models\ServiceRequest;
+use App\Models\Shift;
+use App\Traits\ShiftManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class BarKeeperController extends Controller
 {
+    use ShiftManager;
     /**
      * Bar Keeper Dashboard
      */
@@ -16,8 +19,13 @@ class BarKeeperController extends Controller
     {
         $user = Auth::guard('staff')->user();
         
-        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'bar'];
+        // Enforcement: If Bar Keeper, must have open shift to access dashboard features
+        if (trim(strtolower($user->role)) === 'bar_keeper' && !$this->hasActiveShift()) {
+            return redirect()->route('bar-keeper.shift.open');
+        }
         
+        $barCategories = ['drinks', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'bar'];
+
         $pendingOrders = \App\Models\ServiceRequest::with(['booking.room', 'service', 'dayService', 'approvedBy', 'paidBy', 'cancelledBy'])
             ->where(function($q) use ($barCategories) {
                 $q->whereHas('service', function($query) use ($barCategories) {
@@ -249,31 +257,80 @@ class BarKeeperController extends Controller
 
     
     /**
-     * Bar Keeper Stock & Sales Reports (Matching Kitchen Style)
+     * Bar Keeper Stock & Sales Reports (Shift-Aware)
      */
     public function reports(Request $request)
     {
         $user = Auth::guard('staff')->user();
-        $dateType = $request->get('date_type', 'daily');
-        $date = $request->date ? \Carbon\Carbon::parse($request->date) : now();
-        
-        if ($dateType === 'weekly') {
-            $startDate = $date->copy()->startOfWeek();
-            $endDate = $date->copy()->endOfWeek();
-        } else {
-            $startDate = $date->copy()->startOfDay();
-            $endDate = $date->copy()->endOfDay();
+        $isManager = in_array($user->role, ['manager', 'admin', 'super_admin']);
+
+        // --- Shift Selection Logic ---
+        // If a specific shift_id is provided, use that shift's window
+        $selectedShift = null;
+        if ($request->shift_id) {
+            $selectedShift = Shift::where('id', $request->shift_id)
+                ->when(!$isManager, function($q) use ($user) {
+                    // Bar keepers can only view their own shifts
+                    $q->where('staff_id', $user->id);
+                })
+                ->first();
         }
 
-        // 1. Get ALL products ever transferred TO the target bar keepers
-        $targetUserIds = [$user->id];
-        // Check if user is manager or admin to show consolidated stock
-        if (in_array($user->role, ['manager', 'admin'])) {
-            $barKeeperIds = \App\Models\Staff::where('role', 'bar_keeper')->pluck('id')->toArray();
-            if (!empty($barKeeperIds)) {
-                $targetUserIds = $barKeeperIds;
+        // If no shift selected, try the active shift or the most recent closed shift
+        if (!$selectedShift) {
+            $selectedShift = $this->getActiveShift();
+            if (!$selectedShift) {
+                // Fall back to most recent closed shift
+                $selectedShift = Shift::where('staff_id', $user->id)
+                    ->where('status', 'closed')
+                    ->latest('closed_at')
+                    ->first();
             }
         }
+
+        // --- Date Range Resolution ---
+        if ($selectedShift) {
+            // Shift-based report: use exact shift window
+            $startDate = $selectedShift->opened_at;
+            $endDate = $selectedShift->closed_at ?? now();
+            $dateType = 'shift';
+            $date = $startDate;
+        } else {
+            // No shift found — fall back to date-based (for managers or day-0 bar keepers)
+            $dateType = $request->get('date_type', 'daily');
+            $date = $request->date ? \Carbon\Carbon::parse($request->date) : now();
+            if ($dateType === 'weekly') {
+                $startDate = $date->copy()->startOfWeek();
+                $endDate = $date->copy()->endOfWeek();
+            } else {
+                $startDate = $date->copy()->startOfDay();
+                $endDate = $date->copy()->endOfDay();
+            }
+        }
+
+        // --- Staff Target: Only this bar keeper's stock (not all merged) ---
+        $targetUserIds = [$user->id];
+        if ($isManager) {
+            if ($request->staff_id) {
+                // Manager viewing a specific staff's report
+                $targetUserIds = [(int)$request->staff_id];
+            } else {
+                // Manager viewing consolidated — all bar keepers
+                $barKeeperIds = \App\Models\Staff::where('role', 'bar_keeper')->pluck('id')->toArray();
+                if (!empty($barKeeperIds)) {
+                    $targetUserIds = $barKeeperIds;
+                }
+            }
+        }
+
+        // Get all shifts for the dropdown (this user or all bar keepers for manager)
+        $pastShifts = Shift::when(!$isManager, fn($q) => $q->where('staff_id', $user->id))
+            ->when($isManager && !$request->staff_id, fn($q) => $q->whereIn('staff_id', \App\Models\Staff::where('role', 'bar_keeper')->pluck('id')))
+            ->when($isManager && $request->staff_id, fn($q) => $q->where('staff_id', $request->staff_id))
+            ->with('staff')
+            ->orderBy('opened_at', 'desc')
+            ->limit(30)
+            ->get();
 
         $variantIds = StockTransfer::whereIn('received_by', $targetUserIds)
             ->where('status', 'completed')
@@ -293,18 +350,15 @@ class BarKeeperController extends Controller
 
         $allVariantIds = array_unique(array_merge($variantIds, $soldVariantIds));
         $variants = \App\Models\ProductVariant::with('product')->whereIn('id', $allVariantIds)->get();
-        // Filter to only show bar categories in stock movements
         $barCategories = ['drinks', 'beverage', 'alcoholic_beverage', 'non_alcoholic_beverage', 'water', 'juices', 'energy_drinks', 'spirits', 'whiskey', 'wine', 'wines', 'beers', 'liquor', 'cocktails', 'soda', 'beverages', 'alcoholic', 'hot_beverages', 'bar'];
 
         $reportData = [];
         foreach ($variants as $variant) {
-            // Check if product belongs to bar categories
             if (!in_array($variant->product->category, $barCategories)) {
                 continue;
             }
             
-            // Opening Stock: (Received before) - (Sold before)
-            // RECEIVED BEFORE
+            // Opening Stock: (Received before shift start) - (Sold before shift start)
             $receivedBefore = StockTransfer::where('product_variant_id', $variant->id)
                 ->whereIn('received_by', $targetUserIds)
                 ->where('status', 'completed')
@@ -321,7 +375,6 @@ class BarKeeperController extends Controller
                         : (float)$t->quantity_transferred;
                 });
 
-            // SOLD BEFORE (Need to robustly filter ServiceRequests)
             $soldBefore = \App\Models\ServiceRequest::where(function($q) use ($startDate) {
                     $q->where(function($sub) use ($startDate) {
                         $sub->where('status', 'completed')
@@ -343,17 +396,21 @@ class BarKeeperController extends Controller
                     $meta = $s->service_specific_data;
                     $servingsPerPic = ($variant->servings_per_pic > 0) ? (float)$variant->servings_per_pic : 1.0;
                     $isGlass = (isset($meta['selling_method']) && in_array($meta['selling_method'], ['glass', 'serving']));
-                    
                     return $isGlass ? ($s->quantity / $servingsPerPic) : $s->quantity;
                 });
 
             $openingStock = max(0, $receivedBefore - $soldBefore);
 
-            // Movements IN PERIOD
+            // Movements IN SHIFT PERIOD (only by this user)
             $receivedInPeriod = StockTransfer::where('product_variant_id', $variant->id)
                 ->whereIn('received_by', $targetUserIds)
                 ->where('status', 'completed')
-                ->whereBetween('received_at', [$startDate, $endDate])
+                ->where(function($q) use ($startDate, $endDate) {
+                    $q->whereBetween('received_at', [$startDate, $endDate])
+                      ->orWhere(function($sub) use ($startDate, $endDate) {
+                          $sub->whereNull('received_at')->whereBetween('created_at', [$startDate, $endDate]);
+                      });
+                })
                 ->get()
                 ->sum(function($t) {
                     return $t->quantity_unit === 'packages' 
@@ -383,16 +440,13 @@ class BarKeeperController extends Controller
                 $meta = $s->service_specific_data;
                 $servingsPerPic = ($variant->servings_per_pic > 0) ? (float)$variant->servings_per_pic : 1.0;
                 $isGlass = (isset($meta['selling_method']) && in_array($meta['selling_method'], ['glass', 'serving']));
-                
                 return $isGlass ? ($s->quantity / $servingsPerPic) : $s->quantity;
             });
 
-            // Financial Metrics
             $actualRevenue = $salesInPeriod->sum('total_price_tsh');
             
-            // Expiry
             $latestTransfer = StockTransfer::where('product_variant_id', $variant->id)
-                ->where('received_by', $user->id)
+                ->whereIn('received_by', $targetUserIds)
                 ->where('status', 'completed')
                 ->whereNotNull('expiry_date')
                 ->orderBy('received_at', 'desc')
@@ -406,21 +460,14 @@ class BarKeeperController extends Controller
                 else $expireText = $daysLeft . " Days";
             }
 
-            // Closing Stock = Opening + Received - Sold
             $closingStock = $openingStock + $receivedInPeriod - $soldInPeriod;
 
             if ($openingStock > 0 || $receivedInPeriod > 0 || $soldInPeriod > 0) {
-                // Determine actual revenue from sales records
-                $actualRevenue = $salesInPeriod->sum('total_price_tsh');
-                
-                // Buying Price for Profit Potential calculations
                 $latestReceipt = \App\Models\StockReceipt::where('product_variant_id', $variant->id)
                     ->orderBy('received_date', 'desc')
                     ->first();
                 $buyingPricePerPic = $latestReceipt ? (float)$latestReceipt->buying_price_per_bottle : 0;
                 
-                // Potential Revenue (Value of stock if sold as PICs)
-                // Use higher of PIC price or servings * glass price if configured
                 $picPrice = (float)($variant->selling_price_per_pic ?? 0);
                 $servingPriceTotal = (float)($variant->servings_per_pic ?? 1) * (float)($variant->selling_price_per_serving ?? 0);
                 $bestUnitPrice = max($picPrice, $servingPriceTotal);
@@ -437,7 +484,7 @@ class BarKeeperController extends Controller
                     'opening_stock' => $openingStock,
                     'received' => $receivedInPeriod > 0 ? $receivedInPeriod : 0,
                     'sold' => $soldInPeriod,
-                    'expected_revenue' => $soldInPeriod * $picPrice, // Base bottle revenue
+                    'expected_revenue' => $soldInPeriod * $picPrice,
                     'actual_revenue' => $actualRevenue,
                     'max_potential_revenue' => ($openingStock + $receivedInPeriod) * $bestUnitPrice,
                     'stock_value' => $stockValue,
@@ -449,12 +496,12 @@ class BarKeeperController extends Controller
             }
         }
 
-        // 2. Production (Bar Sales) during this period
+        // 2. Sales during this shift period
         $rawSales = \App\Models\ServiceRequest::with(['service', 'booking.room', 'approvedBy'])
             ->where(function($q) use ($barCategories) {
                 $q->whereHas('service', function($query) use ($barCategories) {
                     $query->whereIn('category', $barCategories);
-                })->orWhereIn('service_id', [3]); // Generic Bar (3)
+                })->orWhereIn('service_id', [3]);
             })
             ->where('status', 'completed')
             ->whereNull('day_service_id')
@@ -463,7 +510,6 @@ class BarKeeperController extends Controller
             ->get();
 
         $salesData = $rawSales->map(function($order) {
-            // Determine Destination
             $dest = 'N/A';
             $guestLabel = 'Room Guest';
             if ($order->is_walk_in) {
@@ -475,7 +521,6 @@ class BarKeeperController extends Controller
                 $guestLabel = 'Room ' . ($order->booking->room->room_number ?? 'N/A');
             }
 
-            // Calculate Pic Equivalent for Statistics
             $meta = $order->service_specific_data;
             $vId = $meta['product_variant_id'] ?? null;
             $variant = $vId ? \App\Models\ProductVariant::find($vId) : null;
@@ -501,7 +546,7 @@ class BarKeeperController extends Controller
             ];
         });
 
-        // 3. Ceremony Usage Breakdown
+        // 3. Ceremony Usage during shift period
         $ceremonyUsage = \App\Models\ServiceRequest::with(['service', 'dayService'])
             ->whereNotNull('day_service_id')
             ->whereBetween('created_at', [$startDate, $endDate])
@@ -522,7 +567,9 @@ class BarKeeperController extends Controller
             'startDate', 
             'endDate', 
             'dateType',
-            'activePage'
+            'activePage',
+            'selectedShift',
+            'pastShifts'
         ));
     }
 
@@ -1383,5 +1430,127 @@ class BarKeeperController extends Controller
                 'message' => 'Failed to reset inventory: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    // === SHIFT MANAGEMENT ===
+
+    /**
+     * Show Open Shift View
+     */
+    public function openShiftView()
+    {
+        if ($this->hasActiveShift()) {
+            return redirect()->route('bar-keeper.dashboard');
+        }
+
+        return view('dashboard.reception.shift-open', [
+            'role' => 'bar_keeper',
+            'userName' => Auth::guard('staff')->user()->name,
+            'hideMoney' => true // Bar Keeper also doesn't need to enter money at start (as per user request)
+        ]);
+    }
+
+    /**
+     * Start Shift
+     */
+    public function startShift(Request $request)
+    {
+        if ($this->hasActiveShift()) {
+            return redirect()->route('bar-keeper.dashboard');
+        }
+
+        Shift::create([
+            'staff_id' => Auth::guard('staff')->id(),
+            'opened_at' => now(),
+            'opening_cash' => $request->opening_cash ?? 0,
+            'status' => 'open'
+        ]);
+
+        return redirect()->route('bar-keeper.dashboard')->with('success', 'Shift activated successfully!');
+    }
+
+    /**
+     * Close Shift Summary View
+     * For Bar Keeper: shows a simple confirmation page (no cash drawer reconciliation)
+     */
+    public function closeShiftView()
+    {
+        $activeShift = $this->getActiveShift();
+        if (!$activeShift) {
+            return redirect()->route('bar-keeper.dashboard')->with('error', 'No active shift found.');
+        }
+
+        // Calculate basic stats for the summary
+        $start = $activeShift->opened_at;
+        $end = now();
+
+        $orders = ServiceRequest::whereBetween('completed_at', [$start, $end])
+            ->where('status', 'completed')
+            ->get();
+
+        $totalRevenue = $orders->where('payment_status', 'paid')->sum('total_price_tsh');
+        $totalOrders = $orders->count();
+
+        return view('dashboard.bar-keeper-shift-close', [
+            'shift' => $activeShift,
+            'totalOrders' => $totalOrders,
+            'totalRevenue' => $totalRevenue,
+            'userName' => Auth::guard('staff')->user()->name,
+        ]);
+    }
+
+    /**
+     * Finalize Shift — close it and redirect to shift-specific report
+     */
+    public function finalizeShift(Request $request)
+    {
+        $activeShift = $this->getActiveShift();
+        if (!$activeShift) {
+            // Handle both AJAX and regular form submissions
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'No active shift found.'], 404);
+            }
+            return redirect()->route('bar-keeper.dashboard')->with('error', 'No active shift found.');
+        }
+
+        $activeShift->update([
+            'closed_at' => now(),
+            'closing_cash_actual' => 0,
+            'closing_cash_expected' => 0,
+            'total_mobile_expected' => 0,
+            'notes' => $request->notes,
+            'status' => 'closed'
+        ]);
+
+        $reportUrl = route('bar-keeper.reports', ['shift_id' => $activeShift->id]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Shift closed! Redirecting to your shift report...',
+                'redirect' => $reportUrl,
+                'print_url' => route('bar-keeper.shift.print', $activeShift->id)
+            ]);
+        }
+
+        return redirect($reportUrl)->with('success', 'Shift closed! Here is your report for this shift.');
+    }
+
+    /**
+     * Print Bar Shift Report (Sales + Stock Movement)
+     */
+    public function printShiftReport(Shift $shift)
+    {
+        $shift->load('staff');
+        
+        // This is a placeholder for a combined Bar Stock Sheet
+        // For now, redirect to the existing report logic filtered by shift
+        // But for consistency, let's render a basic shift print
+        
+        return $this->reports(new Request([
+            'date' => $shift->opened_at->format('Y-m-d'),
+            'date_type' => 'daily',
+            'shift_id' => $shift->id
+        ]));
     }
 }

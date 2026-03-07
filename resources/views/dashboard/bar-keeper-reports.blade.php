@@ -13,7 +13,6 @@
   </ul>
 </div>
 
-<!-- Report Type and Date Filter -->
 <div class="row mb-3 d-print-none">
   <div class="col-md-12">
     <div class="tile shadow-sm border-0">
@@ -21,6 +20,40 @@
         <h3 class="title">Generate Report</h3>
       </div>
       <div class="tile-body">
+
+        {{-- 1. Shift-Based Quick Filter --}}
+        @if(isset($pastShifts) && $pastShifts->count() > 0)
+        <form method="GET" action="{{ route('bar-keeper.reports') }}" id="shiftSelectForm" class="mb-3">
+          <div class="row align-items-end">
+            <div class="col-md-6">
+              <label class="font-weight-bold"><i class="fa fa-history mr-1"></i> My Shift History:</label>
+              <select name="shift_id" class="form-control" onchange="this.form.submit()">
+                <option value="">-- Select a shift --</option>
+                @foreach($pastShifts as $sh)
+                  <option value="{{ $sh->id }}" {{ (isset($selectedShift) && $selectedShift && $selectedShift->id == $sh->id) ? 'selected' : '' }}>
+                    @if($sh->staff) {{ $sh->staff->name }} — @endif
+                    {{ $sh->opened_at->format('D d M, H:i') }}
+                    @if($sh->status === 'open') [ACTIVE] @else → {{ $sh->closed_at?->format('H:i') }} @endif
+                  </option>
+                @endforeach
+              </select>
+            </div>
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-primary btn-block">
+                <i class="fa fa-eye"></i> View This Shift
+              </button>
+            </div>
+            <div class="col-md-3">
+              <button type="button" onclick="window.print()" class="btn btn-success btn-block">
+                <i class="fa fa-print"></i> Print / Download
+              </button>
+            </div>
+          </div>
+        </form>
+        <hr>
+        @endif
+
+        {{-- 2. Manual Date Filter (fallback / manager view) --}}
         <form method="GET" action="{{ route('bar-keeper.reports') }}" id="reportForm">
           <div class="row">
             <div class="col-md-3">
@@ -42,8 +75,8 @@
             <div class="col-md-3">
               <div class="form-group">
                 <label>&nbsp;</label>
-                <button type="submit" class="btn btn-primary btn-block shadow-sm">
-                  <i class="fa fa-file-text"></i> Generate Report
+                <button type="submit" class="btn btn-outline-primary btn-block shadow-sm">
+                  <i class="fa fa-file-text"></i> Date-Based Report
                 </button>
               </div>
             </div>
@@ -383,12 +416,18 @@
     
     <!-- Report Number -->
     <div class="receipt-report-number">
+        @if(isset($selectedShift) && $selectedShift)
+            <strong>Shift:</strong> #{{ $selectedShift->id }} &nbsp;|&nbsp;
+            <strong>Staff:</strong> {{ $selectedShift->staff->name ?? auth('staff')->user()->name }} &nbsp;|&nbsp;
+        @endif
         <strong>Report #:</strong> BAR-RPT-{{ date('Ymd') }}-{{ strtoupper(substr(md5('bar' . $startDate . $endDate), 0, 6)) }}
     </div>
     
     <!-- Receipt Title -->
     <div class="receipt-report-title">
-        @if($dateType == 'weekly')
+        @if(isset($selectedShift) && $selectedShift)
+            SHIFT STOCK & SALES SHEET
+        @elseif($dateType == 'weekly')
             WEEKLY BAR INVENTORY & SALES SUMMARY
         @else
             DAILY BAR STOCK & SALES SHEET
@@ -408,6 +447,24 @@
         <div class="receipt-column">
             <div class="receipt-info-section">
                 <h3>Report Information</h3>
+                @if(isset($selectedShift) && $selectedShift)
+                <div class="receipt-info-row">
+                    <span class="receipt-info-label">Shift ID:</span>
+                    <span class="receipt-info-value"><strong>#{{ $selectedShift->id }}</strong></span>
+                </div>
+                <div class="receipt-info-row">
+                    <span class="receipt-info-label">Staff:</span>
+                    <span class="receipt-info-value"><strong>{{ $selectedShift->staff->name ?? auth('staff')->user()->name }}</strong></span>
+                </div>
+                <div class="receipt-info-row">
+                    <span class="receipt-info-label">Shift Opened:</span>
+                    <span class="receipt-info-value">{{ $startDate->format('d M Y, H:i') }}</span>
+                </div>
+                <div class="receipt-info-row">
+                    <span class="receipt-info-label">Shift Closed:</span>
+                    <span class="receipt-info-value">{{ $selectedShift->closed_at ? $selectedShift->closed_at->format('d M Y, H:i') : 'Active' }}</span>
+                </div>
+                @else
                 <div class="receipt-info-row">
                     <span class="receipt-info-label">Report Type:</span>
                     <span class="receipt-info-value"><strong>{{ $dateType == 'weekly' ? 'Weekly Summary' : 'Daily Stock Sheet' }}</strong></span>
@@ -426,6 +483,7 @@
                     <span class="receipt-info-label">Generated By:</span>
                     <span class="receipt-info-value">{{ auth('staff')->user()->name }}</span>
                 </div>
+                @endif
             </div>
         </div>
         
@@ -757,7 +815,7 @@
     <div class="signature-grid">
         <div class="signature-box">
             <div class="signature-line"></div>
-            <strong>BAR KEEPER</strong>
+            <strong>{{ isset($selectedShift) && $selectedShift ? ($selectedShift->staff->name ?? 'BAR KEEPER') : 'BAR KEEPER' }}</strong>
             <p style="font-size: 11px; margin-top: 5px;">(Signature & Date)</p>
         </div>
         <div class="signature-box">

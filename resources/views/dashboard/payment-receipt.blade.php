@@ -159,7 +159,7 @@
         }
 
         .summary-box {
-            width: 280px;
+            width: 360px;
             background: #f8fafc;
             padding: 15px;
             border-radius: 6px;
@@ -447,24 +447,25 @@
             <div class="summary-box">
                 <div class="summary-row">
                     <label>Subtotal (USD):</label>
-                    <span>${{ number_format($grandTotalUSD, 2) }}</span>
+                    <span style="text-align: right;">${{ number_format($grandTotalUSD, 2) }} <br><small style="color: #64748b;">{{ number_format($grandTotalUSD * $currentExchangeRate, 0) }} TZS</small></span>
                 </div>
                 <div class="summary-row grand-total">
                     <label>Total Balance:</label>
-                    <span>${{ number_format($grandTotalUSD, 2) }}</span>
+                    <span style="text-align: right;">${{ number_format($grandTotalUSD, 2) }} <br><small style="font-size: 12px; color: var(--text-light); font-weight: normal;">{{ number_format($grandTotalUSD * $currentExchangeRate, 0) }} TZS</small></span>
                 </div>
-                <div class="summary-row paid">
-                    <label>Amount Paid:</label>
-                    <span>${{ number_format($grandPaidUSD, 2) }}</span>
+                <div class="summary-row paid" style="align-items: center;">
+                    <label style="margin-top: 10px;">Amount Paid:</label>
+                    <span style="text-align: right; margin-top: 10px;">${{ number_format($grandPaidUSD, 2) }} <br><small style="font-size: 11px; font-weight: normal;">{{ number_format($grandPaidUSD * $currentExchangeRate, 0) }} TZS</small></span>
                 </div>
                 @if($balanceUSD > 0.1)
-                <div class="summary-row" style="color: #dc2626; font-weight: 700;">
+                <div class="summary-row" style="color: #dc2626; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
                     <label>Due Balance:</label>
-                    <span>${{ number_format($balanceUSD, 2) }}</span>
+                    <span style="text-align: right;">${{ number_format($balanceUSD, 2) }} <br><small style="font-size: 11px; font-weight: normal;">{{ number_format($balanceUSD * $currentExchangeRate, 0) }} TZS</small></span>
                 </div>
-                <div class="summary-row" style="color: grey; font-size: 10px;">
-                    <label>TZS Equivalent:</label>
-                    <span>{{ number_format($balanceUSD * $currentExchangeRate, 0) }} TZS</span>
+                @else
+                <div class="summary-row" style="color: #10b981; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
+                    <label>Due Balance:</label>
+                    <span style="text-align: right;">$0.00 <br><small style="font-size: 11px; font-weight: normal;">0 TZS</small></span>
                 </div>
                 @endif
             </div>

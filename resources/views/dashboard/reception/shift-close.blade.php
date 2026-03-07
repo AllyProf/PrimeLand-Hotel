@@ -20,6 +20,7 @@
                         <small class="text-muted">Shift started at: {{ $shift->opened_at->format('M d, Y H:i A') }}</small>
                     </div>
                     <div class="card-body">
+                        @if(!(isset($isChef) && $isChef))
                         <div class="row text-center mb-4">
                             <div class="col-md">
                                 <div class="p-3 bg-light rounded h-100">
@@ -77,7 +78,14 @@
                                 </div>
                             </div>
                         </div>
+                        @else
+                        <div class="alert alert-info py-4 text-center">
+                            <h5 class="mb-0"><i class="fa fa-info-circle mr-2"></i> Inventory & Production Duty</h5>
+                            <p class="mb-0 text-muted">This closure will finalize all stock usages and meals produced during your operational shift.</p>
+                        </div>
+                        @endif
 
+                        @if(!(isset($isChef) && $isChef))
                         <div class="table-responsive">
                             <table class="table table-bordered table-sm">
                                 <thead class="table-dark">
@@ -133,6 +141,12 @@
                                 </tfoot>
                             </table>
                         </div>
+                        @else
+                        <div class="p-3 border rounded bg-light">
+                            <h6><i class="fa fa-cubes"></i> Shift Coverage</h6>
+                            <p class="small text-muted mb-0">Chef shifts focus on stock accountability and meal production. All sales recorded by waiters during this window will be reported separately but linked to your shift period for cross-referencing.</p>
+                        </div>
+                        @endif
                         
                         {{-- Staff Breakdown --}}
                         <div class="mt-4">
@@ -183,6 +197,7 @@
                             <input type="hidden" name="total_bank_expected" value="{{ $expectedBank }}">
                             <input type="hidden" name="total_online_expected" value="{{ $expectedOnline }}">
 
+                            @if(!(isset($isChef) && $isChef))
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Actual Cash in Drawer (Physical Count)</label>
                                 <div class="input-group input-group-lg">
@@ -191,6 +206,9 @@
                                 </div>
                                 <div id="cash-diff" class="mt-2 fw-bold text-center"></div>
                             </div>
+                            @else
+                                <input type="hidden" name="closing_cash_actual" value="0">
+                            @endif
 
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Handover Notes / Discrepancies</label>
@@ -198,7 +216,7 @@
                             </div>
 
                             <div class="alert alert-warning">
-                                <i class="fa fa-exclamation-triangle me-2"></i> After closing, you will not be able to record any more payments until you open a new shift.
+                                <i class="fa fa-exclamation-triangle me-2"></i> After closing, you will not be able to record any more operations until you open a new shift.
                             </div>
 
                             <div class="d-grid shadow">
@@ -270,7 +288,11 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i> Processing...';
 
-                fetch("{{ route('reception.shift.finalize') }}", {
+                fetch("{{ 
+                    $role === 'head_chef' ? route('chef-master.shift.finalize') : 
+                    ($role === 'bar_keeper' ? route('bar-keeper.shift.finalize') : 
+                    route('reception.shift.finalize')) 
+                }}", {
                     method: 'POST',
                     body: formData,
                     headers: {

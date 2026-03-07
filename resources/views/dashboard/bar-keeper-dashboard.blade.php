@@ -66,7 +66,15 @@
     <div class="tile shadow-sm border-0">
       <div class="tile-title-w-btn">
         <h3 class="title"><i class="fa fa-shopping-basket mr-2 text-primary"></i> Pending Guest Orders</h3>
-        <button class="btn btn-primary rounded-pill px-4" onclick="openWalkInModal()"><i class="fa fa-plus-circle mr-1"></i> New Walk-in Sale</button>
+        <div class="btn-group">
+            @php $activeShift = Auth::guard('staff')->user()->currentShift; @endphp
+            @if($activeShift)
+                <a href="{{ route('bar-keeper.shift.close') }}" class="btn btn-danger mr-2 rounded-pill px-4 shadow-sm"><i class="fa fa-sign-out"></i> CLOSE SHIFT</a>
+            @else
+                <a href="{{ route('bar-keeper.shift.open') }}" class="btn btn-success mr-2 rounded-pill px-4 shadow-sm"><i class="fa fa-sign-in"></i> OPEN SHIFT</a>
+            @endif
+            <button class="btn btn-primary rounded-pill px-4" onclick="openWalkInModal()"><i class="fa fa-plus-circle mr-1"></i> New Walk-in Sale</button>
+        </div>
       </div>
       
       @if($pendingOrders->count() > 0)

@@ -8,7 +8,11 @@
   </div>
   <ul class="app-breadcrumb breadcrumb">
     <li class="breadcrumb-item"><i class="fa fa-home fa-lg"></i></li>
-    <li class="breadcrumb-item"><a href="{{ route($role === 'manager' ? 'admin.dashboard' : 'reception.dashboard') }}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{{ 
+        $role === 'head_chef' ? route('chef-master.dashboard') : 
+        ($role === 'bar_keeper' ? route('bar-keeper.dashboard') : 
+        route($role === 'manager' ? 'admin.dashboard' : 'reception.dashboard')) 
+    }}">Dashboard</a></li>
     <li class="breadcrumb-item">Open Shift</li>
   </ul>
 </div>
@@ -35,12 +39,17 @@
                 <!-- Right Side: Action Form -->
                 <div class="col-md-7 p-5 bg-white d-flex flex-column justify-content-center">
                     <div class="mb-4">
-                        <h4 class="text-dark font-weight-bold">Drawer Initialization</h4>
-                        <p class="text-muted">Welcome, <strong>{{ $userName }}</strong>. Please record your starting balance to proceed.</p>
+                        <h4 class="text-dark font-weight-bold">{{ isset($hideMoney) && $hideMoney ? 'Shift Start' : 'Drawer Initialization' }}</h4>
+                        <p class="text-muted">Welcome, <strong>{{ $userName }}</strong>. {{ isset($hideMoney) && $hideMoney ? 'Click the button below to start your shift operations.' : 'Please record your starting balance to proceed.' }}</p>
                     </div>
 
-                    <form action="{{ route('reception.shift.start') }}" method="POST">
+                    <form action="{{ 
+                        $role === 'head_chef' ? route('chef-master.shift.start') : 
+                        ($role === 'bar_keeper' ? route('bar-keeper.shift.start') : 
+                        route('reception.shift.start')) 
+                    }}" method="POST">
                         @csrf
+                        @if(!(isset($hideMoney) && $hideMoney))
                         <div class="form-group mb-4">
                             <label for="opening_cash" class="font-weight-bold text-muted small text-uppercase">Opening Cash Balance (Float)</label>
                             <div class="input-group input-group-lg">
@@ -58,6 +67,12 @@
                         <div class="alert alert-secondary border-0 small py-2 px-3 mb-4" style="border-radius: 8px; background: #f8f9fa;">
                             <i class="fa fa-info-circle text-info mr-2"></i> Input the physical cash in your drawer. <strong>If previous shift cash was already submitted, enter 0.</strong>
                         </div>
+                        @else
+                            <input type="hidden" name="opening_cash" value="0">
+                            <div class="alert alert-info border-0 py-3 mb-4" style="border-radius: 10px;">
+                                <i class="fa fa-info-circle mr-2"></i> Operational shift will track all stock movements and sales under your name for accountability.
+                            </div>
+                        @endif
 
                         <div class="row">
                             <div class="col-sm-8">
@@ -66,7 +81,11 @@
                                 </button>
                             </div>
                             <div class="col-sm-4 mt-3 mt-sm-0">
-                                <a href="{{ route($role === 'manager' ? 'admin.dashboard' : 'reception.dashboard') }}" class="btn btn-light btn-lg btn-block py-3" style="border-radius: 10px; font-weight: 600; font-size: 1rem; color: #666;">
+                                <a href="{{ 
+                                    $role === 'head_chef' ? route('chef-master.dashboard') : 
+                                    ($role === 'bar_keeper' ? route('bar-keeper.dashboard') : 
+                                    route($role === 'manager' ? 'admin.dashboard' : 'reception.dashboard')) 
+                                }}" class="btn btn-light btn-lg btn-block py-3" style="border-radius: 10px; font-weight: 600; font-size: 1rem; color: #666;">
                                     Cancel
                                 </a>
                             </div>

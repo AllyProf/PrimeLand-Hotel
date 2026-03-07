@@ -18,6 +18,8 @@ use App\Models\KitchenInventoryItem;
 use App\Models\KitchenStockMovement;
 use App\Models\ServiceRequest;
 use App\Models\Service;
+use App\Models\Shift;
+use App\Traits\ShiftManager;
 use App\Mail\StaffTransferNotificationMail;
 use App\Mail\ShoppingListFinalizedMail;
 use App\Services\SmsService;
@@ -26,6 +28,7 @@ use Carbon\Carbon;
 
 class KitchenController extends Controller
 {
+    use ShiftManager;
     // === SHOPPING LIST MANAGEMENT ===
 
     public function index(Request $request)
@@ -726,6 +729,11 @@ class KitchenController extends Controller
     {
         $user = Auth::guard('staff')->user();
         $isChef = \App\Services\RolePermissionService::hasRole($user, 'head_chef');
+
+        // Enforcement: If Chef, must have open shift to access dashboard features
+        if ($isChef && !$this->hasActiveShift()) {
+            return redirect()->route('chef-master.shift.open');
+        }
 
         $today = now()->startOfDay();
         $stats = [
@@ -1587,16 +1595,56 @@ class KitchenController extends Controller
      */
     public function reports(Request $request)
     {
-        $reportType = $request->get('date_type', 'daily');
-        $date = $request->date ? Carbon::parse($request->date) : now();
-        
-        if ($reportType === 'weekly') {
-            $startDate = $date->copy()->startOfWeek();
-            $endDate = $date->copy()->endOfWeek();
-        } else {
-            $startDate = $date->copy()->startOfDay();
-            $endDate = $date->copy()->endOfDay();
+        $user = Auth::guard('staff')->user();
+        $isManager = in_array($user->role, ['manager', 'admin', 'super_admin']);
+
+        // --- Shift Selection Logic ---
+        $selectedShift = null;
+        if ($request->shift_id) {
+            $selectedShift = Shift::where('id', $request->shift_id)
+                ->when(!$isManager, function($q) use ($user) {
+                    $q->where('staff_id', $user->id);
+                })
+                ->first();
         }
+
+        // Default to active/recently closed shift for chefs if no shift is requested
+        if (!$selectedShift && !$isManager && !$request->has('date_type')) {
+            $selectedShift = $this->getActiveShift();
+            if (!$selectedShift) {
+                $selectedShift = Shift::where('staff_id', $user->id)
+                    ->where('status', 'closed')
+                    ->latest('closed_at')
+                    ->first();
+            }
+        }
+
+        // --- Date Range Resolution ---
+        if ($selectedShift) {
+            $startDate = $selectedShift->opened_at;
+            $endDate = $selectedShift->closed_at ?? now();
+            $reportType = 'shift';
+            $date = $startDate;
+        } else {
+            $reportType = $request->get('date_type', 'daily');
+            $date = $request->date ? Carbon::parse($request->date) : now();
+            
+            if ($reportType === 'weekly') {
+                $startDate = $date->copy()->startOfWeek();
+                $endDate = $date->copy()->endOfWeek();
+            } else {
+                $startDate = $date->copy()->startOfDay();
+                $endDate = $date->copy()->endOfDay();
+            }
+        }
+
+        // Past Shifts for Dropdown Selector
+        $pastShifts = Shift::when(!$isManager, fn($q) => $q->where('staff_id', $user->id))
+            ->when($isManager && $request->staff_id, fn($q) => $q->where('staff_id', $request->staff_id))
+            ->with('staff')
+            ->orderBy('opened_at', 'desc')
+            ->limit(30)
+            ->get();
 
         // 1. Get ONLY Kitchen-related inventory items (Exclude ALL Bar/Drink categories)
         $barCategories = [
@@ -1612,8 +1660,15 @@ class KitchenController extends Controller
         $reportData = [];
         foreach ($items as $item) {
             // Opening Stock Calculation (Movements BEFORE the period)
+            // Use exact created_at timestamp if shift, otherwise use movement_date
             $movementsBefore = KitchenStockMovement::where('inventory_item_id', $item->id)
-                ->where('movement_date', '<', $startDate->toDateString())
+                ->where(function($q) use ($startDate, $selectedShift) {
+                    if ($selectedShift) {
+                        $q->where('created_at', '<', $startDate);
+                    } else {
+                        $q->where('movement_date', '<', $startDate->toDateString());
+                    }
+                })
                 ->get();
             
             $openingStock = 0;
@@ -1627,7 +1682,13 @@ class KitchenController extends Controller
 
             // Movements IN the period
             $movementsInPeriod = KitchenStockMovement::where('inventory_item_id', $item->id)
-                ->whereBetween('movement_date', [$startDate->toDateString(), $endDate->toDateString()])
+                ->where(function($q) use ($startDate, $endDate, $selectedShift) {
+                    if ($selectedShift) {
+                        $q->whereBetween('created_at', [$startDate, $endDate]);
+                    } else {
+                        $q->whereBetween('movement_date', [$startDate->toDateString(), $endDate->toDateString()]);
+                    }
+                })
                 ->get();
             
             $received = $movementsInPeriod->whereIn('movement_type', ['supply', 'manual_add'])->sum('quantity');
@@ -1726,7 +1787,164 @@ class KitchenController extends Controller
             'reportType',
             'activePage',
             'totalRev',
-            'totalQty'
+            'totalQty',
+            'pastShifts',
+            'selectedShift'
         ));
     }
+
+    // === SHIFT MANAGEMENT ===
+
+    /**
+     * Show Open Shift View
+     */
+    public function openShiftView()
+    {
+        if ($this->hasActiveShift()) {
+            return redirect()->route('chef-master.dashboard');
+        }
+
+        return view('dashboard.reception.shift-open', [
+            'role' => 'head_chef',
+            'userName' => Auth::guard('staff')->user()->name,
+            'hideMoney' => true // Custom flag for Chef/Bar
+        ]);
+    }
+
+    /**
+     * Start Shift
+     */
+    public function startShift(Request $request)
+    {
+        if ($this->hasActiveShift()) {
+            return redirect()->route('chef-master.dashboard');
+        }
+
+        Shift::create([
+            'staff_id' => Auth::guard('staff')->id(),
+            'opened_at' => now(),
+            'opening_cash' => $request->opening_cash ?? 0,
+            'status' => 'open'
+        ]);
+
+        return redirect()->route('chef-master.dashboard')->with('success', 'Shift activated successfully!');
+    }
+
+    /**
+     * Close Shift Summary View — Simple confirmation for Chef
+     */
+    public function closeShiftView()
+    {
+        $activeShift = $this->getActiveShift();
+        if (!$activeShift) {
+            return redirect()->route('chef-master.dashboard')->with('error', 'No active shift found.');
+        }
+
+        $start = $activeShift->opened_at;
+
+        // Count how many stock movements happened during this shift
+        $movementCount = KitchenStockMovement::where('created_at', '>=', $start)->count();
+
+        return view('admin.restaurants.kitchen.shift-close', [
+            'shift' => $activeShift,
+            'movementCount' => $movementCount,
+            'userName' => Auth::guard('staff')->user()->name,
+        ]);
+    }
+
+    /**
+     * Finalize Shift — close and redirect to printable stock sheet
+     */
+    public function finalizeShift(Request $request)
+    {
+        $activeShift = $this->getActiveShift();
+        if (!$activeShift) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'No active shift found.'], 404);
+            }
+            return redirect()->route('chef-master.dashboard')->with('error', 'No active shift found.');
+        }
+
+        $activeShift->update([
+            'closed_at' => now(),
+            'closing_cash_actual' => 0,
+            'notes' => $request->notes,
+            'status' => 'closed'
+        ]);
+
+        $printUrl = route('chef-master.reports', ['shift_id' => $activeShift->id]);
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Shift closed! Redirecting to your shift report...',
+                'redirect' => $printUrl,
+                'print_url' => route('chef-master.shift.print', $activeShift->id)
+            ]);
+        }
+
+        return redirect($printUrl)->with('success', 'Shift closed! Here is your report for this shift.');
+    }
+
+    /**
+     * Print Individual Stock Sheet for Chef Shift
+     */
+    public function printShiftReport(Shift $shift)
+    {
+        $shift->load('staff');
+        $start = $shift->opened_at;
+        $end = $shift->closed_at ?? now();
+
+        // Get Kitchen Items
+        $barCategories = ['spirits', 'alcoholic_beverage', 'liquor', 'wine', 'soft_drinks', 'beverages', 'water', 'juices', 'drinks'];
+        $items = KitchenInventoryItem::whereNotIn('category', $barCategories)->get();
+
+        $reportData = [];
+        foreach ($items as $item) {
+            // Live Current Stock (at THIS MOMENT)
+            $liveStock = (float)$item->current_stock;
+            
+            // Revert all movements since shift start to get Opening Stock at that time
+            $allAfterStart = KitchenStockMovement::where('inventory_item_id', $item->id)
+                ->where('created_at', '>=', $start)
+                ->get();
+            
+            $usageTypes = ['sale', 'guest_use', 'internal_use', 'staff_use'];
+            $additionTypes = ['supply', 'manual_add'];
+            $lossTypes = ['destroyed', 'manual_subtract'];
+
+            $usageAfterStart = $allAfterStart->whereIn('movement_type', $usageTypes)->sum('quantity');
+            $receivedAfterStart = $allAfterStart->whereIn('movement_type', $additionTypes)->sum('quantity');
+            $lostAfterStart = $allAfterStart->whereIn('movement_type', $lossTypes)->sum('quantity');
+
+            // Opening Stock at Start = Stock now - (Received since then) + (Used since then) + (Lost since then)
+            $openingStock = $liveStock - $receivedAfterStart + $usageAfterStart + $lostAfterStart;
+
+            // Usage ONLY within the shift window
+            $shiftMovements = $allAfterStart->where('created_at', '<=', $end);
+            
+            $usageInShift = $shiftMovements->whereIn('movement_type', $usageTypes)->sum('quantity');
+            $receivedInShift = $shiftMovements->whereIn('movement_type', $additionTypes)->sum('quantity');
+            $lostInShift = $shiftMovements->whereIn('movement_type', $lossTypes)->sum('quantity');
+
+            // Closing Stock (At Exactly Shift End)
+            $closingStock = $openingStock + $receivedInShift - $usageInShift - $lostInShift;
+
+            $reportData[] = (object)[
+                'name' => $item->name,
+                'unit' => $item->unit,
+                'opening_stock' => $openingStock,
+                'received' => $receivedInShift,
+                'usage' => $usageInShift,
+                'lost' => $lostInShift,
+                'closing_stock' => $closingStock,
+            ];
+        }
+
+        return view('admin.restaurants.kitchen.shift-print', [
+            'shift' => $shift,
+            'reportData' => $reportData,
+            'hotelName' => 'PRIME LAND HOTEL'
+        ]);
+        }
 }

@@ -5,6 +5,8 @@
     $dashRoute    = $dashRoute    ?? ($role === 'manager' ? 'admin.dashboard' : 'reception.dashboard');
 @endphp
 
+@extends('dashboard.layouts.app')
+
 @section('content')
 <div class="app-title">
   <div>
@@ -210,9 +212,17 @@
                                         <span class="badge badge-secondary px-3 py-2"><i class="fa fa-check"></i> CLOSED</span>
                                     @endif
                                 </td>
-                                <td>{{ number_format($shift->opening_cash ?? 0, 0) }} TZS</td>
                                 <td>
-                                    @if($shift->status === 'closed')
+                                    @if(in_array($shift->staff->role ?? '', ['head_chef', 'chef', 'bar_keeper']))
+                                        <span class="text-muted">N/A</span>
+                                    @else
+                                        {{ number_format($shift->opening_cash ?? 0, 0) }} TZS
+                                    @endif
+                                </td>
+                                <td>
+                                    @if(in_array($shift->staff->role ?? '', ['head_chef', 'chef', 'bar_keeper']))
+                                        <span class="text-muted">N/A</span>
+                                    @elseif($shift->status === 'closed')
                                         {{ number_format($shift->closing_cash_actual ?? 0, 0) }} TZS
                                         @php
                                             $diff = ($shift->closing_cash_actual ?? 0) - ($shift->closing_cash_expected ?? 0);
@@ -227,25 +237,39 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @php
-                                        $expectedTotal = (float)($shift->closing_cash_expected ?? 0) +
-                                                         (float)($shift->total_mobile_expected ?? 0) +
-                                                         (float)($shift->total_card_expected ?? 0) +
-                                                         (float)($shift->total_bank_expected ?? 0) +
-                                                         (float)($shift->total_online_expected ?? 0);
-                                    @endphp
-                                    @if($shift->status === 'closed')
-                                        <strong>{{ number_format($expectedTotal, 0) }} TZS</strong>
+                                    @if(in_array($shift->staff->role ?? '', ['head_chef', 'chef', 'bar_keeper']))
+                                        <span class="text-muted">N/A</span>
                                     @else
-                                        <span class="text-muted">Pending Close</span>
+                                        @php
+                                            $expectedTotal = (float)($shift->closing_cash_expected ?? 0) +
+                                                             (float)($shift->total_mobile_expected ?? 0) +
+                                                             (float)($shift->total_card_expected ?? 0) +
+                                                             (float)($shift->total_bank_expected ?? 0) +
+                                                             (float)($shift->total_online_expected ?? 0);
+                                        @endphp
+                                        @if($shift->status === 'closed')
+                                            <strong>{{ number_format($expectedTotal, 0) }} TZS</strong>
+                                        @else
+                                            <span class="text-muted">Pending Close</span>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group">
                                         @if($shift->status === 'closed')
-                                            <a href="{{ route($printRoute, $shift->id) }}" class="btn btn-sm btn-info" target="_blank" title="Print Report">
-                                                <i class="fa fa-print"></i>
-                                            </a>
+                                            @if(in_array($shift->staff->role ?? '', ['head_chef', 'chef']))
+                                                <a href="{{ route('chef-master.reports', ['shift_id' => $shift->id]) }}" class="btn btn-sm btn-info" target="_blank" title="View Shift Report">
+                                                    <i class="fa fa-print"></i>
+                                                </a>
+                                            @elseif(in_array($shift->staff->role ?? '', ['bar_keeper']))
+                                                <a href="{{ route('bar-keeper.reports', ['shift_id' => $shift->id]) }}" class="btn btn-sm btn-info" target="_blank" title="View Shift Report">
+                                                    <i class="fa fa-print"></i>
+                                                </a>
+                                            @else
+                                                <a href="{{ route($printRoute, $shift->id) }}" class="btn btn-sm btn-info" target="_blank" title="Print Cash Report">
+                                                    <i class="fa fa-print"></i>
+                                                </a>
+                                            @endif
                                         @endif
                                         @if(in_array($role, ['reception']) && $shift->status === 'open' && $shift->staff_id === Auth::guard('staff')->id())
                                             <a href="{{ route('reception.shift.close') }}" class="btn btn-sm btn-warning" title="Close My Shift">

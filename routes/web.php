@@ -875,6 +875,12 @@ Route::prefix('bar-keeper')->group(function () {
         Route::get('/purchase-requests/templates/{id}', [\App\Http\Controllers\PurchaseRequestController::class, 'getTemplate'])->name('bar-keeper.purchase-requests.templates.get');
         Route::put('/purchase-requests/templates/{id}', [\App\Http\Controllers\PurchaseRequestController::class, 'updateTemplate'])->name('bar-keeper.purchase-requests.templates.update');
         Route::delete('/purchase-requests/templates/{id}', [\App\Http\Controllers\PurchaseRequestController::class, 'deleteTemplate'])->name('bar-keeper.purchase-requests.templates.delete');
+        // Shift Management
+        Route::get('/shift/open', [\App\Http\Controllers\BarKeeperController::class, 'openShiftView'])->name('bar-keeper.shift.open');
+        Route::post('/shift/start', [\App\Http\Controllers\BarKeeperController::class, 'startShift'])->name('bar-keeper.shift.start');
+        Route::get('/shift/close', [\App\Http\Controllers\BarKeeperController::class, 'closeShiftView'])->name('bar-keeper.shift.close');
+        Route::post('/shift/finalize', [\App\Http\Controllers\BarKeeperController::class, 'finalizeShift'])->name('bar-keeper.shift.finalize');
+        Route::get('/shift/print/{shift}', [\App\Http\Controllers\BarKeeperController::class, 'printShiftReport'])->name('bar-keeper.shift.print');
         
     });
 });
@@ -974,6 +980,13 @@ Route::prefix('chef-master')->group(function () {
         
         Route::post('/logout', [AuthController::class, 'logout'])->name('chef-master.logout');
         
+        // Shift Management
+        Route::get('/shift/open', [\App\Http\Controllers\KitchenController::class, 'openShiftView'])->name('chef-master.shift.open');
+        Route::post('/shift/start', [\App\Http\Controllers\KitchenController::class, 'startShift'])->name('chef-master.shift.start');
+        Route::get('/shift/close', [\App\Http\Controllers\KitchenController::class, 'closeShiftView'])->name('chef-master.shift.close');
+        Route::post('/shift/finalize', [\App\Http\Controllers\KitchenController::class, 'finalizeShift'])->name('chef-master.shift.finalize');
+        Route::get('/shift/print/{shift}', [\App\Http\Controllers\KitchenController::class, 'printShiftReport'])->name('chef-master.shift.print');
+
         // Inventory Management
         Route::get('/inventory', [\App\Http\Controllers\KitchenController::class, 'inventory'])->name('chef-master.inventory');
         Route::post('/inventory/{item}/update-stock', [\App\Http\Controllers\KitchenController::class, 'updateInventoryStock'])->name('chef-master.inventory.update-stock');
@@ -1009,7 +1022,6 @@ Route::prefix('chef-master')->group(function () {
 
         // Dedicated KDS Monitor
         Route::get('/kds', [\App\Http\Controllers\KitchenController::class, 'kds'])->name('chef-master.kds');
-
 
     });
 });
