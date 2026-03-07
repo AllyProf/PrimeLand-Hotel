@@ -2235,9 +2235,14 @@ function viewBooking(bookingId) {
               <!-- Financial Info -->
               <div class="col-md-6">
                 <div class="preview-section h-100">
-                  <h5><i class="fa fa-dollar"></i> Financial Info</h5>
+                  <h5><i class="${booking.guest_type === 'tanzanian' ? 'fa fa-money' : 'fa fa-dollar'}"></i> Financial Info</h5>
                   <table class="table table-bordered table-sm">
                     ${(() => {
+                      const isTanzanian = booking.guest_type === 'tanzanian';
+                      const currencySymbol = isTanzanian ? '' : '$';
+                      const currencySuffix = isTanzanian ? ' TZS' : '';
+                      const deco = isTanzanian ? 0 : 2;
+                      
                       const serviceCharges = parseFloat(booking.service_charges_usd || 0);
                       const totalRoomCharge = parseFloat(booking.total_price || 0);
                       const totalCharges = parseFloat(booking.total_bill_usd || totalRoomCharge);
@@ -2249,49 +2254,82 @@ function viewBooking(bookingId) {
                       // Price per Night
                       html += `<tr>
                         <th>Price/Night:</th>
-                        <td>$${pricePerNight.toFixed(2)}</td>
+                        <td>${currencySymbol}${pricePerNight.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix}</td>
                       </tr>`;
 
                       // Total Room Charge
                       html += `<tr>
                         <th>Room Charge:</th>
-                        <td>$${totalRoomCharge.toFixed(2)}</td>
+                        <td>${currencySymbol}${totalRoomCharge.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix}</td>
                       </tr>`;
                       
                       // Service Charges (if any)
                       if (serviceCharges > 0) {
+                        const sVal = isTanzanian ? parseFloat(booking.service_charges_tsh || 0) : serviceCharges;
                         html += `<tr>
                           <th>Service Charges:</th>
-                          <td>$${serviceCharges.toFixed(2)}</td>
+                          <td>${currencySymbol}${sVal.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix}</td>
                         </tr>`;
                       }
                       
                       // Total Charges
                       html += `<tr class="table-active">
                         <th class="font-weight-bold">Total Bill:</th>
-                        <td class="font-weight-bold h5 mb-0 text-primary">$${totalCharges.toFixed(2)}</td>
+                        <td class="font-weight-bold h5 mb-0 text-primary">${currencySymbol}${totalCharges.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix}</td>
                       </tr>`;
                       
                       return html;
                     })()}
                     
-                    ${isExtended && extensionCost > 0 ? `<tr><th class="text-info">Extension:</th><td class="text-info">+$${extensionCost.toFixed(2)}</td></tr>` : ''}
-                    ${isDecreased && decreaseRefund > 0 ? `<tr><th class="text-warning">Refund:</th><td class="text-warning">-$${decreaseRefund.toFixed(2)}</td></tr>` : ''}
+                    ${(() => {
+                        const isTanzanian = booking.guest_type === 'tanzanian';
+                        const currencySymbol = isTanzanian ? '' : '$';
+                        const currencySuffix = isTanzanian ? ' TZS' : '';
+                        const deco = isTanzanian ? 0 : 2;
+                        
+                        let html = '';
+                        if (isExtended && extensionCost > 0) {
+                            const eCost = isTanzanian ? (extensionCost * (booking.locked_exchange_rate || 2500)) : extensionCost;
+                            html += `<tr><th class="text-info">Extension:</th><td class="text-info">+${currencySymbol}${eCost.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix}</td></tr>`;
+                        }
+                        if (isDecreased && decreaseRefund > 0) {
+                            const dRefund = isTanzanian ? (decreaseRefund * (booking.locked_exchange_rate || 2500)) : decreaseRefund;
+                            html += `<tr><th class="text-warning">Refund:</th><td class="text-warning">-${currencySymbol}${dRefund.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix}</td></tr>`;
+                        }
+                        return html;
+                    })()}
 
                     <tr>
                       <th>${booking.is_corporate_booking ? 'Paid by Company:' : 'Total Amount Paid:'}</th>
-                      <td class="text-success font-weight-bold">$${parseFloat(booking.total_paid_usd || booking.amount_paid || 0).toFixed(2)}</td>
+                      <td class="text-success font-weight-bold">
+                        ${(() => {
+                            const isTanzanian = booking.guest_type === 'tanzanian';
+                            const currencySymbol = isTanzanian ? '' : '$';
+                            const currencySuffix = isTanzanian ? ' TZS' : '';
+                            const deco = isTanzanian ? 0 : 2;
+                            const paidVal = parseFloat(booking.total_paid_usd || booking.amount_paid || 0);
+                            
+                            return `${currencySymbol}${paidVal.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix}`;
+                        })()}
+                      </td>
                     </tr>
                     ${(() => {
+                      const isTanzanian = booking.guest_type === 'tanzanian';
+                      const currencySymbol = isTanzanian ? '' : '$';
+                      const currencySuffix = isTanzanian ? ' TZS' : '';
+                      const deco = isTanzanian ? 0 : 2;
+                      
                       const totalCharges = parseFloat(booking.total_bill_usd || booking.total_price || 0);
                       const totalPaid = parseFloat(booking.total_paid_usd || booking.amount_paid || 0);
                       const balance = totalCharges - totalPaid;
+                      
+                      const dispBalance = balance;
                       
                       // If there's a positive balance (guest owes money)
                       if (balance > 0.01) {
                         return `<tr class="table-active">
                           <th class="font-weight-bold">Balance Due:</th>
-                          <td class="font-weight-bold text-danger h5 mb-0">$${balance.toFixed(2)}</td>
+                          <td class="font-weight-bold text-danger h5 mb-0">${currencySymbol}${dispBalance.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix}</td>
                         </tr>`;
                       } 
                       // If fully paid or overpaid
@@ -2305,7 +2343,7 @@ function viewBooking(bookingId) {
                         if (balance < -0.01) {
                           html += `<tr>
                             <th class="text-muted">Overpayment:</th>
-                            <td class="text-info">$${Math.abs(balance).toFixed(2)} <small class="text-muted">(Credit)</small></td>
+                            <td class="text-info">${currencySymbol}${Math.abs(dispBalance).toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${currencySuffix} <small class="text-muted">(Credit)</small></td>
                           </tr>`;
                         }
                         return html;

@@ -218,14 +218,26 @@
           <div class="row">
             <div class="col-md-6">
               <div class="form-group">
-                <label for="price_per_night">Price per Night <span class="text-danger">*</span></label>
+                <label for="price_per_night">Price for International Guest (USD) <span class="text-danger">*</span></label>
                 <div class="input-group">
                   <div class="input-group-prepend">
                     <span class="input-group-text">$</span>
                   </div>
                   <input class="form-control" type="number" id="price_per_night" name="price_per_night" step="0.01" min="0" placeholder="0.00" value="{{ $room->price_per_night ?? '' }}" required>
                 </div>
-                <small class="form-text text-muted" id="price_per_night_tzs"></small>
+                <small class="form-text text-muted" id="price_per_night_tzs_auto"></small>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="price_per_night_tzs">Price for Tanzanian House (TZS) <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <div class="input-group-prepend">
+                    <span class="input-group-text">TZS</span>
+                  </div>
+                  <input class="form-control" type="number" id="price_per_night_tzs" name="price_per_night_tzs" step="1" min="0" placeholder="0" value="{{ $room->price_per_night_tzs ?? '' }}" required>
+                </div>
+                <small class="form-text text-muted" id="price_per_night_usd_auto"></small>
               </div>
             </div>
           </div>
@@ -382,7 +394,8 @@
             <div class="preview-section mt-4">
               <h5><i class="fa fa-dollar"></i> Pricing Information</h5>
               <table class="table table-bordered">
-                <tr><th width="30%">Price per Night:</th><td id="preview_price_per_night">-</td></tr>
+                <tr><th width="30%">International Guest (USD):</th><td id="preview_price_per_night">-</td></tr>
+                <tr><th width="30%">Tanzanian Guest (TZS):</th><td id="preview_price_per_night_tzs">-</td></tr>
               </table>
             </div>
 
@@ -1152,46 +1165,44 @@ function convertToTZS(usdAmount) {
 
 // Add currency conversion listeners
 function setupCurrencyConversion() {
-  const priceFields = ['price_per_night'];
+  const usdField = document.getElementById('price_per_night');
+  const tzsField = document.getElementById('price_per_night_tzs');
+  const usdAutoDisplay = document.getElementById('price_per_night_tzs_auto');
+  const tzsAutoDisplay = document.getElementById('price_per_night_usd_auto');
   
-  priceFields.forEach(fieldId => {
-    const field = document.getElementById(fieldId);
-    const displayField = document.getElementById(fieldId + '_tzs');
-    
-    // Only setup conversion if BOTH elements exist
-    if (field && displayField) {
-      // Update on input (real-time as user types)
-      field.addEventListener('input', function() {
-        if (this.value && parseFloat(this.value) > 0) {
-          const tzsAmount = (parseFloat(this.value) * exchangeRate).toLocaleString('en-US', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-          });
-          displayField.innerHTML = `<strong>≈ ${tzsAmount} TZS</strong> <small class="text-muted">(Rate: 1 USD = ${exchangeRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} TZS)</small>`;
-          displayField.style.color = '#e77a3a';
-          displayField.style.fontWeight = '500';
-          displayField.style.display = 'block';
-        } else {
-          displayField.textContent = '';
-        }
-      });
-      
-      // Also update on page load if field has value (for edit mode)
-      if (field.value && parseFloat(field.value) > 0) {
-        const tzsAmount = (parseFloat(field.value) * exchangeRate).toLocaleString('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        });
-        displayField.innerHTML = `<strong>≈ ${tzsAmount} TZS</strong> <small class="text-muted">(Rate: 1 USD = ${exchangeRate.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} TZS)</small>`;
-        displayField.style.color = '#e77a3a';
-        displayField.style.fontWeight = '500';
-        displayField.style.display = 'block';
+  if (usdField && usdAutoDisplay) {
+    usdField.addEventListener('input', function() {
+      if (this.value && parseFloat(this.value) > 0) {
+        const tzsVal = Math.round(parseFloat(this.value) * exchangeRate);
+        usdAutoDisplay.innerHTML = `<strong>≈ ${tzsVal.toLocaleString()} TZS</strong> <small class="text-muted">(at current rate)</small>`;
+      } else {
+        usdAutoDisplay.innerHTML = '';
       }
-    } else if (!displayField && field) {
-      // Element doesn't exist - this is fine, just skip currency conversion display
-      console.log(`Currency display element '${fieldId}_tzs' not found - skipping conversion display`);
+    });
+
+    // Initial load
+    if (usdField.value) {
+        const event = new Event('input');
+        usdField.dispatchEvent(event);
     }
-  });
+  }
+
+  if (tzsField && tzsAutoDisplay) {
+    tzsField.addEventListener('input', function() {
+      if (this.value && parseFloat(this.value) > 0) {
+        const usdVal = (parseFloat(this.value) / exchangeRate).toFixed(2);
+        tzsAutoDisplay.innerHTML = `<strong>≈ $${usdVal} USD</strong> <small class="text-muted">(at current rate)</small>`;
+      } else {
+        tzsAutoDisplay.innerHTML = '';
+      }
+    });
+
+    // Initial load
+    if (tzsField.value) {
+        const event = new Event('input');
+        tzsField.dispatchEvent(event);
+    }
+  }
 }
 
 // Update preview with all form data
@@ -1215,10 +1226,16 @@ function updatePreview() {
   // Pricing
   const pricePerNight = document.getElementById('price_per_night').value;
   if (pricePerNight && parseFloat(pricePerNight) > 0) {
-    document.getElementById('preview_price_per_night').innerHTML = 
-      `$${parseFloat(pricePerNight).toFixed(2)} <span class="text-muted">(${convertToTZS(pricePerNight)})</span>`;
+    document.getElementById('preview_price_per_night').innerHTML = `$${parseFloat(pricePerNight).toFixed(2)}`;
   } else {
     document.getElementById('preview_price_per_night').textContent = '-';
+  }
+
+  const pricePerNightTzs = document.getElementById('price_per_night_tzs').value;
+  if (pricePerNightTzs && parseFloat(pricePerNightTzs) > 0) {
+    document.getElementById('preview_price_per_night_tzs').innerHTML = `${parseInt(pricePerNightTzs).toLocaleString()} TZS`;
+  } else {
+    document.getElementById('preview_price_per_night_tzs').textContent = '-';
   }
 
   // Amenities

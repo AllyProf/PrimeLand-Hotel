@@ -157,14 +157,17 @@
                   </div>
                 </td>
                 <td>
-                  <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                  <small class="text-muted">
-                    @if($booking->locked_exchange_rate)
-                      {{ number_format($booking->total_price * $booking->locked_exchange_rate, 2) }} TZS
-                    @else
-                      {{ number_format($booking->total_price * ($exchangeRate ?? 2500), 2) }} TZS
-                    @endif
-                  </small>
+                  @if($booking->guest_type === 'tanzanian')
+                    <strong>{{ number_format($booking->total_price, 0) }} TZS</strong><br>
+                    <small class="text-muted">
+                      ≈ ${{ number_format($booking->total_price / ($booking->locked_exchange_rate ?? $exchangeRate ?? 2500), 2) }}
+                    </small>
+                  @else
+                    <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
+                    <small class="text-muted">
+                      ≈ {{ number_format($booking->total_price * ($booking->locked_exchange_rate ?? $exchangeRate ?? 2500), 0) }} TZS
+                    </small>
+                  @endif
                 </td>
                 <td>
                   <div class="btn-group">
@@ -192,6 +195,7 @@
                             data-amount-paid="{{ $booking->amount_paid ?? 0 }}"
                             data-payment-percentage="{{ $booking->payment_percentage ?? 0 }}"
                             data-exchange-rate="{{ $booking->locked_exchange_rate ?? '' }}"
+                            data-guest-type="{{ $booking->guest_type }}"
                             data-special-requests="{{ htmlspecialchars($booking->special_requests ?? '', ENT_QUOTES, 'UTF-8') }}"
                             data-airport-pickup="{{ $booking->airport_pickup_required ? '1' : '0' }}"
                             data-flight-number="{{ $booking->flight_number ?? '' }}"
@@ -327,7 +331,10 @@ function viewBookingDetailsModal(bookingId) {
     return div.innerHTML;
   }
   
-  // Get data from data attributes
+  // Get guest type to determine primary currency
+  const guestType = button.getAttribute('data-guest-type') || 'international';
+  const isTanzanian = guestType === 'tanzanian';
+  
   const bookingData = {
     booking_reference: button.getAttribute('data-booking-ref'),
     guest_name: button.getAttribute('data-guest-name'),
@@ -336,6 +343,7 @@ function viewBookingDetailsModal(bookingId) {
     country_code: button.getAttribute('data-country-code'),
     country: button.getAttribute('data-country'),
     guest_id: button.getAttribute('data-guest-id'),
+    guest_type: guestType,
     room_type: button.getAttribute('data-room-type'),
     room_number: button.getAttribute('data-room-number'),
     check_in: button.getAttribute('data-check-in'),
@@ -367,7 +375,36 @@ function viewBookingDetailsModal(bookingId) {
   };
   
   const exchangeRate = bookingData.locked_exchange_rate || {{ $exchangeRate ?? 2500 }};
-  const totalPriceTsh = bookingData.total_price * exchangeRate;
+  
+  // Calculate price labels based on guest type
+  let primaryPriceLabel, secondaryPriceLabel;
+  let primaryValue, secondaryValue;
+  let primaryPaidLabel, secondaryPaidLabel;
+  let primaryPaidValue, secondaryPaidValue;
+  
+  if (isTanzanian) {
+    // Stored total_price is interpreted as TZS
+    primaryPriceLabel = 'Total Price (TZS)';
+    primaryValue = bookingData.total_price.toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS';
+    secondaryPriceLabel = 'Equivalent (USD)';
+    secondaryValue = '$' + (bookingData.total_price / exchangeRate).toFixed(2);
+    
+    primaryPaidLabel = 'Amount Paid (TZS)';
+    primaryPaidValue = bookingData.amount_paid.toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS';
+    secondaryPaidLabel = 'Amount Paid (USD)';
+    secondaryPaidValue = '$' + (bookingData.amount_paid / exchangeRate).toFixed(2);
+  } else {
+    // Stored total_price is interpreted as USD
+    primaryPriceLabel = 'Total Price (USD)';
+    primaryValue = '$' + bookingData.total_price.toFixed(2);
+    secondaryPriceLabel = 'Equivalent (TZS)';
+    secondaryValue = (bookingData.total_price * exchangeRate).toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS';
+    
+    primaryPaidLabel = 'Amount Paid (USD)';
+    primaryPaidValue = '$' + bookingData.amount_paid.toFixed(2);
+    secondaryPaidLabel = 'Amount Paid (TZS)';
+    secondaryPaidValue = (bookingData.amount_paid * exchangeRate).toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS';
+  }
   
   // Status badges
   const statusBadges = {
@@ -483,39 +520,41 @@ function viewBookingDetailsModal(bookingId) {
         </h5>
         <table class="table table-sm table-borderless">
           <tr>
-            <td width="40%"><strong>Total Price (USD):</strong></td>
-            <td><strong>$${parseFloat(bookingData.total_price).toFixed(2)}</strong></td>
+            <td width="40%"><strong>${primaryPriceLabel}:</strong></td>
+            <td><strong>${primaryValue}</strong></td>
+          </tr>
+          <tr>
+            <td><strong>${secondaryPriceLabel}:</strong></td>
+            <td>${secondaryValue}</td>
           </tr>
           <tr>
             <td><strong>Exchange Rate:</strong></td>
-            <td>${bookingData.locked_exchange_rate ? parseFloat(bookingData.locked_exchange_rate).toFixed(2) + ' TZS/USD' : 'N/A (Old booking)'}</td>
+            <td>${bookingData.locked_exchange_rate ? parseFloat(bookingData.locked_exchange_rate).toFixed(2) + ' TZS/USD' : 'N/A (Standard Rate)'}</td>
+          </tr>
+          ${bookingData.amount_paid > 0 ? `
+          <tr>
+            <td><strong>${primaryPaidLabel}:</strong></td>
+            <td><strong style="color: #17a2b8;">${primaryPaidValue}</strong></td>
           </tr>
           <tr>
-            <td><strong>Total Price (TZS):</strong></td>
-            <td><strong>${parseFloat(totalPriceTsh).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} TZS</strong></td>
-          </tr>
-          ${bookingData.payment_status === 'partial' && bookingData.amount_paid ? `
-          <tr>
-            <td><strong>Amount Paid (USD):</strong></td>
-            <td><strong style="color: #17a2b8;">$${parseFloat(bookingData.amount_paid).toFixed(2)}</strong></td>
+            <td><strong>${secondaryPaidLabel}:</strong></td>
+            <td><span style="color: #17a2b8;">${secondaryPaidValue}</span></td>
           </tr>
           <tr>
-            <td><strong>Amount Paid (TZS):</strong></td>
-            <td><strong style="color: #17a2b8;">${parseFloat((bookingData.amount_paid || 0) * (bookingData.locked_exchange_rate || 2442.54)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} TZS</strong></td>
-          </tr>
-          <tr>
-            <td><strong>Remaining Amount (USD):</strong></td>
-            <td><strong style="color: #dc3545;">$${parseFloat((bookingData.total_price || 0) - (bookingData.amount_paid || 0)).toFixed(2)}</strong></td>
-          </tr>
-          <tr>
-            <td><strong>Remaining Amount (TZS):</strong></td>
-            <td><strong style="color: #dc3545;">${parseFloat(((bookingData.total_price || 0) - (bookingData.amount_paid || 0)) * (bookingData.locked_exchange_rate || 2442.54)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} TZS</strong></td>
-          </tr>
-          <tr>
-            <td><strong>Payment Percentage:</strong></td>
-            <td><span class="badge badge-info">${parseFloat(((bookingData.amount_paid || 0) / (bookingData.total_price || 1)) * 100).toFixed(0)}%</span></td>
+            <td><strong>Payment Status:</strong></td>
+            <td>${paymentBadges[bookingData.payment_status] || bookingData.payment_status}</td>
           </tr>
           ` : ''}
+          ${bookingData.total_price > bookingData.amount_paid ? `
+          <tr>
+            <td><strong>Remaining Balance:</strong></td>
+            <td><strong style="color: #dc3545;">${isTanzanian ? (bookingData.total_price - bookingData.amount_paid).toLocaleString() + ' TZS' : '$' + (bookingData.total_price - bookingData.amount_paid).toFixed(2)}</strong></td>
+          </tr>
+          ` : ''}
+          <tr>
+            <td><strong>Payment Percentage:</strong></td>
+            <td><span class="badge badge-info">${bookingData.payment_percentage.toFixed(0)}%</span></td>
+          </tr>
         </table>
       </div>
       <div class="col-md-6">

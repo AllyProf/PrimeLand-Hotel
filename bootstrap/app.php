@@ -33,10 +33,8 @@ return Application::configure(basePath: dirname(__DIR__))
             ]);
         }
         
-        // Add single session check to web middleware group (runs on all web requests)
-        $middleware->web(append: [
-            \App\Http\Middleware\CheckSingleSession::class,
-        ]);
+        // Control for single session removed - allowing multiple logins from same account
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // Log CSRF token mismatch exceptions with full details

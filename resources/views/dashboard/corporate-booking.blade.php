@@ -1922,13 +1922,16 @@ function createRoomCard(room) {
   }
   
   cardHtml += '</div>';
+  // Display both USD and TZS prices (Corporate can have mixed guests)
+  const roomPriceUSD = parseFloat(room.price_per_night) || 0;
+  const roomPriceTZS = room.price_per_night_tzs ? parseFloat(room.price_per_night_tzs) : (roomPriceUSD * exchangeRate);
+  
   cardHtml += '<div class="room-price">';
   cardHtml += '<span class="price-label">Per night</span>';
-  // Room prices are stored in USD per night (company pays in USD)
-  const roomPriceUSD = parseFloat(room.price_per_night) || 0;
-  const roomPriceTZS = roomPriceUSD * exchangeRate;
-  cardHtml += '<span class="price-amount">$' + roomPriceUSD.toFixed(2) + ' USD</span>';
-  cardHtml += '<small class="d-block text-muted" style="font-size: 10px;">≈ ' + roomPriceTZS.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' TZS</small>';
+  cardHtml += '<div class="d-flex flex-column text-right">';
+  cardHtml += '<span class="price-amount text-primary">$' + roomPriceUSD.toFixed(2) + ' <small>USD</small></span>';
+  cardHtml += '<span class="price-amount text-success" style="font-size: 12px; font-weight: 600;">' + roomPriceTZS.toLocaleString() + ' <small>TZS</small></span>';
+  cardHtml += '</div>';
   cardHtml += '</div>';
   
   // Show guest slots and info
@@ -2198,10 +2201,18 @@ function generatePreview() {
     const room = bookingData.rooms.find(r => r.id == guest.room_id);
     if (room) {
       // Room charges are ALWAYS paid by company
-      // Room prices are stored in USD per night
-      const roomPriceUSD = parseFloat(room.price_per_night) || 0;
+      // Room cost depends on guest type (national vs international)
+      const isTanzanian = guest.country && (guest.country.toLowerCase() === 'tanzania' || guest.country.toLowerCase() === 'tanzanian');
+      let roomPriceUSD;
+      
+      if (isTanzanian && room.price_per_night_tzs) {
+        roomPriceUSD = parseFloat(room.price_per_night_tzs) / exchangeRate;
+      } else {
+        roomPriceUSD = parseFloat(room.price_per_night) || 0;
+      }
+      
       const roomCostUSD = roomPriceUSD * nights; // Total cost in USD
-      totalCompanyCost += roomCostUSD; // Company pays in USD
+      totalCompanyCost += roomCostUSD; // Company pays in USD (or its equivalent in TZS)
       
       // Payment responsibility only applies to services (not room charges)
       // For now, we don't calculate service costs here, but the structure is ready
@@ -2251,16 +2262,28 @@ function generatePreview() {
   previewHtml += '<div class="card-header bg-warning text-white"><h5 class="mb-0"><i class="fa fa-users"></i> Guests & Room Assignments</h5></div>';
   previewHtml += '<div class="card-body">';
   previewHtml += '<table class="table table-bordered">';
-  previewHtml += '<thead><tr><th>Guest Name</th><th>Email</th><th>Phone</th><th>Room</th><th>Payment</th></tr></thead>';
+  previewHtml += '<thead><tr><th>Guest Name</th><th>Email</th><th>Phone</th><th>Room</th><th>Price (' + nights + ' nights)</th><th>Payment Responsibility</th></tr></thead>';
   previewHtml += '<tbody>';
   
   bookingData.guests.forEach(guest => {
     const room = bookingData.rooms.find(r => r.id == guest.room_id);
+    const isTanzanian = guest.country && (guest.country.toLowerCase() === 'tanzania' || guest.country.toLowerCase() === 'tanzanian');
+    
+    let guestPriceDisplay;
+    if (room && isTanzanian && room.price_per_night_tzs) {
+      guestPriceDisplay = '<span class="text-success font-weight-bold">' + (parseFloat(room.price_per_night_tzs) * nights).toLocaleString() + ' TZS</span>';
+    } else if (room) {
+      guestPriceDisplay = '<span class="text-primary font-weight-bold">$' + (parseFloat(room.price_per_night) * nights).toFixed(2) + ' USD</span>';
+    } else {
+      guestPriceDisplay = '<span class="text-muted small">N/A</span>';
+    }
+
     previewHtml += '<tr>';
     previewHtml += '<td>' + guest.full_name + '</td>';
     previewHtml += '<td>' + guest.email + '</td>';
     previewHtml += '<td>' + guest.phone + '</td>';
     previewHtml += '<td>Room ' + (room ? room.room_number : 'N/A') + ' (' + (room ? room.room_type : 'N/A') + ')</td>';
+    previewHtml += '<td>' + guestPriceDisplay + '</td>';
     previewHtml += '<td><span class="badge badge-' + (guest.payment_responsibility === 'company' ? 'info' : 'warning') + '">';
     previewHtml += guest.payment_responsibility === 'company' ? 'Company Paid' : 'Self-Paid';
     previewHtml += '</span></td>';

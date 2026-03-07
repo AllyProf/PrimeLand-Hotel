@@ -316,22 +316,43 @@
             $displayBookings = $allCompanyBookings;
         }
         
-        $groupRoomTotalUSD = 0;
-        foreach($displayBookings as $b) { $groupRoomTotalUSD += $b->total_price; }
+        $isTzGuest = ($booking->guest_type === 'tanzanian');
+        
+        $groupRoomTotalBase = 0;
+        foreach($displayBookings as $b) { $groupRoomTotalBase += $b->total_price; }
 
-        $totalPaidUSD = ($isCorporate && isset($totalCompanyPaid)) ? $totalCompanyPaid : ($booking->amount_paid ?? 0);
+        $totalPaidBase = ($isCorporate && isset($totalCompanyPaid)) ? $totalCompanyPaid : ($booking->amount_paid ?? 0);
         
         if (isset($isGuestWithSelfPaidServices) && $isGuestWithSelfPaidServices) {
-            $grandTotalUSD = $guestServicePayments ?? 0;
-            $grandPaidUSD = $guestServicePayments ?? 0;
+            $grandTotalBase = $guestServicePayments ?? 0;
+            $grandPaidBase = $guestServicePayments ?? 0;
         } else {
-            $grandTotalUSD = $groupRoomTotalUSD;
-            $grandPaidUSD = $totalPaidUSD;
+            $grandTotalBase = $groupRoomTotalBase;
+            $grandPaidBase = $totalPaidBase;
         }
         
-        $balanceUSD = max(0, $grandTotalUSD - $grandPaidUSD);
+        $balanceBase = max(0, $grandTotalBase - $grandPaidBase);
         $currentExchangeRate = $exchangeRate ?? 2500;
-        $isTzGuest = ($booking->guest_type === 'tanzanian');
+        
+        // Final figures based on guest type
+        if ($isTzGuest) {
+            $grandTotalTZS = $grandTotalBase;
+            $grandPaidTZS = $grandPaidBase;
+            $balanceTZS = $balanceBase;
+            
+            // Standard conversions to USD for background storage/ref
+            $grandTotalUSD = $grandTotalBase / $currentExchangeRate;
+            $grandPaidUSD = $grandPaidBase / $currentExchangeRate;
+            $balanceUSD = $balanceBase / $currentExchangeRate;
+        } else {
+            $grandTotalUSD = $grandTotalBase;
+            $grandPaidUSD = $grandPaidBase;
+            $balanceUSD = $balanceBase;
+            
+            $grandTotalTZS = $grandTotalBase * $currentExchangeRate;
+            $grandPaidTZS = $grandPaidBase * $currentExchangeRate;
+            $balanceTZS = $balanceBase * $currentExchangeRate;
+        }
     @endphp
 
     <div class="no-print-bar">
@@ -424,7 +445,7 @@
                     @foreach($displayBookings as $b)
                     @php
                         $bookingExchangeRate = $b->locked_exchange_rate ?? $currentExchangeRate;
-                        $totalPriceTZS = $b->total_price * $bookingExchangeRate;
+                        $lineTotal = $isTzGuest ? $b->total_price : ($b->total_price * $bookingExchangeRate);
                     @endphp
                     <tr>
                         <td class="item-desc">
@@ -433,7 +454,7 @@
                         </td>
                         <td style="text-align: center;">{{ $b->check_in->diffInDays($b->check_out) }}</td>
                         @if($isTzGuest)
-                        <td style="text-align: right;">{{ number_format($totalPriceTZS, 0) }} TZS</td>
+                        <td style="text-align: right;">{{ number_format($lineTotal, 0) }} TZS</td>
                         @else
                         <td style="text-align: right;">${{ number_format($b->total_price, 2) }}</td>
                         @endif
@@ -489,20 +510,20 @@
                 @if($isTzGuest)
                 <div class="summary-row">
                     <label>Subtotal:</label>
-                    <span style="text-align: right;">{{ number_format($grandTotalUSD * $currentExchangeRate, 0) }} TZS</span>
+                    <span style="text-align: right;">{{ number_format($grandTotalTZS, 0) }} TZS</span>
                 </div>
                 <div class="summary-row grand-total">
                     <label>Total Balance:</label>
-                    <span style="text-align: right;">{{ number_format($grandTotalUSD * $currentExchangeRate, 0) }} TZS</span>
+                    <span style="text-align: right;">{{ number_format($grandTotalTZS, 0) }} TZS</span>
                 </div>
                 <div class="summary-row paid" style="align-items: center;">
                     <label style="margin-top: 10px;">Amount Paid:</label>
-                    <span style="text-align: right; margin-top: 10px;">{{ number_format($grandPaidUSD * $currentExchangeRate, 0) }} TZS</span>
+                    <span style="text-align: right; margin-top: 10px;">{{ number_format($grandPaidTZS, 0) }} TZS</span>
                 </div>
-                @if($balanceUSD > 0.1)
+                @if($balanceTZS > 1)
                 <div class="summary-row" style="color: #dc2626; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
                     <label>Due Balance:</label>
-                    <span style="text-align: right;">{{ number_format($balanceUSD * $currentExchangeRate, 0) }} TZS</span>
+                    <span style="text-align: right;">{{ number_format($balanceTZS, 0) }} TZS</span>
                 </div>
                 @else
                 <div class="summary-row" style="color: #10b981; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">

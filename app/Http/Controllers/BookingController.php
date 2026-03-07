@@ -860,8 +860,16 @@ class BookingController extends Controller
             // Add service charges and total paid to booking data
             $bookingData['service_charges_tsh'] = $totalServiceChargesTsh;
             $bookingData['service_charges_usd'] = $totalServiceChargesUsd;
-            $bookingData['total_paid_usd'] = (float)($booking->amount_paid ?? 0) + $paidServiceChargesUsd;
-            $bookingData['total_bill_usd'] = (float)$booking->total_price + $totalServiceChargesUsd;
+            
+            if ($booking->guest_type === 'tanzanian') {
+                // For Tanzanian guests, total_price is already in TSH
+                $bookingData['total_paid_usd'] = (float)($booking->amount_paid ?? 0) + $paidServiceChargesTsh;
+                $bookingData['total_bill_usd'] = (float)$booking->total_price + $totalServiceChargesTsh;
+            } else {
+                // For International guests, total_price is in USD
+                $bookingData['total_paid_usd'] = (float)($booking->amount_paid ?? 0) + $paidServiceChargesUsd;
+                $bookingData['total_bill_usd'] = (float)$booking->total_price + $totalServiceChargesUsd;
+            }
             
             // Return booking even if room doesn't exist (for manual bookings that might not have room assigned yet)
             return response()->json([
@@ -3507,10 +3515,22 @@ class BookingController extends Controller
                     continue;
                 }
 
-                // Calculate room cost in USD (room prices are stored in USD per night)
-                // Company pays in USD, so we store in USD
-                $roomPriceUSD = $room->price_per_night;
-                $roomCostUSD = $roomPriceUSD * $nights; // Total cost in USD
+                // Determine guest type based on country for pricing
+                $nationality = $guestData['country'] ?? '';
+                $guestType = 'international';
+                if (strtolower($nationality) === 'tanzania' || strtolower($nationality) === 'tanzanian') {
+                    $guestType = 'tanzanian';
+                }
+
+                // Calculate room cost based on guest type
+                // If Tanzanian, use price_per_night_tzs if available, otherwise fallback to USD converted
+                if ($guestType === 'tanzanian' && !empty($room->price_per_night_tzs)) {
+                    $roomPriceUSD = (float)$room->price_per_night_tzs / $lockedExchangeRate;
+                } else {
+                    $roomPriceUSD = (float)$room->price_per_night;
+                }
+
+                $roomCostUSD = $roomPriceUSD * $nights;
                 $paymentResponsibility = $guestData['payment_responsibility'] ?? 'company';
 
                 // Generate unique booking reference
@@ -3551,13 +3571,6 @@ class BookingController extends Controller
                 $paymentStatus = 'pending';
                 $amountPaid = 0;
                 $paymentPercentage = 0;
-
-                // Determine guest type based on country
-                $guestType = 'international';
-                $nationality = $guestData['country'] ?? '';
-                if (strtolower($nationality) === 'tanzania' || strtolower($nationality) === 'tanzanian') {
-                    $guestType = 'tanzanian';
-                }
 
                 // Create booking
                 $booking = Booking::create([
@@ -4051,6 +4064,7 @@ class BookingController extends Controller
                 'room_number' => $room->room_number,
                 'room_type' => $room->room_type,
                 'price_per_night' => $room->price_per_night,
+                'price_per_night_tzs' => $room->price_per_night_tzs,
                 'capacity' => $room->capacity ?? 1,
                 'bed_type' => $room->bed_type ?? null,
                 'floor_location' => $room->floor_location ?? null,
@@ -4177,7 +4191,8 @@ class BookingController extends Controller
                 'id' => $room->id,
                 'room_number' => $room->room_number,
                 'room_type' => $room->room_type,
-                'price_per_night' => $room->price_per_night,
+                'price_per_night' => (float)$room->price_per_night,
+                'price_per_night_tzs' => (float)$room->price_per_night_tzs,
                 'capacity' => $room->capacity ?? 1,
                 'bed_type' => $room->bed_type ?? null,
                 'floor_location' => $room->floor_location ?? null,
@@ -4274,7 +4289,7 @@ class BookingController extends Controller
             'notify_departments.*' => 'in:reception,bar_keeper,head_chef',
             'total_price' => 'required|numeric|min:0',
             'amount_paid' => 'required|numeric|min:0',
-            'payment_method' => 'required|in:online,cash,bank,mobile,card,other',
+            'payment_method' => 'required|in:online,cash,bank,mobile,card,later,other',
             'payment_provider' => 'required_if:payment_method,mobile,bank,card,online|nullable|string|max:255',
             'payment_reference'     => 'required_if:payment_method,online,bank,mobile,card,other|nullable|string|max:255',
             'custom_exchange_rate'  => 'nullable|numeric|min:100|max:10000000',
@@ -4395,7 +4410,13 @@ class BookingController extends Controller
         }
 
         // Determine payment status
-        $paymentStatus = $paymentPercentage >= 100 ? 'paid' : 'partial';
+        if ($amountPaid <= 0) {
+            $paymentStatus = 'pending';
+        } elseif ($paymentPercentage >= 100) {
+            $paymentStatus = 'paid';
+        } else {
+            $paymentStatus = 'partial';
+        }
 
         // Create the booking
         $booking = Booking::create([
@@ -4422,7 +4443,7 @@ class BookingController extends Controller
             'payment_transaction_id' => $validated['payment_reference'] ?? null,
             'amount_paid' => $amountPaid,
             'payment_percentage' => $paymentPercentage,
-            'paid_at' => now(),
+            'paid_at' => $amountPaid > 0 ? now() : null,
             'booking_reference' => $bookingReference,
             'guest_id' => $guestId,
             'payment_deadline' => $paymentDeadline,
@@ -4545,39 +4566,9 @@ class BookingController extends Controller
             ]);
         }
 
-        // Send email notification to reception staff
-        try {
-            $receptionStaff = \App\Models\Staff::where('role', 'reception')
-                ->where('is_active', true)
-                ->get();
-            
-            foreach ($receptionStaff as $staff) {
-                try {
-                    Mail::to($staff->email)->send(new \App\Mail\StaffNewBookingMail($booking->load('room')));
-                } catch (\Exception $e) {
-                    \Log::error('Failed to send booking email to reception staff: ' . $staff->email . ' - ' . $e->getMessage());
-                }
-            }
-        } catch (\Exception $e) {
-            \Log::error('Failed to send booking emails to reception staff: ' . $e->getMessage());
-        }
+        // Notification emails to staff/managers are disabled to speed up the booking process
+        // Only guest receives automatic confirmation email/SMS as per instructions
 
-        // Send email notification to managers
-        try {
-            $managers = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
-                ->where('is_active', true)
-                ->get();
-            
-            foreach ($managers as $manager) {
-                try {
-                    Mail::to($manager->email)->send(new \App\Mail\StaffNewBookingMail($booking->load('room')));
-                } catch (\Exception $e) {
-                    \Log::error('Failed to send booking email to manager: ' . $manager->email . ' - ' . $e->getMessage());
-                }
-            }
-        } catch (\Exception $e) {
-            \Log::error('Failed to send booking emails to managers: ' . $e->getMessage());
-        }
 
         // Create notification
         try {
@@ -4599,11 +4590,9 @@ class BookingController extends Controller
                     'bar_keeper' => 'bar_keeper',
                     'head_chef' => 'head_chef',
                 ];
-                
                 foreach ($departments as $department) {
                     $role = $roleMapping[$department] ?? null;
                     if ($role) {
-                        // Create notification for the department
                         Notification::create([
                             'type' => 'booking',
                             'title' => 'Special Request from Guest',
@@ -4615,64 +4604,26 @@ class BookingController extends Controller
                             'notifiable_type' => Booking::class,
                             'link' => $role === 'reception' ? route('reception.bookings') : ($role === 'bar_keeper' ? route('bar-keeper.dashboard') : route('chef-master.dashboard')),
                         ]);
-                        
-                        // Send email notification to all staff members of this department
-                        try {
-                            $departmentStaff = \App\Models\Staff::where('role', $role)
-                                ->where('is_active', true)
-                                ->get();
-                            
-                            foreach ($departmentStaff as $staff) {
-                                try {
-                                    // Create a simple email notification
-                                    $emailSubject = "Special Request from Guest - Room {$room->room_number}";
-                                    $emailBody = "Dear {$staff->name},\n\n";
-                                    $emailBody .= "Guest {$fullName} (Room {$room->room_number}) has submitted special requests:\n\n";
-                                    $emailBody .= $validated['special_requests'] . "\n\n";
-                                    $emailBody .= "Check-in: {$checkIn->format('Y-m-d H:i')}\n";
-                                    $emailBody .= "Check-out: {$checkOut->format('Y-m-d H:i')}\n\n";
-                                    $emailBody .= "Please review and prepare accordingly.\n\n";
-                                    $emailBody .= "Booking Reference: {$bookingReference}\n\n";
-                                    $emailBody .= "Best regards,\nPrimeLand Hotel System";
-                                    
-                                    Mail::raw($emailBody, function($message) use ($staff, $emailSubject, $fullName, $room) {
-                                        $message->to($staff->email)
-                                                ->subject($emailSubject);
-                                    });
-                                    
-                                    \Log::info('Special request email sent to department staff', [
-                                        'staff_email' => $staff->email,
-                                        'role' => $role,
-                                        'booking_reference' => $bookingReference
-                                    ]);
-                                } catch (\Exception $e) {
-                                    \Log::error('Failed to send special request email to staff: ' . $staff->email . ' - ' . $e->getMessage());
-                                }
-                            }
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send special request emails to department: ' . $e->getMessage());
-                        }
                     }
                 }
                 
-                \Log::info('Special requests notifications sent to departments', [
+                \Log::info('Special requests notifications (DB only) sent to departments', [
                     'booking_reference' => $bookingReference,
-                    'departments' => $departments,
-                    'guest_name' => $fullName
+                    'departments' => $departments
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to send special requests notifications: ' . $e->getMessage());
+                \Log::error('Failed to process special requests notifications: ' . $e->getMessage());
             }
         }
 
         $message = 'Booking created successfully!';
         if ($emailSent) {
-            $message .= ' Email notifications have been sent to guest, reception, and manager.';
+            $message .= ' Email confirmation has been sent to the guest.';
         } else {
             if ($emailError) {
                 $message .= ' ' . $emailError;
             } else {
-                $message .= ' Email sending failed. Please check email configuration.';
+                $message .= ' Guest email sending failed. Please check email configuration.';
             }
         }
         
@@ -5197,9 +5148,16 @@ class BookingController extends Controller
             // Reload booking with room relationship to ensure it's available
             $booking->load('room');
             
-            $mailable = $isCorporate 
-                ? new \App\Mail\CompanyInvoiceMail($company, [$booking], $validated['total_price'], 0, 0, $validated['check_in'], $validated['check_out'], "Proforma Invoice: Quotation for " . $validated['number_of_rooms'] . " rooms.", $pdfData)
-                : new BookingConfirmationMail($booking, $password, 0, $validated['total_price'], "Proforma Invoice: This is a quotation based on your inquiry.", $pdfData);
+            $subjectStr = $isCorporate ? "Company Inquiry ({$company->name})" : "Booking Inquiry Invoice";
+            $invoiceTypeStr = (isset($validated['notes']) && (str_contains(strtolower($validated['notes']), 'proforma') || str_contains(strtolower($validated['notes']), 'quotation'))) ? 'Proforma Invoice / Quotation' : 'Booking Invoice';
+            
+            $mailable = new \App\Mail\SimpleInvoiceMail(
+                $fullName,
+                $subjectStr . ' - ' . $bookingReference,
+                $invoiceTypeStr,
+                $validated['notes'] ?? null,
+                $pdfData
+            );
             
             Mail::to($validated['guest_email'])->send($mailable);
             $emailSent = true;

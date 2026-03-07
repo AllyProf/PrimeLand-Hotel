@@ -481,6 +481,7 @@
                 <option value="bank">Bank Transfer</option>
                 <option value="mobile">Mobile Payment</option>
                 <option value="card">Card</option>
+                <option value="later">Pay Later</option>
                 <option value="other">Other</option>
               </select>
             </div>
@@ -1325,9 +1326,14 @@ function validateWizardStep(step) {
       return false;
     }
     
-    if (!amountPaid || parseFloat(amountPaid) <= 0) {
+    if ((!amountPaid || parseFloat(amountPaid) < 0) && paymentMethod !== 'later') {
       swal({ title: "Validation Error", text: "Please enter amount paid", type: "error", confirmButtonColor: "#e77a3a" });
       return false;
+    }
+    
+    if (paymentMethod === 'later' && parseFloat(amountPaid) > 0) {
+       // Optional: warn if they selected Pay Later but entered an amount? 
+       // For now, let's just allow 0.
     }
     
     return true;
@@ -1373,8 +1379,18 @@ function updateReviewSummary() {
   if (selectedRoomCard) {
     const roomNumber = selectedRoomCard.querySelector('.room-number')?.textContent?.replace('Room ', '') || '';
     const roomType = selectedRoomCard.querySelector('.room-type-badge')?.textContent || '';
-    const roomPrice = selectedRoomCard.getAttribute('data-room-price') || '0';
-    document.getElementById('review_room').textContent = `Room ${roomNumber} - ${roomType} ($${parseFloat(roomPrice).toFixed(2)}/night)`;
+    const roomPriceUSD = selectedRoomCard.getAttribute('data-room-price') || '0';
+    const roomPriceTZS = selectedRoomCard.getAttribute('data-room-price-tzs') || '0';
+    
+    // Get guest type to show correct price
+    const guestTypeEl = document.getElementById('guest_type');
+    const isTanzanian = guestTypeEl && guestTypeEl.value === 'tanzanian';
+    
+    if (isTanzanian) {
+      document.getElementById('review_room').textContent = `Room ${roomNumber} - ${roomType} (${parseFloat(roomPriceTZS).toLocaleString()} TZS/night)`;
+    } else {
+      document.getElementById('review_room').textContent = `Room ${roomNumber} - ${roomType} ($${parseFloat(roomPriceUSD).toFixed(2)}/night)`;
+    }
   } else {
     const hiddenRoomInput = document.getElementById('room_id');
     if (hiddenRoomInput && hiddenRoomInput.value) {
@@ -1430,7 +1446,7 @@ function updateReviewSummary() {
   const guestTypeEl = document.getElementById('guest_type');
   const guestTypeValue = guestTypeEl ? guestTypeEl.value : 'international';
   const isTanzanian = guestTypeValue === 'tanzanian';
-  const currencySymbol = isTanzanian ? 'TZS' : 'USD';
+  const currencySymbol = isTanzanian ? 'TZS ' : 'USD ';
   
   // Calculate nights
   let nights = 0;
@@ -1463,14 +1479,22 @@ function updateReviewSummary() {
   const recommendedPriceValue = recommendedPrice ? (parseFloat(recommendedPrice.value) || 0) : 0;
   const recommendedPriceEl = document.getElementById('review_recommended_price');
   if (recommendedPriceEl) {
-    recommendedPriceEl.textContent = recommendedPriceValue > 0 ? currencySymbol + recommendedPriceValue.toFixed(2) : '-';
+    if (recommendedPriceValue > 0) {
+      recommendedPriceEl.textContent = isTanzanian ? recommendedPriceValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' TZS' : '$' + recommendedPriceValue.toFixed(2) + ' USD';
+    } else {
+      recommendedPriceEl.textContent = '-';
+    }
   }
   
   // Total Price (from hidden field, which is auto-filled from recommended price)
   const totalPriceValue = totalPrice ? (parseFloat(totalPrice.value) || recommendedPriceValue) : recommendedPriceValue;
   const totalPriceEl = document.getElementById('review_total_price');
   if (totalPriceEl) {
-    totalPriceEl.textContent = totalPriceValue > 0 ? currencySymbol + totalPriceValue.toFixed(2) : '-';
+    if (totalPriceValue > 0) {
+      totalPriceEl.textContent = isTanzanian ? totalPriceValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' TZS' : '$' + totalPriceValue.toFixed(2) + ' USD';
+    } else {
+      totalPriceEl.textContent = '-';
+    }
   }
   
   // Discount calculation
@@ -1478,7 +1502,8 @@ function updateReviewSummary() {
     const discountAmount = recommendedPriceValue - totalPriceValue;
     const discountPercentage = (discountAmount / recommendedPriceValue) * 100;
     document.getElementById('review_discount_row').style.display = '';
-    document.getElementById('review_discount').textContent = currencySymbol + discountAmount.toFixed(2) + ' (' + discountPercentage.toFixed(2) + '% off)';
+    const discountFormatted = isTanzanian ? discountAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' TZS' : '$' + discountAmount.toFixed(2) + ' USD';
+    document.getElementById('review_discount').textContent = discountFormatted + ' (' + discountPercentage.toFixed(2) + '% off)';
   } else {
     document.getElementById('review_discount_row').style.display = 'none';
   }
@@ -1528,8 +1553,12 @@ function updateReviewSummary() {
   // Amount Paid
   const amountPaidEl = document.getElementById('review_amount_paid');
   if (amountPaidEl) {
-    const amountPaidValue = (amountPaid && amountPaid.value) ? parseFloat(amountPaid.value) : 0;
-    amountPaidEl.textContent = amountPaidValue > 0 ? currencySymbol + amountPaidValue.toFixed(2) : '-';
+    const amountPaidValue = (amountPaid && amountPaid.value !== '') ? parseFloat(amountPaid.value) : null;
+    if (amountPaidValue !== null) {
+      amountPaidEl.textContent = isTanzanian ? amountPaidValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' TZS' : '$' + amountPaidValue.toFixed(2) + ' USD';
+    } else {
+      amountPaidEl.textContent = '-';
+    }
   }
   
   // Payment Percentage
@@ -1542,8 +1571,12 @@ function updateReviewSummary() {
   // Remaining Amount
   const remainingAmountEl = document.getElementById('review_remaining');
   if (remainingAmountEl) {
-    const remainingAmountValue = (remainingAmount && remainingAmount.value) ? parseFloat(remainingAmount.value) : 0;
-    remainingAmountEl.textContent = remainingAmountValue > 0 ? currencySymbol + remainingAmountValue.toFixed(2) : '-';
+    const remainingAmountValue = (remainingAmount && remainingAmount.value !== '') ? parseFloat(remainingAmount.value) : null;
+    if (remainingAmountValue !== null) {
+      remainingAmountEl.textContent = isTanzanian ? remainingAmountValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' TZS' : '$' + remainingAmountValue.toFixed(2) + ' USD';
+    } else {
+      remainingAmountEl.textContent = '-';
+    }
   }
 }
 
@@ -2579,6 +2612,7 @@ document.addEventListener('DOMContentLoaded', function() {
     card.className = 'room-card' + (canSelect ? '' : ' unselectable');
     card.setAttribute('data-room-id', room.id);
     card.setAttribute('data-room-price', room.price_per_night);
+    card.setAttribute('data-room-price-tzs', room.price_per_night_tzs || (parseFloat(room.price_per_night) * window.activeExchangeRate));
     card.setAttribute('data-room-capacity', room.capacity || 1);
     card.setAttribute('data-can-select', canSelect);
     
@@ -2606,7 +2640,11 @@ document.addEventListener('DOMContentLoaded', function() {
     cardHtml += '</div>';
     cardHtml += '<div class="room-price">';
     cardHtml += '<span class="price-label">Per night</span>';
-    cardHtml += '<span class="price-amount">$' + parseFloat(room.price_per_night).toFixed(2) + '</span>';
+    cardHtml += '<div class="text-right">';
+    cardHtml += '<div class="price-amount text-primary">$' + parseFloat(room.price_per_night).toFixed(2) + ' <small>USD</small></div>';
+    const roomPriceTZS = room.price_per_night_tzs ? parseFloat(room.price_per_night_tzs) : (parseFloat(room.price_per_night) * window.activeExchangeRate);
+    cardHtml += '<div class="price-amount text-success" style="font-size: 11px;">' + roomPriceTZS.toLocaleString() + ' <small>TZS</small></div>';
+    cardHtml += '</div>';
     cardHtml += '</div>';
     cardHtml += '</div>';
     cardHtml += '</div>';
@@ -2814,9 +2852,10 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
     
-    const pricePerNight = parseFloat(selectedCard.getAttribute('data-room-price')) || 0;
+    const pricePerNightUSD = parseFloat(selectedCard.getAttribute('data-room-price')) || 0;
+    const pricePerNightTZS = parseFloat(selectedCard.getAttribute('data-room-price-tzs')) || (pricePerNightUSD * window.activeExchangeRate);
     
-    if (pricePerNight <= 0) {
+    if (pricePerNightUSD <= 0) {
       recommendedPriceInput.value = '';
       return;
     }
@@ -2833,33 +2872,40 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     
-    if (nights > 0 && pricePerNight > 0) {
-      const recommendedUSD = pricePerNight * nights;
-      const isTanzanian    = guestTypeSelect && guestTypeSelect.value === 'tanzanian';
-      // Always use window.activeExchangeRate so custom override is reflected immediately
+    if (nights > 0) {
+      const isTanzanian = guestTypeSelect && guestTypeSelect.value === 'tanzanian';
       const rateToUse = window.activeExchangeRate || window.systemExchangeRate;
+      
+      const recommendedUSD = pricePerNightUSD * nights;
+      const recommendedTZS = pricePerNightTZS * nights;
 
       if (isTanzanian) {
-        // Convert to TZS for Tanzanian guests using the active (possibly overridden) rate
-        const recommendedTZS = recommendedUSD * rateToUse;
+        // Use TZS price directly
         recommendedPriceInput.value = recommendedTZS.toFixed(2);
 
-        // Show USD equivalent
+        // Show USD equivalent for internal tracking
         const usdConversion = document.getElementById('recommended_price_usd');
         if (usdConversion) {
-          document.getElementById('recommended_price_usd_value').textContent = recommendedUSD.toFixed(2);
+          usdConversion.style.display = 'block';
+          document.getElementById('recommended_price_usd_value').textContent = (recommendedTZS / rateToUse).toFixed(2);
         }
-
+        
         // Auto-fill total price (in TZS)
         totalPriceInput.value = recommendedTZS.toFixed(2);
       } else {
         // Keep in USD for International guests
         recommendedPriceInput.value = recommendedUSD.toFixed(2);
-
+        
+        // Show TZS equivalent display
+        const tzsConversion = document.getElementById('recommended_price_tzs');
+        if (tzsConversion) {
+          tzsConversion.style.display = 'block';
+          document.getElementById('recommended_price_tzs_value').textContent = (recommendedUSD * rateToUse).toLocaleString();
+        }
+        
         // Auto-fill total price (in USD)
         totalPriceInput.value = recommendedUSD.toFixed(2);
       }
-
       
       // Recalculate payment percentage and remaining amount if amount paid is already entered
       const amountPaidInput = document.getElementById('amount_paid');
@@ -2886,7 +2932,7 @@ document.addEventListener('DOMContentLoaded', function() {
         totalPriceInput.value = recommendedPrice.toFixed(2);
         // Recalculate with the new total price
         const newTotalPrice = recommendedPrice;
-        if (newTotalPrice > 0 && amountPaid > 0) {
+        if (newTotalPrice > 0 && amountPaid >= 0) {
           const percentage = (amountPaid / newTotalPrice) * 100;
           paymentPercentageInput.value = percentage.toFixed(2);
           
@@ -2902,7 +2948,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Calculate based on entered total price
-    if (totalPrice > 0 && amountPaid > 0) {
+    if (totalPrice > 0 && amountPaid >= 0) {
       const percentage = (amountPaid / totalPrice) * 100;
       paymentPercentageInput.value = percentage.toFixed(2);
       
@@ -3019,13 +3065,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show/hide reference field
     if (paymentReferenceWrapper && paymentReferenceInput) {
-      if (requiresReference) {
+      if (requiresReference && paymentMethod !== 'later') {
         paymentReferenceWrapper.style.display = 'block';
         paymentReferenceInput.setAttribute('required', 'required');
       } else {
         paymentReferenceWrapper.style.display = 'none';
         paymentReferenceInput.removeAttribute('required');
         paymentReferenceInput.value = '';
+      }
+    }
+
+    // Handle "Pay Later" specific logic
+    if (paymentMethod === 'later') {
+      if (amountPaidInput) {
+        amountPaidInput.value = '0';
+        // Trigger calculation
+        calculatePaymentFromAmount(true);
       }
     }
   }
@@ -3109,10 +3164,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const remainingAmountTZS  = parseFloat(remainingAmountInput.value) || 0;
 
         if (totalPriceTZS > 0) {
-          formData.set('total_price', (totalPriceTZS / submitRate).toFixed(2));
-        }
-        if (amountPaidTZS > 0) {
-          formData.set('amount_paid', (amountPaidTZS / submitRate).toFixed(2));
+          // Use exact TZS amount for Tanzanian guests to avoid rounding errors
+          formData.set('total_price', totalPriceTZS);
+          formData.set('amount_paid', amountPaidTZS);
         }
         if (remainingAmountTZS > 0) {
           formData.set('remaining_amount', (remainingAmountTZS / submitRate).toFixed(2));
@@ -3155,7 +3209,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validate payment provider and reference if required
     const paymentMethod = paymentMethodSelect.value;
     const requiresProvider = ['mobile', 'bank', 'card', 'online'].includes(paymentMethod);
-    const requiresReference = paymentMethod && paymentMethod !== 'cash';
+    const requiresReference = paymentMethod && paymentMethod !== 'cash' && paymentMethod !== 'later';
     
     if (requiresProvider && (!paymentProviderSelect || !paymentProviderSelect.value)) {
       swal({

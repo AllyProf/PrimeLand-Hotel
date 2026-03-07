@@ -336,8 +336,19 @@
               <td>{{ $room->capacity }} Guest(s)</td>
               <td>{{ $room->bed_type }}</td>
               <td>
-                <strong>${{ number_format($room->price_per_night, 2) }}</strong>
-                <br><small class="text-muted">≈ {{ number_format($room->price_per_night * ($exchangeRate ?? 2400), 0) }} TZS</small>
+                <div class="d-flex flex-column" style="gap: 4px;">
+                  <div class="price-item">
+                    <span class="badge badge-light border text-primary" style="width: 40px; font-size: 9px; padding: 2px 0; font-weight: 800; border-color: #007bff !important;">USD</span>
+                    <strong class="ml-1" style="color: #333; font-size: 13px;">${{ number_format($room->price_per_night, 2) }}</strong>
+                  </div>
+                  <div class="price-item">
+                    <span class="badge badge-light border text-success" style="width: 40px; font-size: 9px; padding: 2px 0; font-weight: 800; border-color: #28a745 !important;">TZS</span>
+                    @php
+                      $tzPrice = $room->price_per_night_tzs ?? ($room->price_per_night * ($exchangeRate ?? 2500));
+                    @endphp
+                    <strong class="ml-1" style="color: #333; font-size: 13px;">{{ number_format($tzPrice, 0) }}</strong>
+                  </div>
+                </div>
               </td>
               <td>
                 @if($room->images && is_array($room->images) && count($room->images) > 0)
@@ -1060,16 +1071,27 @@ window.viewRoom = function(roomId) {
       const exchangeRate = {{ $exchangeRate ?? 2400 }};
       
       // Helper function to format price with TZS
-      const formatPrice = (usdPrice) => {
+      const formatPrice = (usdPrice, tzsPriceInput = null) => {
         const usd = parseFloat(usdPrice).toFixed(2);
-        const tzs = (parseFloat(usdPrice) * exchangeRate).toFixed(0);
-        return `$${usd} <small class="text-muted">(≈ ${parseFloat(tzs).toLocaleString()} TZS)</small>`;
+        const tzs = tzsPriceInput ? parseFloat(tzsPriceInput).toLocaleString() : (parseFloat(usdPrice) * exchangeRate).toLocaleString();
+        return `
+          <div class="d-flex flex-column" style="gap: 4px;">
+            <div class="price-item">
+              <span class="badge badge-light border text-primary" style="width: 40px; font-size: 9px; padding: 2px 0; font-weight: 800; border-color: #007bff !important;">USD</span>
+              <strong class="ml-1" style="color: #333;">$${usd}</strong>
+            </div>
+            <div class="price-item">
+              <span class="badge badge-light border text-success" style="width: 40px; font-size: 9px; padding: 2px 0; font-weight: 800; border-color: #28a745 !important;">TZS</span>
+              <strong class="ml-1" style="color: #333;">${tzs}</strong>
+            </div>
+          </div>
+        `;
       };
       
       // Build Pricing Information table rows
       let pricingRows = `
-        <tr><td colspan="2" style="background: #f8f9fa; padding: 8px;"><small class="text-muted"><i class="fa fa-info-circle"></i> Exchange Rate: 1 USD = ${exchangeRate.toLocaleString()} TZS</small></td></tr>
-        <tr><th>Price/Night:</th><td>${formatPrice(room.price_per_night)}</td></tr>
+        <tr><td colspan="2" style="background: #f8f9fa; padding: 8px;"><small class="text-muted"><i class="fa fa-info-circle"></i> Corporate Pricing Rules apply based on guest nationality.</small></td></tr>
+        <tr><th>Price/Night:</th><td>${formatPrice(room.price_per_night, room.price_per_night_tzs)}</td></tr>
       `;
       if (isValid(room.extra_guest_fee) && parseFloat(room.extra_guest_fee) > 0) {
         pricingRows += `<tr><th>Extra Guest Fee:</th><td>${formatPrice(room.extra_guest_fee)}</td></tr>`;
