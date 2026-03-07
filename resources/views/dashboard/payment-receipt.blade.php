@@ -9,8 +9,8 @@
     <style>
         :root {
             --primary: #e07632;
-            --text-main: #1e293b;
-            --text-light: #64748b;
+            --text-main: #000000;
+            --text-light: #000000;
             --border: #e2e8f0;
             --bg-light: #f8fafc;
         }
@@ -33,43 +33,66 @@
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             position: relative;
+            overflow: hidden; /* important for preventing watermark overflow */
         }
 
-        /* Compact Header */
+        .receipt-container::before {
+            content: "PRIMELAND HOTEL";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-35deg);
+            font-size: 60px;
+            font-weight: 900;
+            color: rgba(224, 118, 50, 0.06); /* Primary color, ultra low opacity */
+            white-space: nowrap;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .receipt-container > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Centered Header */
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: center;
             border-bottom: 2px solid var(--primary);
             padding-bottom: 20px;
             margin-bottom: 25px;
         }
 
+        .logo-section {
+            margin-bottom: 15px;
+        }
+
         .logo-section h1 {
-            font-size: 22px;
+            font-size: 26px;
             color: var(--primary);
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 4px;
         }
 
         .logo-section p {
-            font-size: 12px;
-            color: var(--text-light);
+            font-size: 13px;
+            color: var(--text-main);
             margin-bottom: 2px;
         }
 
         .receipt-title-section {
-            text-align: right;
+            text-align: center;
         }
 
         .receipt-title-section h2 {
             font-size: 24px;
             font-weight: 800;
-            color: #0f172a;
+            color: var(--text-main);
             margin-bottom: 8px;
         }
 
         .ref-pill {
+            display: inline-block;
             background: var(--bg-light);
             padding: 8px 15px;
             border: 1px solid var(--border);
@@ -129,7 +152,7 @@
             border-bottom: 2px solid var(--border);
             font-size: 11px;
             text-transform: uppercase;
-            color: #475569;
+            color: var(--text-main);
         }
 
         .items-table td {
@@ -200,26 +223,28 @@
             margin-bottom: 8px;
         }
 
-        /* Policies - Bottom Mini Text */
+        /* Policies - Vertically Arranged */
         .policies-footer {
             margin-top: 30px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
             padding-top: 20px;
             border-top: 1px solid #f1f5f9;
         }
+        
+        .policy-item {
+            margin-bottom: 12px;
+        }
 
         .policy-item h4 {
-            font-size: 9px;
+            font-size: 10px;
             text-transform: uppercase;
-            color: var(--primary);
+            color: var(--text-main);
+            font-weight: 700;
             margin-bottom: 4px;
         }
 
         .policy-item p {
-            font-size: 8px;
-            color: var(--text-light);
+            font-size: 9px;
+            color: var(--text-main);
             line-height: 1.3;
         }
 
@@ -306,6 +331,7 @@
         
         $balanceUSD = max(0, $grandTotalUSD - $grandPaidUSD);
         $currentExchangeRate = $exchangeRate ?? 2500;
+        $isTzGuest = ($booking->guest_type === 'tanzanian');
     @endphp
 
     <div class="no-print-bar">
@@ -318,19 +344,23 @@
     </div>
 
     <div class="receipt-container">
-        <div class="header">
-            <div class="logo-section">
-                <h1>PRIMELAND HOTEL</h1>
-                <p>Comfort in every Stay</p>
-                <p><i class="fa fa-map-marker"></i> Moshi, Kilimanjaro, Tanzania</p>
-                <p><i class="fa fa-phone"></i> 0677155157 | <i class="fa fa-envelope"></i> info@primelandhotel.com</p>
-            </div>
-            <div class="receipt-title-section">
-                <h2>RECEIPT</h2>
-                <div class="ref-pill">
-                    {{ $booking->booking_reference }}-{{ date('Ymd') }}
+        <div class="header" style="text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 20px; margin-bottom: 25px;">
+            <h1 style="font-size: 26px; color: var(--primary); font-weight: 800; margin-bottom: 4px;">PRIMELAND HOTEL</h1>
+            <p style="font-size: 13px; color: var(--text-main); margin-bottom: 25px; font-weight: 500;">Comfort in every Stay</p>
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="text-align: left;">
+                    <p style="margin-bottom: 16px; font-size: 12px; font-weight: 600; color: var(--text-main); line-height: 24px;"><i class="fa fa-map-marker"></i> Moshi, Kilimanjaro, Tanzania</p>
+                    <p style="margin-bottom: 6px; font-size: 12px; font-weight: 600; color: var(--text-main);"><i class="fa fa-phone"></i> 0677155157</p>
+                    <p style="font-size: 12px; font-weight: 600; color: var(--text-main);"><i class="fa fa-envelope"></i> info@primelandhotel.com</p>
                 </div>
-                <p style="margin-top: 8px; font-weight: 500; color: var(--text-light);">Date: {{ now()->format('M d, Y') }}</p>
+                <div style="text-align: right;">
+                    <h2 style="font-size: 24px; line-height: 24px; font-weight: 800; color: var(--text-main); margin-bottom: 16px;">RECEIPT</h2>
+                    <div class="ref-pill" style="display: inline-block; background: var(--bg-light); padding: 8px 15px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600; font-size: 12px;">
+                        {{ $booking->booking_reference }}-{{ date('Ymd') }}
+                    </div>
+                    <p style="margin-top: 8px; font-weight: 500; color: var(--text-main); font-size: 12px;">Date: {{ now()->format('M d, Y') }}</p>
+                </div>
             </div>
         </div>
 
@@ -342,6 +372,7 @@
                     <div class="info-row"><label>Email:</label> <span>{{ $booking->company->email }}</span></div>
                 @else
                     <div class="info-row"><label>Guest:</label> <span>{{ $booking->guest_name }}</span></div>
+                    <div class="info-row"><label>Email:</label> <span>{{ $booking->guest_email ?? 'N/A' }}</span></div>
                     <div class="info-row"><label>Phone:</label> <span>{{ $booking->guest_phone ?? 'N/A' }}</span></div>
                 @endif
             </div>
@@ -351,8 +382,9 @@
                     <div class="info-row"><label>Check-in:</label> <span>{{ $booking->check_in->format('M d, Y') }}</span></div>
                     <div class="info-row"><label>Check-out:</label> <span>{{ $booking->check_out->format('M d, Y') }}</span></div>
                 @else
-                    <div class="info-row"><label>Dates:</label> <span>{{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}</span></div>
-                    <div class="info-row"><label>Room:</label> <span>{{ $booking->room->room_number }} ({{ $booking->room->room_type }})</span></div>
+                    <div class="info-row"><label>Check-in:</label> <span>{{ $booking->check_in->format('M d, Y') }}</span></div>
+                    <div class="info-row"><label>Check-out:</label> <span>{{ $booking->check_out->format('M d, Y') }}</span></div>
+                    <div class="info-row"><label>Room Type:</label> <span>{{ $booking->room->room_type }} ({{ $booking->room->room_number }})</span></div>
                 @endif
             </div>
         </div>
@@ -362,8 +394,11 @@
                 <tr>
                     <th>Description</th>
                     <th style="text-align: center;">Nights</th>
-                    <th style="text-align: right;">USD Total</th>
-                    <th style="text-align: right;">TZS Total</th>
+                    @if($isTzGuest)
+                    <th style="text-align: right;">Total (TZS)</th>
+                    @else
+                    <th style="text-align: right;">Total (USD)</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -378,8 +413,11 @@
                             @if($gs->quantity > 1) <small>Quantity: {{ $gs->quantity }}</small> @endif
                         </td>
                         <td style="text-align: center;">-</td>
-                        <td style="text-align: right;">${{ number_format($gs->total_price_tsh / $currentExchangeRate, 2) }}</td>
+                        @if($isTzGuest)
                         <td style="text-align: right;">{{ number_format($gs->total_price_tsh, 0) }} TZS</td>
+                        @else
+                        <td style="text-align: right;">${{ number_format($gs->total_price_tsh / $currentExchangeRate, 2) }}</td>
+                        @endif
                     </tr>
                     @endforeach
                 @else
@@ -394,8 +432,11 @@
                             <small>Guest: {{ $b->guest_name }}</small>
                         </td>
                         <td style="text-align: center;">{{ $b->check_in->diffInDays($b->check_out) }}</td>
-                        <td style="text-align: right;">${{ number_format($b->total_price, 2) }}</td>
+                        @if($isTzGuest)
                         <td style="text-align: right;">{{ number_format($totalPriceTZS, 0) }} TZS</td>
+                        @else
+                        <td style="text-align: right;">${{ number_format($b->total_price, 2) }}</td>
+                        @endif
                     </tr>
                     @endforeach
                 @endif
@@ -418,7 +459,7 @@
                     {{-- Hotel Authorized Signature --}}
                     <div style="text-align: center; flex: 1; min-width: 160px;">
                         <div class="sig-line"></div>
-                        <p style="font-size: 11px; color: #64748b;">Hotel Authorized Signature</p>
+                        <p style="font-size: 11px; color: var(--text-main);">Hotel Authorized Signature</p>
                     </div>
                     {{-- Guest Signature --}}
                     @php
@@ -432,12 +473,12 @@
                         @else
                             <div class="sig-line"></div>
                         @endif
-                        <p style="font-size: 11px; color: #64748b;">
+                        <p style="font-size: 11px; color: var(--text-main);">
                             Guest Signature
                             @if($booking->checkout_signature_path)
-                                <br><span style="font-size: 9px; color: #10b981;">(Check-Out Signature)</span>
+                                <br><span style="font-size: 9px; color: var(--text-main);">(Check-Out Signature)</span>
                             @elseif($booking->guest_signature_path)
-                                <br><span style="font-size: 9px; color: #64748b;">(Check-In Signature)</span>
+                                <br><span style="font-size: 9px; color: var(--text-main);">(Check-In Signature)</span>
                             @endif
                         </p>
                     </div>
@@ -445,28 +486,54 @@
             </div>
 
             <div class="summary-box">
+                @if($isTzGuest)
                 <div class="summary-row">
-                    <label>Subtotal (USD):</label>
-                    <span style="text-align: right;">${{ number_format($grandTotalUSD, 2) }} <br><small style="color: #64748b;">{{ number_format($grandTotalUSD * $currentExchangeRate, 0) }} TZS</small></span>
+                    <label>Subtotal:</label>
+                    <span style="text-align: right;">{{ number_format($grandTotalUSD * $currentExchangeRate, 0) }} TZS</span>
                 </div>
                 <div class="summary-row grand-total">
                     <label>Total Balance:</label>
-                    <span style="text-align: right;">${{ number_format($grandTotalUSD, 2) }} <br><small style="font-size: 12px; color: var(--text-light); font-weight: normal;">{{ number_format($grandTotalUSD * $currentExchangeRate, 0) }} TZS</small></span>
+                    <span style="text-align: right;">{{ number_format($grandTotalUSD * $currentExchangeRate, 0) }} TZS</span>
                 </div>
                 <div class="summary-row paid" style="align-items: center;">
                     <label style="margin-top: 10px;">Amount Paid:</label>
-                    <span style="text-align: right; margin-top: 10px;">${{ number_format($grandPaidUSD, 2) }} <br><small style="font-size: 11px; font-weight: normal;">{{ number_format($grandPaidUSD * $currentExchangeRate, 0) }} TZS</small></span>
+                    <span style="text-align: right; margin-top: 10px;">{{ number_format($grandPaidUSD * $currentExchangeRate, 0) }} TZS</span>
                 </div>
                 @if($balanceUSD > 0.1)
                 <div class="summary-row" style="color: #dc2626; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
                     <label>Due Balance:</label>
-                    <span style="text-align: right;">${{ number_format($balanceUSD, 2) }} <br><small style="font-size: 11px; font-weight: normal;">{{ number_format($balanceUSD * $currentExchangeRate, 0) }} TZS</small></span>
+                    <span style="text-align: right;">{{ number_format($balanceUSD * $currentExchangeRate, 0) }} TZS</span>
                 </div>
                 @else
                 <div class="summary-row" style="color: #10b981; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
                     <label>Due Balance:</label>
-                    <span style="text-align: right;">$0.00 <br><small style="font-size: 11px; font-weight: normal;">0 TZS</small></span>
+                    <span style="text-align: right;">0 TZS</span>
                 </div>
+                @endif
+                @else
+                <div class="summary-row">
+                    <label>Subtotal:</label>
+                    <span style="text-align: right;">${{ number_format($grandTotalUSD, 2) }}</span>
+                </div>
+                <div class="summary-row grand-total">
+                    <label>Total Balance:</label>
+                    <span style="text-align: right;">${{ number_format($grandTotalUSD, 2) }}</span>
+                </div>
+                <div class="summary-row paid" style="align-items: center;">
+                    <label style="margin-top: 10px;">Amount Paid:</label>
+                    <span style="text-align: right; margin-top: 10px;">${{ number_format($grandPaidUSD, 2) }}</span>
+                </div>
+                @if($balanceUSD > 0.1)
+                <div class="summary-row" style="color: #dc2626; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
+                    <label>Due Balance:</label>
+                    <span style="text-align: right;">${{ number_format($balanceUSD, 2) }}</span>
+                </div>
+                @else
+                <div class="summary-row" style="color: #10b981; font-weight: 700; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border);">
+                    <label>Due Balance:</label>
+                    <span style="text-align: right;">$0.00</span>
+                </div>
+                @endif
                 @endif
             </div>
         </div>

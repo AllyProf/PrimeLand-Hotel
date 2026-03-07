@@ -320,9 +320,9 @@
 <div class="row">
   <div class="col-md-6">
     <div class="tile">
-      <h3 class="tile-title">Revenue Trend (Last 6 Months)</h3>
+      <h3 class="tile-title">Booking Trend (Last 6 Months)</h3>
       <div class="embed-responsive embed-responsive-16by9">
-        <canvas class="embed-responsive-item" id="revenueChart"></canvas>
+        <canvas class="embed-responsive-item" id="bookingTrendChart"></canvas>
       </div>
     </div>
   </div>
@@ -848,24 +848,27 @@ function viewBooking(bookingId) {
     $('#toggleStatsBtn').html('<i class="fa fa-bar-chart"></i> See All Statistics');
   });
   
-  // Chart scripts
-  // Revenue Chart Data
-  var revenueData = {
-    labels: {!! json_encode(array_column($revenueData, 'month')) !!},
+  // Removed Revenue Trend Chart Data for manager privacy
+  // Booking Trend Chart Data
+  var bookingTrendDataRaw = {
+    labels: {!! json_encode(array_column($bookingTrendData ?? [], 'month')) !!},
     datasets: [
       {
-        label: "Revenue (TZS)",
+        label: "Bookings",
         fillColor: "rgba(151,187,205,0.2)",
         strokeColor: "rgba(151,187,205,1)",
         pointColor: "rgba(151,187,205,1)",
         pointStrokeColor: "#fff",
         pointHighlightFill: "#fff",
         pointHighlightStroke: "rgba(151,187,205,1)",
-        data: {!! json_encode(array_column($revenueData, 'revenue')) !!}
+        data: {!! json_encode(array_column($bookingTrendData ?? [], 'bookings')) !!}
       }
     ]
   };
-  
+
+  // Draw Booking Trend Chart
+  var ctxBookingTrend = $("#bookingTrendChart").get(0).getContext("2d");
+  var bookingTrendChart = new Chart(ctxBookingTrend).Line(bookingTrendDataRaw);
   // Booking Status Chart Data
   var bookingStatusData = [
     @foreach($bookingStatusData as $status => $count)
@@ -878,9 +881,7 @@ function viewBooking(bookingId) {
     @endforeach
   ];
   
-  // Draw Revenue Chart
-  var ctxRevenue = $("#revenueChart").get(0).getContext("2d");
-  var revenueChart = new Chart(ctxRevenue).Line(revenueData);
+  // (Revenue Chart removed)
   
   // Draw Booking Status Chart
   var ctxStatus = $("#bookingStatusChart").get(0).getContext("2d");

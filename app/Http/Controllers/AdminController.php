@@ -243,35 +243,21 @@ class AdminController extends Controller
                 ->orderBy('extension_requested_at', 'asc')
                 ->get();
             
-            // Revenue chart data (last 6 months) - in TZS
-            $revenueData = [];
+            // Booking trend data (last 6 months)
+            $bookingTrendData = [];
             for ($i = 5; $i >= 0; $i--) {
                 $month = Carbon::now()->subMonths($i);
                 $monthStart = $month->copy()->startOfMonth();
                 $monthEnd = $month->copy()->endOfMonth();
                 
-                $monthBookingRevenueUSD = Booking::whereBetween('created_at', [$monthStart, $monthEnd])
-                    ->where('payment_status', 'paid')
-                    ->get()
-                    ->sum(function($booking) {
-                        return $booking->amount_paid ?? $booking->total_price ?? 0;
-                    });
-                $monthServiceRevenueTZS = ServiceRequest::where('status', 'completed')
-                    ->whereBetween('completed_at', [$monthStart, $monthEnd])
-                    ->sum('total_price_tsh');
-
-                $monthDayServiceRevenueTZS = \App\Models\DayService::where('payment_status', 'paid')
-                    ->whereBetween('paid_at', [$monthStart, $monthEnd])
-                    ->get()->sum(function($s) use ($exchangeRate) {
-                        $amount = $s->amount_paid ?? $s->amount ?? 0;
-                        return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
-                    });
-
-                $monthRevenueTZS = ($monthBookingRevenueUSD * $exchangeRate) + $monthServiceRevenueTZS + $monthDayServiceRevenueTZS;
+                $monthBookingsCount = Booking::whereBetween('created_at', [$monthStart, $monthEnd])
+                    ->where('booking_reference', 'NOT LIKE', 'INV%')
+                    ->where('booking_reference', 'NOT LIKE', 'CINV%')
+                    ->count();
                 
-                $revenueData[] = [
+                $bookingTrendData[] = [
                     'month' => $month->format('M Y'),
-                    'revenue' => $monthRevenueTZS
+                    'bookings' => $monthBookingsCount
                 ];
             }
             
@@ -292,7 +278,7 @@ class AdminController extends Controller
                 'recentBookings' => $recentBookings,
                 'exchangeRate' => $exchangeRate,
                 'pendingExtensions' => $pendingExtensions,
-                'revenueData' => $revenueData,
+                'bookingTrendData' => $bookingTrendData,
                 'bookingStatusData' => $bookingStatusData,
             ]);
 
@@ -314,7 +300,7 @@ class AdminController extends Controller
                 'recentBookings' => collect(),
                 'exchangeRate' => 2500,
                 'pendingExtensions' => collect(),
-                'revenueData' => [],
+                'bookingTrendData' => [],
                 'bookingStatusData' => [],
                 'error' => 'An error occurred while loading the dashboard. Please check the logs.',
             ]);
