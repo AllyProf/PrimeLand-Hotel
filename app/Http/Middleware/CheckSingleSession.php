@@ -16,6 +16,9 @@ class CheckSingleSession
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Return next immediately to allow multiple logins from same account
+        return $next($request);
+        
         // Skip session check for login, logout, and public routes
         $skipRoutes = ['login', 'login.post', 'logout', 'booking.index', 'booking.check-availability'];
         $routeName = $request->route()?->getName();
