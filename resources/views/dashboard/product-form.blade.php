@@ -36,6 +36,23 @@
                 @method('PUT')
             @endif
 
+            @if(session('error'))
+                <div class="alert alert-danger shadow-sm border-0 mb-4" style="border-radius: 12px;">
+                    <i class="fa fa-exclamation-circle mr-2"></i> {{ session('error') }}
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="alert alert-danger shadow-sm border-0 mb-4" style="border-radius: 12px;">
+                    <h5 class="alert-heading"><i class="fa fa-warning mr-2"></i> Please correct the following issues:</h5>
+                    <ul class="mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <!-- 1. Brand / Family Details -->
             <div class="card shadow-sm mb-4 border-top-primary">
                 <div class="card-header bg-light">

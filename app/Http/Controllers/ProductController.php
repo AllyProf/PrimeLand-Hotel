@@ -235,11 +235,11 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'supplier_id' => 'nullable|exists:suppliers,id',
+            'supplier_id' => 'nullable',
             'category' => 'required|string',
             'description' => 'nullable|string',
             'variants' => 'required|array|min:1',
-            'variants.*.id' => 'nullable|exists:product_variants,id',
+            'variants.*.id' => 'nullable',
             'variants.*.name' => 'required|string|max:255',
             'variants.*.measurement' => 'required|string',
             'variants.*.unit' => 'required|string', // ml, l
@@ -247,6 +247,10 @@ class ProductController extends Controller
             'variants.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'variants.*.servings' => 'nullable|integer|min:1',
         ]);
+
+        $user = Auth::guard('staff')->user();
+        $role = $user->role;
+        $isBarKeeper = ($role === 'bar_keeper' || $role === 'barkeeper');
 
         DB::beginTransaction();
         try {
@@ -311,7 +315,8 @@ class ProductController extends Controller
 
             DB::commit();
             
-            return redirect()->route($this->getRoutePrefix() . '.products.index', ['type' => $product->type])
+            $routePrefix = $isBarKeeper ? 'bar-keeper' : 'admin';
+            return redirect()->route($routePrefix . '.products.index', ['type' => $product->type])
                 ->with('success', 'Product updated successfully!');
 
         } catch (\Exception $e) {
@@ -436,7 +441,7 @@ class ProductController extends Controller
      */
     private function getRoutePrefix(): string
     {
-        $role = strtolower(auth()->guard('staff')->user()->role ?? 'manager');
-        return ($role === 'bar_keeper') ? 'bar-keeper' : 'admin';
+        $role = strtolower(str_replace([' ', '_'], '', auth()->guard('staff')->user()->role ?? 'manager'));
+        return ($role === 'barkeeper' || $role === 'bartender' || $role === 'barkeepr') ? 'bar-keeper' : 'admin';
     }
 }
