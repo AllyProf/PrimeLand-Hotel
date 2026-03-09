@@ -293,11 +293,15 @@ class ProductController extends Controller
                     $data['image'] = $variantData['image']->store('products/variants', 'public');
                 }
 
-                if (isset($variantData['id'])) {
-                    // Update existing
-                    $variant = ProductVariant::find($variantData['id']);
-                    if ($variant && $variant->product_id === $product->id) {
+                if (!empty($variantData['id'])) {
+                    // Update existing - use loose comparison (==) to avoid int/string type mismatch
+                    $variant = ProductVariant::find((int) $variantData['id']);
+                    if ($variant && $variant->product_id == $product->id) {
                         $variant->update($data);
+                        $existingVariantIds[] = $variant->id;
+                    } else {
+                        // Fallback: create if variant not found or doesn't belong to this product
+                        $variant = ProductVariant::create(array_merge($data, ['product_id' => $product->id, 'is_active' => true]));
                         $existingVariantIds[] = $variant->id;
                     }
                 } else {
@@ -321,6 +325,11 @@ class ProductController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Product update failed', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return back()->with('error', 'Update failed: ' . $e->getMessage())->withInput();
         }
     }
