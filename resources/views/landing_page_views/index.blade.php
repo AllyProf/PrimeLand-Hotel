@@ -617,7 +617,7 @@
 </section>
 
 <!--  GT Offer Section Start -->
-<section class="gt-offer-section-3 parallaxie fix section-padding bg-cover" style="background-image: url('{{ asset('landing-assets/img/home-3/hotel-offer.jpg') }}');">
+<section class="gt-offer-section-3 parallaxie fix section-padding bg-cover" style="background-image: url('{{ asset('landing-assets/img/home-3/kilimanjaro_background.png') }}?v={{ time() }}');">
     <div class="left-shape">
         <img src="{{ asset('landing-assets/img/home-3/left-shape.png') }}" alt="img">
         <a href="https://www.youtube.com/watch?v=Cn4G2lZ_g2I" class="video-btn ripple video-popup">
@@ -626,21 +626,27 @@
     </div>
     <span class="book-text">BOOKING NOW</span>
     <div class="container">
-        <div class="row">
+        <div class="row align-items-center">
             <div class="col-xl-6">
                 <div class="gt-offer-content-left-3">
                     <a href="{{ url('/') }}">
                         <img src="{{ asset('royal-master/image/logo/Logo.png') }}" alt="img" style="max-height: 80px; filter: brightness(0) invert(1);">
                     </a>
                     <h2 class="wow fadeInUp" data-wow-delay=".5s">
-                        Summer Big <br>
-                        Offer
+                        Kilimanjaro <br>
+                        Trekkers Offer
                     </h2>
                     <h5 class="wow fadeInUp" data-wow-delay=".7s">STARTS FROM</h5>
-                    <h4 class="wow fadeInUp" data-wow-delay=".7s">$599.00</h4>
+                    <h4 class="wow fadeInUp" data-wow-delay=".7s">$85.00</h4>
                     <p class="wow fadeInUp" data-wow-delay=".9">
-                        Experience the ultimate summer getaway at PrimeLand Hotel. Enjoy exclusive discounts and world-class amenities during your stay with us.
+                        Get the perfect rest before or after your trek. Our package includes airport pickup, early breakfast, packed lunch boxes, and free gear storage.
                     </p>
+                    <a href="{{ url('/rooms') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay="1.1s" style="margin-top: 20px;">BOOK THIS OFFER</a>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="gt-offer-image" style="padding-left: 30px; position: relative; z-index: 10;">
+                    <img src="{{ asset('landing-assets/img/home-3/kilimanjaro_trekkers.png') }}?v={{ time() }}" alt="Kilimanjaro Trekkers" style="border-radius: 20px; box-shadow: 0 15px 45px rgba(0,0,0,0.4); width: 100%; height: auto; border: 5px solid rgba(255,255,255,0.1); display: block !important;">
                 </div>
             </div>
         </div>
