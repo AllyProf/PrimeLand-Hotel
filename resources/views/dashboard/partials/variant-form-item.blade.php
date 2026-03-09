@@ -20,7 +20,7 @@
         <div class="col-md-4">
             <div class="form-group">
                 <label class="control-label">Product Name</label>
-                <input type="text" class="form-control" name="variants[{{ $index }}][name]" value="{{ $variant->variant_name }}" required>
+                <input type="text" class="form-control variant-name-input" name="variants[{{ $index }}][name]" value="{{ $variant->variant_name }}" required>
             </div>
         </div>
         <div class="col-md-4">

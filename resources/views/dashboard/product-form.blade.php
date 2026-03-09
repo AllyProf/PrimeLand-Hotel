@@ -265,15 +265,41 @@
         }
     }
 
-    // Auto-update variant names when brand name changes (for new variants only)
+    // Track the brand name to help sync variants
+    let initialBrandName = document.getElementById('brandNameInput').value.trim().toLowerCase();
+
     document.getElementById('brandNameInput').addEventListener('input', function() {
-        const brandName = this.value;
+        const newBrandName = this.value;
+        const newBrandNameLower = newBrandName.trim().toLowerCase();
+        
         document.querySelectorAll('.variant-name-input').forEach(input => {
-            // Only update if it looks like a default or empty value, don't overwrite user custom text
-            if(input.value.trim() === '' || input.value.trim() === brandName.substring(0, brandName.length-1)) {
-                input.value = brandName + ' ';
+            const currentVal = input.value;
+            const currentValLower = currentVal.trim().toLowerCase();
+            
+            // Sync if:
+            // 1. Box is empty
+            // 2. Box contains the brand name exactly
+            // 3. Box starts with the previous brand name (we try to preserve the suffix like "350ml")
+            if (currentValLower === '' || 
+                currentValLower === initialBrandName || 
+                (initialBrandName !== '' && currentValLower.startsWith(initialBrandName))) {
+                
+                if (currentValLower.startsWith(initialBrandName) && initialBrandName !== '') {
+                    // Extract the suffix (e.g. " 350ml")
+                    const suffix = currentVal.substring(initialBrandName.length);
+                    input.value = newBrandName + suffix;
+                } else {
+                    input.value = newBrandName + (newBrandName ? ' ' : '');
+                }
             }
         });
+        
+        // Update the "old" tracker for the next keystroke, but only if we're not empty
+        // Actually, we keep initialBrandName static for the session or update it carefully
+        // For simplicity, let's just use the current value as the new basis
+        if (newBrandName.length > 2) {
+            initialBrandName = newBrandNameLower;
+        }
     });
 
     document.addEventListener('DOMContentLoaded', function() {
