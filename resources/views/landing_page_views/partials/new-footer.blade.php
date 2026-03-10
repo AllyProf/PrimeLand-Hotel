@@ -118,7 +118,7 @@
         <a href="https://wa.me/255677155156" target="_blank" class="float-btn whatsapp-btn" title="Chat with us">
             <i class="fa-brands fa-whatsapp"></i>
         </a>
-        <a href="https://www.google.com/maps/place/Primeland+Hotel/@-3.3290402,37.3327172,17z" target="_blank"
+        <a href="https://www.google.com/maps/place/Primeland+Hotel/@-3.3290456,37.3352921,17z/data=!3m1!4b1!4m9!3m8!1s0x1839d9c289b52703:0x4cb0911bcf50efb!5m2!4m1!1i2!8m2!3d-3.3290456!4d37.3352921!16s%2Fg%2F11vqscl66t?entry=ttu&g_ep=EgoyMDI2MDMwNC4xIKXMDSoASAFQAw%3D%3D" target="_blank"
             class="float-btn maps-btn" title="Find us on Maps">
             <i class="fa-solid fa-map-marker-alt"></i>
         </a>
