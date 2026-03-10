@@ -29,7 +29,7 @@ Route::get('/service-details', function () {
 });
 
 Route::get('/rooms', function () {
-    return view('landing_page_views.rooms');
+    return view('landing_page_views.room-2');
 });
 
 Route::get('/rooms/single-room', function () {

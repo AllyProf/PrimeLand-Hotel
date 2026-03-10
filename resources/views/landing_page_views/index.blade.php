@@ -38,7 +38,7 @@
             </p>
 
             <div class="hero-button wow fadeInUp" data-wow-delay=".7s">
-                <a href="{{ route('booking.index') }}" class="gt-theme-btn">Book Now</a>
+                <a href="{{ url('/contact') }}" class="gt-theme-btn">Book Now</a>
                 <a href="{{ url('/rooms') }}" class="gt-theme-btn style-2">Our Rooms</a>
             </div>
         </div>
