@@ -415,17 +415,17 @@
                 <div class="row justify-content-center">
                     <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".2s">
                         <div class="top-title">
-                            <a href="{{ url('/rooms') }}"> Single Room <img src="{{ asset('assets/img/home-3/room/sm-01.jpg') }}" alt="img"> </a>
+                            <a href="{{ url('/rooms/single-room') }}"> Single Room <img src="{{ asset('assets/img/home-3/room/sm-01.jpg') }}" alt="img"> </a>
                         </div>
                     </div>
                     <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".4s">
                         <div class="top-title">
-                            <a href="{{ url('/rooms') }}"> Double Room <img src="{{ asset('assets/img/home-3/room/sm-02.jpg') }}" alt="img"> </a>
+                            <a href="{{ url('/rooms/double-room') }}"> Double Room <img src="{{ asset('assets/img/home-3/room/sm-02.jpg') }}" alt="img"> </a>
                         </div>
                     </div>
                     <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".6s">
                         <div class="top-title">
-                            <a href="{{ url('/rooms') }}"> Twin Room <img src="{{ asset('assets/img/home-3/room/sm-03.jpg') }}" alt="img"> </a>
+                            <a href="{{ url('/rooms/twin-room') }}"> Twin Room <img src="{{ asset('assets/img/home-3/room/sm-03.jpg') }}" alt="img"> </a>
                         </div>
                     </div>
                 </div>
@@ -441,13 +441,13 @@
                         <div class="room-content">
                             <span>From $70 / Night</span>
                             <div class="content">
-                                <h3><a href="{{ url('/rooms') }}">Single Room</a></h3>
+                                <h3><a href="{{ url('/rooms/single-room') }}">Single Room</a></h3>
                                 <ul>
                                     <li> <img src="{{ asset('assets/img/home-3/room/bed.png') }}" alt="img"> 1 Queen Bed </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/man.png') }}" alt="img"> 1 Guest </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/room.png') }}" alt="img"> B&amp;B Basis </li>
                                 </ul>
-                                <a href="{{ url('/rooms') }}" class="gt-theme-btn">ROOM DETAILS</a>
+                                <a href="{{ url('/rooms/single-room') }}" class="gt-theme-btn">ROOM DETAILS</a>
                             </div>
                         </div>
                     </div>
@@ -458,13 +458,13 @@
                         <div class="room-content">
                             <span>From $85 / Night</span>
                             <div class="content">
-                                <h3><a href="{{ url('/rooms') }}">Double Room</a></h3>
+                                <h3><a href="{{ url('/rooms/double-room') }}">Double Room</a></h3>
                                 <ul>
                                     <li> <img src="{{ asset('assets/img/home-3/room/bed.png') }}" alt="img"> 1 Queen Bed </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/man.png') }}" alt="img"> 2 Guests </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/room.png') }}" alt="img"> B&amp;B Basis </li>
                                 </ul>
-                                <a href="{{ url('/rooms') }}" class="gt-theme-btn">ROOM DETAILS</a>
+                                <a href="{{ url('/rooms/double-room') }}" class="gt-theme-btn">ROOM DETAILS</a>
                             </div>
                         </div>
                     </div>
@@ -475,13 +475,13 @@
                         <div class="room-content">
                             <span>From $95 / Night</span>
                             <div class="content">
-                                <h3><a href="{{ url('/rooms') }}">Twin Room</a></h3>
+                                <h3><a href="{{ url('/rooms/twin-room') }}">Twin Room</a></h3>
                                 <ul>
                                     <li> <img src="{{ asset('assets/img/home-3/room/bed.png') }}" alt="img"> 2 Twin Beds </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/man.png') }}" alt="img"> 2 Guests </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/room.png') }}" alt="img"> B&amp;B Basis </li>
                                 </ul>
-                                <a href="{{ url('/rooms') }}" class="gt-theme-btn">ROOM DETAILS</a>
+                                <a href="{{ url('/rooms/twin-room') }}" class="gt-theme-btn">ROOM DETAILS</a>
                             </div>
                         </div>
                     </div>
@@ -540,13 +540,11 @@
                             surroundings, and the feeling of true indulgence.
                         </p>
                             <div class="gt-client-info wow fadeInUp" data-wow-delay=".6s">
-                                <div class="gt-client-image">
-                                    <img src="{{ asset('assets/img/home-1/testimonial/client-info.png') }}" alt="img">
-                                </div>
+                                
                                 <div class="mb-3 wow fadeInUp" data-wow-delay=".7s">
                                     <img src="{{ asset('assets/img/new_images/client_trust_badge_v2.png') }}" alt="Trust Badge" style="width: 168px; height: 60px; object-fit: contain;">
                                 </div>
-                                <h3>More then <span>25K</span> clients Reviews</h3>
+                                <h3>More than <span>25K</span> Guests Reviews</h3>
                             </div>
                     </div>
                 </div>
@@ -820,6 +818,38 @@
                                     aria-labelledby="headingOne" data-bs-parent="#accordionExample">
                                     <div class="accordion-body">
                                         <p> Yes! We offer a free daily breakfast buffet for all our guests staying at Primeland Hotel. </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Item 2 -->
+                            <div class="accordion-item wow fadeInUp" data-wow-delay=".5s">
+                                <h2 class="accordion-header" id="headingTwo">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseTwo" aria-expanded="false"
+                                        aria-controls="collapseTwo">
+                                        What are your check-in and check-out times?
+                                    </button>
+                                </h2>
+                                <div id="collapseTwo" class="accordion-collapse collapse"
+                                    aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+                                    <div class="accordion-body">
+                                        <p> Our standard check-in time is at 2:00 PM, and check-out is at 10:00 AM. Late check-outs may be available upon request, subject to availability and additional fees. </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Item 3 -->
+                            <div class="accordion-item wow fadeInUp" data-wow-delay=".7s">
+                                <h2 class="accordion-header" id="headingThree">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#collapseThree" aria-expanded="false"
+                                        aria-controls="collapseThree">
+                                        Do you offer airport transfer services?
+                                    </button>
+                                </h2>
+                                <div id="collapseThree" class="accordion-collapse collapse"
+                                    aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                                    <div class="accordion-body">
+                                        <p> Yes, we offer secure and comfortable airport pickups and drop-offs for Kilimanjaro International Airport (JRO). Please inform us of your flight details in advance to arrange the transfer. </p>
                                     </div>
                                 </div>
                             </div>
