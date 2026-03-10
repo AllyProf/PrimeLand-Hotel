@@ -69,7 +69,7 @@
                 <div class="offcanvas__top mb-5 d-flex justify-content-between align-items-center">
                     <div class="offcanvas__logo">
                         <a href="{{ url('/') }}">
-                            <img src="{{ asset('assets/img/new_images/primeland_hotel_logo.png') }}" alt="logo-img"
+                            <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="logo-img"
                                 style="max-width: 150px; height: auto;">
                         </a>
                     </div>
@@ -145,11 +145,11 @@
             <div class="header-main">
                 <div class="logo">
                     <a href="{{ url('/') }}" class="header-logo">
-                        <img src="{{ asset('assets/img/new_images/primeland_hotel_logo.png') }}" alt="logo-img"
+                        <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="logo-img"
                             style="max-width: 150px; height: auto;">
                     </a>
                     <a href="{{ url('/') }}" class="header-logo-2">
-                        <img src="{{ asset('assets/img/new_images/primeland_hotel_logo.png') }}" alt="logo-img"
+                        <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="logo-img"
                             style="max-width: 150px; height: auto;">
                     </a>
                 </div>

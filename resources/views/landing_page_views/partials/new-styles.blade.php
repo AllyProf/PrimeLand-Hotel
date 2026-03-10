@@ -1,5 +1,5 @@
 <!--<< Favcion >>-->
-<link rel="shortcut icon" href="{{ asset('assets/img/new_images/primeland_hotel_logo.png') }}">
+<link rel="shortcut icon" href="{{ asset('assets/img/new_images/primeland_logo.png') }}">
 <!--<< Bootstrap min.css >>-->
 <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
 <!--<< All Min Css >>-->
