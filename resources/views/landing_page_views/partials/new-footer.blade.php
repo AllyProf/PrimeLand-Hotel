@@ -77,7 +77,7 @@
                 </div>
 
                 <!-- Digital Platforms Column -->
-                <div class="col-xl-3 col-lg-3 col-md-6">
+                <div class="col-xl-3 col-lg-3 col-md-6 text-center text-lg-start">
                     <div class="footer-single-widget">
                         <div class="widget-head">
                             <h3 style="color: #e77a3a !important;">Digital Platforms</h3>

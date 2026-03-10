@@ -37,8 +37,15 @@
     .prl-divider {
         display: flex;
         align-items: center;
+        justify-content: center; /* Default to center (mobile) */
         gap: 10px;
         margin: 14px 0 22px;
+    }
+
+    @media (min-width: 992px) {
+        .prl-divider {
+            justify-content: flex-start;
+        }
     }
 
     .prl-divider .prl-line {
@@ -104,6 +111,15 @@
         grid-template-columns: repeat(3, 1fr);
         gap: 12px;
         max-width: 220px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @media (min-width: 992px) {
+        .prl-social-grid {
+            margin-left: 0;
+            margin-right: 0;
+        }
     }
 
     .prl-social-grid a {
