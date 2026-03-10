@@ -120,7 +120,7 @@
                             </div>
                         </li>
                     </ul>
-                    <a href="{{ route('booking.index') }}" class="gt-theme-btn">BOOK NOW</a>
+                    <a href="{{ url('/contact') }}" class="gt-theme-btn">BOOK NOW</a>
                     <div class="prl-social-grid mt-4">
                         <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
                             target="_blank" class="ig" title="Instagram"><i class="fab fa-instagram"></i></a>
@@ -192,7 +192,7 @@
                         <i class="fa-regular fa-magnifying-glass"></i>
                     </a>
                     <div class="hero-button">
-                        <a href="{{ route('booking.index') }}" class="gt-theme-btn">Book now</a>
+                        <a href="{{ url('/contact') }}" class="gt-theme-btn">Book now</a>
                     </div>
                     <div class="header__hamburger my-auto d-xl-none">
                         <div class="sidebar__toggle">
