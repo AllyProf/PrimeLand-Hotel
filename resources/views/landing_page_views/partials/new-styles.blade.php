@@ -110,7 +110,7 @@
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 12px;
-        max-width: 220px;
+        max-width: 240px; /* Increased from 220px */
         margin-left: auto;
         margin-right: auto;
     }
@@ -123,14 +123,14 @@
     }
 
     .prl-social-grid a {
-        width: 60px;
-        height: 60px;
+        width: 70px; /* Increased from 60px */
+        height: 70px; /* Increased from 60px */
         background: #222222;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 12px;
-        font-size: 24px;
+        font-size: 30px; /* Increased from 24px */
         transition: all 0.3s ease;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     }
