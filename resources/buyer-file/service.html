@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--<< Header Area >>-->
+
+<head>
+    <!-- ========== Meta Tags ========== -->
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="iamlabib">
+    <meta name="description" content="Laxary- Hotel & Resort Booking HTML Template">
+    <!-- ======== Page title ============ -->
+    <title>Our Services | Primeland Hotel - Moshi, Kilimanjaro</title>
+    <!--<< Favcion >>-->
+    <link rel="shortcut icon" href="assets/img/new_images/primeland_hotel_logo.png">
+    <!--<< Bootstrap min.css >>-->
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <!--<< All Min Css >>-->
+    <link rel="stylesheet" href="assets/css/all.min.css">
+    <!--<< Animate.css >>-->
+    <link rel="stylesheet" href="assets/css/animate.css">
+    <!--<< Magnific Popup.css >>-->
+    <link rel="stylesheet" href="assets/css/magnific-popup.css">
+    <!--<< MeanMenu.css >>-->
+    <link rel="stylesheet" href="assets/css/meanmenu.css">
+    <!--<< Swiper Bundle.css >>-->
+    <link rel="stylesheet" href="assets/css/swiper-bundle.min.css">
+    <!--<< Nice Select.css >>-->
+    <link rel="stylesheet" href="assets/css/nice-select.css">
+    <!--<< Main.css >>-->
+    <link rel="stylesheet" href="assets/css/flaticon.css">
+    <!--<< Main.css >>-->
+    <link rel="stylesheet" href="assets/css/main.css">
+
+    <style>
+        /* ===== PRIMELAND BRAND COLOR ===== */
+        :root {
+            --prl-brand: #e77a3a;
+        }
+
+        /* ===== SECTION DIVIDER ===== */
+        .prl-divider {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .prl-divider-line {
+            height: 2px;
+            width: 60px;
+            background: #e77a3a;
+            border-radius: 4px;
+        }
+
+        .prl-divider-dot {
+            width: 10px;
+            height: 10px;
+            background: #e77a3a;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .prl-divider-dot::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border: 1px solid #e77a3a;
+            border-radius: 50%;
+        }
+
+        .gt-theme-btn {
+            background-color: #e77a3a !important;
+            border-color: #e77a3a !important;
+        }
+
+        .gt-theme-btn::before,
+        .gt-theme-btn::after {
+            background-color: #d16629 !important;
+        }
+
+        ul.gt-breadcrumb-items li a:hover,
+        .main-menu ul li.has-dropdown>a:hover,
+        .footer-list li a:hover,
+        .footer-single-widget .gt-list-area li a:hover,
+        .footer-single-widget .contact-list li a:hover {
+            color: #e77a3a !important;
+        }
+
+        .search-btn,
+        .sidebar__toggle i,
+        .main-header__search i,
+        .fa-play,
+        .faq-item h3 i {
+            color: #e77a3a !important;
+        }
+
+        .faq-item.active h3 {
+            color: #e77a3a !important;
+        }
+
+        .service-box-items:hover h4,
+        .gt-counter-wrapper .gt-counter h2 .gt-count,
+        .gt-testimonial-section .gt-testimonial-wrapper .gt-testimonial-slider .gt-testimonial-box .star i,
+        .gt-instagram-section .gt-section-title h6 {
+            color: #e77a3a !important;
+        }
+
+        .service-box-items:hover {
+            border-color: #e77a3a !important;
+        }
+
+        .swiper-dot1 .dot,
+        .swiper-dot1 .dot::before,
+        .gt-instagram-section .gt-instagram-slider .gt-instagram-image .gt-icon {
+            background-color: #e77a3a !important;
+        }
+
+        .array-button-2 button,
+        .gt-instagram-section .gt-instagram-slider .gt-instagram-image .gt-icon {
+            border-color: #e77a3a !important;
+        }
+
+        .array-button-2 button:hover {
+            background-color: #e77a3a !important;
+            color: #ffffff !important;
+        }
+    </style>
+    <style>
+        /* ===== PRIMELAND BRAND COLOR ===== */
+        :root {
+            --prl-brand: #e77a3a;
+        }
+
+        /* ===== SECTION DIVIDER ===== */
+        .prl-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 14px 0 22px;
+        }
+
+        .prl-divider .prl-line {
+            height: 2px;
+            width: 45px;
+            background: #e77a3a;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .prl-divider .prl-dot {
+            width: 8px;
+            height: 8px;
+            background: #e77a3a;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Footer Social Grid Styling */
+        .prl-social-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 220px;
+        }
+
+        .prl-social-grid a {
+            width: 60px;
+            height: 60px;
+            background: #222222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .prl-social-grid a:hover {
+            transform: translateY(-3px);
+            background: #333333;
+        }
+
+        .prl-social-grid a.fb {
+            color: #1877F2;
+        }
+
+        .prl-social-grid a.ig {
+            color: #E4405F;
+        }
+
+        .prl-social-grid a.tw {
+            color: #1DA1F2;
+        }
+
+        .prl-social-grid a.wa {
+            color: #25D366;
+        }
+
+        .prl-social-grid a.yt {
+            color: #FF0000;
+        }
+
+        .prl-social-grid a.li {
+            color: #0077B5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Preloader Start -->
+    <div id="preloader" class="preloader">
+        <div class="animation-preloader">
+            <div class="spinner">
+            </div>
+            <div class="txt-loading">
+                <span data-text-preloader="P" class="letters-loading">
+                    P
+                </span>
+                <span data-text-preloader="R" class="letters-loading">
+                    R
+                </span>
+                <span data-text-preloader="I" class="letters-loading">
+                    I
+                </span>
+                <span data-text-preloader="M" class="letters-loading">
+                    M
+                </span>
+                <span data-text-preloader="E" class="letters-loading">
+                    E
+                </span>
+                <span data-text-preloader="L" class="letters-loading">
+                    L
+                </span>
+                <span data-text-preloader="A" class="letters-loading">
+                    A
+                </span>
+                <span data-text-preloader="N" class="letters-loading">
+                    N
+                </span>
+                <span data-text-preloader="D" class="letters-loading">
+                    D
+                </span>
+            </div>
+            <p class="text-center">Loading</p>
+        </div>
+        <div class="loader">
+            <div class="row">
+                <div class="col-3 loader-section section-left">
+                    <div class="bg"></div>
+                </div>
+                <div class="col-3 loader-section section-left">
+                    <div class="bg"></div>
+                </div>
+                <div class="col-3 loader-section section-right">
+                    <div class="bg"></div>
+                </div>
+                <div class="col-3 loader-section section-right">
+                    <div class="bg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- GT Back To Top Start -->
+    <button id="gt-back-top" class="gt-back-to-top show">
+        <i class="fa-solid fa-chevrons-up"></i>
+    </button>
+
+    <!-- GT MouseCursor Start -->
+    <div class="mouseCursor cursor-outer"></div>
+    <div class="mouseCursor cursor-inner"></div>
+
+    <!-- Offcanvas Area Start -->
+    <div class="fix-area">
+        <div class="offcanvas__info">
+            <div class="offcanvas__wrapper">
+                <div class="offcanvas__content">
+                    <div class="offcanvas__top mb-5 d-flex justify-content-between align-items-center">
+                        <div class="offcanvas__logo">
+                            <a href="index.html">
+                                <img src="assets/img/new_images/primeland_hotel_logo.png" alt="logo-img"
+                                    style="max-width: 150px; height: auto;">
+                            </a>
+                        </div>
+                        <div class="offcanvas__close">
+                            <button>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text d-none d-xl-block">
+                        Nullam dignissim, ante scelerisque the is euismod fermentum odio sem semper the is erat, a
+                        feugiat leo urna eget eros. Duis Aenean a imperdiet risus.
+                    </p>
+                    <div class="mobile-menu fix mb-3"></div>
+                    <div class="offcanvas__contact">
+                        <h4>Contact Info</h4>
+                        <ul>
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon">
+                                    <i class="fal fa-map-marker-alt"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a target="_blank" href="#">Main Street, Melbourne, Australia</a>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon mr-15">
+                                    <i class="fal fa-envelope"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a href="mailto:info@example.com"><span
+                                            class="mailto:info@example.com">info@example.com</span></a>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon mr-15">
+                                    <i class="fal fa-clock"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a target="_blank" href="#">Mod-friday, 09am -05pm</a>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon mr-15">
+                                    <i class="far fa-phone"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a href="tel:+11002345909">+11002345909</a>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="header-button mt-4">
+
+                        </div>
+                        <a href="contact.html" class="gt-theme-btn">BOOK NOW</a>
+                        <div class="prl-social-grid mt-4">
+                            <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                                target="_blank" class="ig" title="Instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="https://wa.me/255677155156" target="_blank" class="wa" title="WhatsApp"><i
+                                    class="fab fa-whatsapp"></i></a>
+                            <a href="#" class="fb" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="tw" title="X / Twitter"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="yt" title="YouTube"><i class="fab fa-youtube"></i></a>
+                            <a href="#" class="li" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="offcanvas__overlay"></div>
+
+    <!-- Header Section Start -->
+    <header id="header-sticky" class="header-1 header-2">
+        <div class="container">
+            <div class="mega-menu-wrapper">
+                <div class="header-main">
+                    <div class="logo">
+                        <a href="index.html" class="header-logo">
+                            <img src="assets/img/new_images/primeland_hotel_logo.png" alt="logo-img"
+                                style="max-width: 150px; height: auto;">
+                        </a>
+                        <a href="index.html" class="header-logo-2">
+                            <img src="assets/img/new_images/primeland_hotel_logo.png" alt="logo-img"
+                                style="max-width: 150px; height: auto;">
+                        </a>
+                    </div>
+                    <div class="header-right d-flex justify-content-end align-items-center">
+                        <div class="mean__menu-wrapper">
+                            <div class="main-menu">
+                                <nav id="mobile-menu">
+                                    <ul>
+                                        <li>
+                                            <a href="index.html">
+                                                Home
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="about.html">
+                                                About Us
+                                            </a>
+                                        </li>
+                                        <li class="has-dropdown">
+                                            <a href="service.html">
+                                                Services
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="service-details.html">Service Details</a></li>
+                                            </ul>
+                                        </li>
+                                        <li class="has-dropdown">
+                                            <a href="room-2.html">
+                                                Room
+                                            </a>
+
+                                        </li>
+                                        <li>
+                                            <a href="contact.html">Contact Us</a>
+                                        </li>
+                                        <li>
+                                            <a href="login.html">Login</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                        <a href="#" class="main-header__search search-toggler">
+                            <i class="fa-regular fa-magnifying-glass"></i>
+                        </a>
+                        <div class="hero-button">
+                            <a href="contact.html" class="gt-theme-btn">Book now</a>
+                        </div>
+                        <div class="header__hamburger my-auto d-xl-none">
+                            <div class="sidebar__toggle">
+                                <i class="fa-regular fa-bars"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- GT Search Start -->
+    <div class="search-popup">
+        <div class="search-popup__overlay search-toggler"></div>
+        <div class="search-popup__content">
+            <form role="search" method="get" class="search-popup__form" action="#">
+                <input type="text" id="search" name="search" placeholder="Search Here...">
+                <button type="submit" aria-label="search submit" class="search-btn">
+                    <span><i class="fa-regular fa-magnifying-glass"></i></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Breadcrumb Section Start -->
+    <div class="gt-breadcrumb-wrapper bg-cover"
+        style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('assets/img/new_images/swimming view_(1).jpg');">
+        <div class="container">
+            <div class="gt-page-heading">
+                <div class="gt-breadcrumb-sub-title">
+                    <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Services</h1>
+                </div>
+                <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
+                    <li>
+                        <a href="index.html">
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </li>
+                    <li>
+                        Services
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- GT Service Section Start -->
+    <section class="gt-service-section fix section-padding fix section-padding">
+        <div class="container">
+            <div class="gt-section-title text-center">
+                <h6 class="justify-content-center wow fadeInUp">
+                    FACILITIES
+                </h6>
+                <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                    Primeland Facilities
+                </h2>
+                <div class="prl-divider justify-content-center mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
+                    <div class="prl-divider-line"></div>
+                    <div class="prl-divider-dot"></div>
+                    <div class="prl-divider-line"></div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp">
+                    <div class="service-box-items">
+                        <div class="icon">
+                            <i class="flaticon-key-card"></i>
+                        </div>
+                        <h4>Smart Key</h4>
+                    </div>
+                </div>
+                <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".2s">
+                    <div class="service-box-items">
+                        <div class="icon">
+                            <i class="flaticon-free-parking"></i>
+                        </div>
+                        <h4>Free Car Parking</h4>
+                    </div>
+                </div>
+                <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".4s">
+                    <div class="service-box-items">
+                        <div class="icon">
+                            <i class="flaticon-wifi-router"></i>
+                        </div>
+                        <h4>Fast Wifi Interner</h4>
+                    </div>
+                </div>
+                <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".6s">
+                    <div class="service-box-items">
+                        <div class="icon">
+                            <i class="flaticon-hotel-service"></i>
+                        </div>
+                        <h4>Room Service</h4>
+                    </div>
+                </div>
+                <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".8s">
+                    <div class="service-box-items">
+                        <div class="icon">
+                            <i class="flaticon-fast-food"></i>
+                        </div>
+                        <h4>Food & Drink</h4>
+                    </div>
+                </div>
+                <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay="1s">
+                    <div class="service-box-items">
+                        <div class="icon">
+                            <i class="flaticon-swimming"></i>
+                        </div>
+                        <h4>Swimming - Pool</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GT Serviec  Section Start -->
+    <section class="gt-service-section fix section-padding section-bg-3">
+        <div class="left-shape">
+            <img src="assets/img/home-3/service/left-shape.png" alt="img">
+        </div>
+        <div class="container">
+            <div class="gt-service-wrapper-3">
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="service-content">
+                            <div class="gt-section-title mb-0">
+                                <h6 class="wow fadeInUp">
+                                    SERVICES
+                                </h6>
+                                <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                                    The Primeland Standard
+                                </h2>
+                                <div class="prl-divider mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
+                                    <div class="prl-divider-line"></div>
+                                    <div class="prl-divider-dot"></div>
+                                    <div class="prl-divider-line"></div>
+                                </div>
+                            </div>
+                            <p class="service-text wow fadeInUp" data-wow-delay=".4s">
+                                Primeland Hotel blends modern comfort with timeless design, offering sophisticated
+                                spaces, elegant details, and a serene atmosphere crafted for unforgettable experiences
+                                in Moshi.
+                            </p>
+                            <div class="faq-item wow fadeInUp" data-wow-delay=".5s">
+                                <h3>
+                                    <i class="fa-solid fa-circle-chevron-right"></i>
+                                    Spa Retreat
+                                </h3>
+                                <p class="faq-text">
+                                    At our hotel, luxury is more than just a word it's a tradition. From exquisite
+                                    design to personalized service, every detail is thoughtfully
+                                </p>
+                            </div>
+                            <div class="faq-item active wow fadeInUp" data-wow-delay=".6s">
+                                <h3>
+                                    <i class="fa-solid fa-circle-chevron-right"></i>
+                                    Family Fun Package
+                                </h3>
+                                <p class="faq-text">
+                                    At our hotel, luxury is more than just a word it's a tradition. From exquisite
+                                    design to personalized service, every detail is thoughtfully
+                                </p>
+                            </div>
+                            <div class="faq-item wow fadeInUp" data-wow-delay=".7s">
+                                <h3>
+                                    <i class="fa-solid fa-circle-chevron-right"></i>
+                                    Traveler Special
+                                </h3>
+                                <p class="faq-text">
+                                    At our hotel, luxury is more than just a word it's a tradition. From exquisite
+                                    design to personalized service, every detail is thoughtfully
+                                </p>
+                            </div>
+                            <div class="faq-item wow fadeInUp" data-wow-delay=".8s">
+                                <h3>
+                                    <i class="fa-solid fa-circle-chevron-right"></i>
+                                    Romantic Getaway
+                                </h3>
+                                <p class="faq-text">
+                                    At our hotel, luxury is more than just a word it's a tradition. From exquisite
+                                    design to personalized service, every detail is thoughtfully
+                                </p>
+                            </div>
+                            <a href="service.html" class="gt-theme-btn wow fadeInUp" data-wow-delay=".9s">VIEW ALL
+                                SERVICE</a>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="swiper service-image-slider">
+                            <div class="swiper-wrapper">
+                                <div class="swiper-slide">
+                                    <div class="service-image">
+                                        <img src="assets/img/home-3/service/service-01.jpg" alt="img">
+                                        <span class="offer-text">From $269 / NIGHT</span>
+                                    </div>
+                                </div>
+                                <div class="swiper-slide">
+                                    <div class="service-image">
+                                        <img src="assets/img/home-3/service/service-01.jpg" alt="img">
+                                        <span class="offer-text">From $269 / NIGHT</span>
+                                    </div>
+                                </div>
+                                <div class="swiper-slide">
+                                    <div class="service-image">
+                                        <img src="assets/img/home-3/service/service-01.jpg" alt="img">
+                                        <span class="offer-text">From $269 / NIGHT</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="array-button-2 justify-content-center">
+                                <button class="array-next"><i class="fa-solid fa-chevron-left"></i></button>
+
+                                <button class="array-prev"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GT Enjoy Hotel Section Start -->
+    <section class="gt-enjoy-hotel-section-3 section-padding">
+        <div class="right-shape">
+            <img src="assets/img/home-3/right-shape.png" alt="img">
+        </div>
+        <div class="container">
+            <div class="gt-enjoy-hotel-wrapper-3">
+                <div class="row g-4 align-items-end">
+                    <div class="col-lg-6 wow fadeInUp" data-wow-delay=".3s">
+                        <div class="gt-hotel-images-items">
+                            <div class="gt-hotel-image">
+                                <img src="assets/img/home-3/enjoy-hotel/02.jpg" alt="img">
+                                <div class="gt-counter">
+                                    <h2><span class="gt-count">19</span>+</h2>
+                                    <p>
+                                        Years Of <br> Experience
+                                    </p>
+                                </div>
+                                <div class="gt-hotel-image-2">
+                                    <img src="assets/img/home-3/enjoy-hotel/01.jpg" alt="img">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 wow fadeInUp" data-wow-delay=".5s">
+                        <div class="gt-enjoy-hotel-content">
+                            <div class="gt-section-title mb-0">
+                                <h6 class="wow fadeInUp">
+                                    ENJOY YOUR DAY
+                                </h6>
+                                <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                                    Primeland Hotel Experience
+                                </h2>
+                                <div class="prl-divider mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
+                                    <div class="prl-divider-line"></div>
+                                    <div class="prl-divider-dot"></div>
+                                    <div class="prl-divider-line"></div>
+                                </div>
+                            </div>
+                            <p class="gt-hotel-text wow fadeInUp" data-wow-delay=".4s">
+                                Discover the perfect stay in the heart of Moshi town. Our hotel is strategically located
+                                perfectly for Kilimanjaro trips and safaris.
+                            </p>
+                            <ul class="nav">
+                                <li class="nav-item wow fadeInUp" data-wow-delay=".2s">
+                                    <a href="#restaurant" data-bs-toggle="tab" class="nav-link active">
+                                        Main Restaurant
+                                    </a>
+                                </li>
+                                <li class="nav-item wow fadeInUp" data-wow-delay=".4s">
+                                    <a href="#poolbar" data-bs-toggle="tab" class="nav-link">
+                                        Pool Bar & Lounge
+                                    </a>
+                                </li>
+                                <li class="nav-item wow fadeInUp" data-wow-delay=".6s">
+                                    <a href="#safari" data-bs-toggle="tab" class="nav-link">
+                                        Tour & Safari Desk
+                                    </a>
+                                </li>
+                            </ul>
+                            <div class="tab-content">
+                                <div id="restaurant" class="tab-pane fade show active">
+                                    <div class="menu-list">
+                                        <p>Working Hours:</p>
+                                        <ul>
+                                            <li>
+                                                <span>Breakfast :</span>
+                                                06:30am - 10:00am
+                                            </li>
+                                            <li>
+                                                <span>Lunch :</span>
+                                                12:30pm - 03:00pm
+                                            </li>
+                                            <li>
+                                                <span>Dinner :</span>
+                                                06:30pm - 10:00pm
+                                            </li>
+                                            <li>
+                                                <span>Evening Bar :</span>
+                                                10:00pm - 11:30pm
+                                            </li>
+                                        </ul>
+                                        <a href="restaurant.html" class="gt-theme-btn">READ MORE</a>
+                                    </div>
+                                </div>
+                                <div id="poolbar" class="tab-pane fade">
+                                    <div class="menu-list">
+                                        <p>Working Hours:</p>
+                                        <ul>
+                                            <li>
+                                                <span>Pool Access :</span>
+                                                07:00am - 07:00pm
+                                            </li>
+                                            <li>
+                                                <span>Bar Service :</span>
+                                                10:00am - 10:00pm
+                                            </li>
+                                            <li>
+                                                <span>Light Tapas :</span>
+                                                12:00pm - 08:00pm
+                                            </li>
+                                            <li>
+                                                <span>Happy Hour :</span>
+                                                05:00pm - 07:00pm
+                                            </li>
+                                        </ul>
+                                        <a href="restaurant.html" class="gt-theme-btn">READ MORE</a>
+                                    </div>
+                                </div>
+                                <div id="safari" class="tab-pane fade">
+                                    <div class="menu-list">
+                                        <p>Working Hours:</p>
+                                        <ul>
+                                            <li>
+                                                <span>Office Hours :</span>
+                                                08:00am - 06:00pm
+                                            </li>
+                                            <li>
+                                                <span>Consultations :</span>
+                                                09:00am - 05:00pm
+                                            </li>
+                                            <li>
+                                                <span>Custom Bookings :</span>
+                                                08:00am - 08:00pm
+                                            </li>
+                                            <li>
+                                                <span>Guest Support :</span>
+                                                24/7 Available
+                                            </li>
+                                        </ul>
+                                        <a href="contact.html" class="gt-theme-btn">READ MORE</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GT Counter Section Start -->
+    <div class="gt-counter-section fix">
+        <div class="container">
+            <div class="gt-counter-wrapper">
+                <div class="gt-counter">
+                    <h2>
+                        <span class="gt-count">799</span>
+                    </h2>
+                    <p>Happy Guests</p>
+                </div>
+                <div class="gt-counter">
+                    <h2>
+                        <span class="gt-count">35</span>+
+                    </h2>
+                    <p>Luxury Rooms</p>
+                </div>
+                <div class="gt-counter">
+                    <h2>
+                        <span class="gt-count">21</span>+
+                    </h2>
+                    <p>Years Of Experience</p>
+                </div>
+                <div class="gt-counter border-none">
+                    <h2>
+                        <span class="gt-count">12</span>
+                    </h2>
+                    <p>Awards Won</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- GT Instagram Section Start -->
+    <div class="gt-instagram-section section-padding pb-0 fix section-bg">
+        <div class="container">
+            <div class="gt-section-title text-center">
+                <h6 class="justify-content-center wow fadeInUp">
+                    OUR INSTAGRAM
+                </h6>
+                <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                    Primeland Hotel Moshi
+                </h2>
+                <div class="prl-divider justify-content-center mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
+                    <div class="prl-divider-line"></div>
+                    <div class="prl-divider-dot"></div>
+                    <div class="prl-divider-line"></div>
+                </div>
+            </div>
+        </div>
+        <div class="swiper gt-instagram-slider">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="assets/img/new_images/PRIMELAND HOTEL BAR.jpg" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="index.html" class="gt-icon">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="assets/img/new_images/restaurant_.jpg" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="index.html" class="gt-icon">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="assets/img/new_images/swimming view_.jpg" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="index.html" class="gt-icon">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="assets/img/new_images/room_(1).jpg" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="index.html" class="gt-icon">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="assets/img/new_images/reception_.jpg" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="index.html" class="gt-icon">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="assets/img/new_images/coffee_.jpg" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="index.html" class="gt-icon">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GT Footer Section Start -->
+    <footer class="gt-footer-section fix bg-cover"
+        style="background-image: url('assets/img/home-1/footer/footer-img.jpg');">
+        <div class="container">
+            <div class="footer-newsletter-items">
+                <h2>Join Our Newsletter</h2>
+                <form action="#">
+                    <div class="form-clt">
+                        <input type="text" placeholder="Enter your email">
+                    </div>
+                    <button class="gt-theme-btn">Subscribe</button>
+                </form>
+            </div>
+            <div class="footer-widget-wrapper">
+                <div class="row">
+                    <!-- Prime Location Column -->
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-single-widget">
+                            <div class="widget-head">
+                                <h3 style="color: #e77a3a !important;">Prime Location</h3>
+                                <div class="prl-divider">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                </div>
+                            </div>
+                            <div class="footer-content">
+                                <ul class="gt-list-area">
+                                    <li style="color: #ffffff !important;">Moshi Town Center – 5 Mins</li>
+                                    <li style="color: #ffffff !important;">Kilimanjaro Int. Airport – 45 Mins</li>
+                                    <li style="color: #ffffff !important;">Marangu Gate (Kili) – 30 Mins</li>
+                                    <li style="color: #ffffff !important;">Moshi Airport – 10 Mins</li>
+                                    <li style="color: #ffffff !important;">Machame Gate – 40 Mins</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Links Column -->
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-single-widget">
+                            <div class="widget-head">
+                                <h3 style="color: #e77a3a !important;">Quick Links</h3>
+                                <div class="prl-divider">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                </div>
+                            </div>
+                            <ul class="gt-list-area">
+                                <li><a href="index.html">Home</a></li>
+                                <li><a href="about.html">About us</a></li>
+                                <li><a href="room-2.html">Hotel</a></li>
+                                <li><a href="contact.html">Contact</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Contact Us Column -->
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-single-widget">
+                            <div class="widget-head">
+                                <h3 style="color: #e77a3a !important;">Contact Us</h3>
+                                <div class="prl-divider">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                </div>
+                            </div>
+                            <ul class="contact-list">
+                                <li>
+                                    Tanzania <br>
+                                    Sokoine Road, Moshi, Kilimanjaro
+                                </li>
+                                <li><a href="tel:+255677155156">+255 677-155-156</a></li>
+                                <li><a href="mailto:info@primelandhotel.com">info@primelandhotel.com</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Digital Platforms Column -->
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-single-widget">
+                            <div class="widget-head">
+                                <h3 style="color: #e77a3a !important;">Digital Platforms</h3>
+                                <div class="prl-divider">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                </div>
+                            </div>
+                            <div class="prl-social-grid mt-4">
+                                <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                                    target="_blank" class="ig" title="Instagram"><i class="fab fa-instagram"></i></a>
+                                <a href="https://wa.me/255677155156" target="_blank" class="wa" title="WhatsApp"><i
+                                        class="fab fa-whatsapp"></i></a>
+                                <a href="#" class="fb" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                                <a href="#" class="tw" title="X / Twitter"><i class="fab fa-twitter"></i></a>
+                                <a href="#" class="yt" title="YouTube"><i class="fab fa-youtube"></i></a>
+                                <a href="#" class="li" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-wrapper">
+                    <p class="wow fadeInUp" data-wow-delay=".3s">&copy; 2025 <b>Primeland Hotel.</b> All rights
+                        reserved. | Sokoine Road, Moshi, Kilimanjaro &ndash; Tanzania</p>
+                    <p class="wow fadeInUp" data-wow-delay=".5s">Powered By <a href="http://www.emca.tech"
+                            target="_blank" style="color: #940000; font-weight: bold;">EmCa Techonologies LTD</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="floating-social-buttons">
+            <a href="https://wa.me/255677155156" target="_blank" class="float-btn whatsapp-btn" title="Chat with us">
+                <i class="fa-brands fa-whatsapp"></i>
+            </a>
+            <a href="https://www.google.com/maps/place/Primeland+Hotel/@-3.3290402,37.3327172,17z" target="_blank"
+                class="float-btn maps-btn" title="Find us on Maps">
+                <i class="fa-solid fa-map-marker-alt"></i>
+            </a>
+        </div>
+    </footer>
+
+    <!--<< All JS Plugins >>-->
+    <script src="assets/js/jquery-3.7.1.min.js"></script>
+    <!--<< Viewport Js >>-->
+    <script src="assets/js/viewport.jquery.js"></script>
+    <!--<< Bootstrap Js >>-->
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <!--<< nice-selec Js >>-->
+    <script src="assets/js/jquery.nice-select.min.js"></script>
+    <!--<< Waypoints Js >>-->
+    <script src="assets/js/jquery.waypoints.js"></script>
+    <!--<< Counterup Js >>-->
+    <script src="assets/js/jquery.counterup.min.js"></script>
+    <!--<< Swiper Slider Js >>-->
+    <script src="assets/js/swiper-bundle.min.js"></script>
+    <!--<< MeanMenu Js >>-->
+    <script src="assets/js/jquery.meanmenu.min.js"></script>
+    <!--<< Parallaxie Js >>-->
+    <script src="assets/js/parallaxie.js"></script>
+    <!--<< Magnific Popup Js >>-->
+    <script src="assets/js/jquery.magnific-popup.min.js"></script>
+    <!--<< Wow Animation Js >>-->
+    <script src="assets/js/wow.min.js"></script>
+    <!--<< Main.js >>-->
+    <script src="assets/js/main.js"></script>
+</body>
+
+</html>

@@ -24,8 +24,24 @@ Route::get('/services', function () {
     return view('landing_page_views.services');
 });
 
+Route::get('/service-details', function () {
+    return view('landing_page_views.service-details');
+});
+
 Route::get('/rooms', function () {
     return view('landing_page_views.rooms');
+});
+
+Route::get('/rooms/single-room', function () {
+    return view('landing_page_views.single-room');
+});
+
+Route::get('/rooms/double-room', function () {
+    return view('landing_page_views.double-room');
+});
+
+Route::get('/rooms/twin-room', function () {
+    return view('landing_page_views.twin-room');
 });
 
 Route::get('/gallery', function () {

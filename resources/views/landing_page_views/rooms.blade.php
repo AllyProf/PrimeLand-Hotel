@@ -1,242 +1,287 @@
 @extends('layouts.new_landing')
 
-@section('title', 'Accomodation - PrimeLand Hotel')
+@section('title', 'Our Rooms | Primeland Hotel - Moshi, Kilimanjaro')
 
 @section('content')
-<!-- Breadcrumb Section Start -->
-<div class="gt-breadcrumb-wrapper bg-cover" style="background-image: url('{{ asset('hotel_gallery/room_ (1).jpg') }}');">
-    <div class="container">
-        <div class="gt-page-heading">
-            <div class="gt-breadcrumb-sub-title">
-                <h1 class="text-white wow fadeInUp" data-wow-delay=".3s">Our Rooms</h1>
-            </div>
-            <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
-                <li>
-                    <a href="{{ url('/') }}">Home</a>
-                </li>
-                <li>
-                    <i class="fa-solid fa-chevron-right"></i>
-                </li>
-                <li>
-                    Accomodation
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>
-
-<!-- GT Room Section Start -->
-<section class="gt-room-section fix section-padding">
-    <div class="container">
-        <div class="gt-section-title text-center">
-            <h6 class="justify-content-center wow fadeInUp">
-                ROOMS & SUITES
-            </h6>
-            <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                Our Phenomenal Rooms
-            </h2>
-        </div>
-        <div class="row g-4">
-            <!-- Room 1 -->
-            <div class="col-xl-4 col-lg-6 wow fadeInUp" data-wow-delay=".2s">
-                <div class="gt-room-items-3 item-2">
-                    <div class="gt-room-image">
-                        <img src="{{ asset('hotel_gallery/room_ (1).jpg') }}" alt="img">
-                    </div>
-                    <div class="gt-room-content">
-                        <div class="gt-room-price">
-                            <h6>
-                                <span>$250</span> / Night
-                            </h6>
-                        </div>
-                        <div class="gt-room-title">
-                            <ul class="gt-room-info">
-                                <li>
-                                    <i class="flaticon-bed"></i> 02 Bed
-                                </li>
-                                <li>
-                                    <i class="flaticon-square-shape"></i> 400 Sq.Ft
-                                </li>
-                            </ul>
-                            <h3><a href="{{ route('booking.index') }}">Deluxe Room</a></h3>
-                        </div>
-                        <div class="gt-room-bottom">
-                            <a href="{{ route('booking.index') }}" class="gt-theme-btn">ROOM DETAILS</a>
-                        </div>
-                    </div>
+    <!-- Breadcrumb Section Start -->
+    <div class="gt-breadcrumb-wrapper bg-cover"
+        style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{{ asset('assets/img/new_images/room_.jpg') }}');">
+        <div class="container">
+            <div class="gt-page-heading">
+                <div class="gt-breadcrumb-sub-title">
+                    <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Rooms & Suites</h1>
                 </div>
-            </div>
-
-            <!-- Room 2 -->
-            <div class="col-xl-4 col-lg-6 wow fadeInUp" data-wow-delay=".4s">
-                <div class="gt-room-items-3 item-3">
-                    <div class="gt-room-image">
-                        <img src="{{ asset('hotel_gallery/room_ (2).jpg') }}" alt="img">
-                    </div>
-                    <div class="gt-room-content">
-                        <div class="gt-room-price">
-                            <h6>
-                                <span>$200</span> / Night
-                            </h6>
-                        </div>
-                        <div class="gt-room-title">
-                            <ul class="gt-room-info">
-                                <li>
-                                    <i class="flaticon-bed"></i> 01 Bed
-                                </li>
-                                <li>
-                                    <i class="flaticon-square-shape"></i> 300 Sq.Ft
-                                </li>
-                            </ul>
-                            <h3><a href="{{ route('booking.index') }}">Standard Room</a></h3>
-                        </div>
-                        <div class="gt-room-bottom">
-                            <a href="{{ route('booking.index') }}" class="gt-theme-btn">ROOM DETAILS</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Room 3 -->
-            <div class="col-xl-4 col-lg-6 wow fadeInUp" data-wow-delay=".6s">
-                <div class="gt-room-items-3 item-4">
-                    <div class="gt-room-image">
-                        <img src="{{ asset('hotel_gallery/room_ (3).jpg') }}" alt="img">
-                    </div>
-                    <div class="gt-room-content">
-                        <div class="gt-room-price">
-                            <h6>
-                                <span>$350</span> / Night
-                            </h6>
-                        </div>
-                        <div class="gt-room-title">
-                            <ul class="gt-room-info">
-                                <li>
-                                    <i class="flaticon-bed"></i> 03 Bed
-                                </li>
-                                <li>
-                                    <i class="flaticon-square-shape"></i> 600 Sq.Ft
-                                </li>
-                            </ul>
-                            <h3><a href="{{ route('booking.index') }}">Luxury Room</a></h3>
-                        </div>
-                        <div class="gt-room-bottom">
-                            <a href="{{ route('booking.index') }}" class="gt-theme-btn">ROOM DETAILS</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Room 4 -->
-            <div class="col-xl-4 col-lg-6 wow fadeInUp" data-wow-delay=".2s">
-                <div class="gt-room-items-3">
-                    <div class="gt-room-image">
-                        <img src="{{ asset('hotel_gallery/room_ (4).jpg') }}" alt="img">
-                    </div>
-                    <div class="gt-room-content">
-                        <div class="gt-room-price">
-                            <h6>
-                                <span>$450</span> / Night
-                            </h6>
-                        </div>
-                        <div class="gt-room-title">
-                            <ul class="gt-room-info">
-                                <li>
-                                    <i class="flaticon-bed"></i> 02 Bed
-                                </li>
-                                <li>
-                                    <i class="flaticon-square-shape"></i> 500 Sq.Ft
-                                </li>
-                            </ul>
-                            <h3><a href="{{ route('booking.index') }}">Honeymoon Suit</a></h3>
-                        </div>
-                        <div class="gt-room-bottom">
-                            <a href="{{ route('booking.index') }}" class="gt-theme-btn">ROOM DETAILS</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Room 5 -->
-            <div class="col-xl-4 col-lg-6 wow fadeInUp" data-wow-delay=".4s">
-                <div class="gt-room-items-3 item-2">
-                    <div class="gt-room-image">
-                        <img src="{{ asset('hotel_gallery/room_ (5).jpg') }}" alt="img">
-                    </div>
-                    <div class="gt-room-content">
-                        <div class="gt-room-price">
-                            <h6>
-                                <span>$150</span> / Night
-                            </h6>
-                        </div>
-                        <div class="gt-room-title">
-                            <ul class="gt-room-info">
-                                <li>
-                                    <i class="flaticon-bed"></i> 01 Bed
-                                </li>
-                                <li>
-                                    <i class="flaticon-square-shape"></i> 250 Sq.Ft
-                                </li>
-                            </ul>
-                            <h3><a href="{{ route('booking.index') }}">Economy Room</a></h3>
-                        </div>
-                        <div class="gt-room-bottom">
-                            <a href="{{ route('booking.index') }}" class="gt-theme-btn">ROOM DETAILS</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Room 6 -->
-            <div class="col-xl-4 col-lg-6 wow fadeInUp" data-wow-delay=".6s">
-                <div class="gt-room-items-3 item-3">
-                    <div class="gt-room-image">
-                        <img src="{{ asset('hotel_gallery/room_ (6).jpg') }}" alt="img">
-                    </div>
-                    <div class="gt-room-content">
-                        <div class="gt-room-price">
-                            <h6>
-                                <span>$280</span> / Night
-                            </h6>
-                        </div>
-                        <div class="gt-room-title">
-                            <ul class="gt-room-info">
-                                <li>
-                                    <i class="flaticon-bed"></i> 02 Bed
-                                </li>
-                                <li>
-                                    <i class="flaticon-square-shape"></i> 450 Sq.Ft
-                                </li>
-                            </ul>
-                            <h3><a href="{{ route('booking.index') }}">Executive Room</a></h3>
-                        </div>
-                        <div class="gt-room-bottom">
-                            <a href="{{ route('booking.index') }}" class="gt-theme-btn">ROOM DETAILS</a>
-                        </div>
-                    </div>
-                </div>
+                <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
+                    <li>
+                        <a href="{{ url('/') }}">
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </li>
+                    <li>
+                        Rooms & Suites
+                    </li>
+                </ul>
             </div>
         </div>
     </div>
-</section>
 
-<!-- GT Project Video Start -->
-<div class="gt-project-video fix bg-cover" style="background-image: url('{{ asset('hotel_gallery/room_ (6).jpg') }}');">
-    <div class="container">
-        <div class="gt-video-wrapper text-center">
-            <div class="video-btn wow fadeInUp" data-wow-delay=".3s">
-                <a href="https://www.youtube.com/watch?v=S3U-13_c0Bw" class="video-link" data-lity><i class="fa-solid fa-play"></i></a>
+    <!-- GT Room Section Start -->
+    <section class="gt-room-section fix section-padding section-bg-3">
+        <div class="gt-room-wrapper">
+            <div class="container">
+                <div class="gt-section-title text-center">
+                    <h6 class="wow fadeInUp justify-content-center">
+                        Explore
+                    </h6>
+                    <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                        Rooms & Suites
+                    </h2>
+                    <div class="prl-divider justify-content-center mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
+                        <div class="prl-divider-line"></div>
+                        <div class="prl-divider-dot"></div>
+                        <div class="prl-divider-line"></div>
+                    </div>
+                </div>
+                <div class="row g-4">
+                    <!-- Twin Room -->
+                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                        <div class="gt-room-box-items">
+                            <div class="gt-thumb">
+                                <img src="{{ asset('assets/img/new_images/room_(6).jpg') }}" alt="Twin Room"
+                                    style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
+                                <span class="gt-post-box">
+                                    $95 / NIGHT
+                                </span>
+                            </div>
+                            <div class="gt-content">
+                                <a href="{{ url('/rooms') }}" class="gt-post-cat">Twin Room</a>
+                                <h3><a href="{{ url('/rooms') }}">Twin Room</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        2 Separate Twin Beds
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        02 Guests
+                                    </li>
+                                </ul>
+                                <p class="mt-3">Spacious and comfortable twin beds, perfect for friends or colleagues sharing a room.</p>
+                                <div class="mt-3 d-flex flex-wrap gap-2">
+                                    <a href="{{ url('/rooms/twin-room') }}" class="gt-theme-btn">Room Details</a>
+                                    <a href="{{ url('/contact') }}" class="gt-link-btn d-flex align-items-center">BOOK NOW</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Double Room -->
+                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                        <div class="gt-room-box-items">
+                            <div class="gt-thumb">
+                                <img src="{{ asset('assets/img/new_images/room_(2).jpg') }}" alt="Double Room"
+                                    style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
+                                <span class="gt-post-box">
+                                    $85 / NIGHT
+                                </span>
+                            </div>
+                            <div class="gt-content">
+                                <a href="{{ url('/rooms') }}" class="gt-post-cat">Double Room</a>
+                                <h3><a href="{{ url('/rooms') }}">Double Room</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        1 Queen Bed
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        02 Guests
+                                    </li>
+                                </ul>
+                                <p class="mt-3">A cozy and elegant room with a premium queen-sized bed, ideal for couples or individuals.</p>
+                                <div class="mt-3 d-flex flex-wrap gap-2">
+                                    <a href="{{ url('/rooms/double-room') }}" class="gt-theme-btn">Room Details</a>
+                                    <a href="{{ url('/contact') }}" class="gt-link-btn d-flex align-items-center">BOOK NOW</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Single Room -->
+                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".6s">
+                        <div class="gt-room-box-items">
+                            <div class="gt-thumb">
+                                <img src="{{ asset('assets/img/new_images/room_(4).jpg') }}" alt="Single Room"
+                                    style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
+                                <span class="gt-post-box">
+                                    $70 / NIGHT
+                                </span>
+                            </div>
+                            <div class="gt-content">
+                                <a href="{{ url('/rooms') }}" class="gt-post-cat">Single Room</a>
+                                <h3><a href="{{ url('/rooms') }}">Single Room</a></h3>
+                                <ul class="gt-list">
+                                    <li>
+                                        <i class="flaticon-bed-1"></i>
+                                        1 Queen Bed
+                                    </li>
+                                    <li>
+                                        <i class="flaticon-user"></i>
+                                        01 Guest
+                                    </li>
+                                </ul>
+                                <p class="mt-3">Perfect for solo travelers or business guests seeking a refined and quiet space.</p>
+                                <div class="mt-3 d-flex flex-wrap gap-2">
+                                    <a href="{{ url('/rooms/single-room') }}" class="gt-theme-btn">Room Details</a>
+                                    <a href="{{ url('/contact') }}" class="gt-link-btn d-flex align-items-center">BOOK NOW</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <h2 class="text-white wow fadeInUp" data-wow-delay=".5s">
-                Experience Luxury Like <br> Never Before
-            </h2>
         </div>
-    </div>
-</div>
+    </section>
 
-@endsection
+    <!-- GT Hotel Facilities Section Start -->
+    <section class="gt-hotel-facilities-section-2 section-padding fix">
+        <div class="gt-hotel-facilities-shape">
+            <img src="{{ asset('assets/img/home-2/hotel-facilites/Vector-01.png') }}" alt="img">
+        </div>
+        <div class="container">
+            <div class="gt-hotel-facilities-wrapper-2">
+                <div class="row g-4">
+                    <div class="col-lg-6 wow fadeInUp" data-wow-delay=".3s">
+                        <div class="gt-hotel-left-images">
+                            <img src="{{ asset('assets/img/new_images/hotel view_.jpg') }}" alt="Primeland Hotel View"
+                                style="border-radius: 10px; object-fit: cover; width: 100%;">
+                            <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                                target="_blank" class="video-btn ripple">
+                                <i class="fa-brands fa-instagram"></i>
+                            </a>
+                            <div class="gt-counter">
+                                <h2><span class="gt-count">19</span>+</h2>
+                                <p>
+                                    Years Of <br> Experience
+                                </p>
+                            </div>
+                            <div class="gt-hotel-img wow fadeInUp" data-wow-delay=".5s">
+                                <img src="{{ asset('assets/img/new_images/swimming view_(1).jpg') }}" alt="Swimming View"
+                                    style="border-radius: 10px; object-fit: cover; max-width: 250px;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="gt-hotel-right-content">
+                            <div class="gt-section-title mb-0">
+                                <h6 class="wow fadeInUp">
+                                    Hotel Facilities
+                                </h6>
+                                <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                                    Primeland Standards
+                                </h2>
+                                <div class="prl-divider wow fadeInUp" data-wow-delay=".3s">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                    <div class="prl-line"></div>
+                                </div>
+                            </div>
+                            <p class="gt-hotel-text wow fadeInUp" data-wow-delay=".4s">
+                                Primeland Hotel blends local Tanzanian hospitality with modern comfort, offering
+                                sophisticated spaces, elegant details, and a serene atmosphere in the heart of Moshi
+                                Town.
+                            </p>
+                            <div class="gt-skill-feature-items">
+                                <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".3s">
+                                    <h3 class="gt-box-title">Room Service</h3>
+                                    <div class="gt-progress">
+                                        <div class="gt-progress-bar" style="width: 90%;">
+                                            <div class="gt-progress-value"><span class="counter-number2">90</span>%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".4s">
+                                    <h3 class="gt-box-title">Breakfast Included</h3>
+                                    <div class="gt-progress">
+                                        <div class="gt-progress-bar" style="width: 55%;">
+                                            <div class="gt-progress-value"><span class="counter-number2">55</span>%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".4s">
+                                    <h3 class="gt-box-title">Laundry & Ironing</h3>
+                                    <div class="gt-progress">
+                                        <div class="gt-progress-bar" style="width: 79%;">
+                                            <div class="gt-progress-value"><span class="counter-number2">79</span>%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{{ url('/about-us') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".6s">VIEW All DETAILS</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-@section('scripts')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lity/2.4.1/lity.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lity/2.4.1/lity.min.js"></script>
+    <!-- GT Hotel Feature Section Start -->
+    <section class="gt-hotel-feature-section-2 section-padding fix pt-0">
+        <div class="container">
+            <div class="gt-hotel-feature-area">
+                <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".2s">
+                    <div class="icon"> <i class="flaticon-fitness-center"></i> </div>
+                    <div class="content"> <h3>Fitness Center</h3> <p>Stay active in our gym.</p> </div>
+                </div>
+                <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".4s">
+                    <div class="icon"> <i class="flaticon-disinfect"></i> </div>
+                    <div class="content"> <h3>Disinfection</h3> <p>Highest hygiene standards.</p> </div>
+                </div>
+                <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".6s">
+                    <div class="icon"> <i class="flaticon-suite"></i> </div>
+                    <div class="content"> <h3>Rooms and Suites</h3> <p>Comfortable stay guaranteed.</p> </div>
+                </div>
+                <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".8s">
+                    <div class="icon"> <i class="flaticon-luggage"></i> </div>
+                    <div class="content"> <h3>Store Luggage</h3> <p>Secure storage for items.</p> </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GT Instagram Section Start -->
+    <section class="gt-instagram-section section-padding pb-0 fix section-bg">
+        <div class="container">
+            <div class="gt-section-title text-center">
+                <h6 class="justify-content-center wow fadeInUp"> OUR INSTAGRAM </h6>
+                <h2 class="wow fadeInUp" data-wow-delay=".2s"> Primeland Hotel Moshi </h2>
+                <div class="prl-divider justify-content-center mt-3 mb-4">
+                    <div class="prl-divider-line"></div> <div class="prl-divider-dot"></div> <div class="prl-divider-line"></div>
+                </div>
+            </div>
+        </div>
+        <div class="swiper gt-instagram-slider">
+            <div class="swiper-wrapper">
+                 <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="{{ asset('assets/img/new_images/PRIMELAND HOTEL BAR.jpg') }}" alt="img" style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank"> <i class="fa-brands fa-instagram"></i> </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="{{ asset('assets/img/new_images/restaurant_.jpg') }}" alt="img" style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank"> <i class="fa-brands fa-instagram"></i> </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="{{ asset('assets/img/new_images/swimming view_.jpg') }}" alt="img" style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank"> <i class="fa-brands fa-instagram"></i> </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 @endsection

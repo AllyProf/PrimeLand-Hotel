@@ -20,6 +20,25 @@
       <h2 class="mobile-header-title">PrimeLand Hotel</h2>
     </div>
     
+    <style>
+      /* Override login background with hotel image */
+      .material-half-bg {
+        background-image: url('{{ asset('assets/img/new_images/hotel view_.jpg') }}') !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-color: transparent !important;
+      }
+      .material-half-bg .cover {
+        background-color: transparent !important;
+        height: 100vh !important;
+      }
+      .login-content .logo h1 {
+        color: #fff;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      }
+    </style>
+
     <section class="material-half-bg">
       <div class="cover"></div>
     </section>

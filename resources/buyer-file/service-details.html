@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--<< Header Area >>-->
+
+<head>
+    <!-- ========== Meta Tags ========== -->
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Primeland Hotel">
+    <meta name="description" content="Primeland Hotel  Boutique hotel in Moshi, Kilimanjaro, Tanzania.">
+    <!-- ======== Page title ============ -->
+    <title>Service Details | Primeland Hotel - Moshi, Kilimanjaro</title>
+    <!--<< Favcion >>-->
+    <link rel="shortcut icon" href="assets/img/new_images/primeland_hotel_logo.png">
+    <!--<< Bootstrap min.css >>-->
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+    <!--<< All Min Css >>-->
+    <link rel="stylesheet" href="assets/css/all.min.css">
+    <!--<< Animate.css >>-->
+    <link rel="stylesheet" href="assets/css/animate.css">
+    <!--<< Magnific Popup.css >>-->
+    <link rel="stylesheet" href="assets/css/magnific-popup.css">
+    <!--<< MeanMenu.css >>-->
+    <link rel="stylesheet" href="assets/css/meanmenu.css">
+    <!--<< Swiper Bundle.css >>-->
+    <link rel="stylesheet" href="assets/css/swiper-bundle.min.css">
+    <!--<< Nice Select.css >>-->
+    <link rel="stylesheet" href="assets/css/nice-select.css">
+    <!--<< Main.css >>-->
+    <link rel="stylesheet" href="assets/css/flaticon.css">
+    <!--<< Main.css >>-->
+    <link rel="stylesheet" href="assets/css/main.css">
+
+    <style>
+        /* ===== PRIMELAND BRAND COLOR ===== */
+        :root {
+            --prl-brand: #e77a3a;
+        }
+
+        .gt-theme-btn {
+            background-color: #e77a3a !important;
+            border-color: #e77a3a !important;
+        }
+
+        .gt-theme-btn::before,
+        .gt-theme-btn::after {
+            background-color: #d16629 !important;
+        }
+
+        ul.gt-breadcrumb-items li a:hover,
+        .main-menu ul li.has-dropdown>a:hover,
+        .footer-list li a:hover,
+        .footer-single-widget .gt-list-area li a:hover,
+        .footer-single-widget .contact-list li a:hover {
+            color: #e77a3a !important;
+        }
+
+        .search-btn,
+        .sidebar__toggle i,
+        .main-header__search i,
+        .fa-play,
+        .faq-item h3 i,
+        .details-list-item ul li span i,
+        .gt-category-list li:hover a,
+        .gt-category-list li:hover i,
+        .hours-list li b {
+            color: #e77a3a !important;
+        }
+
+        .gt-category-list li:hover {
+            background-color: #fcece2 !important;
+        }
+
+        .accordion-button:not(.collapsed) {
+            color: #e77a3a !important;
+            background-color: #fcece2 !important;
+        }
+
+        /* Footer Social Grid Styling */
+        .prl-social-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 220px;
+        }
+
+        .prl-social-grid a {
+            width: 60px;
+            height: 60px;
+            background: #222222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            margin: 0 !important;
+        }
+
+        .prl-social-grid a:hover {
+            transform: translateY(-3px);
+            background: #333333;
+        }
+
+        .prl-social-grid a.fb {
+            color: #1877F2;
+        }
+
+        .prl-social-grid a.ig {
+            color: #E4405F;
+        }
+
+        .prl-social-grid a.tw {
+            color: #1DA1F2;
+        }
+
+        .prl-social-grid a.wa {
+            color: #25D366;
+        }
+
+        .prl-social-grid a.yt {
+            color: #FF0000;
+        }
+
+        .prl-social-grid a.li {
+            color: #0077B5;
+        }
+    </style>
+    <style>
+        /* ===== PRIMELAND BRAND COLOR ===== */
+        :root {
+            --prl-brand: #e77a3a;
+        }
+
+        /* ===== SECTION DIVIDER ===== */
+        .prl-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 14px 0 22px;
+        }
+
+        .prl-divider .prl-line {
+            height: 2px;
+            width: 45px;
+            background: #e77a3a;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .prl-divider .prl-dot {
+            width: 8px;
+            height: 8px;
+            background: #e77a3a;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* Footer Social Grid Styling */
+        .prl-social-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 220px;
+        }
+
+        .prl-social-grid a {
+            width: 60px;
+            height: 60px;
+            background: #222222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .prl-social-grid a:hover {
+            transform: translateY(-3px);
+            background: #333333;
+        }
+
+        .prl-social-grid a.fb {
+            color: #1877F2;
+        }
+
+        .prl-social-grid a.ig {
+            color: #E4405F;
+        }
+
+        .prl-social-grid a.tw {
+            color: #1DA1F2;
+        }
+
+        .prl-social-grid a.wa {
+            color: #25D366;
+        }
+
+        .prl-social-grid a.yt {
+            color: #FF0000;
+        }
+
+        .prl-social-grid a.li {
+            color: #0077B5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Preloader Start -->
+    <div id="preloader" class="preloader">
+        <div class="animation-preloader">
+            <div class="spinner">
+            </div>
+            <div class="txt-loading">
+                <span data-text-preloader="P" class="letters-loading">
+                    P
+                </span>
+                <span data-text-preloader="R" class="letters-loading">
+                    R
+                </span>
+                <span data-text-preloader="I" class="letters-loading">
+                    I
+                </span>
+                <span data-text-preloader="M" class="letters-loading">
+                    M
+                </span>
+                <span data-text-preloader="E" class="letters-loading">
+                    E
+                </span>
+                <span data-text-preloader="L" class="letters-loading">
+                    L
+                </span>
+                <span data-text-preloader="A" class="letters-loading">
+                    A
+                </span>
+                <span data-text-preloader="N" class="letters-loading">
+                    N
+                </span>
+                <span data-text-preloader="D" class="letters-loading">
+                    D
+                </span>
+            </div>
+            <p class="text-center">Loading</p>
+        </div>
+        <div class="loader">
+            <div class="row">
+                <div class="col-3 loader-section section-left">
+                    <div class="bg"></div>
+                </div>
+                <div class="col-3 loader-section section-left">
+                    <div class="bg"></div>
+                </div>
+                <div class="col-3 loader-section section-right">
+                    <div class="bg"></div>
+                </div>
+                <div class="col-3 loader-section section-right">
+                    <div class="bg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GT Back To Top Start -->
+    <button id="gt-back-top" class="gt-back-to-top show">
+        <i class="fa-solid fa-chevrons-up"></i>
+    </button>
+
+    <!-- GT MouseCursor Start -->
+    <div class="mouseCursor cursor-outer"></div>
+    <div class="mouseCursor cursor-inner"></div>
+
+    <!-- Offcanvas Area Start -->
+    <div class="fix-area">
+        <div class="offcanvas__info">
+            <div class="offcanvas__wrapper">
+                <div class="offcanvas__content">
+                    <div class="offcanvas__top mb-5 d-flex justify-content-between align-items-center">
+                        <div class="offcanvas__logo">
+                            <a href="index.html">
+                                <img src="assets/img/new_images/primeland_hotel_logo.png" alt="logo-img"
+                                    style="max-width: 150px; height: auto;">
+                            </a>
+                        </div>
+                        <div class="offcanvas__close">
+                            <button>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text d-none d-xl-block">
+                        A boutique hotel in the heart of Moshi Town, Kilimanjaro &ndash; Tanzania. Conveniently located
+                        near
+                        the town center and 45 minutes from JRO Airport.
+                    </p>
+                    <div class="mobile-menu fix mb-3"></div>
+                    <div class="offcanvas__contact">
+                        <h4>Contact Info</h4>
+                        <ul>
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon">
+                                    <i class="fal fa-map-marker-alt"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a target="_blank" href="#">Sokoine Road, Moshi, Kilimanjaro</a>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon mr-15">
+                                    <i class="fal fa-envelope"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a href="mailto:info@primelandhotel.com"><span>info@primelandhotel.com</span></a>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon mr-15">
+                                    <i class="fal fa-clock"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a target="_blank" href="#">Check-in: 2:00pm | Check-out: 10:00am</a>
+                                </div>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <div class="offcanvas__contact-icon mr-15">
+                                    <i class="far fa-phone"></i>
+                                </div>
+                                <div class="offcanvas__contact-text">
+                                    <a href="tel:+255677155156">+255 677-155-156</a>
+                                </div>
+                            </li>
+                        </ul>
+                        <div class="header-button mt-4">
+
+                        </div>
+                        <a href="contact.html" class="gt-theme-btn">BOOK NOW</a>
+                        <div class="prl-social-grid mt-4">
+                            <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                                target="_blank" class="ig" title="Instagram"><i class="fab fa-instagram"></i></a>
+                            <a href="https://wa.me/255677155156" target="_blank" class="wa" title="WhatsApp"><i
+                                    class="fab fa-whatsapp"></i></a>
+                            <a href="#" class="fb" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="tw" title="X / Twitter"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="yt" title="YouTube"><i class="fab fa-youtube"></i></a>
+                            <a href="#" class="li" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="offcanvas__overlay"></div>
+
+    <!-- Header Section Start -->
+    <header id="header-sticky" class="header-1 header-2">
+        <div class="container">
+            <div class="mega-menu-wrapper">
+                <div class="header-main">
+                    <div class="logo">
+                        <a href="index.html" class="header-logo">
+                            <img src="assets/img/new_images/primeland_hotel_logo.png" alt="logo-img"
+                                style="max-width: 150px; height: auto;">
+                        </a>
+                        <a href="index.html" class="header-logo-2">
+                            <img src="assets/img/new_images/primeland_hotel_logo.png" alt="logo-img"
+                                style="max-width: 150px; height: auto;">
+                        </a>
+                    </div>
+                    <div class="header-right d-flex justify-content-end align-items-center">
+                        <div class="mean__menu-wrapper">
+                            <div class="main-menu">
+                                <nav id="mobile-menu">
+                                    <ul>
+                                        <li>
+                                            <a href="index.html">
+                                                Home
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="about.html">
+                                                About Us
+                                            </a>
+                                        </li>
+                                        <li class="has-dropdown">
+                                            <a href="service.html">
+                                                Services
+                                            </a>
+                                            <ul class="submenu">
+                                                <li><a href="service-details.html">Service Details</a></li>
+                                            </ul>
+                                        </li>
+                                        <li class="has-dropdown">
+                                            <a href="room-2.html">
+                                                Room
+                                            </a>
+
+                                        </li>
+                                        <li>
+                                            <a href="contact.html">Contact Us</a>
+                                        </li>
+                                        <li>
+                                            <a href="login.html">Login</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                        <a href="#" class="main-header__search search-toggler">
+                            <i class="fa-regular fa-magnifying-glass"></i>
+                        </a>
+                        <div class="hero-button">
+                            <a href="contact.html" class="gt-theme-btn">Book now</a>
+                        </div>
+                        <div class="header__hamburger my-auto d-xl-none">
+                            <div class="sidebar__toggle">
+                                <i class="fa-regular fa-bars"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- GT Search Start -->
+    <div class="search-popup">
+        <div class="search-popup__overlay search-toggler"></div>
+        <div class="search-popup__content">
+            <form role="search" method="get" class="search-popup__form" action="#">
+                <input type="text" id="search" name="search" placeholder="Search Here...">
+                <button type="submit" aria-label="search submit" class="search-btn">
+                    <span><i class="fa-regular fa-magnifying-glass"></i></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Breadcrumb Section Start -->
+    <div class="gt-breadcrumb-wrapper bg-cover"
+        style="background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('assets/img/new_images/coffee_.jpg');">
+        <div class="container">
+            <div class="gt-page-heading">
+                <div class="gt-breadcrumb-sub-title">
+                    <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Services Details</h1>
+                </div>
+                <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
+                    <li>
+                        <a href="index.html">
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </li>
+                    <li>
+                        Services Details
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- GT Service Section Start -->
+    <section class="gt-service-details-section section-padding">
+        <div class="container">
+            <div class="gt-service-details-wrapper">
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="gt-service-details-items">
+                            <div class="details-image">
+                                <img src="assets/img/new_images/our-services.jpg" alt="img"
+                                    style="width: 100%; border-radius: 10px;">
+                            </div>
+                            <div class="details-content">
+                                <h2>Family Fun Package</h2>
+                                <p>
+                                    Planning a trip for the whole family? Our Family Fun Package is designed to offer
+                                    comfort, entertainment, and unforgettable moments for guests of all ages. Book now
+                                    for a stay filled with laughter, relaxation, and family bonding.
+                                </p>
+                                <span class="gt-box">
+                                    Our well-trained team is dedicated to providing an exceptional experience, from
+                                    local excursions to on-site comforts.
+                                </span>
+                                <div class="details-list-item">
+                                    <h3>Package Inclusions:</h3>
+                                    <ul>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Family-Size Room or Suite
+                                            </span>
+                                            Spacious accommodations with extra beds or connecting rooms, ideal for
+                                            families.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Daily Breakfast Buffet for the Family
+                                            </span>
+                                            A variety of kid-friendly and healthy options included each morning.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Welcome Gifts for Children
+                                            </span>
+                                            Fun surprises like toys, coloring books, or snack packs upon arrival.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Complimentary Kids Club Access
+                                            </span>
+                                            Supervised activities, games, and crafts for different age groups.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Family Movie Night Experience
+                                            </span>
+                                            Enjoy in-room movie setup or join our weekly family movie screenings with
+                                            popcorn.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Kids Eat Free (Under Age 6)
+                                            </span>
+                                            Special dining benefits when ordering from the children menu with a paying
+                                            adult.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Access to Family Pool & Kids Play Area
+                                            </span>
+                                            Safe, clean recreational areas for fun and relaxation.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Free Late Check-Out (Based on Availability)
+                                            </span>
+                                            Enjoy a little more time before departure.
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <div class="details-image-2">
+                                            <img src="assets/img/new_images/swimming floating tray_.jpg" alt="img"
+                                                style="width: 100%; height: 300px; object-fit: cover; border-radius: 10px;">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="details-image-2">
+                                            <img src="assets/img/new_images/PRIMELAND HOTEL BAR.jpg" alt="img"
+                                                style="width: 100%; height: 300px; object-fit: cover; border-radius: 10px;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="details-list-item">
+                                    <h3>Booking Info:</h3>
+                                    <ul>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Availability:
+                                            </span>
+                                            Year-round (subject to blackout dates)
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Minimum Stay:
+                                            </span>
+                                            2 nights
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                How to Book:
+                                            </span>
+                                            Select the Family Fun Package when reserving your room online or contact our
+                                            reservations team.
+                                        </li>
+                                        <li>
+                                            <span>
+                                                <i class="fa-solid fa-circle-check"></i>
+                                                Cancellation Policy:
+                                            </span>
+                                            Flexible options available (check specific rates)
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="faq-content">
+                                    <h3>Frequently Asked Question</h3>
+                                    <div class="faq-accordion">
+                                        <div class="accordion" id="accordion">
+                                            <div class="accordion-item mb-4 wow fadeInUp" data-wow-delay=".5s">
+                                                <h5 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#faq1"
+                                                        aria-expanded="false" aria-controls="faq1">
+                                                        Is your restaurant and pool bar open to non-residents?
+                                                    </button>
+                                                </h5>
+                                                <div id="faq1" class="accordion-collapse collapse"
+                                                    data-bs-parent="#accordion">
+                                                    <div class="accordion-body">
+                                                        Absolutely! Our facilities, including our pool bar and
+                                                        restaurant, are open to all guests visiting Moshi Town.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item mb-4 wow fadeInUp" data-wow-delay=".3s">
+                                                <h5 class="accordion-header">
+                                                    <button class="accordion-button" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#faq2"
+                                                        aria-expanded="true" aria-controls="faq2">
+                                                        Do you offer services or activities for families and children?
+                                                    </button>
+                                                </h5>
+                                                <div id="faq2" class="accordion-collapse show"
+                                                    data-bs-parent="#accordion">
+                                                    <div class="accordion-body">
+                                                        Of course! We offer family-sized rooms and special activities
+                                                        suitable for children of all ages.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item mb-4 wow fadeInUp" data-wow-delay=".7s">
+                                                <h5 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#faq3"
+                                                        aria-expanded="false" aria-controls="faq3">
+                                                        Do you provide airport shuttle services to JRO?
+                                                    </button>
+                                                </h5>
+                                                <div id="faq3" class="accordion-collapse collapse"
+                                                    data-bs-parent="#accordion">
+                                                    <div class="accordion-body">
+                                                        Yes, we offer reliable shuttle services to and from JRO Airport.
+                                                        Please book at least 48 hours in advance.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="accordion-item wow fadeInUp" data-wow-delay=".8s">
+                                                <h5 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button"
+                                                        data-bs-toggle="collapse" data-bs-target="#faq4"
+                                                        aria-expanded="false" aria-controls="faq4">
+                                                        Is the front desk and security available 24 hours?
+                                                    </button>
+                                                </h5>
+                                                <div id="faq4" class="accordion-collapse collapse"
+                                                    data-bs-parent="#accordion">
+                                                    <div class="accordion-body">
+                                                        Our front desk is available 24/7. However, our main gates and
+                                                        restaurant follow standard operating hours for security.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="gt-main-sideber sticky-style">
+                            <div class="gt-single-sideber-widget">
+                                <div class="gt-widget-title">
+                                    <h3>All Categories</h3>
+                                </div>
+                                <ul class="gt-category-list">
+                                    <li><a href="service-details.html">Airport Shuttle</a><span><i
+                                                class="fa-solid fa-circle-chevron-right"></i></span></li>
+                                    <li><a href="service-details.html">Free Car Parking</a><span><i
+                                                class="fa-solid fa-circle-chevron-right"></i></span></li>
+                                    <li><a href="service-details.html">Fast Wifi Internet</a><span><i
+                                                class="fa-solid fa-circle-chevron-right"></i></span></li>
+                                    <li><a href="service-details.html">Room Service</a><span><i
+                                                class="fa-solid fa-circle-chevron-right"></i></span></li>
+                                    <li><a href="service-details.html">Food & Drink</a><span><i
+                                                class="fa-solid fa-circle-chevron-right"></i></span></li>
+                                    <li><a href="service-details.html">Swimming Pool</a><span><i
+                                                class="fa-solid fa-circle-chevron-right"></i></span></li>
+                                </ul>
+                            </div>
+                            <div class="gt-single-sideber-widget">
+                                <div class="gt-widget-title">
+                                    <h3>Hours</h3>
+                                </div>
+                                <ul class="hours-list">
+                                    <li>
+                                        <span>Breakfast - <b>6:30 AM to 10:00 AM</b>
+                                    </li>
+                                    <li>
+                                        <span>Lunch - <b>12:30 PM to 3:00 PM</b>
+                                    </li>
+                                    <li>
+                                        <span>Dinner - <b>6:30 PM to 10:00 PM</b>
+                                    </li>
+                                    <li>
+                                        <span>Pool Bar - <b>10:00 AM to 10:00 PM</b>
+                                    </li>
+                                    <li>
+                                        <span>Office - <b>8:00 AM to 6:00 PM</b>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="gt-single-sideber-widget">
+                                <div class="gt-widget-title">
+                                    <h3>Hotel Booking</h3>
+                                </div>
+                                <div class="booking-item">
+                                    <form action="#">
+                                        <div class="row g-4">
+                                            <div class="col-lg-12">
+                                                <div class="form-clt">
+                                                    <input type="text" placeholder="Check In">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-12">
+                                                <div class="form-clt">
+                                                    <input type="text" placeholder="Check Out">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-12">
+                                                <div class="form-clt">
+                                                    <div class="form">
+                                                        <select class="single-select w-100">
+                                                            <option>Room</option>
+                                                            <option>01</option>
+                                                            <option>02</option>
+                                                            <option>03</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-12">
+                                                <div class="form-clt">
+                                                    <div class="form">
+                                                        <select class="single-select w-100">
+                                                            <option>Guest</option>
+                                                            <option>01</option>
+                                                            <option>02</option>
+                                                            <option>03</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-12">
+                                                <button class="gt-theme-btn w-100" type="submit">
+                                                    CHECK AVAILABILITY
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            <div class="service-details-contact-bg text-center bg-cover"
+                                style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('assets/img/new_images/coffee_.jpg');">
+                                <h3>
+                                    Please Contact Us By Phone or Email to Make a Reservation.
+                                </h3>
+                                <div class="icon">
+                                    <img src="assets/img/inner/service-details/call.png" alt="img">
+                                </div>
+                                <p>Need Reservation? Call us directly.</p>
+                                <h3><a href="tel:+255677155156">+255 677-155-156</a></h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GT Footer Section Start -->
+    <footer class="gt-footer-section fix bg-cover"
+        style="background-image: url('assets/img/home-1/footer/footer-img.jpg');">
+        <div class="container">
+            <div class="footer-newsletter-items">
+                <h2>Join Our Newsletter</h2>
+                <form action="#">
+                    <div class="form-clt">
+                        <input type="text" placeholder="Enter your email">
+                    </div>
+                    <button class="gt-theme-btn">Subscribe</button>
+                </form>
+            </div>
+            <div class="footer-widget-wrapper">
+                <div class="row">
+                    <!-- Prime Location Column -->
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-single-widget">
+                            <div class="widget-head">
+                                <h3 style="color: #e77a3a !important;">Prime Location</h3>
+                                <div class="prl-divider">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                </div>
+                            </div>
+                            <div class="footer-content">
+                                <ul class="gt-list-area">
+                                    <li style="color: #ffffff !important;">Moshi Town Center – 5 Mins</li>
+                                    <li style="color: #ffffff !important;">Kilimanjaro Int. Airport – 45 Mins</li>
+                                    <li style="color: #ffffff !important;">Marangu Gate (Kili) – 30 Mins</li>
+                                    <li style="color: #ffffff !important;">Moshi Airport – 10 Mins</li>
+                                    <li style="color: #ffffff !important;">Machame Gate – 40 Mins</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Links Column -->
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-single-widget">
+                            <div class="widget-head">
+                                <h3 style="color: #e77a3a !important;">Quick Links</h3>
+                                <div class="prl-divider">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                </div>
+                            </div>
+                            <ul class="gt-list-area">
+                                <li><a href="index.html">Home</a></li>
+                                <li><a href="about.html">About us</a></li>
+                                <li><a href="room-2.html">Hotel</a></li>
+                                <li><a href="contact.html">Contact</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Contact Us Column -->
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-single-widget">
+                            <div class="widget-head">
+                                <h3 style="color: #e77a3a !important;">Contact Us</h3>
+                                <div class="prl-divider">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                </div>
+                            </div>
+                            <ul class="contact-list">
+                                <li>
+                                    Tanzania <br>
+                                    Sokoine Road, Moshi, Kilimanjaro
+                                </li>
+                                <li><a href="tel:+255677155156">+255 677-155-156</a></li>
+                                <li><a href="mailto:info@primelandhotel.com">info@primelandhotel.com</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Digital Platforms Column -->
+                    <div class="col-xl-3 col-lg-3 col-md-6">
+                        <div class="footer-single-widget">
+                            <div class="widget-head">
+                                <h3 style="color: #e77a3a !important;">Digital Platforms</h3>
+                                <div class="prl-divider">
+                                    <div class="prl-line"></div>
+                                    <div class="prl-dot"></div>
+                                </div>
+                            </div>
+                            <div class="prl-social-grid mt-4">
+                                <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                                    target="_blank" class="ig" title="Instagram"><i class="fab fa-instagram"></i></a>
+                                <a href="https://wa.me/255677155156" target="_blank" class="wa" title="WhatsApp"><i
+                                        class="fab fa-whatsapp"></i></a>
+                                <a href="#" class="fb" title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                                <a href="#" class="tw" title="X / Twitter"><i class="fab fa-twitter"></i></a>
+                                <a href="#" class="yt" title="YouTube"><i class="fab fa-youtube"></i></a>
+                                <a href="#" class="li" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-wrapper">
+                    <p class="wow fadeInUp" data-wow-delay=".3s">&copy; 2025 <b>Primeland Hotel.</b> All rights
+                        reserved. | Sokoine Road, Moshi, Kilimanjaro &ndash; Tanzania</p>
+                    <p class="wow fadeInUp" data-wow-delay=".5s">Powered By <a href="http://www.emca.tech"
+                            target="_blank" style="color: #940000; font-weight: bold;">EmCa Techonologies LTD</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="floating-social-buttons">
+            <a href="https://wa.me/255677155156" target="_blank" class="float-btn whatsapp-btn" title="Chat with us">
+                <i class="fa-brands fa-whatsapp"></i>
+            </a>
+            <a href="https://www.google.com/maps/place/Primeland+Hotel/@-3.3290402,37.3327172,17z" target="_blank"
+                class="float-btn maps-btn" title="Find us on Maps">
+                <i class="fa-solid fa-map-marker-alt"></i>
+            </a>
+        </div>
+    </footer>
+
+    <!--<< All JS Plugins >>-->
+    <script src="assets/js/jquery-3.7.1.min.js"></script>
+    <!--<< Viewport Js >>-->
+    <script src="assets/js/viewport.jquery.js"></script>
+    <!--<< Bootstrap Js >>-->
+    <script src="assets/js/bootstrap.bundle.min.js"></script>
+    <!--<< nice-selec Js >>-->
+    <script src="assets/js/jquery.nice-select.min.js"></script>
+    <!--<< Waypoints Js >>-->
+    <script src="assets/js/jquery.waypoints.js"></script>
+    <!--<< Counterup Js >>-->
+    <script src="assets/js/jquery.counterup.min.js"></script>
+    <!--<< Swiper Slider Js >>-->
+    <script src="assets/js/swiper-bundle.min.js"></script>
+    <!--<< MeanMenu Js >>-->
+    <script src="assets/js/jquery.meanmenu.min.js"></script>
+    <!--<< Parallaxie Js >>-->
+    <script src="assets/js/parallaxie.js"></script>
+    <!--<< Magnific Popup Js >>-->
+    <script src="assets/js/jquery.magnific-popup.min.js"></script>
+    <!--<< Wow Animation Js >>-->
+    <script src="assets/js/wow.min.js"></script>
+    <!--<< Main.js >>-->
+    <script src="assets/js/main.js"></script>
+</body>
+
+</html>
