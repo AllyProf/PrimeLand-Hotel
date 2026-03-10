@@ -862,7 +862,7 @@
 </section>
 
 <!-- Instagram Section -->
-<div class="gt-instagram-section mt-5 pt-80 pb-0 fix section-bg">
+<div class="gt-instagram-section pt-80 pb-0 fix section-bg">
     <div class="container">
         <div class="gt-section-title text-center">
             <h6 class="justify-content-center wow fadeInUp"> FOLLOW US </h6>
