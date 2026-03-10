@@ -22,6 +22,7 @@
                             <div class="prl-divider">
                                 <div class="prl-line"></div>
                                 <div class="prl-dot"></div>
+                                <div class="prl-line"></div>
                             </div>
                         </div>
                         <div class="footer-content">
@@ -44,6 +45,7 @@
                             <div class="prl-divider">
                                 <div class="prl-line"></div>
                                 <div class="prl-dot"></div>
+                                <div class="prl-line"></div>
                             </div>
                         </div>
                         <ul class="gt-list-area">
@@ -63,6 +65,7 @@
                             <div class="prl-divider">
                                 <div class="prl-line"></div>
                                 <div class="prl-dot"></div>
+                                <div class="prl-line"></div>
                             </div>
                         </div>
                         <ul class="contact-list">
@@ -84,6 +87,7 @@
                             <div class="prl-divider">
                                 <div class="prl-line"></div>
                                 <div class="prl-dot"></div>
+                                <div class="prl-line"></div>
                             </div>
                         </div>
                         <div class="prl-social-grid mt-4">

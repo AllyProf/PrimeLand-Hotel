@@ -54,6 +54,7 @@
         background: #e77a3a;
         border-radius: 2px;
         flex-shrink: 0;
+        animation: prlLineAnim 4s infinite ease-in-out;
     }
 
     .prl-divider .prl-dot {
@@ -62,6 +63,17 @@
         background: #e77a3a;
         border-radius: 50%;
         flex-shrink: 0;
+        animation: prlDotPulse 4s infinite ease-in-out;
+    }
+
+    @keyframes prlLineAnim {
+        0%, 100% { width: 30px; opacity: 0.6; }
+        50% { width: 65px; opacity: 1; }
+    }
+
+    @keyframes prlDotPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.4); }
     }
 
     /* Offer Section Enhancement */
