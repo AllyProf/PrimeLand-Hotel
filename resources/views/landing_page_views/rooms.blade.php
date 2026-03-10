@@ -29,7 +29,7 @@
     </div>
 
     <!-- GT Room Section Start -->
-    <section class="gt-room-section fix section-padding section-bg-3">
+    <section class="gt-room-section fix section-padding section-bg">
         <div class="gt-room-wrapper">
             <div class="container">
                 <div class="gt-section-title text-center">
@@ -39,17 +39,14 @@
                     <h2 class="wow fadeInUp" data-wow-delay=".2s">
                         Rooms & Suites
                     </h2>
-                    <div class="prl-divider justify-content-center mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
-                        <div class="prl-divider-line"></div>
-                        <div class="prl-divider-dot"></div>
-                        <div class="prl-divider-line"></div>
-                    </div>
                 </div>
-                <div class="row g-4">
+                <div class="row">
                     <!-- Twin Room -->
-                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".2s">
+                    <div class="col-xl-4 col-lg-6 col-md-6">
                         <div class="gt-room-box-items">
                             <div class="gt-thumb">
+                                <img src="{{ asset('assets/img/new_images/room_(6).jpg') }}" alt="Twin Room"
+                                    style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <img src="{{ asset('assets/img/new_images/room_(6).jpg') }}" alt="Twin Room"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <span class="gt-post-box">
@@ -57,8 +54,8 @@
                                 </span>
                             </div>
                             <div class="gt-content">
-                                <a href="{{ url('/rooms') }}" class="gt-post-cat">Twin Room</a>
-                                <h3><a href="{{ url('/rooms') }}">Twin Room</a></h3>
+                                <a href="{{ url('/rooms/twin-room') }}" class="gt-post-cat">Twin Room</a>
+                                <h3><a href="{{ url('/rooms/twin-room') }}">Twin Room</a></h3>
                                 <ul class="gt-list">
                                     <li>
                                         <i class="flaticon-bed-1"></i>
@@ -69,18 +66,16 @@
                                         02 Guests
                                     </li>
                                 </ul>
-                                <p class="mt-3">Spacious and comfortable twin beds, perfect for friends or colleagues sharing a room.</p>
-                                <div class="mt-3 d-flex flex-wrap gap-2">
-                                    <a href="{{ url('/rooms/twin-room') }}" class="gt-theme-btn">Room Details</a>
-                                    <a href="{{ url('/contact') }}" class="gt-link-btn d-flex align-items-center">BOOK NOW</a>
-                                </div>
+                                <a href="{{ url('/rooms/twin-room') }}" class="gt-link-btn">DISCOVER MORE</a>
                             </div>
                         </div>
                     </div>
                     <!-- Double Room -->
-                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".4s">
+                    <div class="col-xl-4 col-lg-6 col-md-6">
                         <div class="gt-room-box-items">
                             <div class="gt-thumb">
+                                <img src="{{ asset('assets/img/new_images/room_(2).jpg') }}" alt="Double Room"
+                                    style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <img src="{{ asset('assets/img/new_images/room_(2).jpg') }}" alt="Double Room"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <span class="gt-post-box">
@@ -88,8 +83,8 @@
                                 </span>
                             </div>
                             <div class="gt-content">
-                                <a href="{{ url('/rooms') }}" class="gt-post-cat">Double Room</a>
-                                <h3><a href="{{ url('/rooms') }}">Double Room</a></h3>
+                                <a href="{{ url('/rooms/double-room') }}" class="gt-post-cat">Double Room</a>
+                                <h3><a href="{{ url('/rooms/double-room') }}">Double Room</a></h3>
                                 <ul class="gt-list">
                                     <li>
                                         <i class="flaticon-bed-1"></i>
@@ -100,18 +95,16 @@
                                         02 Guests
                                     </li>
                                 </ul>
-                                <p class="mt-3">A cozy and elegant room with a premium queen-sized bed, ideal for couples or individuals.</p>
-                                <div class="mt-3 d-flex flex-wrap gap-2">
-                                    <a href="{{ url('/rooms/double-room') }}" class="gt-theme-btn">Room Details</a>
-                                    <a href="{{ url('/contact') }}" class="gt-link-btn d-flex align-items-center">BOOK NOW</a>
-                                </div>
+                                <a href="{{ url('/rooms/double-room') }}" class="gt-link-btn">DISCOVER MORE</a>
                             </div>
                         </div>
                     </div>
                     <!-- Single Room -->
-                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".6s">
+                    <div class="col-xl-4 col-lg-6 col-md-6">
                         <div class="gt-room-box-items">
                             <div class="gt-thumb">
+                                <img src="{{ asset('assets/img/new_images/room_(4).jpg') }}" alt="Single Room"
+                                    style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <img src="{{ asset('assets/img/new_images/room_(4).jpg') }}" alt="Single Room"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <span class="gt-post-box">
@@ -119,8 +112,8 @@
                                 </span>
                             </div>
                             <div class="gt-content">
-                                <a href="{{ url('/rooms') }}" class="gt-post-cat">Single Room</a>
-                                <h3><a href="{{ url('/rooms') }}">Single Room</a></h3>
+                                <a href="{{ url('/rooms/single-room') }}" class="gt-post-cat">Single Room</a>
+                                <h3><a href="{{ url('/rooms/single-room') }}">Single Room</a></h3>
                                 <ul class="gt-list">
                                     <li>
                                         <i class="flaticon-bed-1"></i>
@@ -131,11 +124,7 @@
                                         01 Guest
                                     </li>
                                 </ul>
-                                <p class="mt-3">Perfect for solo travelers or business guests seeking a refined and quiet space.</p>
-                                <div class="mt-3 d-flex flex-wrap gap-2">
-                                    <a href="{{ url('/rooms/single-room') }}" class="gt-theme-btn">Room Details</a>
-                                    <a href="{{ url('/contact') }}" class="gt-link-btn d-flex align-items-center">BOOK NOW</a>
-                                </div>
+                                <a href="{{ url('/rooms/single-room') }}" class="gt-link-btn">DISCOVER MORE</a>
                             </div>
                         </div>
                     </div>
@@ -196,29 +185,36 @@
                                 <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".3s">
                                     <h3 class="gt-box-title">Room Service</h3>
                                     <div class="gt-progress">
-                                        <div class="gt-progress-bar" style="width: 90%;">
-                                            <div class="gt-progress-value"><span class="counter-number2">90</span>%</div>
+                                        <div class="gt-progress-bar"
+                                            style="width: 90%; animation: 2.6s ease 0s 1 normal none running animate-positive; opacity: 1;">
+                                            <div class="gt-progress-value"><span class="counter-number2">90</span>%
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".4s">
                                     <h3 class="gt-box-title">Breakfast Included</h3>
                                     <div class="gt-progress">
-                                        <div class="gt-progress-bar" style="width: 55%;">
-                                            <div class="gt-progress-value"><span class="counter-number2">55</span>%</div>
+                                        <div class="gt-progress-bar"
+                                            style="width: 55%; animation: 2.6s ease 0s 1 normal none running animate-positive; opacity: 1;">
+                                            <div class="gt-progress-value"><span class="counter-number2">55</span>%
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="gt-skill-feature wow fadeInUp" data-wow-delay=".4s">
                                     <h3 class="gt-box-title">Laundry & Ironing</h3>
                                     <div class="gt-progress">
-                                        <div class="gt-progress-bar" style="width: 79%;">
-                                            <div class="gt-progress-value"><span class="counter-number2">79</span>%</div>
+                                        <div class="gt-progress-bar"
+                                            style="width: 79%; animation: 2.6s ease 0s 1 normal none running animate-positive; opacity: 1;">
+                                            <div class="gt-progress-value"><span class="counter-number2">79</span>%
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <a href="{{ url('/about-us') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".6s">VIEW All DETAILS</a>
+                            <a href="{{ url('/about-us') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".6s">VIEW All
+                                DETAILS</a>
                         </div>
                     </div>
                 </div>
@@ -231,57 +227,114 @@
         <div class="container">
             <div class="gt-hotel-feature-area">
                 <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".2s">
-                    <div class="icon"> <i class="flaticon-fitness-center"></i> </div>
-                    <div class="content"> <h3>Fitness Center</h3> <p>Stay active in our gym.</p> </div>
+                    <div class="icon">
+                        <i class="flaticon-fitness-center"></i>
+                    </div>
+                    <div class="content">
+                        <h3>Fitness Center</h3>
+                        <p>Stay active in our gym.</p>
+                    </div>
                 </div>
                 <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".4s">
-                    <div class="icon"> <i class="flaticon-disinfect"></i> </div>
-                    <div class="content"> <h3>Disinfection</h3> <p>Highest hygiene standards.</p> </div>
+                    <div class="icon">
+                        <i class="flaticon-disinfect"></i>
+                    </div>
+                    <div class="content">
+                        <h3>Disinfection</h3>
+                        <p>Highest hygiene standards.</p>
+                    </div>
                 </div>
                 <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".6s">
-                    <div class="icon"> <i class="flaticon-suite"></i> </div>
-                    <div class="content"> <h3>Rooms and Suites</h3> <p>Comfortable stay guaranteed.</p> </div>
+                    <div class="icon">
+                        <i class="flaticon-suite"></i>
+                    </div>
+                    <div class="content">
+                        <h3>Rooms and Suites</h3>
+                        <p>Comfortable stay guaranteed.</p>
+                    </div>
                 </div>
                 <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".8s">
-                    <div class="icon"> <i class="flaticon-luggage"></i> </div>
-                    <div class="content"> <h3>Store Luggage</h3> <p>Secure storage for items.</p> </div>
+                    <div class="icon">
+                        <i class="flaticon-luggage"></i>
+                    </div>
+                    <div class="content">
+                        <h3>Store Luggage</h3>
+                        <p>Secure storage for items.</p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- GT Instagram Section Start -->
-    <section class="gt-instagram-section section-padding pb-0 fix section-bg">
+    <div class="gt-instagram-section section-padding pb-0 fix section-bg">
         <div class="container">
             <div class="gt-section-title text-center">
-                <h6 class="justify-content-center wow fadeInUp"> OUR INSTAGRAM </h6>
-                <h2 class="wow fadeInUp" data-wow-delay=".2s"> Primeland Hotel Moshi </h2>
-                <div class="prl-divider justify-content-center mt-3 mb-4">
-                    <div class="prl-divider-line"></div> <div class="prl-divider-dot"></div> <div class="prl-divider-line"></div>
-                </div>
+                <h6 class="justify-content-center wow fadeInUp">
+                    OUR INSTAGRAM
+                </h6>
+                <h2 class="wow fadeInUp" data-wow-delay=".2s">
+                    Follow Us @Primeland Hotel
+                </h2>
             </div>
         </div>
         <div class="swiper gt-instagram-slider">
             <div class="swiper-wrapper">
-                 <div class="swiper-slide">
+                <div class="swiper-slide">
                     <div class="gt-instagram-image">
-                        <img src="{{ asset('assets/img/new_images/PRIMELAND HOTEL BAR.jpg') }}" alt="img" style="width: 305px; height: 297px; object-fit: cover;">
-                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank"> <i class="fa-brands fa-instagram"></i> </a>
+                        <img src="{{ asset('assets/img/new_images/PRIMELAND HOTEL BAR.jpg') }}" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
                     </div>
                 </div>
                 <div class="swiper-slide">
                     <div class="gt-instagram-image">
-                        <img src="{{ asset('assets/img/new_images/restaurant_.jpg') }}" alt="img" style="width: 305px; height: 297px; object-fit: cover;">
-                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank"> <i class="fa-brands fa-instagram"></i> </a>
+                        <img src="{{ asset('assets/img/new_images/restaurant_.jpg') }}" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
                     </div>
                 </div>
                 <div class="swiper-slide">
                     <div class="gt-instagram-image">
-                        <img src="{{ asset('assets/img/new_images/swimming view_.jpg') }}" alt="img" style="width: 305px; height: 297px; object-fit: cover;">
-                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank"> <i class="fa-brands fa-instagram"></i> </a>
+                        <img src="{{ asset('assets/img/new_images/swimming view_.jpg') }}" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="{{ asset('assets/img/new_images/room_(1).jpg') }}" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="{{ asset('assets/img/new_images/reception_.jpg') }}" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="swiper-slide">
+                    <div class="gt-instagram-image">
+                        <img src="{{ asset('assets/img/new_images/coffee_.jpg') }}" alt="img"
+                            style="width: 305px; height: 297px; object-fit: cover;">
+                        <a href="https://www.instagram.com/primeland_hotel/" class="gt-icon" target="_blank">
+                            <i class="fa-brands fa-instagram"></i>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 @endsection
