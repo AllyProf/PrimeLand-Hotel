@@ -170,8 +170,13 @@
                                             <li><a href="{{ url('/service-details') }}">Service Details</a></li>
                                         </ul>
                                     </li>
-                                    <li class="{{ Request::is('rooms') ? 'active' : '' }}">
+                                    <li class="has-dropdown {{ Request::is('rooms*') ? 'active' : '' }}">
                                         <a href="{{ url('/rooms') }}">Rooms</a>
+                                        <ul class="submenu">
+                                            <li><a href="{{ url('/rooms/single-room') }}">Single Room</a></li>
+                                            <li><a href="{{ url('/rooms/double-room') }}">Double Room</a></li>
+                                            <li><a href="{{ url('/rooms/twin-room') }}">Twin Room</a></li>
+                                        </ul>
                                     </li>
                                     <li class="{{ Request::is('contact') ? 'active' : '' }}">
                                         <a href="{{ url('/contact') }}">Contact Us</a>
