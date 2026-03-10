@@ -28,11 +28,11 @@ Route::get('/service-details', function () {
     return view('landing_page_views.service-details');
 });
 
-Route::get('/rooms', function () {
+Route::get('/room-2', function () {
     return view('landing_page_views.rooms');
 });
 
-Route::get('/room-2', function () {
+Route::get('/rooms-suites', function () {
     return view('landing_page_views.rooms');
 });
 

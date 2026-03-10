@@ -171,7 +171,7 @@
                                         </ul>
                                     </li>
                                     <li class="has-dropdown {{ Request::is('rooms*') ? 'active' : '' }}">
-                                        <a href="{{ url('/rooms') }}">Rooms</a>
+                                        <a href="{{ url('/room-2') }}">Rooms</a>
                                         <ul class="submenu">
                                             <li><a href="{{ url('/rooms/single-room') }}">Single Room</a></li>
                                             <li><a href="{{ url('/rooms/double-room') }}">Double Room</a></li>
