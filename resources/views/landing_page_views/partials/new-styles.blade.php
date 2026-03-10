@@ -25,6 +25,14 @@
         --prl-brand: #e77a3a;
     }
 
+    /* Make logo background transparent visually */
+    .logo img,
+    .header-logo img,
+    .header-logo-2 img,
+    .offcanvas__logo img {
+        mix-blend-mode: multiply;
+    }
+
     /* ===== SECTION DIVIDER ===== */
     .prl-divider {
         display: flex;
