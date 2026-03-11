@@ -1,6 +1,6 @@
 @extends('layouts.new_landing')
 
-@section('title', 'About Us | Primeland Hotel - Moshi, Kilimanjaro')
+@section('title', 'About Primeland Hotel | Boutique Hotel in Moshi near Kilimanjaro')
 
 @section('content')
     <!-- Breadcrumb Section Start -->
@@ -43,7 +43,7 @@
                                     About Us
                                 </h6>
                                 <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                                    Welcome to Primeland Hotel Comfort in Every Stay
+                                    Welcome to Primeland Hotel – Boutique Accommodation in Moshi, Tanzania
                                 </h2>
                                 <div class="prl-divider mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
                                     <div class="prl-divider-line"></div>
@@ -71,9 +71,8 @@
                                                     <i class="flaticon-target"></i>
                                                 </div>
                                                 <div class="content">
-                                                    <h3>Our Mission</h3>
-                                                    <p>We are a small boutique-style hotel in the heart of Moshi Town,
-                                                        Kilimanjaro &ndash; Tanzania.</p>
+                                                    <h3>Best Hotel in Moshi for Tourists</h3>
+                                                    <p>Primeland Hotel is a small hotel with great service in Moshi, located in the heart of Moshi Town, Kilimanjaro &ndash; Tanzania. The perfect boutique choice for tourists and travelers.</p>
                                                 </div>
                                             </div>
                                             <div class="gt-icon-box style-2">
@@ -81,9 +80,8 @@
                                                     <i class="flaticon-leadership"></i>
                                                 </div>
                                                 <div class="content">
-                                                    <h3>Our Vision</h3>
-                                                    <p>Conveniently located near the town center and 45 minutes from JRO
-                                                        Airport. The perfect base for your trip.</p>
+                                                    <h3>Perfect for Safaris & Trekking</h3>
+                                                    <p>Conveniently located near the town center and 45 minutes from JRO Airport. We are the top choice for hotels for safari adventures in the Kilimanjaro region.</p>
                                                 </div>
                                             </div>
                                             <a href="{{ url('/about-us') }}" class="gt-theme-btn">DISCOVER MORE</a>

@@ -28,13 +28,13 @@ Route::get('/service-details', function () {
     return view('landing_page_views.service-details');
 });
 
-Route::get('/room-2', function () {
+Route::get('/rooms', function () {
     return view('landing_page_views.rooms');
 });
 
-Route::get('/rooms-suites', function () {
-    return view('landing_page_views.rooms');
-});
+// SEO Redirects: Ensure /rooms is the canonical URL
+Route::redirect('/room-2', '/rooms', 301);
+Route::redirect('/rooms-suites', '/rooms', 301);
 
 Route::get('/rooms/single-room', function () {
     return view('landing_page_views.single-room');

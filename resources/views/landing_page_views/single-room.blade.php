@@ -1,6 +1,6 @@
 @extends('layouts.new_landing')
 
-@section('title', 'Single Room | Primeland Hotel - Moshi, Kilimanjaro')
+@section('title', 'Single Room in Moshi Hotel | Accommodation in Moshi, Tanzania')
 
 @section('content')
     <!-- Breadcrumb Section Start -->
@@ -9,7 +9,7 @@
         <div class="container">
             <div class="gt-page-heading">
                 <div class="gt-breadcrumb-sub-title">
-                    <h1 class="text-white wow fadeInUp" data-wow-delay=".3s">Single Room</h1>
+                    <h1 class="text-white wow fadeInUp" data-wow-delay=".3s">Single Room in Moshi</h1>
                 </div>
                 <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
                     <li><a href="{{ url('/') }}">Home</a></li>
@@ -30,7 +30,7 @@
                     <div class="col-lg-8">
                         <div class="gt-room-items">
                             <div class="room-image">
-                                <img src="{{ asset('assets/img/new_images/room_(4).jpg') }}" alt="Single Room" style="max-width: 100%; height: auto; border-radius: 8px;">
+                                <img src="{{ asset('assets/img/new_images/room_(4).jpg') }}" alt="Single room in Moshi hotel - Primeland Hotel" style="max-width: 100%; height: auto; border-radius: 8px;">
                             </div>
                             <div class="gt-room-content">
                                 <h5>$70 / NIGHT</h5>

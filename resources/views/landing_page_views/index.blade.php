@@ -1,6 +1,6 @@
 @extends('layouts.new_landing')
 
-@section('title', 'Home | Primeland Hotel - Moshi, Kilimanjaro')
+@section('title', 'Primeland Hotel | Boutique Hotel in Moshi Near Mount Kilimanjaro')
 
 @section('content')
 <!-- GT Hero Section Start -->
@@ -26,20 +26,19 @@
                 style="display:flex;align-items:center;gap:12px;margin:18px 0 16px;">
                 <div style="height:2px;width:50px;background:#e77a3a;"></div>
                 <span
-                    style="color:#e77a3a;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-weight:600;">Best
-                    Choice for Travelers</span>
+                    style="color:#e77a3a;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-weight:600;">Best Hotel In Moshi for your Stay</span>
                 <div style="height:2px;width:50px;background:#e77a3a;"></div>
             </div>
 
             <!-- Sub-caption -->
             <p class="wow fadeInUp" data-wow-delay=".5s"
                 style="font-size:16px;color:rgba(255,255,255,0.85);margin-bottom:30px;">
-                STAY WITH US: Relax &amp; Unwind
+                STAY WITH US: Relax & Unwind
             </p>
 
             <div class="hero-button wow fadeInUp" data-wow-delay=".7s">
                 <a href="{{ url('/contact') }}" class="gt-theme-btn">Book Now</a>
-                <a href="{{ url('/room-2') }}" class="gt-theme-btn style-2">Our Rooms</a>
+                <a href="{{ url('/rooms') }}" class="gt-theme-btn style-2">Our Rooms</a>
             </div>
         </div>
     </div>
@@ -110,8 +109,7 @@
                             We are a small boutique-style hotel in the heart of Moshi Town, Kilimanjaro &ndash;
                             Tanzania.
                             Conveniently located approximately 1.5 km from Moshi's town center and just 45 minutes
-                            from Kilimanjaro International Airport. Whether you're here on a business trip, family
-                            visit, Kilimanjaro trek or safari, our well-trained team is ready to make your stay
+                            from Kilimanjaro International Airport. Whether you're here for Kilimanjaro trekking tours or safari adventures in the Kilimanjaro region, our well-trained team is ready to make your stay
                             exceptional.
                         </p>
                         <ul class="gt-icon-list wow fadeInUp" data-wow-delay=".6s">
@@ -168,7 +166,7 @@
                                 SERVICES
                             </h6>
                             <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                                Our Services
+                                Hotel Services – Swimming Pool, Restaurant, Wi-Fi
                             </h2>
                             <div class="prl-divider wow fadeInUp" data-wow-delay=".3s">
                                 <div class="prl-line"></div>
@@ -267,7 +265,7 @@
                 FACILITIES
             </h6>
             <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                Hotel Facilities
+                Boutique Hotel Facilities in Moshi
             </h2>
             <div class="prl-divider justify-content-center wow fadeInUp" data-wow-delay=".3s">
                 <div class="prl-line"></div>

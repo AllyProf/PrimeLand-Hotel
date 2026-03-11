@@ -69,7 +69,7 @@
                 <div class="offcanvas__top mb-5 d-flex justify-content-between align-items-center">
                     <div class="offcanvas__logo">
                         <a href="{{ url('/') }}">
-                            <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="logo-img"
+                            <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="Primeland Hotel Moshi - Boutique Hotel near Kilimanjaro"
                                 style="max-width: 150px; height: auto;">
                         </a>
                     </div>
@@ -145,11 +145,11 @@
             <div class="header-main">
                 <div class="logo">
                     <a href="{{ url('/') }}" class="header-logo">
-                        <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="logo-img"
+                        <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="Primeland Hotel Moshi Logo"
                             style="max-width: 150px; height: auto;">
                     </a>
                     <a href="{{ url('/') }}" class="header-logo-2">
-                        <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="logo-img"
+                        <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="Primeland Hotel Moshi Logo"
                             style="max-width: 150px; height: auto;">
                     </a>
                 </div>
@@ -171,7 +171,7 @@
                                         </ul>
                                     </li>
                                     <li class="has-dropdown {{ Request::is('rooms*') ? 'active' : '' }}">
-                                        <a href="{{ url('/room-2') }}">Rooms</a>
+                                        <a href="{{ url('/rooms') }}">Rooms</a>
                                         <ul class="submenu">
                                             <li><a href="{{ url('/rooms/single-room') }}">Single Room</a></li>
                                             <li><a href="{{ url('/rooms/double-room') }}">Double Room</a></li>

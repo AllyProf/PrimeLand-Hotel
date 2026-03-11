@@ -1,6 +1,6 @@
 @extends('layouts.new_landing')
 
-@section('title', 'Service Details | Primeland Hotel - Moshi, Kilimanjaro')
+@section('title', 'Hotel Amenities Moshi | Swimming Pool & Airport Shuttle at Primeland Hotel')
 
 @section('content')
 <!-- Breadcrumb Section Start -->
@@ -9,7 +9,7 @@
     <div class="container">
         <div class="gt-page-heading">
             <div class="gt-breadcrumb-sub-title">
-                <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Service Details</h1>
+                <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Hotel Services in Moshi</h1>
             </div>
             <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
                 <li>
@@ -44,7 +44,7 @@
                 <div class="col-lg-8">
                     <div class="gt-service-details-items">
                         <div class="details-image">
-                            <img src="{{ asset('assets/img/new_images/our-services.jpg') }}" alt="img"
+                            <img src="{{ asset('assets/img/new_images/our-services.jpg') }}" alt="Primeland Hotel services and facilities in Moshi"
                                 style="width: 100%; border-radius: 10px;">
                         </div>
                         <div class="details-content">
@@ -125,13 +125,13 @@
                             <div class="row g-4">
                                 <div class="col-md-6">
                                     <div class="details-image-2">
-                                        <img src="{{ asset('assets/img/new_images/swimming floating tray_.jpg') }}" alt="img"
+                                        <img src="{{ asset('assets/img/new_images/swimming floating tray_.jpg') }}" alt="Swimming pool at Primeland Hotel Moshi Kilimanjaro"
                                             style="width: 100%; height: 300px; object-fit: cover; border-radius: 10px;">
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="details-image-2">
-                                        <img src="{{ asset('assets/img/new_images/PRIMELAND HOTEL BAR.jpg') }}" alt="img"
+                                        <img src="{{ asset('assets/img/new_images/PRIMELAND HOTEL BAR.jpg') }}" alt="Bar and restaurant at Primeland Hotel Moshi"
                                             style="width: 100%; height: 300px; object-fit: cover; border-radius: 10px;">
                                     </div>
                                 </div>

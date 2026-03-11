@@ -1,6 +1,6 @@
 @extends('layouts.new_landing')
 
-@section('title', 'Our Services | Primeland Hotel - Moshi, Kilimanjaro')
+@section('title', 'Hotel Services Moshi | Swimming Pool, Restaurant & Free Wi-Fi in Moshi')
 
 @section('content')
 <!-- Breadcrumb Section Start -->
@@ -36,7 +36,7 @@
                 FACILITIES
             </h6>
             <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                Primeland Facilities
+                Hotel Services – Swimming Pool, Restaurant, Wi-Fi
             </h2>
             <div class="prl-divider justify-content-center mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
                 <div class="prl-divider-line"></div>

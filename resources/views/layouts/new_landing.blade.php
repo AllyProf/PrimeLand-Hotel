@@ -14,8 +14,9 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="author" content="PrimeLand">
-        <meta name="description" content="PrimeLand Hotel & Resort">
+        <meta name="author" content="Primeland Hotel">
+        <meta name="description" content="Discover the best hotel in Moshi for Kilimanjaro climbers and tourists. Primeland Hotel offers boutique accommodation near Mount Kilimanjaro trekking routes. Features include a swimming pool, restaurant, and airport shuttle from JRO. Book your safari adventure stay online!">
+        <meta name="keywords" content="hotels in Moshi Tanzania for tourists, hotels near Kilimanjaro for safari, best hotel in Moshi for Kilimanjaro climbers, boutique hotels in Tanzania, luxury hotel near Kilimanjaro, Mount Kilimanjaro trekking routes hotel, hotels close to Kilimanjaro airport, book hotel online in Moshi, Moshi hotels with swimming pool, cozy boutique hotel in Moshi near Kilimanjaro, affordable hotel rooms for Kilimanjaro climbers">
         <!-- ======== Page title ============ -->
         <title>@yield('title', 'PrimeLand Hotel')</title>
         

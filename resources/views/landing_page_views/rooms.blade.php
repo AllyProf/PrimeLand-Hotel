@@ -1,6 +1,6 @@
 @extends('layouts.new_landing')
 
-@section('title', 'Our Rooms | Primeland Hotel - Moshi, Kilimanjaro')
+@section('title', 'Best Boutique Hotel in Moshi for Tourists | Kilimanjaro Safari & Trekking Accommodation')
 
 @section('content')
     <!-- Breadcrumb Section Start -->
@@ -37,7 +37,7 @@
                         Explore
                     </h6>
                     <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                        Rooms & Suites
+                        Affordable Hotel Rooms for Kilimanjaro Climbers
                     </h2>
                 </div>
                 <div class="row">
@@ -45,7 +45,7 @@
                     <div class="col-xl-4 col-lg-6 col-md-6">
                         <div class="gt-room-box-items">
                             <div class="gt-thumb">
-                                <img src="{{ asset('assets/img/new_images/room_(6).jpg') }}" alt="Twin Room"
+                                <img src="{{ asset('assets/img/new_images/room_(6).jpg') }}" alt="Twin room in Moshi hotel - Primeland Hotel"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <img src="{{ asset('assets/img/new_images/room_(6).jpg') }}" alt="Twin Room"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
@@ -74,7 +74,7 @@
                     <div class="col-xl-4 col-lg-6 col-md-6">
                         <div class="gt-room-box-items">
                             <div class="gt-thumb">
-                                <img src="{{ asset('assets/img/new_images/room_(2).jpg') }}" alt="Double Room"
+                                <img src="{{ asset('assets/img/new_images/room_(2).jpg') }}" alt="Double room in Moshi - Primeland Hotel"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <img src="{{ asset('assets/img/new_images/room_(2).jpg') }}" alt="Double Room"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
@@ -103,7 +103,7 @@
                     <div class="col-xl-4 col-lg-6 col-md-6">
                         <div class="gt-room-box-items">
                             <div class="gt-thumb">
-                                <img src="{{ asset('assets/img/new_images/room_(4).jpg') }}" alt="Single Room"
+                                <img src="{{ asset('assets/img/new_images/room_(4).jpg') }}" alt="Single room in Moshi hotel - Primeland Hotel"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
                                 <img src="{{ asset('assets/img/new_images/room_(4).jpg') }}" alt="Single Room"
                                     style="width: 100%; aspect-ratio: 4/3; object-fit: cover;">
