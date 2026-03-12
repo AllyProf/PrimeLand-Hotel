@@ -1770,7 +1770,7 @@ class BookingController extends Controller
         if ($user) {
             $bookings = Booking::where('guest_email', $user->email)
                 ->where('status', 'confirmed')
-                ->whereIn('payment_status', ['paid', 'partial'])
+                ->whereIn('payment_status', ['paid', 'partial', 'pending'])
                 ->where('check_in_status', 'pending')
                 ->with('room')
                 ->orderBy('check_in', 'asc')
@@ -1837,10 +1837,10 @@ class BookingController extends Controller
             ], 400);
         }
 
-        if ($booking->payment_status !== 'paid') {
+        if (!in_array($booking->payment_status, ['paid', 'partial', 'pending'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment is not completed. Please complete payment first.',
+                'message' => 'Payment status is invalid. Please contact the hotel for assistance.',
             ], 400);
         }
 

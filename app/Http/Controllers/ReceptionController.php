@@ -384,15 +384,7 @@ class ReceptionController extends Controller
                 // Traditionally confirmed/paid bookings
                 $q->where(function($q1) {
                     $q1->where('status', 'confirmed')
-                       ->whereIn('payment_status', ['paid', 'partial'])
-                       ->where(function($q2) {
-                           $q2->where('payment_status', 'paid')
-                              ->orWhere(function($subQ) {
-                                  $subQ->where('payment_status', 'partial')
-                                       ->whereNotNull('amount_paid')
-                                       ->where('amount_paid', '>', 0);
-                              });
-                       });
+                       ->whereIn('payment_status', ['paid', 'partial', 'pending']);
                 })
                 // OR mobile submissions waiting for review (even if pending payment/status)
                 ->orWhereNotNull('mobile_checkin_submitted_at');
@@ -415,15 +407,7 @@ class ReceptionController extends Controller
                         // Traditionally confirmed/paid bookings
                         $q->where(function($q1) {
                             $q1->where('status', 'confirmed')
-                               ->whereIn('payment_status', ['paid', 'partial'])
-                               ->where(function($q2) {
-                                   $q2->where('payment_status', 'paid')
-                                      ->orWhere(function($subQ) {
-                                          $subQ->where('payment_status', 'partial')
-                                               ->whereNotNull('amount_paid')
-                                               ->where('amount_paid', '>', 0);
-                                      });
-                               });
+                               ->whereIn('payment_status', ['paid', 'partial', 'pending']);
                         })
                         // OR mobile submissions waiting for review
                         ->orWhereNotNull('mobile_checkin_submitted_at');
@@ -519,17 +503,9 @@ class ReceptionController extends Controller
                 ->where('check_in_status', 'pending')
                 ->where(function($q) {
                     $q->where(function($q1) {
-                        $q1->where('status', 'confirmed')
-                           ->whereIn('payment_status', ['paid', 'partial'])
-                           ->where(function($q2) {
-                               $q2->where('payment_status', 'paid')
-                                  ->orWhere(function($subQ) {
-                                      $subQ->where('payment_status', 'partial')
-                                           ->whereNotNull('amount_paid')
-                                           ->where('amount_paid', '>', 0);
-                                  });
-                           });
-                    })
+                    $q1->where('status', 'confirmed')
+                       ->whereIn('payment_status', ['paid', 'partial', 'pending']);
+                })
                     ->orWhereNotNull('mobile_checkin_submitted_at');
                 })
                 ->where(function($q) {
@@ -542,15 +518,7 @@ class ReceptionController extends Controller
                 ->where(function($q) {
                     $q->where(function($q1) {
                         $q1->where('status', 'confirmed')
-                           ->whereIn('payment_status', ['paid', 'partial'])
-                           ->where(function($q2) {
-                               $q2->where('payment_status', 'paid')
-                                  ->orWhere(function($subQ) {
-                                      $subQ->where('payment_status', 'partial')
-                                           ->whereNotNull('amount_paid')
-                                           ->where('amount_paid', '>', 0);
-                                  });
-                           });
+                           ->whereIn('payment_status', ['paid', 'partial', 'pending']);
                     })
                     ->orWhereNotNull('mobile_checkin_submitted_at');
                 })
@@ -943,17 +911,7 @@ class ReceptionController extends Controller
     {
         $query = Booking::with(['room', 'serviceRequests.service'])
             ->where('status', 'confirmed')
-            ->whereIn('payment_status', ['paid', 'partial'])
-            ->where(function($q) {
-                // Include paid bookings
-                $q->where('payment_status', 'paid')
-                  // Or partial payments where amount_paid > 0
-                  ->orWhere(function($subQ) {
-                      $subQ->where('payment_status', 'partial')
-                           ->whereNotNull('amount_paid')
-                           ->where('amount_paid', '>', 0);
-                  });
-            })
+            ->whereIn('payment_status', ['paid', 'partial', 'pending'])
             ->where('check_in_status', '!=', 'checked_out');
 
         // Search functionality
@@ -1039,17 +997,7 @@ class ReceptionController extends Controller
                 // Confirmed and paid/partial bookings for current/upcoming dates
                 $q->where(function($subQ) use ($today) {
                     $subQ->where('status', 'confirmed')
-                          ->whereIn('payment_status', ['paid', 'partial'])
-                          ->where(function($paymentQ) {
-                              // Include paid bookings
-                              $paymentQ->where('payment_status', 'paid')
-                                      // Or partial payments where amount_paid > 0
-                                      ->orWhere(function($partialQ) {
-                                          $partialQ->where('payment_status', 'partial')
-                                                   ->whereNotNull('amount_paid')
-                                                   ->where('amount_paid', '>', 0);
-                                      });
-                          })
+                          ->whereIn('payment_status', ['paid', 'partial', 'pending'])
                           ->where('check_in_status', '!=', 'checked_out')
                           ->whereDate('check_in', '<=', $today)
                           ->whereDate('check_out', '>=', $today);
@@ -1064,17 +1012,7 @@ class ReceptionController extends Controller
                 // OR confirmed paid/partial bookings for future dates (upcoming check-ins)
                 ->orWhere(function($subQ) use ($today) {
                     $subQ->where('status', 'confirmed')
-                          ->whereIn('payment_status', ['paid', 'partial'])
-                          ->where(function($paymentQ) {
-                              // Include paid bookings
-                              $paymentQ->where('payment_status', 'paid')
-                                      // Or partial payments where amount_paid > 0
-                                      ->orWhere(function($partialQ) {
-                                          $partialQ->where('payment_status', 'partial')
-                                                   ->whereNotNull('amount_paid')
-                                                   ->where('amount_paid', '>', 0);
-                                      });
-                          })
+                          ->whereIn('payment_status', ['paid', 'partial', 'pending'])
                           ->where('check_in_status', 'pending')
                           ->whereDate('check_in', '>=', $today);
                 });

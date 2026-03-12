@@ -50,10 +50,10 @@ class HousekeeperController extends Controller
                               ->whereDate('check_in', '>=', $today)
                               ->whereNull('cancelled_at');
                     })
-                    // OR confirmed paid/partial bookings for future dates (upcoming check-ins)
+                    // OR confirmed paid/partial/pending bookings for future dates (upcoming check-ins)
                     ->orWhere(function($subQ) use ($today) {
                         $subQ->where('status', 'confirmed')
-                              ->whereIn('payment_status', ['paid', 'partial'])
+                              ->whereIn('payment_status', ['paid', 'partial', 'pending'])
                               ->where('check_in_status', 'pending')
                               ->whereDate('check_in', '>=', $today);
                     });
