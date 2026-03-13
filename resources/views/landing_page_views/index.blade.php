@@ -333,29 +333,7 @@
     </div>
 </section>
 
-<!-- GT Counter Section Start -->
-<div class="gt-counter-section fix">
-    <div class="container">
-        <div class="gt-counter-wrapper">
-            <div class="gt-counter">
-                <h2> <span class="gt-count">3</span> </h2>
-                <p>Room Types</p>
-            </div>
-            <div class="gt-counter">
-                <h2> <span class="gt-count">8</span>+ </h2>
-                <p>Countries Visited</p>
-            </div>
-            <div class="gt-counter">
-                <h2> <span class="gt-count">43</span>min </h2>
-                <p>To JRO Airport</p>
-            </div>
-            <div class="gt-counter border-none">
-                <h2 style="letter-spacing:1px;"> 5&#9733; </h2>
-                <p>Guest Ratings</p>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- GT Testimonial Section Start -->
 <section class="gt-testimonial-section section-padding fix section-bg-3">
@@ -381,13 +359,7 @@
                             word for it. Our guests return time and again for the impeccable service, exquisite
                             surroundings, and the feeling of true indulgence.
                         </p>
-                            <div class="gt-client-info wow fadeInUp" data-wow-delay=".6s">
-                                
-                                <div class="mb-3 wow fadeInUp" data-wow-delay=".7s">
-                                    <img src="{{ asset('assets/img/new_images/client_trust_badge_v2.png') }}" alt="Trust Badge" style="width: 168px; height: 60px; object-fit: contain;">
-                                </div>
-                                <h3>More than <span>25K</span> Guests Reviews</h3>
-                            </div>
+
                     </div>
                 </div>
                 <div class="col-lg-6">
@@ -492,7 +464,7 @@
             <div class="text"> <img src="{{ asset('assets/img/home-1/star.png') }}" alt="img"> </div>
             <div class="text">Moshi, Kilimanjaro</div>
             <div class="text"> <img src="{{ asset('assets/img/home-1/star.png') }}" alt="img"> </div>
-            <div class="text">Boutique Hotel Tanzania</div>
+            <div class="text">Boutique hotel in Moshi-Kilimanjaro -Tanzania</div>
         </div>
         <!-- Repeat for animation -->
         <div class="marquee-group">
@@ -500,7 +472,7 @@
             <div class="text"> <img src="{{ asset('assets/img/home-1/star.png') }}" alt="img"> </div>
             <div class="text">Moshi, Kilimanjaro</div>
             <div class="text"> <img src="{{ asset('assets/img/home-1/star.png') }}" alt="img"> </div>
-            <div class="text">Boutique Hotel Tanzania</div>
+            <div class="text">Boutique hotel in Moshi-Kilimanjaro -Tanzania</div>
         </div>
     </div>
 </div>
