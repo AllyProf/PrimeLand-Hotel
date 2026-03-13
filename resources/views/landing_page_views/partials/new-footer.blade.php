@@ -2,16 +2,7 @@
 <footer class="gt-footer-section fix bg-cover"
     style="background-image: url('{{ asset('assets/img/home-1/footer/footer-img.jpg') }}');">
     <div class="container">
-        <div class="footer-newsletter-items">
-            <h2>Join Our Newsletter</h2>
-            <form action="{{ route('newsletter.subscribe') }}" method="POST">
-                @csrf
-                <div class="form-clt">
-                    <input type="email" name="email" placeholder="Enter your email" required>
-                </div>
-                <button type="submit" class="gt-theme-btn">Subscribe</button>
-            </form>
-        </div>
+
         <div class="footer-widget-wrapper">
             <div class="row">
                 <!-- Prime Location Column -->
