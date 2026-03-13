@@ -97,7 +97,7 @@
                                 ABOUT US
                             </h6>
                             <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                                Welcome to Primeland Hotel Comfort in Every Stay
+                                Welcome to Primeland Hotel
                             </h2>
                             <div class="prl-divider wow fadeInUp" data-wow-delay=".3s">
                                 <div class="prl-line"></div>
