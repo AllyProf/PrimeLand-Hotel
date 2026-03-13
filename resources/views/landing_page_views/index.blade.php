@@ -113,191 +113,77 @@
 </section>
 
 <!-- GT Service Section Start -->
-<section class="gt-service-section fix section-padding section-bg-3">
-    <div class="left-shape">
-        <img src="{{ asset('assets/img/home-3/service/left-shape.png') }}" alt="img">
-    </div>
-    <div class="container">
-        <div class="gt-service-wrapper-3">
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="service-content">
-                        <div class="gt-section-title mb-0">
-                            <h6 class="wow fadeInUp">
-                                SERVICES
-                            </h6>
-                            <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                                Our Services
-                            </h2>
-                            <div class="prl-divider wow fadeInUp" data-wow-delay=".3s">
-                                <div class="prl-line"></div>
-                                <div class="prl-dot"></div>
-                                <div class="prl-line"></div>
-                            </div>
-                        </div>
-                        <p class="service-text wow fadeInUp" data-wow-delay=".4s">
-                            At Primeland Hotel, we offer a comprehensive range of premium services designed to ensure your stay is seamless, comfortable, and memorable. From around-the-clock support to relaxing facilities, we are dedicated to excellence in hospitality.
-                        </p>
-                        <div class="faq-item active wow fadeInUp" data-wow-delay=".5s">
-                            <h3>
-                                <i class="fa-solid fa-circle-chevron-right"></i>
-                                ACCOMMODATION
-                            </h3>
-                            <p class="faq-text">
-                                Experience ultimate comfort in our tastefully designed rooms, featuring modern amenities and serene interiors perfect for a restful night.
-                            </p>
-                        </div>
-                        <div class="faq-item wow fadeInUp" data-wow-delay=".6s">
-                            <h3>
-                                <i class="fa-solid fa-circle-chevron-right"></i>
-                                24/7 FRONT DESK SERVICE
-                            </h3>
-                            <p class="faq-text">
-                                Our friendly reception team is available around the clock to assist you with check-ins, local recommendations, and any requests to enhance your stay.
-                            </p>
-                        </div>
-                        <div class="faq-item wow fadeInUp" data-wow-delay=".7s">
-                            <h3>
-                                <i class="fa-solid fa-circle-chevron-right"></i>
-                                SWIMMING POOL
-                            </h3>
-                            <p class="faq-text">
-                                Take a refreshing dip in our crystal-clear swimming pool, the perfect spot to relax and soak in the beautiful Moshi sun.
-                            </p>
-                        </div>
-                        <div class="faq-item wow fadeInUp" data-wow-delay=".8s">
-                            <h3>
-                                <i class="fa-solid fa-circle-chevron-right"></i>
-                                RESTAURANT AND POOL BAR
-                            </h3>
-                            <p class="faq-text">
-                                Savor delicious local and international cuisines at our restaurant, or enjoy a chilled drink at our vibrant pool bar.
-                            </p>
-                        </div>
-                        <div class="faq-item wow fadeInUp" data-wow-delay=".8s">
-                            <h3>
-                                <i class="fa-solid fa-circle-chevron-right"></i>
-                                FREE WIFI
-                            </h3>
-                            <p class="faq-text">
-                                Stay connected with high-speed complimentary Wi-Fi available throughout the hotel premises for all our guests.
-                            </p>
-                        </div>
-                        <div class="faq-item wow fadeInUp" data-wow-delay=".9s">
-                            <h3>
-                                <i class="fa-solid fa-circle-chevron-right"></i>
-                                24/7 SECURITY
-                            </h3>
-                            <p class="faq-text">
-                                Your safety is our priority. Our premises are monitored and protected 24/7 by a professional security team for your peace of mind.
-                            </p>
-                        </div>
-                        <a href="{{ url('/services') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".9s">VIEW ALL
-                            SERVICES</a>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="swiper service-image-slider">
-                        <div class="swiper-wrapper">
-                            <div class="swiper-slide">
-                                <div class="service-image">
-                                    <img src="{{ asset('assets/img/home-3/service/service-01.jpg') }}" alt="img">
-                                    <span class="offer-text">Single Room From $70 / NIGHT</span>
-                                </div>
-                            </div>
-                            <div class="swiper-slide">
-                                <div class="service-image">
-                                    <img src="{{ asset('assets/img/home-3/service/service-01.jpg') }}" alt="img">
-                                    <span class="offer-text">Double Room From $85 / NIGHT</span>
-                                </div>
-                            </div>
-                            <div class="swiper-slide">
-                                <div class="service-image">
-                                    <img src="{{ asset('assets/img/home-3/service/service-01.jpg') }}" alt="img">
-                                    <span class="offer-text">Twin Room From $95 / NIGHT</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="array-button-2 justify-content-center">
-                            <button class="array-next"><i class="fa-solid fa-chevron-left"></i></button>
-
-                            <button class="array-prev"><i class="fa-solid fa-chevron-right"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- GT Facilities Section Start -->
-<section class="gt-service-section fix section-padding" style="padding-top: 40px !important;">
+<section class="gt-service-section fix section-padding">
     <div class="container">
         <div class="gt-section-title text-center">
             <h6 class="justify-content-center wow fadeInUp">
-                FACILITIES
+                OUR SERVICES
             </h6>
             <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                Boutique Hotel Facilities in Moshi
+                Premium Boutique Hotel Services in Moshi
             </h2>
             <div class="prl-divider justify-content-center wow fadeInUp" data-wow-delay=".3s">
                 <div class="prl-line"></div>
                 <div class="prl-dot"></div>
                 <div class="prl-line"></div>
             </div>
+            <p class="service-text wow fadeInUp mt-3" data-wow-delay=".4s" style="max-width: 800px; margin: 0 auto;">
+                At Primeland Hotel, we pride ourselves on delivering exceptional hospitality. Our range of services is carefully curated to provide comfort, security, and convenience, ensuring that your stay in the heart of Moshi is nothing short of extraordinary.
+            </p>
         </div>
-        <div class="row">
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp">
+        <div class="row g-4 mt-4">
+            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".2s">
                 <div class="service-box-items">
                     <div class="icon">
                         <i class="flaticon-hotel-service"></i>
                     </div>
-                    <h4>Accommodation</h4>
+                    <h4>ACCOMMODATION</h4>
                 </div>
             </div>
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".2s">
+            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".3s">
                 <div class="service-box-items">
                     <div class="icon">
-                        <i class="flaticon-swimming"></i>
+                        <i class="flaticon-24-hour-service"></i>
                     </div>
-                    <h4>Swimming Pool</h4>
+                    <h4>24/7 FRONT DESK SERVICE</h4>
                 </div>
             </div>
             <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".4s">
                 <div class="service-box-items">
                     <div class="icon">
-                        <i class="flaticon-wifi-router"></i>
+                        <i class="flaticon-swimming"></i>
                     </div>
-                    <h4>Free Wi-Fi</h4>
+                    <h4>SWIMMING POOL</h4>
+                </div>
+            </div>
+            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".5s">
+                <div class="service-box-items">
+                    <div class="icon">
+                        <i class="flaticon-fast-food"></i>
+                    </div>
+                    <h4>RESTAURANT AND POOL BAR</h4>
                 </div>
             </div>
             <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".6s">
                 <div class="service-box-items">
                     <div class="icon">
-                        <i class="flaticon-24-hour-service"></i>
+                        <i class="flaticon-wifi-router"></i>
                     </div>
-                    <h4>24/7 Front Desk</h4>
+                    <h4>FREE WIFI</h4>
                 </div>
             </div>
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".8s">
+            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".7s">
                 <div class="service-box-items">
                     <div class="icon">
-                        <i class="flaticon-fast-food"></i>
+                        <i class="flaticon-disinfect"></i>
                     </div>
-                    <h4>Restaurant &amp; Bar</h4>
-                </div>
-            </div>
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay="1s">
-                <div class="service-box-items">
-                    <div class="icon">
-                        <i class="flaticon-key-card"></i>
-                    </div>
-                    <h4>Airport Shuttle</h4>
+                    <h4>24/7 SECURITY</h4>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
 
 <!-- OUR ROOMS Text Section -->
 <section class="gt-about-section-3 fix" style="padding-top: 40px; padding-bottom: 120px;">
