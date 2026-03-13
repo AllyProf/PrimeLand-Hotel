@@ -127,7 +127,7 @@
                                 SERVICES
                             </h6>
                             <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                                Hotel Services – Swimming Pool, Restaurant, Wi-Fi
+                                Our Services
                             </h2>
                             <div class="prl-divider wow fadeInUp" data-wow-delay=".3s">
                                 <div class="prl-line"></div>
@@ -136,9 +136,7 @@
                             </div>
                         </div>
                         <p class="service-text wow fadeInUp" data-wow-delay=".4s">
-                            At Primeland Hotel, every detail is thoughtfully curated from exquisite interior
-                            design to personalized service to ensure a delightful experience while travelling to
-                            Moshi.
+                            Experience the perfect blend of relaxation and convenience with our range of premium hotel services. From refreshing dips in our pool to delicious on-site dining, we provide everything you need for a comfortable stay in Moshi.
                         </p>
                         <div class="faq-item wow fadeInUp" data-wow-delay=".5s">
                             <h3>
