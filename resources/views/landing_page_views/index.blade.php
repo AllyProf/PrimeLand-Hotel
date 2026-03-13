@@ -121,7 +121,7 @@
                 OUR SERVICES
             </h6>
             <h2 class="wow fadeInUp text-white" data-wow-delay=".2s">
-                Premium Boutique Hotel Services in Moshi
+                Boutique Hotel Services in Moshi
             </h2>
             <div class="prl-divider justify-content-center wow fadeInUp" data-wow-delay=".3s">
                 <div class="prl-line" style="background: white;"></div>
@@ -271,25 +271,7 @@
                 </div>
                 <a href="{{ url('/rooms') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".4s">VIEW All DETAILS</a>
             </div>
-            <div class="gt-room-top-items">
-                <div class="row justify-content-center">
-                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".2s">
-                        <div class="top-title">
-                            <a href="{{ url('/rooms/single-room') }}"> Single Room <img src="{{ asset('assets/img/home-3/room/sm-01.jpg') }}" alt="img"> </a>
-                        </div>
-                    </div>
-                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".4s">
-                        <div class="top-title">
-                            <a href="{{ url('/rooms/double-room') }}"> Double Room <img src="{{ asset('assets/img/home-3/room/sm-02.jpg') }}" alt="img"> </a>
-                        </div>
-                    </div>
-                    <div class="col-xl-4 col-lg-6 col-md-6 wow fadeInUp" data-wow-delay=".6s">
-                        <div class="top-title">
-                            <a href="{{ url('/rooms/twin-room') }}"> Twin Room <img src="{{ asset('assets/img/home-3/room/sm-03.jpg') }}" alt="img"> </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
         </div>
     </div>
     <div class="room-slider-image-3">
