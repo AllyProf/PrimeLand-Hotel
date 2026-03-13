@@ -54,17 +54,25 @@
                                 </div>
                                 <h3>Room Amenities:</h3>
                                 <div class="gt-list-content">
-                                    <ul>
-                                        <li><i class="fa-solid fa-circle-check"></i> Free Wi-Fi</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Air Conditioning</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Standard universal electric sockets</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Free toiletries</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Towels</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Mineral water</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Tea / coffee making amenities</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Refrigerator</li>
-                                        <li><i class="fa-solid fa-circle-check"></i> Smart TV</li>
-                                    </ul>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <ul>
+                                                <li><i class="fa-solid fa-circle-check"></i> Free Wi-Fi</li>
+                                                <li><i class="fa-solid fa-circle-check"></i> Air Conditioning</li>
+                                                <li><i class="fa-solid fa-circle-check"></i> Standard universal electric sockets</li>
+                                                <li><i class="fa-solid fa-circle-check"></i> Free toiletries</li>
+                                                <li><i class="fa-solid fa-circle-check"></i> Towels</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <ul>
+                                                <li><i class="fa-solid fa-circle-check"></i> Mineral water</li>
+                                                <li><i class="fa-solid fa-circle-check"></i> Tea / coffee making amenities</li>
+                                                <li><i class="fa-solid fa-circle-check"></i> Refrigerator</li>
+                                                <li><i class="fa-solid fa-circle-check"></i> Smart TV</li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                                 <h3>Rates &amp; Policies</h3>
                                 <ul class="chack-list">
