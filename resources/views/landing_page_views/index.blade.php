@@ -460,19 +460,19 @@
     </style>
     <div class="marquee">
         <div class="marquee-group">
-            <div class="text">Primeland Hotel</div>
+            <div class="text">Luxury Accommodation</div>
             <div class="text"> <img src="{{ asset('assets/img/home-1/star.png') }}" alt="img"> </div>
-            <div class="text">Moshi, Kilimanjaro</div>
+            <div class="text">Premier Hospitality</div>
             <div class="text"> <img src="{{ asset('assets/img/home-1/star.png') }}" alt="img"> </div>
-            <div class="text">Boutique hotel in Moshi-Kilimanjaro -Tanzania</div>
+            <div class="text">Gateway to Kilimanjaro</div>
         </div>
         <!-- Repeat for animation -->
         <div class="marquee-group">
-            <div class="text">Primeland Hotel</div>
+            <div class="text">Luxury Accommodation</div>
             <div class="text"> <img src="{{ asset('assets/img/home-1/star.png') }}" alt="img"> </div>
-            <div class="text">Moshi, Kilimanjaro</div>
+            <div class="text">Premier Hospitality</div>
             <div class="text"> <img src="{{ asset('assets/img/home-1/star.png') }}" alt="img"> </div>
-            <div class="text">Boutique hotel in Moshi-Kilimanjaro -Tanzania</div>
+            <div class="text">Gateway to Kilimanjaro</div>
         </div>
     </div>
 </div>

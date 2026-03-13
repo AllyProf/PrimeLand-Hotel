@@ -426,15 +426,15 @@
         <!--================Breadcrumb Area =================-->
         
         <!--================Coming Soon Section =================-->
-        <section class="about_history_area section_gap" style="padding: 60px 0; background: #f8f9fa;">
+        <section class="about_history_area section_gap" style="padding: 100px 0; background: #000;">
             <div class="container">
                 <!-- Section Title -->
-                <div class="section_title text-center" style="margin-bottom: 50px;">
-                    <h2 class="title_color" style="color: #e77a3a; font-size: 36px; margin-bottom: 15px; position: relative; display: inline-block; padding-bottom: 15px;">
-                        Online Booking Coming Soon
-                        <span style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 3px; background: #e77a3a; border-radius: 2px;"></span>
+                <div class="section_title text-center" style="margin-bottom: 70px;">
+                    <h2 class="title_color" style="color: #e77a3a; font-size: 42px; margin-bottom: 15px; position: relative; display: inline-block; padding-bottom: 15px;">
+                        Online Booking System Coming Soon
+                        <span style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 80px; height: 3px; background: #e77a3a; border-radius: 2px;"></span>
                     </h2>
-                    <p style="font-size: 16px; color: #777; margin-top: 20px;">We're working on our online booking system to provide you with a seamless reservation experience</p>
+                    <p style="font-size: 18px; color: #bbb; margin-top: 20px; max-width: 800px; margin-left: auto; margin-right: auto;">We are currently refining our digital reservation platform to ensure a seamless and premium booking experience for our valued guests.</p>
                 </div>
                 
                 <!-- Main Content with Image -->
@@ -447,29 +447,29 @@
                     </div>
                     <div class="col-lg-6">
                         <div style="padding-left: 20px;">
-                            <div style="width: 50px; height: 4px; background: #e77a3a; margin-bottom: 20px; border-radius: 2px;"></div>
-                            <h3 style="color: #222; font-size: 28px; font-weight: 700; margin-bottom: 20px;">Book Your Stay Directly</h3>
-                            <p style="color: #666; line-height: 1.95; font-size: 16px; margin-bottom: 20px;">
-                                While we're building our online booking platform, we're here to help you make your reservation directly. Our friendly staff is available 24/7 to assist you with booking your perfect stay at PrimeLand Hotel.
+                            <div style="width: 50px; height: 4px; background: #e77a3a; margin-bottom: 25px; border-radius: 2px;"></div>
+                            <h3 style="color: #fff; font-size: 32px; font-weight: 700; margin-bottom: 25px;">Book Your Stay Directly</h3>
+                            <p style="color: #bbb; line-height: 2; font-size: 17px; margin-bottom: 20px;">
+                                While we finalize our online platform, our dedicated reservation team is available 24/7 to handle your requests personally. We ensure every detail of your stay is tailored to your preferences.
                             </p>
-                            <p style="color: #666; line-height: 1.95; font-size: 16px; margin-bottom: 25px;">
-                                Experience luxury accommodation at the base of Mount Kilimanjaro. Contact us today to secure your room and start planning your unforgettable Tanzanian adventure.
+                            <p style="color: #bbb; line-height: 2; font-size: 17px; margin-bottom: 30px;">
+                                Experience the perfect blend of local charm and modern luxury at the foothills of Mount Kilimanjaro. Contact us today to secure our best available rates.
                             </p>
-                            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px;">
-                                <div style="display: flex; align-items: center; color: #666; font-size: 14px;">
-                                    <i class="lnr lnr-checkmark-circle" style="color: #e77a3a; font-size: 20px; margin-right: 8px;"></i>
-                                    <span>24/7 Support</span>
+                            <div style="display: flex; gap: 25px; flex-wrap: wrap; margin-bottom: 35px;">
+                                <div style="display: flex; align-items: center; color: #fff; font-size: 15px;">
+                                    <i class="lnr lnr-checkmark-circle" style="color: #e77a3a; font-size: 22px; margin-right: 10px;"></i>
+                                    <span>24/7 Concierge</span>
                                 </div>
-                                <div style="display: flex; align-items: center; color: #666; font-size: 14px;">
-                                    <i class="lnr lnr-checkmark-circle" style="color: #e77a3a; font-size: 20px; margin-right: 8px;"></i>
-                                    <span>Instant Confirmation</span>
+                                <div style="display: flex; align-items: center; color: #fff; font-size: 15px;">
+                                    <i class="lnr lnr-checkmark-circle" style="color: #e77a3a; font-size: 22px; margin-right: 10px;"></i>
+                                    <span>Personalized Service</span>
                                 </div>
-                                <div style="display: flex; align-items: center; color: #666; font-size: 14px;">
-                                    <i class="lnr lnr-checkmark-circle" style="color: #e77a3a; font-size: 20px; margin-right: 8px;"></i>
-                                    <span>Best Rates</span>
+                                <div style="display: flex; align-items: center; color: #fff; font-size: 15px;">
+                                    <i class="lnr lnr-checkmark-circle" style="color: #e77a3a; font-size: 22px; margin-right: 10px;"></i>
+                                    <span>Exclusive Direct Rates</span>
                                 </div>
                             </div>
-                            <a href="{{ url('/contact') }}" class="btn theme_btn button_hover" style="margin-top: 10px;">Contact Us Now</a>
+                            <a href="{{ url('/contact') }}" class="btn theme_btn button_hover" style="padding: 15px 40px; font-weight: 600;">Contact Us Now</a>
                         </div>
                     </div>
                 </div>
@@ -482,8 +482,8 @@
                 <!-- Contact Information Section -->
                 <div class="row">
                     <div class="col-lg-8 offset-lg-2">
-                        <div style="background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.12); padding: 40px;">
-                            <h3 style="color: #222; font-size: 24px; font-weight: 700; margin-bottom: 30px; text-align: center; position: relative; padding-bottom: 15px;">
+                        <div style="background: #111; border: 1px solid #333; border-radius: 15px; overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.5); padding: 50px;">
+                            <h3 style="color: #fff; font-size: 26px; font-weight: 700; margin-bottom: 40px; text-align: center; position: relative; padding-bottom: 15px;">
                                 Contact Us to Book
                                 <span style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 3px; background: #e77a3a; border-radius: 2px;"></span>
                             </h3>
@@ -495,9 +495,9 @@
                                             <i class="fa fa-phone" style="font-size: 20px;"></i>
                                         </div>
                                         <div>
-                                            <h4 style="color: #222; font-size: 18px; font-weight: 600; margin-bottom: 8px;">Phone</h4>
-                                            <p style="color: #666; margin: 0; line-height: 1.8;">
-                                                <a href="tel:+255677155156" style="color: #666; text-decoration: none; transition: color 0.3s;">+255 677-155-156</a>
+                                            <h4 style="color: #fff; font-size: 18px; font-weight: 600; margin-bottom: 8px;">Phone</h4>
+                                            <p style="color: #bbb; margin: 0; line-height: 1.8;">
+                                                <a href="tel:+255677155156" style="color: #bbb; text-decoration: none; transition: color 0.3s;">+255 677-155-156</a>
                                             </p>
                                         </div>
                                     </div>
@@ -509,9 +509,9 @@
                                             <i class="fa fa-whatsapp" style="font-size: 20px;"></i>
                                         </div>
                                         <div>
-                                            <h4 style="color: #222; font-size: 18px; font-weight: 600; margin-bottom: 8px;">WhatsApp</h4>
-                                            <p style="color: #666; margin: 0; line-height: 1.8;">
-                                                <a href="https://wa.me/255677155156" style="color: #666; text-decoration: none; transition: color 0.3s;">+255 677-155-156</a>
+                                            <h4 style="color: #fff; font-size: 18px; font-weight: 600; margin-bottom: 8px;">WhatsApp</h4>
+                                            <p style="color: #bbb; margin: 0; line-height: 1.8;">
+                                                <a href="https://wa.me/255677155156" style="color: #bbb; text-decoration: none; transition: color 0.3s;">+255 677-155-156</a>
                                             </p>
                                         </div>
                                     </div>
@@ -523,10 +523,9 @@
                                             <i class="fa fa-envelope" style="font-size: 20px;"></i>
                                         </div>
                                         <div>
-                                            <h4 style="color: #222; font-size: 18px; font-weight: 600; margin-bottom: 8px;">Email</h4>
-                                            <p style="color: #666; margin: 0; line-height: 1.8;">
-                                                <a href="mailto:info@primelandhotel.com" style="color: #666; text-decoration: none; transition: color 0.3s;">info@primelandhotel.com</a><br>
-                                                <a href="mailto:infoprimelandhotel@gmail.com" style="color: #666; text-decoration: none; transition: color 0.3s;">infoprimelandhotel@gmail.com</a>
+                                            <h4 style="color: #fff; font-size: 18px; font-weight: 600; margin-bottom: 8px;">Email</h4>
+                                            <p style="color: #bbb; margin: 0; line-height: 1.8;">
+                                                <a href="mailto:info@primelandhotel.com" style="color: #bbb; text-decoration: none; transition: color 0.3s;">info@primelandhotel.com</a><br>
                                             </p>
                                         </div>
                                     </div>
@@ -538,15 +537,15 @@
                                             <i class="fa fa-clock-o" style="font-size: 20px;"></i>
                                         </div>
                                         <div>
-                                            <h4 style="color: #222; font-size: 18px; font-weight: 600; margin-bottom: 8px;">Front Desk</h4>
-                                            <p style="color: #666; margin: 0; line-height: 1.8;">Available 24/7</p>
+                                            <h4 style="color: #fff; font-size: 18px; font-weight: 600; margin-bottom: 8px;">Front Desk</h4>
+                                            <p style="color: #bbb; margin: 0; line-height: 1.8;">Available 24/7</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div style="text-align: center; margin-top: 30px;">
-                                <a href="{{ url('/') }}" class="btn theme_btn button_hover">
+                            <div style="text-align: center; margin-top: 35px;">
+                                <a href="{{ url('/') }}" class="btn theme_btn button_hover" style="background: transparent; border: 1px solid #444;">
                                     <i class="fa fa-arrow-left"></i> Back to Homepage
                                 </a>
                             </div>
