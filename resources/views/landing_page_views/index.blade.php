@@ -560,7 +560,8 @@
 </section>
 
 <!-- EXCLUSIVE DEALS Section -->
-<section class="gt-offer-section-3 parallaxie fix section-padding bg-cover" style="margin-top: 60px; background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{{ asset('assets/img/new_images/hotel view_.jpg') }}');">
+<section class="gt-offer-section-3 parallaxie fix bg-cover" 
+    style="margin-top: -40px; padding: 80px 0; background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{{ asset('assets/img/new_images/hotel view_.jpg') }}');">
     <div class="left-shape">
         <img src="{{ asset('assets/img/new_images/left-shape (2).png') }}" alt="img">
         <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
@@ -597,7 +598,7 @@
 </section>
 
 <!-- FAQ Section -->
-<section class="faq-section fix pb-120 section-bg" style="margin-top: 60px;">
+<section class="faq-section fix pb-120 section-bg" style="margin-top: 0;">
     <div class="container">
         <div class="gt-faq-wrapper">
             <div class="row g-4 align-items-center">
