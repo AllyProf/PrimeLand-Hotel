@@ -74,19 +74,13 @@
         <div class="gt-about-wrapper">
             <div class="row g-4">
                 <div class="col-lg-6">
-                    <div class="gt-about-image-items">
+                    <div class="gt-about-image-items text-center text-lg-start">
                         <div class="gt-about-image wow fadeInUp" data-wow-delay=".2s">
                             <img src="{{ asset('assets/img/home-1/about/about-01.jpg') }}" alt="img" class="wow fadeInUp"
                                 data-wow-delay=".2s">
                             <div class="gt-about-image-2 wow fadeInUp" data-wow-delay=".4s">
                                 <img src="{{ asset('assets/img/home-1/about/about-02.jpg') }}" alt="img">
                             </div>
-                        </div>
-                        <div class="gt-award-box wow fadeInUp" data-wow-delay=".6s">
-                            <div class="gt-icon">
-                                <img src="{{ asset('assets/img/home-1/about/award.svg') }}" alt="img">
-                            </div>
-                            <h4>AWARD WINING HOTEL</h4>
                         </div>
                     </div>
                 </div>
@@ -106,43 +100,10 @@
                             </div>
                         </div>
                         <p class="gt-about-text wow fadeInUp" data-wow-delay=".4s">
-                            We are a small boutique-style hotel in the heart of Moshi Town, Kilimanjaro &ndash;
-                            Tanzania.
-                            Conveniently located approximately 1.5 km from Moshi's town center and just 45 minutes
-                            from Kilimanjaro International Airport. Whether you're here for Kilimanjaro trekking tours or safari adventures in the Kilimanjaro region, our well-trained team is ready to make your stay
-                            exceptional.
+                            We are a small boutique style hotel in the heart of Moshi Town, Kilimanjaro region, -Tanzania. Conveniently located near Moshi’s town center approximately 1.5km away (7-10 min car ride)/ and 45 minutes’ drive from JRO airport. Relax and unwind your day on a visit to Moshi, whether on your business trip, family visit or Kilimanjaro trek and safaris. Our hotel is managed by a team of well trained staff who are ready to take care of your stay. Enjoy our cozy and neat interiors for a calm and peaceful overnight.
                         </p>
-                        <ul class="gt-icon-list wow fadeInUp" data-wow-delay=".6s">
-                            <li>
-                                <img src="{{ asset('assets/img/home-1/about/icon-1.png') }}" alt="img">
-                                <span>Swimming <br> Pool</span>
-                            </li>
-                            <li>
-                                <img src="{{ asset('assets/img/home-1/about/icon-2.png') }}" alt="img">
-                                <span>Airport <br> Shuttle</span>
-                            </li>
-                        </ul>
-                        <ul class="gt-list wow fadeInUp" data-wow-delay=".8s">
-                            <li>
-                                <i class="flaticon-arrow-right"></i>
-                                Free Daily Breakfast Included
-                            </li>
-                            <li>
-                                <i class="flaticon-arrow-right"></i>
-                                Restaurant &amp; Pool Bar On-Site
-                            </li>
-                        </ul>
                         <div class="gt-about-button wow fadeInUp" data-wow-delay="1s">
-                            <a href="{{ url('/about-us') }}" class="gt-theme-btn">ABOUT US</a>
-                            <div class="gt-call-icon">
-                                <div class="gt-call">
-                                    <i class="flaticon-phone"></i>
-                                </div>
-                                <div class="gt-content">
-                                    <span>Reservations</span>
-                                    <a href="tel:+255677155156">+255 677-155-156</a>
-                                </div>
-                            </div>
+                            <a href="{{ url('/about-us') }}" class="gt-theme-btn">READ MORE</a>
                         </div>
                     </div>
                 </div>
