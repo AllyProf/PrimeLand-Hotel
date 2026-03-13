@@ -136,46 +136,60 @@
                             </div>
                         </div>
                         <p class="service-text wow fadeInUp" data-wow-delay=".4s">
-                            Experience the perfect blend of relaxation and convenience with our range of premium hotel services. From refreshing dips in our pool to delicious on-site dining, we provide everything you need for a comfortable stay in Moshi.
+                            At Primeland Hotel, we offer a comprehensive range of premium services designed to ensure your stay is seamless, comfortable, and memorable. From around-the-clock support to relaxing facilities, we are dedicated to excellence in hospitality.
                         </p>
-                        <div class="faq-item wow fadeInUp" data-wow-delay=".5s">
+                        <div class="faq-item active wow fadeInUp" data-wow-delay=".5s">
                             <h3>
                                 <i class="fa-solid fa-circle-chevron-right"></i>
-                                Swimming Pool &amp; Pool Bar
+                                ACCOMMODATION
                             </h3>
                             <p class="faq-text">
-                                Refresh and relax in our beautiful swimming pool and enjoy cold drinks from our pool
-                                bar after a long day of adventure.
+                                Experience ultimate comfort in our tastefully designed rooms, featuring modern amenities and serene interiors perfect for a restful night.
                             </p>
                         </div>
-                        <div class="faq-item active wow fadeInUp" data-wow-delay=".6s">
+                        <div class="faq-item wow fadeInUp" data-wow-delay=".6s">
                             <h3>
                                 <i class="fa-solid fa-circle-chevron-right"></i>
-                                Restaurant &amp; Daily Breakfast
+                                24/7 FRONT DESK SERVICE
                             </h3>
                             <p class="faq-text">
-                                Enjoy delicious meals from our on-site restaurant. Free daily breakfast is included
-                                with every room booking.
+                                Our friendly reception team is available around the clock to assist you with check-ins, local recommendations, and any requests to enhance your stay.
                             </p>
                         </div>
                         <div class="faq-item wow fadeInUp" data-wow-delay=".7s">
                             <h3>
                                 <i class="fa-solid fa-circle-chevron-right"></i>
-                                Airport Shuttle Service
+                                SWIMMING POOL
                             </h3>
                             <p class="faq-text">
-                                We offer convenient airport transfers to and from Kilimanjaro International Airport
-                                (JRO). Pre-booking required at least 48 hours in advance.
+                                Take a refreshing dip in our crystal-clear swimming pool, the perfect spot to relax and soak in the beautiful Moshi sun.
                             </p>
                         </div>
                         <div class="faq-item wow fadeInUp" data-wow-delay=".8s">
                             <h3>
                                 <i class="fa-solid fa-circle-chevron-right"></i>
-                                Laundry &amp; 24/7 Security
+                                RESTAURANT AND POOL BAR
                             </h3>
                             <p class="faq-text">
-                                Full laundry service is available upon request. Our premises are secured 24/7 for
-                                your peace of mind.
+                                Savor delicious local and international cuisines at our restaurant, or enjoy a chilled drink at our vibrant pool bar.
+                            </p>
+                        </div>
+                        <div class="faq-item wow fadeInUp" data-wow-delay=".8s">
+                            <h3>
+                                <i class="fa-solid fa-circle-chevron-right"></i>
+                                FREE WIFI
+                            </h3>
+                            <p class="faq-text">
+                                Stay connected with high-speed complimentary Wi-Fi available throughout the hotel premises for all our guests.
+                            </p>
+                        </div>
+                        <div class="faq-item wow fadeInUp" data-wow-delay=".9s">
+                            <h3>
+                                <i class="fa-solid fa-circle-chevron-right"></i>
+                                24/7 SECURITY
+                            </h3>
+                            <p class="faq-text">
+                                Your safety is our priority. Our premises are monitored and protected 24/7 by a professional security team for your peace of mind.
                             </p>
                         </div>
                         <a href="{{ url('/services') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".9s">VIEW ALL
