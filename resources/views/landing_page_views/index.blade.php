@@ -113,25 +113,28 @@
 </section>
 
 <!-- GT Service Section Start -->
-<section class="gt-service-section fix section-padding">
+<section class="gt-service-section fix section-padding bg-cover" 
+    style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('{{ asset('assets/img/new_images/hotel view_.jpg') }}'); padding: 100px 0;">
     <div class="container">
         <div class="gt-section-title text-center">
-            <h6 class="justify-content-center wow fadeInUp">
+            <h6 class="justify-content-center wow fadeInUp text-white">
                 OUR SERVICES
             </h6>
-            <h2 class="wow fadeInUp" data-wow-delay=".2s">
+            <h2 class="wow fadeInUp text-white" data-wow-delay=".2s">
                 Premium Boutique Hotel Services in Moshi
             </h2>
             <div class="prl-divider justify-content-center wow fadeInUp" data-wow-delay=".3s">
-                <div class="prl-line"></div>
-                <div class="prl-dot"></div>
-                <div class="prl-line"></div>
+                <div class="prl-line" style="background: white;"></div>
+                <div class="prl-dot" style="background: white;"></div>
+                <div class="prl-line" style="background: white;"></div>
             </div>
-            <p class="service-text wow fadeInUp mt-3" data-wow-delay=".4s" style="max-width: 800px; margin: 0 auto;">
-                At Primeland Hotel, we pride ourselves on delivering exceptional hospitality. Our range of services is carefully curated to provide comfort, security, and convenience, ensuring that your stay in the heart of Moshi is nothing short of extraordinary.
-            </p>
         </div>
-        <div class="row g-4 mt-4">
+    </div>
+</section>
+
+<section class="gt-service-box-section fix section-padding pt-5">
+    <div class="container">
+        <div class="row g-4">
             <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".2s">
                 <div class="service-box-items">
                     <div class="icon">
