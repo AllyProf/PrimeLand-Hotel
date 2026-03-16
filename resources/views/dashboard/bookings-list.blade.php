@@ -104,221 +104,228 @@
       
       <!-- Statistics Cards -->
       @php
-        $isCorporate = ($bookingType ?? 'individual') == 'corporate';
+        $typeParam   = ($bookingType ?? 'individual') == 'corporate' ? 'corporate' : 'individual';
+        $activeQuick = request('quick_filter', '');
+        $isCorporate = ($typeParam == 'corporate');
       @endphp
       
-      @if($isCorporate)
-      <!-- Corporate Bookings Statistics -->
-      <div class="row mb-3">
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small info coloured-icon">
-            <i class="icon fa fa-building fa-2x"></i>
-            <div class="info">
-              <h4>Total Companies</h4>
-              <p><b>{{ $stats['total'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small dark coloured-icon">
-            <i class="icon fa fa-check-circle fa-2x"></i>
-            <div class="info">
-              <h4 style="color: #000;">Confirmed</h4>
-              <p style="color: #000;"><b>{{ $stats['confirmed'] ?? 0 }}</b></p>
-              <small style="color: #000;">Companies</small>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small primary coloured-icon">
-            <i class="icon fa fa-sign-in fa-2x"></i>
-            <div class="info">
-              <h4>Checked In</h4>
-              <p><b>{{ $stats['checked_in'] ?? 0 }}</b></p>
-              <small>Companies</small>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small warning coloured-icon">
-            <i class="icon fa fa-sign-out fa-2x"></i>
-            <div class="info">
-              <h4>Checked Out</h4>
-              <p><b>{{ $stats['checked_out'] ?? 0 }}</b></p>
-              <small>Companies</small>
-            </div>
-          </div>
-        </div>
-      </div>
-      @else
-      <!-- Individual Bookings Statistics -->
-      <div class="row mb-3">
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small info coloured-icon">
-            <i class="icon fa fa-list fa-2x"></i>
-            <div class="info">
-              <h4>Total Bookings</h4>
-              <p><b>{{ $stats['total'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small {{ ($stats['confirmed'] ?? 0) > 0 ? 'success' : 'dark' }} coloured-icon">
-            <i class="icon fa fa-check-circle fa-2x"></i>
-            <div class="info">
-              <h4 style="color: #000;">Confirmed</h4>
-              <p style="color: #000;"><b>{{ $stats['confirmed'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small primary coloured-icon">
-            <i class="icon fa fa-sign-in fa-2x"></i>
-            <div class="info">
-              <h4>Checked In</h4>
-              <p><b>{{ $stats['checked_in'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small warning coloured-icon">
-            <i class="icon fa fa-sign-out fa-2x"></i>
-            <div class="info">
-              <h4>Checked Out</h4>
-              <p><b>{{ $stats['checked_out'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Additional stats for individual bookings -->
-      <div class="row mb-3">
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small primary coloured-icon">
-            <i class="icon fa fa-check-circle fa-2x"></i>
-            <div class="info">
-              <h4>Completed</h4>
-              <p><b>{{ $stats['completed'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small danger coloured-icon">
-            <i class="icon fa fa-times fa-2x"></i>
-            <div class="info">
-              <h4>Cancelled</h4>
-              <p><b>{{ $stats['cancelled'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small danger coloured-icon">
-            <i class="icon fa fa-exclamation-triangle fa-2x"></i>
-            <div class="info">
-              <h4>Expired</h4>
-              <p><b>{{ $stats['expired'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-3 col-md-6 col-sm-6 mb-3">
-          <div class="widget-small warning coloured-icon">
-            <i class="icon fa fa-clock-o fa-2x"></i>
-            <div class="info">
-              <h4>Pending</h4>
-              <p><b>{{ $stats['pending'] ?? 0 }}</b></p>
-            </div>
-          </div>
-        </div>
-      </div>
-      @endif
-      
-      <!-- Filters -->
-      <div class="row mb-3">
-        <div class="col-md-12">
-          <div class="tile">
-            <div class="tile-body">
-              <div class="row">
-                <div class="col-md-2">
-                  <div class="form-group">
-                    <label for="statusFilter"><strong>Status:</strong></label>
-                    <select id="statusFilter" class="form-control" onchange="filterBookings()">
-                      <option value="all" {{ request('status') == 'all' || !request('status') ? 'selected' : '' }}>All Status</option>
-                      <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                      <option value="confirmed" {{ request('status') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                      <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                      <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                      <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Expired</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-group">
-                    <label for="checkInStatusFilter"><strong>Check-in Status:</strong></label>
-                    <select id="checkInStatusFilter" class="form-control" onchange="filterBookings()">
-                      <option value="all">All Check-in</option>
-                      <option value="pending">Pending</option>
-                      <option value="checked_in">Checked In</option>
-                      <option value="checked_out">Checked Out</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-group">
-                    <label for="paymentStatusFilter"><strong>Payment Status:</strong></label>
-                    <select id="paymentStatusFilter" class="form-control" onchange="filterBookings()">
-                      <option value="all">All Payment</option>
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
-                      <option value="failed">Failed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="form-group">
-                    <label for="searchInput"><strong>Search:</strong></label>
-                    <input type="text" id="searchInput" class="form-control" 
-                           placeholder="Search by name, email, or reference..." 
-                           onkeyup="filterBookings()">
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-group">
-                    <label>&nbsp;</label>
-                    <button type="button" class="btn btn-secondary btn-block" onclick="resetFilters()">
-                      <i class="fa fa-refresh"></i> Reset
-                    </button>
-                  </div>
-                </div>
+      <!-- Consolidated Operational Statistics Cards -->
+      <div class="row mb-4">
+        {{-- Arriving Today --}}
+        <div class="col-lg-3 col-md-6">
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'checkin_today']) }}" class="text-decoration-none">
+            <div class="widget-small primary coloured-icon shadow-sm" style="border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
+              <i class="icon fa fa-plane fa-2x" style="background-color: #009688;"></i>
+              <div class="info">
+                <h4 class="text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 1px;">Arriving Today</h4>
+                <p style="font-size: 24px;"><b>{{ $stats['checkin_today'] ?? 0 }}</b></p>
+                <small class="text-muted">Expected Check-ins</small>
               </div>
             </div>
-          </div>
+          </a>
+        </div>
+
+        {{-- Departing Today --}}
+        <div class="col-lg-3 col-md-6">
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'checkout_today']) }}" class="text-decoration-none">
+            <div class="widget-small warning coloured-icon shadow-sm" style="border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
+              <i class="icon fa fa-sign-out fa-2x" style="background-color: #ff9800;"></i>
+              <div class="info">
+                <h4 class="text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 1px;">Departing Today</h4>
+                <p style="font-size: 24px;"><b>{{ $stats['checkout_today'] ?? 0 }}</b></p>
+                <small class="text-muted">Expected Check-outs</small>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        {{-- In-House Now --}}
+        <div class="col-lg-3 col-md-6">
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'in_house']) }}" class="text-decoration-none">
+            <div class="widget-small info coloured-icon shadow-sm" style="border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
+              <i class="icon fa fa-users fa-2x" style="background-color: #17a2b8;"></i>
+              <div class="info">
+                <h4 class="text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 1px;">In-House Now</h4>
+                <p style="font-size: 24px;"><b>{{ $stats['checked_in'] ?? 0 }}</b></p>
+                <small class="text-muted">Currently Staying</small>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        {{-- Overdue Checkout --}}
+        <div class="col-lg-3 col-md-6">
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'overdue']) }}" class="text-decoration-none">
+            <div class="widget-small danger coloured-icon shadow-sm" style="border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
+              <i class="icon fa fa-exclamation-triangle fa-2x" style="background-color: #e91e63;"></i>
+              <div class="info">
+                <h4 class="text-uppercase font-weight-bold" style="font-size: 11px; letter-spacing: 1px;">Overdue</h4>
+                <p style="font-size: 24px;"><b>{{ $stats['overdue'] ?? 0 }}</b></p>
+                <small class="text-muted">Late Check-outs</small>
+              </div>
+            </div>
+          </a>
         </div>
       </div>
       
+      <!-- Filters -->
+      <!-- Sleek Modern Filters -->
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <div class="d-flex flex-wrap align-items-center bg-white p-3 shadow-sm border" style="border-radius: 12px; gap: 15px;">
+            <div style="flex: 1; min-width: 250px;">
+              <div class="input-group">
+                <div class="input-group-prepend">
+                  <span class="input-group-text bg-light border-right-0"><i class="fa fa-search text-muted"></i></span>
+                </div>
+                <input type="text" id="searchInput" class="form-control border-left-0 bg-light" 
+                       placeholder="Find guests, email or reference..." 
+                       value="{{ $filters['search'] ?? '' }}"
+                       onkeyup="filterBookings()" onchange="applyServerFilters()" style="border-radius: 0 8px 8px 0;">
+              </div>
+            </div>
+            
+            <div style="width: 150px;">
+              <select id="statusFilter" class="form-control custom-select bg-light" onchange="applyServerFilters()" style="border-radius: 8px;">
+                <option value="all">All Status</option>
+                <option value="pending" {{ ($filters['status'] ?? '') == 'pending' ? 'selected' : '' }}>Pending</option>
+                <option value="confirmed" {{ ($filters['status'] ?? '') == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                <option value="cancelled" {{ ($filters['status'] ?? '') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                <option value="completed" {{ ($filters['status'] ?? '') == 'completed' ? 'selected' : '' }}>Completed</option>
+                <option value="expired" {{ ($filters['status'] ?? '') == 'expired' ? 'selected' : '' }}>Expired</option>
+              </select>
+            </div>
+            
+            <div style="width: 180px;">
+              <select id="checkInStatusFilter" class="form-control custom-select bg-light" onchange="applyServerFilters()" style="border-radius: 8px;">
+                <option value="all">Check-in Status</option>
+                <option value="pending" {{ ($filters['check_in_status'] ?? '') == 'pending' ? 'selected' : '' }}>Pending Check-in</option>
+                <option value="checked_in" {{ ($filters['check_in_status'] ?? '') == 'checked_in' ? 'selected' : '' }}>Checked In</option>
+                <option value="checked_out" {{ ($filters['check_in_status'] ?? '') == 'checked_out' ? 'selected' : '' }}>Checked Out</option>
+              </select>
+            </div>
+            
+            <div style="width: 160px;">
+              <select id="paymentStatusFilter" class="form-control custom-select bg-light" onchange="applyServerFilters()" style="border-radius: 8px;">
+                <option value="all">Payment Status</option>
+                <option value="pending" {{ ($filters['payment_status'] ?? '') == 'pending' ? 'selected' : '' }}>Unpaid</option>
+                <option value="paid" {{ ($filters['payment_status'] ?? '') == 'paid' ? 'selected' : '' }}>Fully Paid</option>
+                <option value="partial" {{ ($filters['payment_status'] ?? '') == 'partial' ? 'selected' : '' }}>Partial</option>
+              </select>
+            </div>
+            
+            {{-- Date Range Filter --}}
+            <div class="d-flex align-items-center" style="gap: 5px;">
+              <span class="text-muted small font-weight-bold" style="text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; white-space: nowrap;">Arrival Period:</span>
+              <input type="date" id="startDate" class="form-control form-control-sm bg-light border" 
+                     style="width: 135px; border-radius: 8px; font-size: 13px;" 
+                     value="{{ $filters['start_date'] ?? '' }}" title="Start Date">
+              <span class="text-muted small">&rarr;</span>
+              <input type="date" id="endDate" class="form-control form-control-sm bg-light border" 
+                     style="width: 135px; border-radius: 8px; font-size: 13px;" 
+                     value="{{ $filters['end_date'] ?? '' }}" title="End Date">
+              <button type="button" class="btn btn-primary btn-sm shadow-sm" onclick="applyServerFilters()" 
+                      style="border-radius: 8px; padding: 5px 12px; font-weight: 600;">
+                Go
+              </button>
+            </div>
+            
+            <div class="ml-auto">
+              <button type="button" class="btn btn-outline-secondary btn-sm px-3 shadow-sm" onclick="resetFilters()" 
+                      style="border-radius: 8px; padding: 5px 12px;" title="Reset Filters">
+                <i class="fa fa-refresh mr-1"></i> Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⚡ Quick Operational Filters -->
+      @php
+        // Variables defined above in the stats section
+      @endphp
+      <div class="mb-4 p-3 bg-white shadow-sm border" style="border-radius: 12px;">
+        <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
+          <span class="text-muted small font-weight-bold mr-1" style="letter-spacing: 0.5px; text-transform: uppercase; white-space: nowrap; font-size: 11px;">
+            <i class="fa fa-bolt text-warning mr-1"></i> Quick View:
+          </span>
+
+          {{-- All --}}
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam]) }}"
+             class="btn btn-sm {{ $activeQuick == '' ? 'btn-dark' : 'btn-outline-secondary' }}"
+             style="border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600;">
+            <i class="fa fa-list mr-1"></i> All Bookings
+          </a>
+
+          {{-- Checking In Today --}}
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'checkin_today']) }}"
+             class="btn btn-sm {{ $activeQuick == 'checkin_today' ? 'btn-primary' : 'btn-outline-primary' }}"
+             style="border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600;">
+            <i class="fa fa-sign-in mr-1"></i> Check-in Today
+            <span class="badge {{ $activeQuick == 'checkin_today' ? 'badge-light' : 'badge-primary' }} ml-1">{{ $stats['checkin_today'] ?? 0 }}</span>
+          </a>
+
+          {{-- Checking Out Today --}}
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'checkout_today']) }}"
+             class="btn btn-sm {{ $activeQuick == 'checkout_today' ? 'btn-warning text-dark' : 'btn-outline-warning' }}"
+             style="border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600;">
+            <i class="fa fa-sign-out mr-1"></i> Check-out Today
+            <span class="badge {{ $activeQuick == 'checkout_today' ? 'badge-dark' : 'badge-warning' }} ml-1">{{ $stats['checkout_today'] ?? 0 }}</span>
+          </a>
+
+          {{-- Currently In-House --}}
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'in_house']) }}"
+             class="btn btn-sm {{ $activeQuick == 'in_house' ? 'btn-success' : 'btn-outline-success' }}"
+             style="border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600;">
+            <i class="fa fa-home mr-1"></i> In-House Now
+            <span class="badge {{ $activeQuick == 'in_house' ? 'badge-light' : 'badge-success' }} ml-1">{{ $stats['checked_in'] ?? 0 }}</span>
+          </a>
+
+          {{-- Arriving This Week --}}
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'arriving_week']) }}"
+             class="btn btn-sm {{ $activeQuick == 'arriving_week' ? 'btn-info' : 'btn-outline-info' }}"
+             style="border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600;">
+            <i class="fa fa-calendar mr-1"></i> Arriving This Week
+            <span class="badge {{ $activeQuick == 'arriving_week' ? 'badge-light' : 'badge-info' }} ml-1">{{ $stats['arriving_week'] ?? 0 }}</span>
+          </a>
+
+          {{-- Pending (Unconfirmed) --}}
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'pending']) }}"
+             class="btn btn-sm {{ $activeQuick == 'pending' ? 'btn-secondary' : 'btn-outline-secondary' }}"
+             style="border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600;">
+            <i class="fa fa-clock-o mr-1"></i> Pending
+            <span class="badge {{ $activeQuick == 'pending' ? 'badge-light' : 'badge-secondary' }} ml-1">{{ $stats['pending'] ?? 0 }}</span>
+          </a>
+
+          {{-- Overdue Checkout --}}
+          <a href="{{ route($bookingsRoute, ['type' => $typeParam, 'quick_filter' => 'overdue']) }}"
+             class="btn btn-sm {{ $activeQuick == 'overdue' ? 'btn-danger' : 'btn-outline-danger' }}"
+             style="border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600;">
+            <i class="fa fa-exclamation-triangle mr-1"></i> Overdue
+            <span class="badge {{ $activeQuick == 'overdue' ? 'badge-light' : 'badge-danger' }} ml-1">{{ $stats['overdue'] ?? 0 }}</span>
+          </a>
+
+          @if($activeQuick)
+            <span class="text-muted small ml-auto" style="font-size: 11px;">
+              <i class="fa fa-filter mr-1"></i> Filtered View &mdash; <a href="{{ route($bookingsRoute, ['type' => $typeParam]) }}" class="text-danger">Clear</a>
+            </span>
+          @endif
+        </div>
+      </div>
+
+
       @if($bookings->count() > 0)
       <!-- Desktop Table View -->
       <div class="table-responsive">
         <table class="table table-hover table-bordered" id="bookingsTable">
           <thead>
             <tr>
-              <th>Reference</th>
-              @if(($bookingType ?? 'individual') == 'corporate')
-                <th>Company</th>
-              @endif
-              <th>Guest</th>
-              <th>Room</th>
-              <th>Check-in</th>
-              <th>Check-out</th>
-              <th>Nights</th>
-              <th>Total Price</th>
-              @if(($bookingType ?? 'individual') == 'corporate')
-                <th>Payment Responsibility</th>
-              @endif
-              <th>Status</th>
-              <th>Payment</th>
-              <th>Check-in</th>
-              <th>Actions</th>
+              <th>Booking & Guest</th>
+              <th>Room Details</th>
+              <th>Stay Period</th>
+              <th>Billing & Payment</th>
+              <th>Current Status</th>
+              <th class="text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -335,231 +342,86 @@
                       $rate = $b->locked_exchange_rate ?? 2500;
                       return (float)$b->total_price + ($b->payment_responsibility !== 'self' ? ($svcTsh / $rate) : 0);
                   });
-                  $totalPaid = $companyBookings->sum('amount_paid');
+                  $roomCount = $companyBookings->unique('room_id')->count();
                   $totalNights = $firstBooking ? $firstBooking->check_in->diffInDays($firstBooking->check_out) : 0;
+                  $allCheckedOut = $companyBookings->every(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_out'; });
                 @endphp
                 <tr class="booking-row corporate-booking-group"
                     data-status="{{ $firstBooking->status ?? 'pending' }}"
                     data-check-in-status="{{ $firstBooking->check_in_status ?? 'pending' }}"
                     data-payment-status="{{ $firstBooking->payment_status ?? 'pending' }}"
                     data-company-id="{{ $company->id ?? '' }}"
-                    style="background-color: #f8f9fa;">
-                  <td>
-                    <strong>{{ $firstBooking->booking_reference ?? 'N/A' }}</strong>
-                    <br><small class="text-muted">{{ $firstBooking->created_at->format('M d, Y') ?? 'N/A' }}</small>
-                    <br><small class="badge badge-info">{{ $totalGuests }} guest{{ $totalGuests > 1 ? 's' : '' }}</small>
+                    style="background-color: #fcfcfc;">
+                  <td class="align-middle">
+                    <div class="d-flex align-items-center">
+                      <div class="bg-light rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border: 1px solid #e2e8f0;">
+                        <i class="fa fa-building text-info"></i>
+                      </div>
+                      <div>
+                        <strong class="text-dark">{{ $firstBooking->booking_reference ?? 'N/A' }}</strong>
+                        <br><strong class="text-primary">{{ $company->name ?? 'N/A' }}</strong>
+                        <br><small class="badge badge-info">{{ $totalGuests }} Guests</small>
+                      </div>
+                    </div>
                   </td>
-                  <td>
-                    @if($company)
-                      <strong class="text-primary">
-                        <i class="fa fa-building"></i> {{ $company->name }}
-                      </strong>
-                      <br><small class="text-muted"><i class="fa fa-envelope"></i> {{ $company->email }}</small>
-                      @if($company->phone)
-                        <br><small class="text-muted"><i class="fa fa-phone"></i> {{ $company->phone }}</small>
-                      @endif
-                    @else
-                      <span class="text-muted">N/A</span>
-                    @endif
+                  <td class="align-middle">
+                    <span class="badge badge-primary px-3 shadow-sm mb-1" style="border-radius: 10px;">{{ $roomCount }} Rooms</span>
+                    <br><small class="text-muted">Mixed Room Types</small>
                   </td>
-                  <td>
-                    <strong class="text-primary">{{ $totalGuests }} guest{{ $totalGuests > 1 ? 's' : '' }}</strong>
+                  <td class="align-middle">
+                     <div class="text-dark font-weight-bold">{{ $firstBooking->check_in->format('M d') }} - {{ $firstBooking->check_out->format('M d, Y') }}</div>
+                     <div class="text-muted small"><i class="fa fa-moon-o"></i> {{ $totalNights }} Nights</div>
                   </td>
-                  <td>
-                    <span class="badge badge-info">{{ $companyBookings->unique('room_id')->count() }} room{{ $companyBookings->unique('room_id')->count() > 1 ? 's' : '' }}</span>
+                  <td class="align-middle">
+                     <div class="font-weight-bold text-dark" style="font-size: 1.1em;">${{ number_format($totalPrice, 2) }}</div>
+                     @php
+                        $hasCompanyPays = $companyBookings->where('payment_responsibility', 'company')->count() > 0;
+                        $hasSelfPays = $companyBookings->where('payment_responsibility', 'self')->count() > 0;
+                     @endphp
+                     <span class="badge badge-light border mt-1">{{ $hasCompanyPays && $hasSelfPays ? 'Mixed Billing' : ($hasCompanyPays ? 'Company Pays' : 'Self-Paid') }}</span>
                   </td>
-                  <td>
-                    {{ $firstBooking->check_in->format('M d, Y') }}
-                    @if($firstBooking->expires_at && $firstBooking->status == 'pending' && $firstBooking->payment_status == 'pending')
-                      @php
-                        $expiresAt = \Carbon\Carbon::parse($firstBooking->expires_at);
-                        $now = \Carbon\Carbon::now();
-                        $secondsRemaining = $now->diffInSeconds($expiresAt, false);
-                      @endphp
-                      @if($secondsRemaining > 0)
-                        <br><small class="text-danger" id="countdown-{{ $firstBooking->id }}">
-                          <i class="fa fa-clock-o"></i> Expires in: <span class="countdown-timer" data-expires="{{ $expiresAt->timestamp * 1000 }}">Calculating...</span>
-                        </small>
-                      @else
-                        <br><small class="text-danger"><i class="fa fa-times-circle"></i> Expired</small>
-                      @endif
-                    @endif
-                  </td>
-                  <td>
-                    {{ $firstBooking->check_out->format('M d, Y') }}
-                    @php
-                      $today = \Carbon\Carbon::today();
-                      $checkOut = \Carbon\Carbon::parse($firstBooking->check_out);
-                      $daysRemaining = $today->diffInDays($checkOut, false);
-                      $weeksRemaining = floor($daysRemaining / 7);
-                      
-                      // Check extension for the group (representative of the first booking)
-                      $isExtended = false;
-                      $isDecreased = false;
-                      if ($firstBooking->original_check_out) {
-                        $originalCheckOut = \Carbon\Carbon::parse($firstBooking->original_check_out);
-                        if ($checkOut->gt($originalCheckOut)) $isExtended = true;
-                        elseif ($checkOut->lt($originalCheckOut)) $isDecreased = true;
-                      }
-
-                      $allCheckedOut = $companyBookings->every(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_out'; });
-                    @endphp
-
-                    @if($isExtended)
-                      <br><span class="badge badge-info shadow-sm" style="font-size: 10px;"><i class="fa fa-calendar-plus-o"></i> Extended stay</span>
-                    @elseif($isDecreased)
-                      <br><span class="badge badge-warning shadow-sm" style="font-size: 10px;"><i class="fa fa-calendar-minus-o"></i> Decreased stay</span>
-                    @endif
-
-                    @if($allCheckedOut)
-                      <br><small class="text-success"><i class="fa fa-check-circle"></i> All Checked Out</small>
-                    @elseif($daysRemaining > 0)
-                      <br>
-                      @if($weeksRemaining > 0)
-                        <small class="text-info">
-                          <i class="fa fa-clock-o"></i> {{ $weeksRemaining }} week{{ $weeksRemaining > 1 ? 's' : '' }} remaining
-                        </small>
-                      @else
-                        <small class="text-info">
-                          <i class="fa fa-clock-o"></i> {{ $daysRemaining }} day{{ $daysRemaining > 1 ? 's' : '' }} remaining
-                        </small>
-                      @endif
-                    @elseif($daysRemaining == 0)
-                      @php
-                        $checkoutTime = $firstBooking->room->checkout_time ?? 
-                                       \App\Models\HotelSetting::getValue('default_checkout_time') ?? 
-                                       \App\Models\HotelSetting::getValue('default_room_checkout_time') ?? 
-                                       '12:00';
-                        $timeParts = explode(':', $checkoutTime);
-                        $hour = (int)$timeParts[0];
-                        $minute = $timeParts[1] ?? '00';
-                        $ampm = $hour >= 12 ? 'PM' : 'AM';
-                        $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
-                        $formattedTime = $hour12 . ':' . $minute . ' ' . $ampm;
-                      @endphp
-                      <br><small class="text-warning"><i class="fa fa-exclamation-triangle"></i> Check-out today at {{ $formattedTime }}</small>
-                    @else
-                      <br><small class="text-danger"><i class="fa fa-times-circle"></i> {{ abs($daysRemaining) }} day{{ abs($daysRemaining) > 1 ? 's' : '' }} overdue</small>
-                    @endif
-                  </td>
-                  <td>
-                    {{ $totalNights }} night(s)
-                    <br><small class="text-muted">{{ $totalGuests }} guest{{ $totalGuests > 1 ? 's' : '' }}</small>
-                  </td>
-                  <td>
-                    <strong>${{ number_format($totalPrice, 2) }}</strong>
-                    <br><small class="text-muted">Total for all guests</small>
-                    @if($totalPaid > 0)
-                      <br><small class="text-success">Paid: ${{ number_format($totalPaid, 2) }}</small>
-                    @endif
-                  </td>
-                  <td>
-                    @php
-                      $hasCompanyPays = $companyBookings->where('payment_responsibility', 'company')->count() > 0;
-                      $hasSelfPays = $companyBookings->where('payment_responsibility', 'self')->count() > 0;
-                    @endphp
-                    @if($hasCompanyPays && $hasSelfPays)
-                      <span class="badge badge-secondary">Mixed</span>
-                      <br><small class="text-muted">Some company, some self</small>
-                    @elseif($hasCompanyPays)
-                      <span class="badge badge-info">
-                        <i class="fa fa-building"></i> Company Pays
-                      </span>
-                      <br><small class="text-muted">(Room charges)</small>
-                    @elseif($hasSelfPays)
-                      <span class="badge badge-warning">
-                        <i class="fa fa-user"></i> Self-Paid
-                      </span>
-                      <br><small class="text-muted">(Services only)</small>
-                    @else
-                      <span class="badge badge-secondary">N/A</span>
-                    @endif
-                  </td>
-                  <td>
+                  <td class="align-middle">
                     @php
                       $allCompleted = $companyBookings->every(function($b) { return $b->status == 'completed' || ($b->check_in_status == 'checked_out'); });
                       $allConfirmed = $companyBookings->every(function($b) { return $b->status == 'confirmed' && $b->check_in_status != 'checked_out'; });
-                      $allPending = $companyBookings->every(function($b) { return $b->status == 'pending'; });
-                      $allCancelled = $companyBookings->every(function($b) { return $b->status == 'cancelled'; });
                     @endphp
-                    @if($allCompleted)
-                      <span class="badge badge-info"><i class="fa fa-flag-checkered"></i> Completed</span>
-                    @elseif($allConfirmed)
-                      <span class="badge badge-success">Confirmed</span>
-                    @elseif($allPending)
-                      <span class="badge badge-warning">Pending</span>
-                    @elseif($allCancelled)
-                      <span class="badge badge-danger">Cancelled</span>
-                    @else
-                      <span class="badge badge-secondary">Mixed</span>
-                    @endif
+                    <div class="mb-1">
+                      <span class="badge border-{{ $allCompleted ? 'info' : ($allConfirmed ? 'success' : 'warning') }} text-{{ $allCompleted ? 'info' : ($allConfirmed ? 'success' : 'warning') }} border" style="width: 100px;">
+                        {{ $allCompleted ? 'COMPLETED' : ($allConfirmed ? 'CONFIRMED' : 'PENDING') }}
+                      </span>
+                    </div>
+                    <span class="badge border-{{ $allCheckedOut ? 'success' : 'secondary' }} text-{{ $allCheckedOut ? 'success' : 'secondary' }} border" style="width: 100px;">
+                      {{ $allCheckedOut ? 'CHECKED OUT' : 'IN PROGRESS' }}
+                    </span>
                   </td>
-                  <td>
-                    @php
-                      $allPaid = $companyBookings->every(function($b) { return $b->payment_status == 'paid'; });
-                      $allPartial = $companyBookings->every(function($b) { return $b->payment_status == 'partial'; });
-                      $allPendingPay = $companyBookings->every(function($b) { return $b->payment_status == 'pending'; });
-                      $totalPaymentPercentage = $totalPrice > 0 ? ($totalPaid / $totalPrice) * 100 : 0;
-                    @endphp
-                    @if($allPaid)
-                      <span class="badge badge-success">Paid</span>
-                    @elseif($allPartial || $totalPaymentPercentage > 0)
-                      <span class="badge badge-info">Partial</span>
-                      <br><small class="text-muted">{{ number_format($totalPaymentPercentage, 0) }}% paid</small>
-                      <br><small class="text-muted">{{ $firstBooking->payment_method ?? 'N/A' }}</small>
-                    @elseif($allPendingPay)
-                      <span class="badge badge-warning">Pending</span>
-                    @else
-                      <span class="badge badge-secondary">Mixed</span>
-                    @endif
-                  </td>
-                  <td>
-                    @php
-                      $allCheckedIn = $companyBookings->every(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_in'; });
-                      $allCheckedOut = $companyBookings->every(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_out'; });
-                      $allPendingCheckIn = $companyBookings->every(function($b) { return ($b->check_in_status ?? 'pending') == 'pending'; });
-                    @endphp
-                    @if($allCheckedOut)
-                      <span class="badge badge-success"><i class="fa fa-check-circle"></i> Checked Out</span>
-                    @elseif($allCheckedIn)
-                      <span class="badge badge-info"><i class="fa fa-sign-in"></i> Checked In</span>
-                    @elseif($allPendingCheckIn)
-                      <span class="badge badge-warning"><i class="fa fa-clock-o"></i> Pending</span>
-                    @else
-                      <span class="badge badge-secondary">Mixed</span>
-                    @endif
-                  </td>
-                  <td>
-                    <button class="btn btn-sm btn-info" onclick="viewCompanyBookingGroup({{ $company->id ?? 'null' }}, {{ $firstBooking->id }})" title="View All Guests">
-                      <i class="fa fa-eye"></i> View More
-                    </button>
-                    @php
-                      $anyCheckedIn = $companyBookings->contains(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_in'; });
-                    @endphp
-                    @if($anyCheckedIn)
-                      <button class="btn btn-sm btn-info mt-1" onclick="openGroupExtensionModal({{ $company->id ?? 'null' }}, '{{ $firstBooking->check_in->format('Y-m-d') }}', '{{ $firstBooking->check_out->format('Y-m-d') }}')" title="Extend Group Stay">
-                        <i class="fa fa-calendar-plus-o"></i> Extend
+                  <td class="text-center align-middle">
+                    <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                      <button class="btn btn-sm btn-white border" onclick="viewCompanyBookingGroup({{ $company->id ?? 'null' }}, {{ $firstBooking->id }})" title="View Group">
+                        <i class="fa fa-eye text-primary"></i>
                       </button>
-                      <button class="btn btn-sm btn-warning mt-1" onclick="openGroupDecreaseModal({{ $company->id ?? 'null' }}, '{{ $firstBooking->check_in->format('Y-m-d') }}', '{{ $firstBooking->check_out->format('Y-m-d') }}')" title="Decrease Group Stay">
-                        <i class="fa fa-calendar-minus-o"></i> Decrease
-                      </button>
-                    @endif
-                    @if(in_array($firstBooking->payment_status, ['paid', 'partial']) || $firstBooking->status == 'confirmed')
-                      @php
-                        $firstPaidBooking = $companyBookings->where('payment_status', '!=', 'pending')->first();
-                      @endphp
-                      @if($firstPaidBooking)
-                        <a href="{{ route('payment.receipt.download', $firstPaidBooking) }}?download=1" class="btn btn-sm btn-success mt-1" target="_blank" title="Download Receipt">
-                          <i class="fa fa-download"></i>
+                      @if(!$allCheckedOut)
+                        <button class="btn btn-sm btn-white border" onclick="openGroupExtensionModal({{ $company->id ?? 'null' }}, '{{ $firstBooking->check_in->format('Y-m-d') }}', '{{ $firstBooking->check_out->format('Y-m-d') }}')" title="Extend Stay">
+                          <i class="fa fa-calendar-plus-o text-info"></i>
+                        </button>
+                      @endif
+                      @if($allConfirmed)
+                        <a href="{{ route('payment.receipt.download', $firstBooking) }}?download=1" class="btn btn-sm btn-white border" target="_blank" title="Receipt">
+                          <i class="fa fa-download text-success"></i>
                         </a>
                       @endif
-                    @endif
+                    </div>
                   </td>
                 </tr>
               @endforeach
             @endif
             @if(($bookingType ?? 'individual') == 'individual')
               @foreach($bookings as $booking)
+              @php
+                  $isTanzanian = ($booking->guest_type === 'tanzanian');
+                  $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+                  $tzsValue = round($booking->total_price * $rate, -3);
+                  $totalNights = $booking->check_in->diffInDays($booking->check_out);
+              @endphp
               <tr class="booking-row"
                   data-status="{{ $booking->status }}"
                   data-check-in-status="{{ $booking->check_in_status ?? 'pending' }}"
@@ -567,331 +429,115 @@
                   data-booking-ref="{{ strtolower($booking->booking_reference) }}"
                   data-guest-name="{{ strtolower($booking->guest_name) }}"
                   data-guest-email="{{ strtolower($booking->guest_email) }}">
-                <td>
-                  <strong>{{ $booking->booking_reference }}</strong>
-                  <br><small class="text-muted">{{ $booking->created_at->format('M d, Y') }}</small>
+                <td class="align-middle">
+                  <div class="d-flex align-items-center">
+                    <div class="bg-light rounded-circle p-2 mr-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border: 1px solid #e2e8f0;">
+                      <i class="fa fa-{{ ($bookingType ?? 'individual') == 'corporate' ? 'building text-info' : 'user text-primary' }}"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark">{{ $booking->booking_reference }}</strong>
+                      <br><strong>{{ $booking->guest_name }}</strong>
+                      <br><small class="text-muted"><i class="fa fa-envelope-o"></i> {{ $booking->guest_email }}</small>
+                      @if($booking->guest_phone)
+                        <br><small class="text-muted"><i class="fa fa-phone"></i> {{ $booking->guest_phone }}</small>
+                      @endif
+                    </div>
+                  </div>
                 </td>
-                <td>
-                  <strong>{{ $booking->guest_name }}</strong>
-                  <br><small class="text-muted">{{ $booking->guest_email }}</small>
-                  <br><small class="text-muted">{{ $booking->guest_phone }}</small>
+                <td class="align-middle">
+                  <span class="badge badge-primary px-3 shadow-sm mb-1" style="border-radius: 10px;">{{ $booking->room->room_type ?? 'N/A' }}</span>
+                  <br><strong class="text-dark" style="font-size: 1.1em;">Room {{ $booking->room->room_number ?? 'N/A' }}</strong>
                 </td>
-                <td>
-                  <span class="badge badge-primary">{{ $booking->room->room_type ?? 'N/A' }}</span>
-                  <br><small class="text-muted">{{ $booking->room->room_number ?? 'N/A' }}</small>
+                <td class="align-middle">
+                   <div class="text-dark font-weight-bold">{{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}</div>
+                   <div class="text-muted small"><i class="fa fa-moon-o"></i> {{ $totalNights }} Nights</div>
+                   @php
+                      $today = \Carbon\Carbon::today();
+                      $checkOut = \Carbon\Carbon::parse($booking->check_out);
+                      $daysRemaining = $today->diffInDays($checkOut, false);
+                   @endphp
+                   @if(($booking->check_in_status ?? 'pending') === 'checked_out')
+                      <span class="badge badge-light text-success border-success border mt-1"><i class="fa fa-check"></i> Finished</span>
+                   @elseif($daysRemaining > 0)
+                      <span class="badge badge-light text-info border-info border mt-1"><i class="fa fa-clock-o"></i> {{ $daysRemaining }} days left</span>
+                   @elseif($daysRemaining == 0)
+                      <span class="badge badge-light text-warning border-warning border mt-1"><i class="fa fa-exclamation-circle"></i> Out Today</span>
+                   @else
+                      <span class="badge badge-light text-danger border-danger border mt-1"><i class="fa fa-warning"></i> {{ abs($daysRemaining) }}d Overdue</span>
+                   @endif
                 </td>
-                <td>
-                  {{ $booking->check_in->format('M d, Y') }}
-                @if($booking->expires_at && $booking->status == 'pending' && $booking->payment_status == 'pending')
+                <td class="align-middle">
+                   <div class="font-weight-bold text-dark" style="font-size: 1.1em;">
+                     @if($isTanzanian)
+                       TZS {{ number_format($tzsValue, 0) }}
+                     @else
+                       ${{ number_format($booking->total_price, 2) }}
+                     @endif
+                   </div>
+                   @php
+                     $pStatus = $booking->payment_status;
+                     $pClass = match($pStatus) {
+                       'paid' => 'success',
+                       'partial' => 'info',
+                       'pending' => 'warning',
+                       default => 'secondary'
+                     };
+                   @endphp
+                   <span class="badge badge-{{ $pClass }} mt-1 px-3" style="border-radius: 4px;">{{ strtoupper($pStatus) }}</span>
+                   @if($booking->payment_method)
+                     <div class="small text-muted mt-1">{{ ucfirst($booking->payment_method) }}</div>
+                   @endif
+                </td>
+                <td class="align-middle">
                   @php
-                    $expiresAt = \Carbon\Carbon::parse($booking->expires_at);
-                    $now = \Carbon\Carbon::now();
-                    $secondsRemaining = $now->diffInSeconds($expiresAt, false);
+                    $bStatus = $booking->status;
+                    $cStatus = $booking->check_in_status ?? 'pending';
+                    $bClass = match($bStatus) {
+                      'confirmed' => 'success',
+                      'pending' => 'warning',
+                      'completed' => 'info',
+                      'cancelled' => 'danger',
+                      default => 'secondary'
+                    };
                   @endphp
-                  @if($secondsRemaining > 0)
-                    <br><small class="text-danger" id="countdown-{{ $booking->id }}">
-                      <i class="fa fa-clock-o"></i> Expires in: <span class="countdown-timer" data-expires="{{ $expiresAt->timestamp * 1000 }}">Calculating...</span>
-                    </small>
-                  @else
-                    <br><small class="text-danger"><i class="fa fa-times-circle"></i> Expired</small>
-                  @endif
-                @endif
-              </td>
-              <td>
-                {{ $booking->check_out->format('M d, Y') }}
-                @php
-                  $today = \Carbon\Carbon::today();
-                  $checkOut = \Carbon\Carbon::parse($booking->check_out);
-                  $daysRemaining = $today->diffInDays($checkOut, false);
-                  $weeksRemaining = floor($daysRemaining / 7);
-                  
-                  // Check if booking was extended (only show if check_out > original_check_out)
-                  $isExtended = false;
-                  $isDecreased = false;
-                  $extendedNights = 0;
-                  $decreasedNights = 0;
-                  if ($booking->original_check_out) {
-                    $originalCheckOut = \Carbon\Carbon::parse($booking->original_check_out);
-                    $currentCheckOut = \Carbon\Carbon::parse($booking->check_out);
-                    if ($currentCheckOut->gt($originalCheckOut)) {
-                      // Extended
-                      $isExtended = true;
-                      $extendedNights = $originalCheckOut->diffInDays($currentCheckOut);
-                    } elseif ($currentCheckOut->lt($originalCheckOut)) {
-                      // Decreased
-                      $isDecreased = true;
-                      $decreasedNights = $currentCheckOut->diffInDays($originalCheckOut);
-                    }
-                  }
-                @endphp
-                @if($isExtended && $extendedNights > 0)
-                  <br><span class="badge badge-info" title="Originally scheduled to check out on {{ \Carbon\Carbon::parse($booking->original_check_out)->format('M d, Y') }}">
-                    <i class="fa fa-calendar-plus-o"></i> Extended by {{ $extendedNights }} night{{ $extendedNights > 1 ? 's' : '' }}
-                  </span>
-                @elseif($isDecreased && $decreasedNights > 0)
-                  <br><span class="badge badge-warning" title="Originally scheduled to check out on {{ \Carbon\Carbon::parse($booking->original_check_out)->format('M d, Y') }}">
-                    <i class="fa fa-calendar-minus-o"></i> Decreased by {{ $decreasedNights }} night{{ $decreasedNights > 1 ? 's' : '' }}
-                  </span>
-                @endif
-                @if($booking->extension_status === 'pending' && $booking->extension_requested_to)
-                  @php
-                    $requestedCheckOut = \Carbon\Carbon::parse($booking->extension_requested_to);
-                    $pendingExtensionNights = $checkOut->diffInDays($requestedCheckOut);
-                  @endphp
-                  @if($pendingExtensionNights > 0)
-                    <br><span class="badge badge-warning" title="Guest has requested extension to {{ $requestedCheckOut->format('M d, Y') }}">
-                      <i class="fa fa-clock-o"></i> Extension Pending (+{{ $pendingExtensionNights }} night{{ $pendingExtensionNights > 1 ? 's' : '' }})
+                  <div class="mb-1">
+                    <span class="badge border-{{ $bClass }} text-{{ $bClass }} border" style="width: 100px;">{{ strtoupper($bStatus) }}</span>
+                  </div>
+                  <div>
+                    <span class="badge border-{{ $cStatus == 'checked_in' ? 'info' : ($cStatus == 'checked_out' ? 'success' : 'secondary') }} text-{{ $cStatus == 'checked_in' ? 'info' : ($cStatus == 'checked_out' ? 'success' : 'secondary') }} border" style="width: 100px;">
+                      {{ strtoupper(str_replace('_', ' ', $cStatus)) }}
                     </span>
-                    <br><small class="text-muted">Requested: {{ $requestedCheckOut->format('M d, Y') }}</small>
-                  @endif
-                @endif
-                @if(($booking->check_in_status ?? 'pending') === 'checked_out')
-                  {{-- Once guest is checked out, do NOT show remaining/overdue time based on dates --}}
-                  <br><small class="text-success">
-                    <i class="fa fa-check-circle"></i> Checked out
-                  </small>
-                @else
-                  @if($daysRemaining > 0)
-                    <br>
-                    @if($weeksRemaining > 0)
-                      <small class="text-info">
-                        <i class="fa fa-clock-o"></i> {{ $weeksRemaining }} week{{ $weeksRemaining > 1 ? 's' : '' }} remaining
-                      </small>
-                    @else
-                      <small class="text-info">
-                        <i class="fa fa-clock-o"></i> {{ $daysRemaining }} day{{ $daysRemaining > 1 ? 's' : '' }} remaining
-                      </small>
-                    @endif
-                  @elseif($daysRemaining == 0)
-                    @php
-                      // Get checkout time from room, or fall back to hotel settings, or default to 12:00
-                      $checkoutTime = $booking->room->checkout_time ?? 
-                                     \App\Models\HotelSetting::getValue('default_checkout_time') ?? 
-                                     \App\Models\HotelSetting::getValue('default_room_checkout_time') ?? 
-                                     '12:00';
-                      // Format time for display (convert 24h to 12h format)
-                      $timeParts = explode(':', $checkoutTime);
-                      $hour = (int)$timeParts[0];
-                      $minute = $timeParts[1] ?? '00';
-                      $ampm = $hour >= 12 ? 'PM' : 'AM';
-                      $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
-                      $formattedTime = $hour12 . ':' . $minute . ' ' . $ampm;
-                    @endphp
-                    <br><small class="text-warning"><i class="fa fa-exclamation-triangle"></i> Check-out today at {{ $formattedTime }}</small>
-                  @else
-                    <br><small class="text-danger"><i class="fa fa-times-circle"></i> {{ abs($daysRemaining) }} day{{ abs($daysRemaining) > 1 ? 's' : '' }} overdue</small>
-                  @endif
-                @endif
-              </td>
-              <td>
-                {{ $booking->check_in->diffInDays($booking->check_out) }} nights
-                @if(($isExtended || $isDecreased) && $booking->original_check_out)
-                  @php
-                    $originalNights = $booking->check_in->diffInDays(\Carbon\Carbon::parse($booking->original_check_out));
-                  @endphp
-                  <br><small class="text-muted">(Original: {{ $originalNights }} nights)</small>
-                @endif
-              </td>
-              <td>
-                @php
-                    $svc = $booking->serviceRequests ? $booking->serviceRequests->whereIn('status', ['approved', 'completed']) : collect();
-                    $svcTsh = $svc->sum('total_price_tsh');
-                    $rate = $booking->locked_exchange_rate ?? 2500;
-                    $svcUsd = $svcTsh / $rate;
-                    $totalBill = (float)$booking->total_price + $svcUsd;
-                @endphp
-                <strong>${{ number_format($totalBill, 2) }}</strong>
-                @if($svcUsd > 0)
-                  <br><small class="text-muted">Room: ${{ number_format($booking->total_price, 2) }}</small>
-                  <br><small class="text-muted">Services: ${{ number_format($svcUsd, 2) }}</small>
-                @endif
-                @php
-                  $isExtended = false;
-                  $isDecreased = false;
-                  $extendedNights = 0;
-                  $decreasedNights = 0;
-                  if ($booking->original_check_out) {
-                    $originalCheckOut = \Carbon\Carbon::parse($booking->original_check_out);
-                    $currentCheckOut = \Carbon\Carbon::parse($booking->check_out);
-                    if ($currentCheckOut->gt($originalCheckOut)) {
-                      $isExtended = true;
-                      $extendedNights = $originalCheckOut->diffInDays($currentCheckOut);
-                    } elseif ($currentCheckOut->lt($originalCheckOut)) {
-                      $isDecreased = true;
-                      $decreasedNights = $currentCheckOut->diffInDays($originalCheckOut);
-                    }
-                  }
-                @endphp
-                @if($isExtended && $booking->room && $extendedNights > 0)
-                  @php
-                    $extensionCost = $booking->room->price_per_night * $extendedNights;
-                    $originalPrice = $booking->total_price - $extensionCost;
-                  @endphp
-                  <br><small class="text-info">
-                    <i class="fa fa-calendar-plus-o"></i> +${{ number_format($extensionCost, 2) }} (extension)
-                  </small>
-                  <br><small class="text-muted">Original: ${{ number_format($originalPrice, 2) }}</small>
-                @elseif($isDecreased && $booking->room && $decreasedNights > 0)
-                  @php
-                    $decreaseRefund = $booking->room->price_per_night * $decreasedNights;
-                    $originalPrice = $booking->total_price + $decreaseRefund;
-                  @endphp
-                  <br><small class="text-warning">
-                    <i class="fa fa-calendar-minus-o"></i> -${{ number_format($decreaseRefund, 2) }} (decrease)
-                  </small>
-                  <br><small class="text-muted">Original: ${{ number_format($originalPrice, 2) }}</small>
-                @endif
-                @if($booking->extension_status === 'pending' && $booking->extension_requested_to && $booking->room)
-                  @php
-                    $requestedCheckOut = \Carbon\Carbon::parse($booking->extension_requested_to);
-                    $pendingExtensionNights = $checkOut->diffInDays($requestedCheckOut);
-                    $pendingExtensionCost = $booking->room->price_per_night * $pendingExtensionNights;
-                  @endphp
-                  @if($pendingExtensionNights > 0)
-                    <br><small class="text-warning" style="display: block; margin-top: 5px;">
-                      <i class="fa fa-clock-o"></i> +${{ number_format($pendingExtensionCost, 2) }} (pending extension)
-                    </small>
-                    <br><small class="text-muted">If approved: ${{ number_format($booking->total_price + $pendingExtensionCost, 2) }}</small>
-                  @endif
-                @endif
-                @if($booking->payment_status == 'paid')
-                  <br><small class="text-success"><i class="fa fa-check"></i> Paid</small>
-                @endif
-              </td>
-              @if(($bookingType ?? 'individual') == 'corporate')
-                <td>
-                  @if($booking->payment_responsibility == 'company')
-                    <span class="badge badge-info">
-                      <i class="fa fa-building"></i> Company Pays
-                    </span>
-                    <br><small class="text-muted">(Room charges)</small>
-                  @elseif($booking->payment_responsibility == 'self')
-                    <span class="badge badge-warning">
-                      <i class="fa fa-user"></i> Self-Paid
-                    </span>
-                    <br><small class="text-muted">(Services only)</small>
-                  @else
-                    <span class="badge badge-secondary">Mixed</span>
-                  @endif
+                  </div>
                 </td>
-              @endif
-              <td>
-                @if($booking->status == 'pending')
-                  <span class="badge badge-warning">Pending</span>
-                @elseif($booking->status == 'confirmed')
-                  <span class="badge badge-success">Confirmed</span>
-                @elseif($booking->status == 'cancelled')
-                  <span class="badge badge-danger">Cancelled</span>
-                @elseif($booking->status == 'completed')
-                  <span class="badge badge-info">Completed</span>
-                @endif
-              </td>
-              <td>
-                @if($booking->payment_status == 'pending')
-                  <span class="badge badge-warning">Pending</span>
-                @elseif($booking->payment_status == 'paid')
-                  <span class="badge badge-success">Paid</span>
-                @elseif($booking->payment_status == 'partial')
-                  <span class="badge badge-info">Partial</span>
-                  @if($booking->payment_percentage)
-                    <br><small class="text-muted">{{ number_format($booking->payment_percentage, 0) }}% paid</small>
-                  @endif
-                @elseif($booking->payment_status == 'failed')
-                  <span class="badge badge-danger">Failed</span>
-                @elseif($booking->payment_status == 'cancelled')
-                  <span class="badge badge-secondary">Cancelled</span>
-                @endif
-                @if($booking->payment_method)
-                  <br><small class="text-muted">{{ ucfirst($booking->payment_method) }}</small>
-                @endif
-              </td>
-              <td>
-                @if($booking->check_in_status == 'pending')
-                  <span class="badge badge-warning">Pending</span>
-                @elseif($booking->check_in_status == 'checked_in')
-                  <span class="badge badge-success">Checked In</span>
-                  <br><small class="text-muted">{{ $booking->checked_in_at ? \Carbon\Carbon::parse($booking->checked_in_at)->format('M d, Y H:i') : '' }}</small>
-                @elseif($booking->check_in_status == 'checked_out')
-                  <span class="badge badge-info">Checked Out</span>
-                  <br><small class="text-muted">{{ $booking->checked_out_at ? \Carbon\Carbon::parse($booking->checked_out_at)->format('M d, Y H:i') : '' }}</small>
-                @endif
-              </td>
-              <td>
-                <div class="btn-group" role="group">
-                  @php
-                    $isExpired = false;
-                    if ($booking->expires_at) {
-                      $isExpired = \Carbon\Carbon::parse($booking->expires_at)->isPast();
-                    }
-                    $showReminders = $booking->status == 'pending' && 
-                                    $booking->payment_status == 'pending' && 
-                                    request('status') != 'expired' && 
-                                    !$isExpired;
-                  @endphp
-                  @if($showReminders)
-                  {{-- For pending payment bookings (not expired): Reminders, View More, Delete --}}
-                  <button class="btn btn-sm btn-warning" onclick="sendReminder({{ $booking->id }})" title="Send Reminders (Email & SMS)">
-                    <i class="fa fa-bell"></i> Reminders
-                  </button>
-                  <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
-                    <i class="fa fa-eye"></i> View More
-                  </button>
-                  @if(!$isReception)
-                  <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
-                    <i class="fa fa-trash"></i>
-                  </button>
-                  @endif
-                  @elseif($booking->status == 'pending' && $booking->payment_status == 'pending')
-                  {{-- For expired pending bookings: View More, Delete (no reminders) --}}
-                  <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
-                    <i class="fa fa-eye"></i> View More
-                  </button>
-                  @if(!$isReception)
-                  <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
-                    <i class="fa fa-trash"></i>
-                  </button>
-                  @endif
-                  @else
-                  {{-- For other bookings: View More, Check In (if applicable), Admin Notes, Delete (if applicable) --}}
-                  <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
-                    <i class="fa fa-eye"></i>@if($booking->status == 'pending' && $booking->payment_status == 'pending') View More @endif
-                  </button>
-                  @if(in_array($booking->payment_status, ['paid', 'partial']) || $booking->status == 'confirmed')
-                  <a href="{{ route('payment.receipt.download', $booking) }}?download=1" class="btn btn-sm btn-success" target="_blank" title="Download Receipt">
-                    <i class="fa fa-download"></i>
-                  </a>
-                  @endif
-
-                  @if($booking->check_in_status == 'checked_in')
-                  <button class="btn btn-sm btn-info" onclick="openManagerExtensionModal({{ $booking->id }}, '{{ $booking->check_in->format('Y-m-d') }}', '{{ $booking->check_out->format('Y-m-d') }}')" title="Extend Stay">
-                    <i class="fa fa-calendar-plus-o"></i> Extend
-                  </button>
-                  <button class="btn btn-sm btn-warning" onclick="openManagerDecreaseModal({{ $booking->id }}, '{{ $booking->check_in->format('Y-m-d') }}', '{{ $booking->check_out->format('Y-m-d') }}')" title="Decrease Stay">
-                    <i class="fa fa-calendar-minus-o"></i> Decrease
-                  </button>
-                  @endif
-                  <button class="btn btn-sm btn-secondary" onclick="showNotesModal({{ $booking->id }})" title="Admin Notes">
-                    <i class="fa fa-sticky-note"></i>
-                  </button>
-                  @if(in_array($booking->status, ['pending', 'cancelled']) || ($booking->status == 'confirmed' && $booking->check_in_status == 'pending'))
-                    @if(!$isReception)
-                    <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
-                      <i class="fa fa-trash"></i>
+                <td class="text-center align-middle">
+                  <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                    <button class="btn btn-sm btn-white border" onclick="viewBooking({{ $booking->id }})" title="View">
+                      <i class="fa fa-eye text-primary"></i>
                     </button>
+                    @if(($booking->check_in_status ?? 'pending') === 'checked_in')
+                      <button class="btn btn-sm btn-white border" onclick="openManagerExtensionModal({{ $booking->id }}, '{{ $booking->check_in->format('Y-m-d') }}', '{{ $booking->check_out->format('Y-m-d') }}')" title="Extend">
+                        <i class="fa fa-calendar-plus-o text-info"></i>
+                      </button>
                     @endif
-                  @endif
-                  @endif
-                </div>
-              </td>
-            </tr>
-            @endforeach
+                    @if(in_array($booking->payment_status, ['paid', 'partial']) || $booking->status == 'confirmed')
+                      <a href="{{ route('payment.receipt.download', $booking) }}?download=1" class="btn btn-sm btn-white border" target="_blank" title="Receipt">
+                        <i class="fa fa-download text-success"></i>
+                      </a>
+                    @endif
+                    <button class="btn btn-sm btn-white border" onclick="showNotesModal({{ $booking->id }})" title="Notes">
+                      <i class="fa fa-sticky-note text-secondary"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              @endforeach
             @endif
           </tbody>
         </table>
       </div>
       
-      <!-- Mobile Card View -->
-      <div class="mobile-booking-cards">
+      <!-- Sleek Mobile Card View (Hidden on Desktop) -->
+      <div class="mobile-booking-cards d-md-none">
         @if(($bookingType ?? 'individual') == 'corporate')
           @foreach($bookings as $group)
             @php
@@ -899,413 +545,92 @@
               $companyBookings = $group['bookings'] ?? collect();
               $firstBooking = $group['first_booking'] ?? $companyBookings->first();
               $totalGuests = $companyBookings->count();
-              $totalPrice = $companyBookings->sum('total_price');
-              $totalPaid = $companyBookings->sum('amount_paid');
-              $totalNights = $firstBooking ? $firstBooking->check_in->diffInDays($firstBooking->check_out) : 0;
+              $totalPrice = $companyBookings->sum(function($b) {
+                  $svc = $b->serviceRequests ? $b->serviceRequests->whereIn('status', ['approved', 'completed']) : collect();
+                  $rate = $b->locked_exchange_rate ?? 2500;
+                  return (float)$b->total_price + ($b->payment_responsibility !== 'self' ? ($svc->sum('total_price_tsh') / $rate) : 0);
+              });
+              $allCheckedOut = $companyBookings->every(function($b) { return ($b->check_in_status ?? 'pending') == 'checked_out'; });
             @endphp
-            <div class="mobile-booking-card booking-row corporate-booking-group"
-                 data-status="{{ $firstBooking->status ?? 'pending' }}"
-                 data-check-in-status="{{ $firstBooking->check_in_status ?? 'pending' }}"
-                 data-payment-status="{{ $firstBooking->payment_status ?? 'pending' }}"
-                 data-company-id="{{ $company->id ?? '' }}">
-              <div class="mobile-booking-card-header">
-                <h5><i class="fa fa-building"></i> {{ $company->name ?? 'N/A' }}</h5>
-                <div class="booking-ref">Ref: {{ $firstBooking->booking_reference ?? 'N/A' }}</div>
-                <span class="badge badge-info">{{ $totalGuests }} guest(s)</span>
+            <div class="card shadow-sm mb-3" style="border-radius: 12px; border: none; overflow: hidden; border-left: 4px solid #17a2b8;">
+              <div class="card-header bg-light border-bottom-0 d-flex justify-content-between align-items-center p-3">
+                <div style="max-width: 70%;">
+                  <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 10px; letter-spacing: 0.5px;">{{ $firstBooking->booking_reference }}</small>
+                  <h6 class="mb-0 text-primary font-weight-bold text-truncate">{{ $company->name ?? 'N/A' }}</h6>
+                </div>
+                <span class="badge badge-info shadow-sm" style="border-radius: 20px; padding: 5px 12px;">{{ $totalGuests }} Guests</span>
               </div>
-              
-              @if($company)
-              <div class="mobile-booking-info-row" style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-                <span class="mobile-booking-info-label"><i class="fa fa-building text-primary"></i> Company:</span>
-                <span class="mobile-booking-info-value">
-                  <strong class="text-primary">{{ $company->name }}</strong>
-                  <br><small class="text-muted">{{ $company->email }}</small>
-                  @if($company->phone)
-                    <br><small class="text-muted">{{ $company->phone }}</small>
-                  @endif
-                </span>
+              <div class="card-body p-3">
+                <div class="row align-items-center">
+                  <div class="col-7">
+                    <div class="small text-muted mb-1"><i class="fa fa-calendar-o"></i> {{ $firstBooking->check_in->format('M d') }} - {{ $firstBooking->check_out->format('M d') }}</div>
+                    <div class="font-weight-bold text-dark" style="font-size: 1.1rem;">${{ number_format($totalPrice, 2) }}</div>
+                  </div>
+                  <div class="col-5 text-right">
+                    <span class="badge border-{{ $allCheckedOut ? 'success' : 'primary' }} text-{{ $allCheckedOut ? 'success' : 'primary' }} border px-2 py-1" style="font-size: 10px; letter-spacing: 0.5px;">
+                      {{ strtoupper($allCheckedOut ? 'FINISHED' : 'IN PROGRESS') }}
+                    </span>
+                  </div>
+                </div>
               </div>
-              @endif
-              
-              <div class="mobile-booking-info-row">
-                <span class="mobile-booking-info-label">Guests:</span>
-                <span class="mobile-booking-info-value">
-                  @foreach($companyBookings as $booking)
-                    <div style="padding: 5px 0; border-bottom: 1px solid #eee;">
-                      <strong>{{ $booking->guest_name }}</strong>
-                      <br><small class="text-muted">{{ $booking->guest_email }}</small>
-                      <br><small class="text-muted">{{ $booking->guest_phone }}</small>
-                      <br><span class="badge badge-secondary">{{ $booking->room->room_number ?? 'N/A' }}</span>
-                    </div>
-                  @endforeach
-                </span>
-              </div>
-              
-              <div class="mobile-booking-info-row">
-                <span class="mobile-booking-info-label">Check-in:</span>
-                <span class="mobile-booking-info-value">{{ $firstBooking->check_in->format('M d, Y') ?? 'N/A' }}</span>
-              </div>
-              
-              <div class="mobile-booking-info-row">
-                <span class="mobile-booking-info-label">Check-out:</span>
-                <span class="mobile-booking-info-value">{{ $firstBooking->check_out->format('M d, Y') ?? 'N/A' }}</span>
-              </div>
-              
-              <div class="mobile-booking-info-row">
-                <span class="mobile-booking-info-label">Nights:</span>
-                <span class="mobile-booking-info-value">{{ $totalNights }} night(s)</span>
-              </div>
-              
-              <div class="mobile-booking-info-row">
-                <span class="mobile-booking-info-label">Total Price:</span>
-                <span class="mobile-booking-info-value"><strong>${{ number_format($totalPrice, 2) }}</strong></span>
-              </div>
-              
-              <div class="mobile-booking-info-row">
-                <span class="mobile-booking-info-label">Status:</span>
-                <span class="mobile-booking-info-value">
-                  @php
-                    $allConfirmed = $companyBookings->every(function($b) { return $b->status == 'confirmed'; });
-                    $allPending = $companyBookings->every(function($b) { return $b->status == 'pending'; });
-                  @endphp
-                  @if($allConfirmed)
-                    <span class="badge badge-success">Confirmed</span>
-                  @elseif($allPending)
-                    <span class="badge badge-warning">Pending</span>
-                  @else
-                    <span class="badge badge-secondary">Mixed</span>
-                  @endif
-                </span>
-              </div>
-              
-              <div class="mobile-booking-info-row">
-                <span class="mobile-booking-info-label">Payment:</span>
-                <span class="mobile-booking-info-value">
-                  @php
-                    $totalPaymentPercentage = $totalPrice > 0 ? ($totalPaid / $totalPrice) * 100 : 0;
-                  @endphp
-                  @if($totalPaymentPercentage >= 100)
-                    <span class="badge badge-success">Paid</span>
-                  @elseif($totalPaymentPercentage > 0)
-                    <span class="badge badge-info">Partial ({{ number_format($totalPaymentPercentage, 0) }}%)</span>
-                  @else
-                    <span class="badge badge-warning">Pending</span>
-                  @endif
-                </span>
-              </div>
-              
-              <div class="mobile-booking-actions">
-                <button class="btn btn-sm btn-info btn-block" onclick="viewCompanyBookingGroup({{ $company->id ?? 'null' }}, {{ $firstBooking->id ?? 'null' }})" title="View All Guests">
-                  <i class="fa fa-eye"></i> View More
+              <div class="card-footer bg-white border-top-0 p-2 d-flex justify-content-between px-3">
+                <button class="btn btn-link btn-sm text-primary font-weight-bold p-0" onclick="viewCompanyBookingGroup({{ $company->id ?? 'null' }}, {{ $firstBooking->id }})">
+                  <i class="fa fa-eye"></i> Details
                 </button>
+                <a href="{{ route('payment.receipt.download', $firstBooking) }}?download=1" class="btn btn-link btn-sm text-success font-weight-bold p-0">
+                  <i class="fa fa-file-text-o"></i> Receipt
+                </a>
               </div>
             </div>
           @endforeach
         @else
           @foreach($bookings as $booking)
-          @php
-            $isExpired = false;
-            if ($booking->expires_at) {
-              $isExpired = \Carbon\Carbon::parse($booking->expires_at)->isPast();
-            }
-            $showReminders = $booking->status == 'pending' && 
-                            $booking->payment_status == 'pending' && 
-                            request('status') != 'expired' && 
-                            !$isExpired;
-            
-            $today = \Carbon\Carbon::today();
-            $checkOut = \Carbon\Carbon::parse($booking->check_out);
-            $daysRemaining = $today->diffInDays($checkOut, false);
-            $weeksRemaining = floor($daysRemaining / 7);
-            
-            $checkoutTime = $booking->room->checkout_time ?? 
-                           \App\Models\HotelSetting::getValue('default_checkout_time') ?? 
-                           \App\Models\HotelSetting::getValue('default_room_checkout_time') ?? 
-                           '12:00';
-            $timeParts = explode(':', $checkoutTime);
-            $hour = (int)$timeParts[0];
-            $minute = $timeParts[1] ?? '00';
-            $ampm = $hour >= 12 ? 'PM' : 'AM';
-            $hour12 = $hour > 12 ? $hour - 12 : ($hour == 0 ? 12 : $hour);
-            $formattedTime = $hour12 . ':' . $minute . ' ' . $ampm;
-          @endphp
-          <div class="mobile-booking-card booking-row"
-               data-status="{{ $booking->status }}"
-               data-check-in-status="{{ $booking->check_in_status ?? 'pending' }}"
-               data-payment-status="{{ $booking->payment_status ?? 'pending' }}"
-               data-booking-ref="{{ strtolower($booking->booking_reference) }}"
-               data-guest-name="{{ strtolower($booking->guest_name) }}"
-               data-guest-email="{{ strtolower($booking->guest_email) }}">
-            <div class="mobile-booking-card-header">
-              <h5>{{ $booking->guest_name }}</h5>
-              <div class="booking-ref">Ref: {{ $booking->booking_reference }}</div>
-            </div>
-            
-            @if(($bookingType ?? 'individual') == 'corporate' && $booking->company)
-          <div class="mobile-booking-info-row" style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 8px;">
-            <span class="mobile-booking-info-label"><i class="fa fa-building text-primary"></i> Company:</span>
-            <span class="mobile-booking-info-value">
-              <strong class="text-primary">{{ $booking->company->name }}</strong>
-              <br><small><i class="fa fa-envelope"></i> {{ $booking->company->email }}</small>
-              @if($booking->company->phone)
-                <br><small><i class="fa fa-phone"></i> {{ $booking->company->phone }}</small>
-              @endif
-            </span>
-          </div>
-          @endif
-          
-          @if(($bookingType ?? 'individual') == 'corporate' && $booking->payment_responsibility)
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Payment:</span>
-            <span class="mobile-booking-info-value">
-              @if($booking->payment_responsibility == 'company')
-                <span class="badge badge-info"><i class="fa fa-building"></i> Company Pays (Room)</span>
-              @elseif($booking->payment_responsibility == 'self')
-                <span class="badge badge-warning"><i class="fa fa-user"></i> Self-Paid (Services)</span>
-              @else
-                <span class="badge badge-secondary">Mixed</span>
-              @endif
-            </span>
-          </div>
-          @endif
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Room:</span>
-            <span class="mobile-booking-info-value">
-              <span class="badge badge-primary">{{ $booking->room->room_type ?? 'N/A' }}</span>
-              <br><small>{{ $booking->room->room_number ?? 'N/A' }}</small>
-            </span>
-          </div>
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Check-in:</span>
-            <span class="mobile-booking-info-value">{{ $booking->check_in->format('M d, Y') }}</span>
-          </div>
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Check-out:</span>
-            <span class="mobile-booking-info-value">
-              {{ $booking->check_out->format('M d, Y') }}
-              @php
-                $isExtended = false;
-                $isDecreased = false;
-                $extendedNights = 0;
-                $decreasedNights = 0;
-                if ($booking->original_check_out) {
-                  $originalCheckOut = \Carbon\Carbon::parse($booking->original_check_out);
-                  $currentCheckOut = \Carbon\Carbon::parse($booking->check_out);
-                  if ($currentCheckOut->gt($originalCheckOut)) {
-                    $isExtended = true;
-                    $extendedNights = $originalCheckOut->diffInDays($currentCheckOut);
-                  } elseif ($currentCheckOut->lt($originalCheckOut)) {
-                    $isDecreased = true;
-                    $decreasedNights = $currentCheckOut->diffInDays($originalCheckOut);
-                  }
-                }
-              @endphp
-              @if($isExtended && $extendedNights > 0)
-                <br><span class="badge badge-info">
-                  <i class="fa fa-calendar-plus-o"></i> Extended by {{ $extendedNights }} night{{ $extendedNights > 1 ? 's' : '' }}
-                </span>
-              @elseif($isDecreased && $decreasedNights > 0)
-                <br><span class="badge badge-warning">
-                  <i class="fa fa-calendar-minus-o"></i> Decreased by {{ $decreasedNights }} night{{ $decreasedNights > 1 ? 's' : '' }}
-                </span>
-              @endif
-              @if($booking->extension_status === 'pending' && $booking->extension_requested_to)
-                @php
-                  $requestedCheckOut = \Carbon\Carbon::parse($booking->extension_requested_to);
-                  $pendingExtensionNights = $currentCheckOut->diffInDays($requestedCheckOut);
-                @endphp
-                @if($pendingExtensionNights > 0)
-                  <br><span class="badge badge-warning">
-                    <i class="fa fa-clock-o"></i> Extension Pending (+{{ $pendingExtensionNights }} night{{ $pendingExtensionNights > 1 ? 's' : '' }})
+            @php
+              $isTanzanian = ($booking->guest_type === 'tanzanian');
+              $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+              $tzsValue = round($booking->total_price * $rate, -3);
+            @endphp
+            <div class="card shadow-sm mb-3" style="border-radius: 12px; border: none; overflow: hidden; border-left: 4px solid {{ $booking->status == 'confirmed' ? '#28a745' : '#ffc107' }};">
+              <div class="card-header bg-light border-bottom-0 d-flex justify-content-between align-items-center p-3">
+                <div style="max-width: 70%;">
+                  <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 10px; letter-spacing: 0.5px;">{{ $booking->booking_reference }}</small>
+                  <h6 class="mb-0 font-weight-bold text-truncate text-dark">{{ $booking->guest_name }}</h6>
+                </div>
+                <span class="badge badge-primary px-3 shadow-sm" style="border-radius: 20px;">Room {{ $booking->room->room_number ?? 'N/A' }}</span>
+              </div>
+              <div class="card-body p-3">
+                <div class="row align-items-center mb-2">
+                  <div class="col-7 text-muted small">
+                    <i class="fa fa-calendar-o"></i> {{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}
+                  </div>
+                  <div class="col-5 text-right font-weight-bold text-dark" style="font-size: 1.05rem;">
+                    @if($isTanzanian)
+                      TZS {{ number_format($tzsValue, 0) }}
+                    @else
+                      ${{ number_format($booking->total_price, 2) }}
+                    @endif
+                  </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <span class="badge border-{{ $booking->status == 'confirmed' ? 'success' : 'warning' }} text-{{ $booking->status == 'confirmed' ? 'success' : 'warning' }} border px-2 py-1" style="font-size: 10px; letter-spacing: 0.5px;">
+                    {{ strtoupper($booking->status) }}
                   </span>
-                  <br><small class="text-muted">Requested: {{ $requestedCheckOut->format('M d, Y') }}</small>
+                  <span class="badge badge-{{ $booking->payment_status == 'paid' ? 'success' : ($booking->payment_status == 'partial' ? 'info' : 'light border') }} px-2 py-1" style="font-size: 10px; letter-spacing: 0.5px;">
+                    {{ strtoupper($booking->payment_status) }}
+                  </span>
+                </div>
+              </div>
+              <div class="card-footer bg-white border-top-0 p-2 d-flex justify-content-between px-3">
+                <button class="btn btn-link btn-sm text-primary font-weight-bold p-0" onclick="viewBooking({{ $booking->id }})"><i class="fa fa-eye"></i> View</button>
+                @if(in_array($booking->payment_status, ['paid', 'partial']) || $booking->status == 'confirmed')
+                  <a href="{{ route('payment.receipt.download', $booking) }}?download=1" class="btn btn-link btn-sm text-success font-weight-bold p-0">
+                    <i class="fa fa-file-text-o"></i> Receipt
+                  </a>
                 @endif
-              @endif
-              @if($daysRemaining > 0)
-                @if($weeksRemaining > 0)
-                  <br><small class="text-info">{{ $weeksRemaining }} week{{ $weeksRemaining > 1 ? 's' : '' }} remaining</small>
-                @else
-                  <br><small class="text-info">{{ $daysRemaining }} day{{ $daysRemaining > 1 ? 's' : '' }} remaining</small>
-                @endif
-              @elseif($daysRemaining == 0)
-                <br><small class="text-warning">Check-out today at {{ $formattedTime }}</small>
-              @else
-                <br><small class="text-danger">{{ abs($daysRemaining) }} day{{ abs($daysRemaining) > 1 ? 's' : '' }} overdue</small>
-              @endif
-            </span>
-          </div>
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Nights:</span>
-            <span class="mobile-booking-info-value">
-              {{ $booking->check_in->diffInDays($booking->check_out) }} nights
-              @if(($isExtended || $isDecreased) && $booking->original_check_out)
-                @php
-                  $originalNights = $booking->check_in->diffInDays(\Carbon\Carbon::parse($booking->original_check_out));
-                @endphp
-                <br><small class="text-muted">(Original: {{ $originalNights }} nights)</small>
-              @endif
-            </span>
-          </div>
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Total Price:</span>
-            <span class="mobile-booking-info-value">
-              <strong>${{ number_format($booking->total_price, 2) }}</strong>
-              @if($isExtended && $booking->room && $extendedNights > 0)
-                @php
-                  $extensionCost = $booking->room->price_per_night * $extendedNights;
-                  $originalPrice = $booking->total_price - $extensionCost;
-                @endphp
-                <br><small class="text-info">
-                  <i class="fa fa-calendar-plus-o"></i> +${{ number_format($extensionCost, 2) }} (extension)
-                </small>
-                <br><small class="text-muted">Original: ${{ number_format($originalPrice, 2) }}</small>
-              @elseif($isDecreased && $booking->room && $decreasedNights > 0)
-                @php
-                  $decreaseRefund = $booking->room->price_per_night * $decreasedNights;
-                  $originalPrice = $booking->total_price + $decreaseRefund;
-                @endphp
-                <br><small class="text-warning">
-                  <i class="fa fa-calendar-minus-o"></i> -${{ number_format($decreaseRefund, 2) }} (decrease)
-                </small>
-                <br><small class="text-muted">Original: ${{ number_format($originalPrice, 2) }}</small>
-              @endif
-              @if($booking->extension_status === 'pending' && $booking->extension_requested_to && $booking->room)
-                @php
-                  $requestedCheckOut = \Carbon\Carbon::parse($booking->extension_requested_to);
-                  $pendingExtensionNights = $currentCheckOut->diffInDays($requestedCheckOut);
-                  $pendingExtensionCost = $booking->room->price_per_night * $pendingExtensionNights;
-                @endphp
-                @if($pendingExtensionNights > 0)
-                  <br><small class="text-warning">
-                    <i class="fa fa-clock-o"></i> +${{ number_format($pendingExtensionCost, 2) }} (pending extension)
-                  </small>
-                  <br><small class="text-muted">If approved: ${{ number_format($booking->total_price + $pendingExtensionCost, 2) }}</small>
-                @endif
-              @endif
-              @if($booking->payment_status == 'paid')
-                <br><small class="text-success"><i class="fa fa-check"></i> Paid</small>
-              @endif
-            </span>
-          </div>
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Status:</span>
-            <span class="mobile-booking-info-value">
-              @if($booking->status == 'pending')
-                <span class="badge badge-warning">Pending</span>
-              @elseif($booking->status == 'confirmed')
-                <span class="badge badge-success">Confirmed</span>
-              @elseif($booking->status == 'cancelled')
-                <span class="badge badge-danger">Cancelled</span>
-              @elseif($booking->status == 'completed')
-                <span class="badge badge-info">Completed</span>
-              @endif
-            </span>
-          </div>
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Payment:</span>
-            <span class="mobile-booking-info-value">
-              @if($booking->payment_status == 'pending')
-                <span class="badge badge-warning">Pending</span>
-              @elseif($booking->payment_status == 'paid')
-                <span class="badge badge-success">Paid</span>
-              @elseif($booking->payment_status == 'partial')
-                <span class="badge badge-info">Partial</span>
-                @if($booking->payment_percentage)
-                  <br><small>{{ number_format($booking->payment_percentage, 0) }}% paid</small>
-                @endif
-              @elseif($booking->payment_status == 'failed')
-                <span class="badge badge-danger">Failed</span>
-              @elseif($booking->payment_status == 'cancelled')
-                <span class="badge badge-secondary">Cancelled</span>
-              @endif
-              @if($booking->payment_method)
-                <br><small>{{ ucfirst($booking->payment_method) }}</small>
-              @endif
-            </span>
-          </div>
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Check-in Status:</span>
-            <span class="mobile-booking-info-value">
-              @if($booking->check_in_status == 'pending')
-                <span class="badge badge-warning">Pending</span>
-              @elseif($booking->check_in_status == 'checked_in')
-                <span class="badge badge-success">Checked In</span>
-                @if($booking->checked_in_at)
-                  <br><small>{{ \Carbon\Carbon::parse($booking->checked_in_at)->format('M d, Y H:i') }}</small>
-                @endif
-              @elseif($booking->check_in_status == 'checked_out')
-                <span class="badge badge-info">Checked Out</span>
-                @if($booking->checked_out_at)
-                  <br><small>{{ \Carbon\Carbon::parse($booking->checked_out_at)->format('M d, Y H:i') }}</small>
-                @endif
-              @endif
-            </span>
-          </div>
-          
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Email:</span>
-            <span class="mobile-booking-info-value"><small>{{ $booking->guest_email }}</small></span>
-          </div>
-          
-          @if($booking->guest_phone)
-          <div class="mobile-booking-info-row">
-            <span class="mobile-booking-info-label">Phone:</span>
-            <span class="mobile-booking-info-value"><small>{{ $booking->guest_phone }}</small></span>
-          </div>
-          @endif
-          
-          <div class="mobile-booking-actions">
-            @if($showReminders)
-            <button class="btn btn-sm btn-warning" onclick="sendReminder({{ $booking->id }})" title="Send Reminders">
-              <i class="fa fa-bell"></i> Reminders
-            </button>
-            <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
-              <i class="fa fa-eye"></i> View
-            </button>
-            @if(!$isReception)
-            <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
-              <i class="fa fa-trash"></i> Delete
-            </button>
-            @endif
-            @elseif($booking->status == 'pending' && $booking->payment_status == 'pending')
-            <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
-              <i class="fa fa-eye"></i> View
-            </button>
-            @if(!$isReception)
-            <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
-              <i class="fa fa-trash"></i> Delete
-            </button>
-            @endif
-            @else
-            <button class="btn btn-sm btn-info" onclick="viewBooking({{ $booking->id }})" title="View Details">
-              <i class="fa fa-eye"></i> View
-            </button>
-            <a href="{{ route('payment.receipt.download', $booking) }}?download=1" class="btn btn-sm btn-success" target="_blank" title="Download Receipt">
-              <i class="fa fa-download"></i>
-            </a>
-
-            <button class="btn btn-sm btn-secondary" onclick="showNotesModal({{ $booking->id }})" title="Admin Notes">
-              <i class="fa fa-sticky-note"></i> Notes
-            </button>
-            @if(in_array($booking->status, ['pending', 'cancelled']) || ($booking->status == 'confirmed' && $booking->check_in_status == 'pending'))
-              @if(!$isReception)
-              <button class="btn btn-sm btn-danger" onclick="deleteBooking({{ $booking->id }})" title="Delete">
-                <i class="fa fa-trash"></i> Delete
-              </button>
-              @endif
-            @endif
-            @endif
-          </div>
-        </div>
-        @endforeach
+                <button class="btn btn-link btn-sm text-secondary font-weight-bold p-0" onclick="showNotesModal({{ $booking->id }})"><i class="fa fa-sticky-note-o"></i> Notes</button>
+              </div>
+            </div>
+          @endforeach
         @endif
       </div>
       
@@ -2909,12 +2234,42 @@ function filterBookings() {
   }
 }
 
+function applyServerFilters() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const search = document.getElementById('searchInput').value;
+    const status = document.getElementById('statusFilter').value;
+    const checkInStatus = document.getElementById('checkInStatusFilter').value;
+    const paymentStatus = document.getElementById('paymentStatusFilter').value;
+    
+    let url = new URL(window.location.href);
+    
+    if (startDate) url.searchParams.set('start_date', startDate); else url.searchParams.delete('start_date');
+    if (endDate) url.searchParams.set('end_date', endDate); else url.searchParams.delete('end_date');
+    if (search) url.searchParams.set('search', search); else url.searchParams.delete('search');
+    
+    if (status && status !== 'all') url.searchParams.set('status', status); else url.searchParams.delete('status');
+    if (checkInStatus && checkInStatus !== 'all') url.searchParams.set('check_in_status', checkInStatus); else url.searchParams.delete('check_in_status');
+    if (paymentStatus && paymentStatus !== 'all') url.searchParams.set('payment_status', paymentStatus); else url.searchParams.delete('payment_status');
+    
+    // Clear quick filter if manual filters are applied
+    url.searchParams.delete('quick_filter');
+    
+    // Reset to page 1 when filtering
+    url.searchParams.set('page', '1');
+    
+    window.location.href = url.toString();
+}
+
 function resetFilters() {
-  document.getElementById('statusFilter').value = 'all';
-  document.getElementById('checkInStatusFilter').value = 'all';
-  document.getElementById('paymentStatusFilter').value = 'all';
-  document.getElementById('searchInput').value = '';
-  filterBookings();
+    let url = new URL(window.location.href);
+    const type = url.searchParams.get('type');
+    
+    // Clear all except type
+    url.search = '';
+    if (type) url.searchParams.set('type', type);
+    
+    window.location.href = url.pathname + url.search;
 }
 
 function viewCompanyBookingGroup(companyId, firstBookingId) {

@@ -91,6 +91,40 @@ class ReceptionController extends Controller
             $query->where('check_in_status', $request->check_in_status);
         }
 
+        // Filter by Date Range (Check-in Date)
+        if ($request->has('start_date') && $request->start_date) {
+            $query->whereDate('check_in', '>=', $request->start_date);
+        }
+        if ($request->has('end_date') && $request->end_date) {
+            $query->whereDate('check_in', '<=', $request->end_date);
+        }
+
+        // Apply Quick Operational Filters
+        $quickFilter = $request->get('quick_filter');
+        if ($quickFilter) {
+            $today = \Carbon\Carbon::today();
+            switch ($quickFilter) {
+                case 'checkin_today':
+                    $query->whereDate('check_in', $today)->where('check_in_status', 'pending');
+                    break;
+                case 'checkout_today':
+                    $query->whereDate('check_out', $today)->where('check_in_status', 'checked_in');
+                    break;
+                case 'in_house':
+                    $query->where('check_in_status', 'checked_in');
+                    break;
+                case 'arriving_week':
+                    $query->whereBetween('check_in', [$today, $today->copy()->addDays(7)]);
+                    break;
+                case 'pending':
+                    $query->where('status', 'pending');
+                    break;
+                case 'overdue':
+                    $query->where('check_in_status', 'checked_in')->whereDate('check_out', '<', $today);
+                    break;
+            }
+        }
+
         // Filter by booking type (individual or corporate)
         $bookingType = $request->get('type', 'individual'); // Default to individual
         if ($bookingType === 'corporate') {
@@ -144,6 +178,39 @@ class ReceptionController extends Controller
                 
                 if ($request->has('check_in_status') && $request->check_in_status) {
                     $companyBookings->where('check_in_status', $request->check_in_status);
+                }
+
+                // Apply Date Range inside corporate loop
+                if ($request->has('start_date') && $request->start_date) {
+                    $companyBookings->whereDate('check_in', '>=', $request->start_date);
+                }
+                if ($request->has('end_date') && $request->end_date) {
+                    $companyBookings->whereDate('check_in', '<=', $request->end_date);
+                }
+
+                // Apply Quick Filter inside corporate loop
+                if ($quickFilter) {
+                    $today = \Carbon\Carbon::today();
+                    switch ($quickFilter) {
+                        case 'checkin_today':
+                            $companyBookings->whereDate('check_in', $today)->where('check_in_status', 'pending');
+                            break;
+                        case 'checkout_today':
+                            $companyBookings->whereDate('check_out', $today)->where('check_in_status', 'checked_in');
+                            break;
+                        case 'in_house':
+                            $companyBookings->where('check_in_status', 'checked_in');
+                            break;
+                        case 'arriving_week':
+                            $companyBookings->whereBetween('check_in', [$today, $today->copy()->addDays(7)]);
+                            break;
+                        case 'pending':
+                            $companyBookings->where('status', 'pending');
+                            break;
+                        case 'overdue':
+                            $companyBookings->where('check_in_status', 'checked_in')->whereDate('check_out', '<', $today);
+                            break;
+                    }
                 }
                 
                 // Search by guest name, booking reference, or company name
@@ -202,7 +269,9 @@ class ReceptionController extends Controller
         // Get statistics filtered by booking type
         if ($bookingType === 'corporate') {
             // For corporate bookings, count unique companies
-            $baseQuery = Booking::where('is_corporate_booking', true);
+            $baseQuery = Booking::where('is_corporate_booking', true)
+                ->where('booking_reference', 'NOT LIKE', 'INV%')
+                ->where('booking_reference', 'NOT LIKE', 'CINV%');
             
             // Apply status filter if provided
             if ($request->has('status') && $request->status == 'expired') {
@@ -221,6 +290,14 @@ class ReceptionController extends Controller
             } else if ($request->has('status') && $request->status) {
                 $baseQuery->where('status', $request->status);
             }
+
+            // Apply Date Range filter to stats
+            if ($request->has('start_date') && $request->start_date) {
+                $baseQuery->whereDate('check_in', '>=', $request->start_date);
+            }
+            if ($request->has('end_date') && $request->end_date) {
+                $baseQuery->whereDate('check_in', '<=', $request->end_date);
+            }
             
             // Count unique companies
             $totalCompanies = $baseQuery->whereNotNull('company_id')->distinct('company_id')->count('company_id');
@@ -238,6 +315,7 @@ class ReceptionController extends Controller
             
             $allCorporateQuery = Booking::where('is_corporate_booking', true);
             
+            $today = \Carbon\Carbon::today();
             $stats = [
                 'total' => $totalCompanies,
                 'individual_total' => $allIndividualQuery->count(),
@@ -249,6 +327,11 @@ class ReceptionController extends Controller
                 'expired' => 0, // Not applicable for corporate view
                 'checked_in' => $checkedInCompanies,
                 'checked_out' => $checkedOutCompanies,
+                // Operational stats (counting actual stays/bookings)
+                'checkin_today' => (clone $baseQuery)->whereDate('check_in', $today)->where('check_in_status', 'pending')->count(),
+                'checkout_today' => (clone $baseQuery)->whereDate('check_out', $today)->where('check_in_status', 'checked_in')->count(),
+                'arriving_week' => (clone $baseQuery)->whereBetween('check_in', [$today, $today->copy()->addDays(7)])->count(),
+                'overdue' => (clone $baseQuery)->where('check_in_status', 'checked_in')->whereDate('check_out', '<', $today)->count(),
             ];
         } else {
             // For individual bookings, count individual bookings
@@ -256,7 +339,9 @@ class ReceptionController extends Controller
             $baseQuery = Booking::where(function($q) {
                 $q->where('is_corporate_booking', false)
                   ->orWhereNull('is_corporate_booking');
-            });
+            })
+            ->where('booking_reference', 'NOT LIKE', 'INV%')
+            ->where('booking_reference', 'NOT LIKE', 'CINV%');
             
             // Synchronize stats with all current filters
             $statsQuery = clone $baseQuery;
@@ -308,6 +393,14 @@ class ReceptionController extends Controller
                       ->orWhere('guest_email', 'like', "%{$search}%");
                 });
             }
+
+            // 5. Apply Date Range filter to stats
+            if ($request->has('start_date') && $request->start_date) {
+                $statsQuery->whereDate('check_in', '>=', $request->start_date);
+            }
+            if ($request->has('end_date') && $request->end_date) {
+                $statsQuery->whereDate('check_in', '<=', $request->end_date);
+            }
             
             // Also get global totals for the tabs (always unfiltered by status/payment/check-in)
             $allIndividualTotal = Booking::where(function($q) {
@@ -320,6 +413,7 @@ class ReceptionController extends Controller
                 ->distinct('company_id')
                 ->count('company_id');
             
+            $today = \Carbon\Carbon::today();
             $stats = [
                 'total' => $statsQuery->count(),
                 'individual_total' => $allIndividualTotal,
@@ -334,6 +428,11 @@ class ReceptionController extends Controller
                     ->count(),
                 'checked_in' => (clone $statsQuery)->where('check_in_status', 'checked_in')->count(),
                 'checked_out' => (clone $statsQuery)->where('check_in_status', 'checked_out')->count(),
+                // Quick Filter Stats
+                'checkin_today' => (clone $statsQuery)->whereDate('check_in', $today)->where('check_in_status', 'pending')->count(),
+                'checkout_today' => (clone $statsQuery)->whereDate('check_out', $today)->where('check_in_status', 'checked_in')->count(),
+                'arriving_week' => (clone $statsQuery)->whereBetween('check_in', [$today, $today->copy()->addDays(7)])->count(),
+                'overdue' => (clone $statsQuery)->where('check_in_status', 'checked_in')->whereDate('check_out', '<', $today)->count(),
             ];
         }
 
@@ -344,9 +443,10 @@ class ReceptionController extends Controller
             'role' => $role,
             'userName' => auth()->user()->name ?? ($role === 'manager' ? 'Manager' : 'Reception Staff'),
             'userRole' => $role === 'manager' ? 'Manager' : 'Reception',
-            'filters' => $request->only(['status', 'payment_status', 'check_in_status', 'search', 'type']),
+            'filters' => $request->only(['status', 'payment_status', 'check_in_status', 'search', 'type', 'quick_filter', 'start_date', 'end_date']),
             'stats' => $stats,
             'bookingType' => $bookingType,
+            'bookingsRoute' => 'reception.bookings',
         ]);
     }
 

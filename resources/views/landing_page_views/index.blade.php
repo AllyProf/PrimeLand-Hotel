@@ -59,8 +59,7 @@
                         Now</a>
                 </div>
             </div>
-            <h4 class="text-white">Check-in: 2:00 PM &nbsp;|&nbsp; Check-out: 10:00 AM &nbsp;|&nbsp; Airport Shuttle
-                Available</h4>
+            
         </div>
     </div>
 </section>
@@ -121,7 +120,7 @@
                 OUR SERVICES
             </h6>
             <h2 class="wow fadeInUp text-white" data-wow-delay=".2s">
-                Boutique Hotel Services in Moshi
+                Our Services at Primeland Hotel
             </h2>
             <div class="prl-divider justify-content-center wow fadeInUp" data-wow-delay=".3s">
                 <div class="prl-line" style="background: white;"></div>
