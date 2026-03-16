@@ -92,6 +92,27 @@
             <div class="row">
               <div class="col-md-6">
                 <div class="form-group">
+                  <label class="font-weight-bold">Guest Nationality <span class="text-danger">*</span></label>
+                  <div class="d-flex mt-1">
+                    <div class="custom-control custom-radio mr-4">
+                      <input type="radio" id="nat_international" name="guest_type" class="custom-control-input" value="international" checked onchange="handleNationalityChange()">
+                      <label class="custom-control-label" for="nat_international">International</label>
+                    </div>
+                    <div class="custom-control custom-radio">
+                      <input type="radio" id="nat_tanzanian" name="guest_type" class="custom-control-input" value="tanzanian" onchange="handleNationalityChange()">
+                      <label class="custom-control-label" for="nat_tanzanian">Tanzanian</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <!-- Empty or potentially other field -->
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group">
                   <label class="font-weight-bold">Email Address <span class="text-danger">*</span></label>
                   <input class="form-control" type="email" id="guest_email" name="guest_email" placeholder="example@email.com" required>
                 </div>
@@ -243,7 +264,14 @@
 @section('scripts')
 <script>
 const SYSTEM_RATE = {{ $exchangeRate ?? 2500 }};
-let currentPricePerNight = 0;
+let currentPricePerNightUsd = 0;
+let currentPricePerNightTzs = 0;
+let currentSelectedNationality = 'international';
+
+function handleNationalityChange() {
+    currentSelectedNationality = $('input[name="guest_type"]:checked').val();
+    updateLiveSummary();
+}
 
 function toggleInvoiceType(type) {
     $('#invoice_type').val(type);
@@ -273,12 +301,18 @@ function updateLiveSummary() {
     const nights = calculateNights();
     const rooms = parseInt($('#number_of_rooms').val()) || 1;
     
+    // Choose the base rate based on nationality
+    let baseRate = (currentSelectedNationality === 'tanzanian') 
+        ? (currentPricePerNightTzs / SYSTEM_RATE) 
+        : currentPricePerNightUsd;
+    
+    // Display purposes
     $('#summary_nights').text(nights);
     $('#summary_rooms').text(rooms);
-    $('#summary_base_rate').text(currentPricePerNight.toFixed(2));
+    $('#summary_base_rate').text(baseRate.toFixed(2));
 
-    if (nights > 0 && currentPricePerNight > 0) {
-        const total = (nights * rooms * currentPricePerNight).toFixed(2);
+    if (nights > 0 && baseRate > 0) {
+        const total = (nights * rooms * baseRate).toFixed(2);
         $('#total_price').val(total).trigger('input'); 
     }
 }
@@ -292,7 +326,8 @@ function fetchAvailableRooms() {
 
     $('#rooms_loading').show();
     $('#availability_status').empty();
-    currentPricePerNight = 0;
+    currentPricePerNightUsd = 0;
+    currentPricePerNightTzs = 0;
     
     $.ajax({
         url: "{{ $role === 'reception' ? route('reception.bookings.available-rooms') : route('admin.bookings.available-rooms') }}",
@@ -303,14 +338,15 @@ function fetchAvailableRooms() {
                 const rooms = Array.isArray(data.available_rooms) ? data.available_rooms : Object.values(data.available_rooms);
                 const needed = parseInt($('#number_of_rooms').val()) || 1;
                 if (rooms.length > 0) {
-                    currentPricePerNight = parseFloat(rooms[0].price_per_night);
+                    currentPricePerNightUsd = parseFloat(rooms[0].price_per_night);
+                    currentPricePerNightTzs = parseFloat(rooms[0].price_per_night_tzs);
                     $('#room_id').val(rooms[0].id);
                     updateLiveSummary();
                     
                     if (rooms.length >= needed) {
-                        $('#availability_status').html(`<span class="text-success"><i class="fa fa-check-circle"></i> Sufficient rooms available (${rooms.length} available). Base rate is $${rooms[0].price_per_night}/night</span>`);
+                        $('#availability_status').html(`<span class="text-success"><i class="fa fa-check-circle"></i> Sufficient rooms available (${rooms.length} available). Rate: $${currentPricePerNightUsd}/night Or ${currentPricePerNightTzs.toLocaleString()} TZS/night</span>`);
                     } else {
-                        $('#availability_status').html(`<span class="text-warning" style="font-size: 14px;"><i class="fa fa-exclamation-triangle"></i> Warning: Only <strong>${rooms.length}</strong> available, but <strong>${needed}</strong> requested!</span><br><span class="text-muted">Base rate is $${rooms[0].price_per_night}/night</span>`);
+                        $('#availability_status').html(`<span class="text-warning" style="font-size: 14px;"><i class="fa fa-exclamation-triangle"></i> Warning: Only <strong>${rooms.length}</strong> available, but <strong>${needed}</strong> requested!</span><br><span class="text-muted">Rate: $${currentPricePerNightUsd}/night Or ${currentPricePerNightTzs.toLocaleString()} TZS/night</span>`);
                     }
                 } else {
                     $('#availability_status').html(`<span class="text-danger"><i class="fa fa-times-circle"></i> No rooms available for these dates!</span>`);
@@ -369,12 +405,12 @@ $(document).ready(function() {
                 let html = '';
                 if (data.length > 0) {
                     data.forEach(g => {
-                        html += `<a href="#" class="list-group-item list-group-item-action guest-select-item" data-name="${g.name}" data-email="${g.email}" data-phone="${g.phone}">
-                                    <div class="d-flex justify-content-between">
-                                        <strong>${g.name}</strong> <i class="fa fa-chevron-right text-muted small"></i>
-                                    </div>
-                                    <small class="text-muted"><i class="fa fa-envelope-o"></i> ${g.email} | <i class="fa fa-phone"></i> ${g.phone}</small>
-                                 </a>`;
+                        html += `<a href="#" class="list-group-item list-group-item-action guest-select-item" data-name="${g.name}" data-email="${g.email}" data-phone="${g.phone}" data-guest-type="${g.guest_type || 'international'}">
+                                     <div class="d-flex justify-content-between">
+                                         <strong>${g.name}</strong> <i class="fa fa-chevron-right text-muted small"></i>
+                                     </div>
+                                     <small class="text-muted"><i class="fa fa-envelope-o"></i> ${g.email} | <i class="fa fa-phone"></i> ${g.phone}</small>
+                                  </a>`;
                     });
                     $('#guestSearchResults').html(html).show();
                 } else { $('#guestSearchResults').hide(); }
@@ -387,6 +423,16 @@ $(document).ready(function() {
         $('#guest_name').val($(this).data('name'));
         $('#guest_email').val($(this).data('email'));
         $('#guest_phone').val($(this).data('phone'));
+        
+        // Auto-select nationality
+        const gType = $(this).data('guest-type');
+        if (gType === 'tanzanian') {
+            $('#nat_tanzanian').prop('checked', true);
+        } else {
+            $('#nat_international').prop('checked', true);
+        }
+        handleNationalityChange();
+
         $('#guestSearchResults').hide();
         $('#guestSearchInput').val('');
     });

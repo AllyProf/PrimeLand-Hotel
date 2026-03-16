@@ -4903,6 +4903,7 @@ class BookingController extends Controller
                 ->first();
             
             if ($lastBooking) {
+                $guest->guest_type = $lastBooking->guest_type; // Use type from booking
                 $guest->last_booking_date = \Carbon\Carbon::parse($lastBooking->check_in)->format('M d, Y');
                 $guest->last_booking_details = [
                     'room' => $lastBooking->room_number ?? ($lastBooking->room ? $lastBooking->room->room_number : 'N/A'),
@@ -5007,6 +5008,7 @@ class BookingController extends Controller
             'corporate_guest_name' => 'nullable|string|max:255',
             'guest_email' => 'required|email|max:255',
             'guest_phone' => 'required|string|max:255',
+            'guest_type' => 'required|in:tanzanian,international',
             'check_in' => 'required|date|after_or_equal:today',
             'check_out' => 'required|date|after:check_in',
             'room_type' => 'required|string',
@@ -5088,6 +5090,7 @@ class BookingController extends Controller
             'last_name' => count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '',
             'guest_email' => $validated['guest_email'],
             'guest_phone' => $validated['guest_phone'],
+            'guest_type' => $validated['guest_type'],
             'check_in' => $validated['check_in'],
             'check_out' => $validated['check_out'],
             'total_price' => $validated['total_price'],
