@@ -182,9 +182,17 @@
 </head>
 <body>
     @php
-        $totalUSD = $companyCharges + $selfPaidCharges;
-        $paidUSD = $totalCompanyPaid ?? 0;
-        $balanceUSD = max(0, $totalUSD - $paidUSD);
+        // Determine currency by the first booking's guest type
+        $firstBooking = $bookings[0] ?? null;
+        $isTanzanian = ($firstBooking && $firstBooking->guest_type === 'tanzanian');
+        $currency = $isTanzanian ? 'TZS ' : '$';
+        $exchangeRate = ($firstBooking && $firstBooking->locked_exchange_rate) ? $firstBooking->locked_exchange_rate : 2500;
+        $multiplier = $isTanzanian ? $exchangeRate : 1;
+        $fmt = $isTanzanian ? 0 : 2;
+
+        $totalVal = ($companyCharges + $selfPaidCharges) * $multiplier;
+        $paidVal = ($totalCompanyPaid ?? 0) * $multiplier;
+        $balanceVal = max(0, $totalVal - $paidVal);
     @endphp
 
     <div class="container">
@@ -242,8 +250,8 @@
                 <tr>
                     <td><strong>{{ $booking->guest_name }}</strong></td>
                     <td>{{ $booking->room->room_number }} ({{ $booking->room->room_type }})</td>
-                    <td style="text-align: center;">${{ number_format($booking->total_price / $nights, 2) }}</td>
-                    <td style="text-align: right;">${{ number_format($booking->total_price, 2) }}</td>
+                    <td style="text-align: center;">{{ $currency }}{{ number_format(($booking->total_price * $multiplier) / $nights, $fmt) }}</td>
+                    <td style="text-align: right;">{{ $currency }}{{ number_format($booking->total_price * $multiplier, $fmt) }}</td>
                     <td style="text-align: center;">
                         <span class="badge {{ $booking->payment_responsibility === 'company' ? 'badge-company' : 'badge-self' }}">
                             {{ $booking->payment_responsibility === 'company' ? 'Corp' : 'Self' }}
@@ -277,19 +285,19 @@
                     <table class="total-row">
                         <tr>
                             <td class="label">Total Group Value</td>
-                            <td class="value">${{ number_format($totalUSD, 2) }}</td>
+                            <td class="value">{{ $currency }}{{ number_format($totalVal, $fmt) }}</td>
                         </tr>
                     </table>
                     <table class="total-row">
                         <tr>
                             <td class="label">Payments Received</td>
-                            <td class="value">${{ number_format($paidUSD, 2) }}</td>
+                            <td class="value">{{ $currency }}{{ number_format($paidVal, $fmt) }}</td>
                         </tr>
                     </table>
                     <table class="total-row grand-total">
                         <tr>
                             <td class="label">GROUP BALANCE</td>
-                            <td class="value">${{ number_format($balanceUSD, 2) }}</td>
+                            <td class="value">{{ $currency }}{{ number_format($balanceVal, $fmt) }}</td>
                         </tr>
                     </table>
                 </td>

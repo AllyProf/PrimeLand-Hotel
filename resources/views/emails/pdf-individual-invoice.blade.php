@@ -186,9 +186,15 @@
 <body>
     @php
         $nights = \Carbon\Carbon::parse($booking->check_in)->diffInDays($booking->check_out);
-        $totalUSD = $booking->total_price;
-        $paidUSD = $booking->amount_paid ?? 0;
-        $balanceUSD = max(0, $totalUSD - $paidUSD);
+        $isTanzanian = ($booking->guest_type === 'tanzanian');
+        $currency = $isTanzanian ? 'TZS ' : '$';
+        $exchangeRate = $booking->locked_exchange_rate ?? 2500;
+        $multiplier = $isTanzanian ? $exchangeRate : 1;
+        
+        $totalVal = $booking->total_price * $multiplier;
+        $paidVal = ($booking->amount_paid ?? 0) * $multiplier;
+        $balanceVal = max(0, $totalVal - $paidVal);
+        $fmt = $isTanzanian ? 0 : 2;
     @endphp
 
     <div class="container">
@@ -247,8 +253,8 @@
                         <span>Stay for {{ $booking->guest_name }}</span>
                     </td>
                     <td style="text-align: center;">{{ $nights }}</td>
-                    <td style="text-align: right;">${{ number_format($totalUSD / max(1, $nights), 2) }}</td>
-                    <td style="text-align: right; font-weight: bold;">${{ number_format($totalUSD, 2) }}</td>
+                    <td style="text-align: right;">{{ $currency }}{{ number_format($totalVal / max(1, $nights), $fmt) }}</td>
+                    <td style="text-align: right; font-weight: bold;">{{ $currency }}{{ number_format($totalVal, $fmt) }}</td>
                 </tr>
             </tbody>
         </table>
@@ -276,19 +282,19 @@
                     <table class="total-row">
                         <tr>
                             <td class="label">Subtotal</td>
-                            <td class="value">${{ number_format($totalUSD, 2) }}</td>
+                            <td class="value">{{ $currency }}{{ number_format($totalVal, $fmt) }}</td>
                         </tr>
                     </table>
                     <table class="total-row">
                         <tr>
                             <td class="label">Amount Paid</td>
-                            <td class="value">${{ number_format($paidUSD, 2) }}</td>
+                            <td class="value">{{ $currency }}{{ number_format($paidVal, $fmt) }}</td>
                         </tr>
                     </table>
                     <table class="total-row grand-total">
                         <tr>
                             <td class="label">TOTAL DUE</td>
-                            <td class="value">${{ number_format($balanceUSD, 2) }}</td>
+                            <td class="value">{{ $currency }}{{ number_format($balanceVal, $fmt) }}</td>
                         </tr>
                     </table>
                 </td>
