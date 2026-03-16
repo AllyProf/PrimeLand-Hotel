@@ -9,7 +9,7 @@
     <div class="container">
         <div class="gt-page-heading">
             <div class="gt-breadcrumb-sub-title">
-                <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Hotel Services in Moshi</h1>
+                <h1 class=" text-white wow fadeInUp" data-wow-delay=".3s">Hotel Services</h1>
             </div>
             <ul class="gt-breadcrumb-items wow fadeInUp" data-wow-delay=".5s">
                 <li>
