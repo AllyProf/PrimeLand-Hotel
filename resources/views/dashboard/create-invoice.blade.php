@@ -399,7 +399,7 @@ function recalcAlternative() {
         // Display is USD, Alternative is TZS
         realUsd = displayValue;
         alternativeValue = displayValue * rateToUse;
-        $('#alternative_total_value').text(alternativeValue.toLocaleString(undefined, {minimumFractionDigits: 0}));
+        $('#alternative_total_value').text(alternativeValue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}));
     }
 
     // Always update the hidden field for the server
