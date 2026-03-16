@@ -36,6 +36,7 @@
     <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-calendar-check-o"></i><span class="app-menu__label">Bookings & Front Desk</span><i class="treeview-indicator fa fa-angle-right"></i></a>
     <ul class="treeview-menu">
         <li><a class="treeview-item" href="{{ route('reception.bookings') }}"><i class="icon fa fa-list"></i> All Bookings</a></li>
+        <li class="treeview-divider"></li>
         <li><a class="treeview-item" href="{{ route('reception.bookings.manual.create') }}"><i class="icon fa fa-plus-circle"></i> Individual Booking</a></li>
         <li><a class="treeview-item" href="{{ route('reception.invoices.create') }}"><i class="icon fa fa-plus-square"></i> Create Quick Invoice</a></li>
         <li><a class="treeview-item" href="{{ route('reception.invoices.index') }}"><i class="icon fa fa-file-text"></i> Sent Quotations</a></li>

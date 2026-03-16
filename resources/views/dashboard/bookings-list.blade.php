@@ -6,11 +6,41 @@
   $bookingsRoute = $isReception ? 'reception.bookings' : 'admin.bookings.index';
   $manualCreateRoute = $isReception ? 'reception.bookings.manual.create' : 'admin.bookings.manual.create';
   $dashboardRoute = $isReception ? route('reception.dashboard') : route('admin.dashboard');
+
+  $activeQuick = request('quick_filter');
+  $pageTitle = 'Bookings Management';
+  $pageDesc = 'View and manage all hotel bookings';
+  
+  if ($activeQuick) {
+      $titles = [
+          'checkin_today' => 'Check-in Today',
+          'checkout_today' => 'Check-out Today',
+          'in_house' => 'In-House Now',
+          'arriving_week' => 'Arriving This Week',
+          'pending' => 'Pending (Unconfirmed)',
+          'overdue' => 'Overdue Checkout'
+      ];
+      
+      $pageTitle = $titles[$activeQuick] ?? 'Filtered Bookings';
+      $pageDesc = 'Operational view: Showing ' . strtolower($pageTitle);
+      
+      $icons = [
+          'checkin_today' => 'fa-sign-in',
+          'checkout_today' => 'fa-sign-out',
+          'in_house' => 'fa-home',
+          'arriving_week' => 'fa-calendar',
+          'pending' => 'fa-clock-o',
+          'overdue' => 'fa-exclamation-triangle'
+      ];
+      $pageIcon = $icons[$activeQuick] ?? 'fa-calendar-check-o';
+  } else {
+      $pageIcon = 'fa-calendar-check-o';
+  }
 @endphp
 <div class="app-title">
   <div>
-    <h1><i class="fa fa-calendar-check-o"></i> Bookings Management</h1>
-    <p>View and manage all hotel bookings</p>
+    <h1><i class="fa {{ $pageIcon }}"></i> {{ $pageTitle }}</h1>
+    <p>{{ $pageDesc }}</p>
   </div>
   <ul class="app-breadcrumb breadcrumb">
     <li class="breadcrumb-item"><i class="fa fa-home fa-lg"></i></li>
