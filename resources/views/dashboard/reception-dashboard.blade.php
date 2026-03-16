@@ -401,36 +401,37 @@
     });
 
     // Room Occupancy Chart (Check-ins vs Check-outs per day this week)
-    var occupancyCtx = document.getElementById('occupancyChart').getContext('2d');
-    var occupancyChart = new Chart(occupancyCtx, {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode(array_column($occupancyData, 'day')) !!},
-            datasets: [
-                {
-                    label: 'Check-ins',
-                    data: {!! json_encode(array_column($occupancyData, 'checkins')) !!},
-                    backgroundColor: 'rgba(70, 191, 189, 0.7)',
-                    borderColor: 'rgba(70, 191, 189, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Check-outs',
-                    data: {!! json_encode(array_column($occupancyData, 'checkouts')) !!},
-                    backgroundColor: 'rgba(247, 70, 74, 0.7)',
-                    borderColor: 'rgba(247, 70, 74, 1)',
-                    borderWidth: 1
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                yAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }]
+    var occupancyData = {
+        labels: {!! json_encode(array_column($occupancyData, 'day')) !!},
+        datasets: [
+            {
+                label: "Check-ins",
+                fillColor: "rgba(70, 191, 189, 0.7)",
+                strokeColor: "rgba(70, 191, 189, 1)",
+                pointColor: "rgba(70, 191, 189, 1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(70, 191, 189, 1)",
+                data: {!! json_encode(array_column($occupancyData, 'checkins')) !!}
             },
-            legend: { position: 'bottom' }
-        }
+            {
+                label: "Check-outs",
+                fillColor: "rgba(247, 70, 74, 0.7)",
+                strokeColor: "rgba(247, 70, 74, 1)",
+                pointColor: "rgba(247, 70, 74, 1)",
+                pointStrokeColor: "#fff",
+                pointHighlightFill: "#fff",
+                pointHighlightStroke: "rgba(247, 70, 74, 1)",
+                data: {!! json_encode(array_column($occupancyData, 'checkouts')) !!}
+            }
+        ]
+    };
+
+    var occupancyCtx = document.getElementById('occupancyChart').getContext('2d');
+    new Chart(occupancyCtx).Bar(occupancyData, {
+        responsive: true,
+        scaleBeginAtZero: true,
+        maintainAspectRatio: false
     });
 
     // Booking Status Pie Chart
