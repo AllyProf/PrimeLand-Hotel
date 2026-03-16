@@ -431,15 +431,20 @@
                                                 Checkout: {{ \Carbon\Carbon::parse($room->last_checked_out_booking->checked_out_at)->format('H:i') }}
                                             </small>
                                         @endif
-                                    @elseif($room->is_occupied && $room->current_booking)
+                                    @elseif($room->is_occupied)
                                         <div class="small">
-                                            <strong class="text-dark"><i class="fa fa-user"></i> {{ Str::limit($room->current_booking->guest_name, 18) }}</strong>
-                                            <div class="d-flex justify-content-between mt-1 text-muted">
-                                                <span>Out: {{ \Carbon\Carbon::parse($room->current_booking->check_out)->format('M d') }}</span>
-                                                @if($isUrgentCheckout)
-                                                    <span class="text-danger font-weight-bold">Today!</span>
-                                                @endif
-                                            </div>
+                                            @if($room->current_booking)
+                                                <strong class="text-dark"><i class="fa fa-user"></i> {{ Str::limit($room->current_booking->guest_name, 18) }}</strong>
+                                                <div class="d-flex justify-content-between mt-1 text-muted">
+                                                    <span>Out: {{ \Carbon\Carbon::parse($room->current_booking->check_out)->format('M d') }}</span>
+                                                    @if($isUrgentCheckout)
+                                                        <span class="text-danger font-weight-bold">Today!</span>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <strong class="text-dark"><i class="fa fa-user-secret"></i> Occupied (Manual)</strong>
+                                                <div class="text-muted small mt-1">Status set by reception</div>
+                                            @endif
                                         </div>
                                     @elseif($room->has_immediate_booking && $room->upcoming_checkin)
                                         <div class="small">
