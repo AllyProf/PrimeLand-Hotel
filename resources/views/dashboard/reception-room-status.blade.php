@@ -2,83 +2,63 @@
 
 @section('content')
 <style>
-    /* Compact Status Card Styles */
+    /* Status Card Styles */
     .room-card-status {
         transition: transform 0.2s, box-shadow 0.2s;
         border: none !important;
         color: #fff !important;
-        min-height: 180px;
-        display: flex;
-        flex-direction: column;
     }
     .room-card-status:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
     }
     
     .room-card-status .card-body {
-        padding: 0.75rem !important;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        height: 100%;
+        padding: 1rem !important; /* Reduced from 1.25rem */
     }
     
-    .status-bg-available { background: linear-gradient(135deg, #28a745, #218838) !important; }
-    .status-bg-occupied { background: linear-gradient(135deg, #dc3545, #c82333) !important; }
-    .status-bg-reserved { background: linear-gradient(135deg, #007bff, #0069d9) !important; }
-    .status-bg-cleaning { background: linear-gradient(135deg, #ffc107, #e0a800) !important; color: #333 !important; }
-    .status-bg-maintenance { background: linear-gradient(135deg, #6c757d, #5a6268) !important; }
-    .status-bg-closed { background: linear-gradient(135deg, #343a40, #23272b) !important; }
+    .room-card-status .text-muted {
+        color: rgba(255,255,255,0.8) !important;
+    }
+    
+    .room-card-status .text-dark {
+        color: #fff !important;
+    }
+    
+    .status-bg-available { background-color: #28a745 !important; }
+    .status-bg-occupied { background-color: #dc3545 !important; }
+    .status-bg-reserved { background-color: #007bff !important; }
+    .status-bg-cleaning { background-color: #ffc107 !important; color: #333 !important; }
+    .status-bg-maintenance { background-color: #6c757d !important; }
+    .status-bg-closed { background-color: #343a40 !important; }
     
     .room-card-status.status-bg-cleaning .text-muted,
     .room-card-status.status-bg-cleaning .text-dark,
-    .room-card-status.status-bg-cleaning .small,
-    .room-card-status.status-bg-cleaning .x-small {
+    .room-card-status.status-bg-cleaning .small {
         color: #333 !important;
     }
     
-    .x-small { font-size: 0.75rem; line-height: 1.2; }
-    
-    .room-card-status .room-number {
-        font-size: 1.75rem;
-        font-weight: 800;
-        letter-spacing: -1px;
-    }
-    
-    .room-card-status .btn-light-custom {
+    .room-card-status .btn-outline-primary, 
+    .room-card-status .btn-outline-danger,
+    .room-card-status .btn-outline-success,
+    .room-card-status .btn-outline-info {
         background: rgba(255,255,255,0.2);
-        border: 1px solid rgba(255,255,255,0.3);
+        border-color: rgba(255,255,255,0.5);
         color: #fff !important;
-        padding: 2px 8px;
-        font-size: 0.7rem;
     }
     
-    .room-card-status.status-bg-cleaning .btn-light-custom {
-        background: rgba(0,0,0,0.05);
-        border-color: rgba(0,0,0,0.1);
+    .room-card-status .btn-outline-primary:hover, 
+    .room-card-status .btn-outline-danger:hover,
+    .room-card-status .btn-outline-success:hover,
+    .room-card-status .btn-outline-info:hover {
+        background: rgba(255,255,255,0.4);
+        border-color: #fff;
+    }
+    
+    .room-card-status.status-bg-cleaning .btn-outline-secondary {
+        border-color: #333;
         color: #333 !important;
     }
-    
-    .room-card-status .btn-light-custom:hover {
-        background: rgba(255,255,255,0.4);
-    }
-    
-    .room-card-status .action-btns .btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        font-weight: 700;
-        background: #fff;
-        border: none;
-    }
-    
-    .status-bg-available .action-btns .btn { color: #28a745; }
-    .status-bg-occupied .action-btns .btn { color: #dc3545; }
-    .status-bg-reserved .action-btns .btn { color: #007bff; }
-    .status-bg-cleaning .action-btns .btn { background: #333; color: #ffc107; }
-    .status-bg-maintenance .action-btns .btn { color: #6c757d; }
-    .status-bg-closed .action-btns .btn { color: #343a40; }
 </style>
 
 <div class="app-title">
@@ -369,77 +349,134 @@
                         }
                     @endphp
 
-                    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4 room-card-container" 
+                    <div class="col-md-3 col-sm-6 mb-4 room-card-container" 
                          data-status="{{ $filterStatus }}" 
                          data-type="{{ $room->room_type }}" 
                          data-number="{{ $room->room_number }}">
                         <div class="card shadow-sm room-card-status {{ $bgClass }} h-100">
-                            <div class="card-body">
-                                <!-- Top Part: Room Number & Quick Actions -->
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="room-number">{{ $room->room_number }}</div>
-                                    <div class="d-flex flex-column align-items-end">
-                                        <button type="button" class="btn btn-xs btn-light-custom rounded-circle mb-1" 
-                                                data-toggle="modal" data-target="#quickInfoModal"
-                                                data-room-info="{{ json_encode($roomData) }}" title="Info">
-                                            <i class="fa fa-info"></i>
-                                        </button>
-                                        <button type="button" class="btn btn-xs btn-light-custom rounded-circle" 
-                                                data-toggle="modal" data-target="#statusUpdateModal"
-                                                data-room-id="{{ $room->id }}" data-room-number="{{ $room->room_number }}"
-                                                data-status="{{ $room->status }}" title="Status">
-                                            <i class="fa fa-cog"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                           <!-- Info Button Overlay -->
+                           <div class="position-absolute d-flex flex-column" style="top: 10px; left: 10px; z-index: 10;">
+                                <button type="button" class="btn btn-sm btn-light shadow-sm rounded-circle mb-2" 
+                                        data-toggle="modal" 
+                                        data-target="#quickInfoModal"
+                                        data-room-info="{{ json_encode($roomData) }}"
+                                        title="Quick Info">
+                                    <i class="fa fa-info" style="width: 10px;"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light shadow-sm rounded-circle" 
+                                        data-toggle="modal" 
+                                        data-target="#statusUpdateModal"
+                                        data-room-id="{{ $room->id }}"
+                                        data-room-number="{{ $room->room_number }}"
+                                        data-status="{{ $room->status }}"
+                                        data-until="{{ $room->status_until ? $room->status_until->format('Y-m-d\TH:i') : '' }}"
+                                        title="Manual Status Update">
+                                    <i class="fa fa-cog" style="width: 10px;"></i>
+                                </button>
+                           </div>
 
-                                <!-- Middle Part: Type & Status Badge -->
-                                <div class="mb-2">
-                                    <div class="x-small font-weight-bold opacity-75 text-uppercase">{{ $room->room_type }}</div>
-                                    <div class="x-small mt-1">
+                            <!-- Room Image Section (Reduced from 160px to 135px) -->
+                            <div class="position-relative" style="height: 135px; overflow: hidden; background-color: rgba(255,255,255,0.05);">
+                                @if($bgImage)
+                                    <img src="{{ $bgImage }}" alt="Room {{ $room->room_number }}" class="w-100 h-100" style="object-fit: cover; transition: transform 0.5s;">
+                                @else
+                                    <div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column" style="color: rgba(255,255,255,0.7) !important;">
+                                        <i class="fa fa-bed fa-3x mb-2" style="opacity: 0.5;"></i>
+                                        <span class="small font-weight-bold" style="font-size: 10px; letter-spacing: 2px; opacity: 0.8;">PRIME LAND HOTEL</span>
+                                    </div>
+                                @endif
+                                <div class="position-absolute" style="top: 10px; right: 10px;">
+                                    <span class="badge {{ $statusBadge }} p-2 shadow-sm">
                                         <i class="fa {{ $statusIcon }}"></i> {{ $statusText }}
-                                    </div>
+                                    </span>
                                 </div>
+                                <div class="position-absolute" style="bottom: 0px; left: 0px; background: {{ $bgImage ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.2)' }}; width: 100%; padding: 8px 15px;">
+                                    <h5 class="text-white mb-0"> <!-- Reduced from h4 -->
+                                        <i class="fa fa-bed mr-2"></i>{{ $room->room_number }} 
+                                        <span class="badge badge-light ml-2" style="font-size: 0.6em; vertical-align: middle;">
+                                            <i class="fa fa-tag mr-1"></i>{{ $room->room_type }}
+                                        </span>
+                                    </h5>
+                                </div>
+                                
+                                <!-- Urgent Indicators Overlay -->
+                                @if($isUrgentCheckout && $room->is_occupied)
+                                    <div class="position-absolute" style="top: 45px; right: 10px;">
+                                        <span class="badge badge-danger p-2 shadow-sm">
+                                            <i class="fa fa-clock-o"></i> Out Today
+                                        </span>
+                                    </div>
+                                @elseif($isUpcomingCheckin && !$room->is_occupied)
+                                    <div class="position-absolute" style="top: 45px; right: 10px;">
+                                        <span class="badge badge-info p-2 shadow-sm">
+                                            <i class="fa fa-suitcase"></i> In Today
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
 
-                                <!-- Details Part -->
-                                <div class="room-details mb-2 mt-auto" style="min-height: 40px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 5px;">
+                            <div class="card-body">
+                                
+                                <div class="room-details mb-3" style="min-height: 50px;"> <!-- Reduced from 60px -->
                                     @if($room->status === 'maintenance')
-                                        <div class="x-small"><i class="fa fa-wrench"></i> Maintenance</div>
-                                    @elseif($room->status === 'to_be_cleaned')
-                                        <div class="x-small"><i class="fa fa-broom"></i> Needs Cleaning</div>
-                                    @elseif($room->is_occupied && $room->current_booking)
-                                        <div class="x-small text-truncate font-weight-bold" title="{{ $room->current_booking->guest_name }}">
-                                            <i class="fa fa-user"></i> {{ Str::limit($room->current_booking->guest_name, 15) }}
+                                        <div class="small text-danger font-weight-bold">
+                                            <i class="fa fa-wrench"></i> Under Maintenance
                                         </div>
-                                        <div class="x-small opacity-75">
-                                            Out: {{ \Carbon\Carbon::parse($room->current_booking->check_out)->format('M d') }}
-                                            @if($isUrgentCheckout) <span class="badge badge-warning text-dark px-1 py-0" style="font-size: 0.6rem;">TODAY</span> @endif
+                                    @elseif($room->status === 'to_be_cleaned')
+                                        <div class="small text-warning font-weight-bold">
+                                            <i class="fa fa-broom"></i> Needs Cleaning
+                                        </div>
+                                        @if($room->last_checked_out_booking)
+                                            <small class="d-block mt-1 text-muted">
+                                                Checkout: {{ \Carbon\Carbon::parse($room->last_checked_out_booking->checked_out_at)->format('H:i') }}
+                                            </small>
+                                        @endif
+                                    @elseif($room->is_occupied && $room->current_booking)
+                                        <div class="small">
+                                            <strong class="text-dark"><i class="fa fa-user"></i> {{ Str::limit($room->current_booking->guest_name, 18) }}</strong>
+                                            <div class="d-flex justify-content-between mt-1 text-muted">
+                                                <span>Out: {{ \Carbon\Carbon::parse($room->current_booking->check_out)->format('M d') }}</span>
+                                                @if($isUrgentCheckout)
+                                                    <span class="text-danger font-weight-bold">Today!</span>
+                                                @endif
+                                            </div>
                                         </div>
                                     @elseif($room->has_immediate_booking && $room->upcoming_checkin)
-                                        <div class="x-small text-truncate font-weight-bold" title="{{ $room->upcoming_checkin->guest_name }}">
-                                            <i class="fa fa-suitcase"></i> {{ Str::limit($room->upcoming_checkin->guest_name, 15) }}
+                                        <div class="small">
+                                            <strong class="text-primary"><i class="fa fa-suitcase"></i> {{ Str::limit($room->upcoming_checkin->guest_name, 18) }}</strong>
+                                            <div class="d-flex justify-content-between mt-1 text-muted">
+                                                <span>In: {{ \Carbon\Carbon::parse($room->upcoming_checkin->check_in)->format('M d') }}</span>
+                                                @if($isUpcomingCheckin)
+                                                    <span class="text-info font-weight-bold">Today!</span>
+                                                @endif
+                                            </div>
                                         </div>
-                                        <div class="x-small opacity-75">
-                                            In: {{ \Carbon\Carbon::parse($room->upcoming_checkin->check_in)->format('M d') }}
-                                            @if($isUpcomingCheckin) <span class="badge badge-light text-dark px-1 py-0" style="font-size: 0.6rem;">TODAY</span> @endif
+                                    @elseif($room->status === 'closed')
+                                         <div class="small text-dark font-weight-bold">
+                                            <i class="fa fa-ban"></i> Room Closed
                                         </div>
                                     @else
-                                        <div class="x-small opacity-75"><i class="fa fa-check"></i> Ready</div>
+                                        <div class="small text-success">
+                                            <i class="fa fa-check-circle"></i> Ready for booking
+                                        </div>
                                     @endif
                                 </div>
 
                                 <!-- Action Buttons -->
-                                <div class="action-btns">
+                                <div class="d-flex justify-content-between">
                                     @if($room->is_occupied && $room->current_booking)
-                                        <a href="{{ route('reception.bookings') }}?search={{ $room->current_booking->booking_reference }}" class="btn btn-sm btn-block shadow-sm">View</a>
+                                        <a href="{{ route('reception.bookings') }}?search={{ $room->current_booking->booking_reference }}" class="btn btn-sm btn-outline-primary w-100 mr-1" title="View Booking"><i class="fa fa-eye"></i> View</a>
+                                        @if($isUrgentCheckout)
+                                             <a href="{{ route('reception.reservations.check-out') }}" class="btn btn-sm btn-outline-danger w-100 ml-1" title="Checkout"><i class="fa fa-sign-out"></i> Out</a>
+                                        @endif
                                     @elseif($room->status === 'available')
-                                        <a href="{{ route('reception.bookings.manual.create') }}?room={{$room->id}}" class="btn btn-sm btn-block shadow-sm">Book</a>
+                                        <a href="{{ route('reception.bookings.manual.create') }}?room={{$room->id}}" class="btn btn-sm btn-outline-success w-100" title="Book Now"><i class="fa fa-plus"></i> Book Now</a>
                                     @elseif($room->has_immediate_booking)
-                                         <a href="{{ route('reception.reservations.check-in') }}" class="btn btn-sm btn-block shadow-sm">In</a>
+                                         <a href="{{ route('reception.reservations.check-in') }}" class="btn btn-sm btn-outline-info w-100" title="Check In"><i class="fa fa-sign-in"></i> Check In</a>
                                     @elseif($room->status === 'to_be_cleaned')
-                                         <button disabled class="btn btn-sm btn-block opacity-50">Cleaning</button>
+                                         <button disabled class="btn btn-sm btn-outline-secondary w-100" title="Cleaning in Progress"><i class="fa fa-hourglass-half"></i> Cleaning...</button>
                                     @else
-                                        <button disabled class="btn btn-sm btn-block opacity-50">Locked</button>
+                                        <button disabled class="btn btn-sm btn-outline-secondary w-100">Unavailable</button>
                                     @endif
                                 </div>
 
