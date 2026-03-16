@@ -149,10 +149,19 @@
                   <small class="text-muted"><i class="fa fa-moon-o mr-1"></i> {{ \Carbon\Carbon::parse($invoice->check_in)->diffInDays(\Carbon\Carbon::parse($invoice->check_out)) }} night(s)</small>
                 </td>
                 <td class="align-middle">
-                  <div class="text-primary font-weight-bold h5 mb-0">${{ number_format($invoice->total_price, 2) }}</div>
-                  <small class="text-muted">
-                    Approx. {{ number_format($invoice->total_price * ($invoice->locked_exchange_rate ?? $exchangeRate), 0) }} TZS
-                  </small>
+                  @php
+                    $isTanzanian = ($invoice->guest_type === 'tanzanian');
+                    $rate = $invoice->locked_exchange_rate ?? $exchangeRate;
+                    $tzsValue = round($invoice->total_price * $rate, -3);
+                  @endphp
+
+                  @if($isTanzanian)
+                    <div class="text-primary font-weight-bold h5 mb-0">TZS {{ number_format($tzsValue, 0) }}</div>
+                    <small class="text-muted">Approx. ${{ number_format($invoice->total_price, 2) }}</small>
+                  @else
+                    <div class="text-primary font-weight-bold h5 mb-0">${{ number_format($invoice->total_price, 2) }}</div>
+                    <small class="text-muted">Approx. {{ number_format($tzsValue, 0) }} TZS</small>
+                  @endif
                 </td>
                 <td class="text-center align-middle">
                     <a href="{{ route('reception.invoices.download', $invoice->id) }}" class="btn btn-outline-danger shadow-sm px-3" title="Download Premium PDF Invoice" style="border-radius: 20px;">
