@@ -8,13 +8,13 @@ use Illuminate\Support\Facades\Log;
 class SmsService
 {
     protected string $baseUrl   = 'https://messaging-service.co.tz';
-    protected string $token;
-    protected string $senderId;
+    protected ?string $token;
+    protected ?string $senderId;
 
     public function __construct()
     {
-        $this->token    = config('services.sms.token',    env('SMS_TOKEN',     '1a60690cac7c9db9f1ba5d68ee88c2d4'));
-        $this->senderId = config('services.sms.sender_id', env('SMS_SENDER_ID', 'PrimeLand'));
+        $this->token    = config('services.sms.token') ?? env('SMS_TOKEN', '1a60690cac7c9db9f1ba5d68ee88c2d4');
+        $this->senderId = config('services.sms.sender_id') ?? env('SMS_SENDER_ID', 'PrimeLand');
     }
 
     // ─────────────────────────────────────────────────────────────────────────

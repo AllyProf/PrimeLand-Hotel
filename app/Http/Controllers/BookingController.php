@@ -5169,7 +5169,7 @@ class BookingController extends Controller
                 'guest_email' => $validated['guest_email'],
                 'has_pdf' => !empty($pdfData)
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $emailError = $e->getMessage();
             \Log::error('Invoice email failed: ' . $e->getMessage());
         }
@@ -5179,7 +5179,7 @@ class BookingController extends Controller
             $label = $isCorporate ? "Company Inquiry ({$company->name})" : "Inquiry";
             $smsMessage = "Dear {$firstName}, we've sent your PrimeLand Hotel {$label} invoice to {$validated['guest_email']}. Ref: {$bookingReference}. Valid for 48h.";
             $smsService->sendSingle($validated['guest_phone'], $smsMessage);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Log::error('Invoice SMS failed: ' . $e->getMessage());
         }
 

@@ -431,7 +431,7 @@ $(document).ready(function() {
             $('#custom_exchange_rate').attr('required', false).val('');
             $('input[name="exchange_rate_note"]').attr('required', false).val('');
         }
-        recalcTzs();
+        recalcAlternative();
     });
 
     // Reuse Guest Search
