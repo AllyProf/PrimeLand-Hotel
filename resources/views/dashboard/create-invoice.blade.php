@@ -192,20 +192,23 @@
             </div>
             <div class="d-flex justify-content-between mb-4 pb-3 border-bottom">
               <span class="text-muted"><i class="fa fa-tag"></i> Base Rate:</span>
-              <span class="font-weight-bold text-dark">$<span id="summary_base_rate">0.00</span> /night</span>
+              <span class="font-weight-bold text-dark"><span id="summary_currency_symbol">$</span><span id="summary_base_rate">0.00</span> /night</span>
             </div>
 
+            <!-- HIDDEN USD FIELD FOR SERVER -->
+            <input type="hidden" id="real_total_price_usd" name="total_price">
+
             <div class="form-group">
-              <label class="font-weight-bold text-primary">Final Total ($) <span class="text-danger">*</span></label>
+              <label class="font-weight-bold text-primary">Final Total (<span id="input_currency_label">USD</span>) <span class="text-danger">*</span></label>
               <div class="input-group">
-                <div class="input-group-prepend"><span class="input-group-text bg-primary text-white border-0">$</span></div>
-                <input class="form-control form-control-lg font-weight-bold" style="font-size: 1.5rem; color: #333; border-color: #007bff;" type="number" id="total_price" name="total_price" step="0.01" min="0" placeholder="0.00" required>
+                <div class="input-group-prepend"><span class="input-group-text bg-primary text-white border-0" id="input_currency_symbol">$</span></div>
+                <input class="form-control form-control-lg font-weight-bold" style="font-size: 1.5rem; color: #333; border-color: #007bff;" type="number" id="display_total_price" step="0.01" min="0" placeholder="0.00" required>
               </div>
             </div>
 
             <div class="card bg-light border-0 mb-4 p-3 rounded">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="mb-0 font-weight-bold text-muted small text-uppercase">Exchange Rate Conversion</h6>
+                <h6 class="mb-0 font-weight-bold text-muted small text-uppercase" id="conversion_card_title">Local Value (TZS)</h6>
                 <div class="custom-control custom-switch">
                   <input type="checkbox" class="custom-control-input" id="overrideExchangeRate">
                   <label class="custom-control-label small" for="overrideExchangeRate">Override</label>
@@ -227,8 +230,8 @@
               </div>
 
               <div class="mt-3 pt-2 border-top text-right">
-                <span class="text-muted small">Approx Local Value:</span>
-                <h5 class="text-dark font-weight-bold mb-0"><span id="total_price_tzs">0</span> TZS</h5>
+                <span class="text-muted small" id="alternative_value_label">Approx USD:</span>
+                <h5 class="text-dark font-weight-bold mb-0"><span id="alternative_currency_symbol">$</span><span id="alternative_total_value">0</span></h5>
               </div>
             </div>
 
@@ -357,13 +360,29 @@ function fetchAvailableRooms() {
     });
 }
 
-function recalcTzs() {
-    const usdValue = parseFloat($('#total_price').val()) || 0;
+function recalcAlternative() {
+    const displayValue = parseFloat($('#display_total_price').val()) || 0;
     const isOverride = $('#overrideExchangeRate').is(':checked');
     const customRate = parseFloat($('#custom_exchange_rate').val()) || SYSTEM_RATE;
     const rateToUse = isOverride ? customRate : SYSTEM_RATE;
     
-    $('#total_price_tzs').text((usdValue * rateToUse).toLocaleString());
+    let realUsd = 0;
+    let alternativeValue = 0;
+
+    if (currentSelectedNationality === 'tanzanian') {
+        // Display is TZS, Alternative is USD
+        realUsd = displayValue / rateToUse;
+        alternativeValue = realUsd;
+        $('#alternative_total_value').text(alternativeValue.toLocaleString(undefined, {minimumFractionDigits: 2}));
+    } else {
+        // Display is USD, Alternative is TZS
+        realUsd = displayValue;
+        alternativeValue = displayValue * rateToUse;
+        $('#alternative_total_value').text(alternativeValue.toLocaleString(undefined, {minimumFractionDigits: 0}));
+    }
+
+    // Always update the hidden field for the server
+    $('#real_total_price_usd').val(realUsd.toFixed(2));
 }
 
 $(document).ready(function() {
@@ -376,8 +395,8 @@ $(document).ready(function() {
 
     $('#room_type').on('change', fetchAvailableRooms);
 
-    $('#total_price').on('input', recalcTzs);
-    $('#custom_exchange_rate').on('input', recalcTzs);
+    $('#display_total_price').on('input', recalcAlternative);
+    $('#custom_exchange_rate').on('input', recalcAlternative);
 
     $('#overrideExchangeRate').change(function() {
         if($(this).is(':checked')) {
