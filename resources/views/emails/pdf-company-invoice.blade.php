@@ -192,6 +192,13 @@
 
         $totalVal = ($companyCharges + $selfPaidCharges) * $multiplier;
         $paidVal = ($totalCompanyPaid ?? 0) * $multiplier;
+        
+        // For Tanzanian groups, round to nearest 1000 for a clean display
+        if ($isTanzanian) {
+            $totalVal = round($totalVal, -3);
+            $paidVal = round($paidVal, -3);
+        }
+
         $balanceVal = max(0, $totalVal - $paidVal);
     @endphp
 

@@ -193,6 +193,13 @@
         
         $totalVal = $booking->total_price * $multiplier;
         $paidVal = ($booking->amount_paid ?? 0) * $multiplier;
+        
+        // For Tanzanian guests, round to nearest 1000 for a clean display
+        if ($isTanzanian) {
+            $totalVal = round($totalVal, -3);
+            $paidVal = round($paidVal, -3);
+        }
+        
         $balanceVal = max(0, $totalVal - $paidVal);
         $fmt = $isTanzanian ? 0 : 2;
     @endphp
