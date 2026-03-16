@@ -273,6 +273,24 @@ let currentSelectedNationality = 'international';
 
 function handleNationalityChange() {
     currentSelectedNationality = $('input[name="guest_type"]:checked').val();
+    
+    // Update Symbols and Labels
+    if (currentSelectedNationality === 'tanzanian') {
+        $('#summary_currency_symbol').text('TZS ');
+        $('#input_currency_label').text('TZS');
+        $('#input_currency_symbol').text('TZS');
+        $('#conversion_card_title').text('USD Value');
+        $('#alternative_value_label').text('Approx USD:');
+        $('#alternative_currency_symbol').text('$');
+    } else {
+        $('#summary_currency_symbol').text('$');
+        $('#input_currency_label').text('USD');
+        $('#input_currency_symbol').text('$');
+        $('#conversion_card_title').text('Local Value (TZS)');
+        $('#alternative_value_label').text('Approx TZS:');
+        $('#alternative_currency_symbol').text('');
+    }
+    
     updateLiveSummary();
 }
 
@@ -306,17 +324,20 @@ function updateLiveSummary() {
     
     // Choose the base rate based on nationality
     let baseRate = (currentSelectedNationality === 'tanzanian') 
-        ? (currentPricePerNightTzs / SYSTEM_RATE) 
+        ? currentPricePerNightTzs 
         : currentPricePerNightUsd;
     
     // Display purposes
     $('#summary_nights').text(nights);
     $('#summary_rooms').text(rooms);
-    $('#summary_base_rate').text(baseRate.toFixed(2));
+    $('#summary_base_rate').text(baseRate.toLocaleString(undefined, {
+        minimumFractionDigits: (currentSelectedNationality === 'tanzanian' ? 0 : 2),
+        maximumFractionDigits: (currentSelectedNationality === 'tanzanian' ? 0 : 2)
+    }));
 
     if (nights > 0 && baseRate > 0) {
-        const total = (nights * rooms * baseRate).toFixed(2);
-        $('#total_price').val(total).trigger('input'); 
+        const total = (nights * rooms * baseRate);
+        $('#display_total_price').val(total.toFixed(currentSelectedNationality === 'tanzanian' ? 0 : 2)).trigger('input'); 
     }
 }
 
