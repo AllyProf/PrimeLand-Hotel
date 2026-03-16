@@ -536,11 +536,11 @@
     }); // End Document Ready Function
 
      function loader() {
-            $windowOn.on('load', function() {
-                // Animate loader off screen
+            // Make preloader disappear faster
+            setTimeout(function() {
                 $(".preloader").addClass('loaded');
-                $(".preloader").delay(200).fadeOut();
-            });
+                $(".preloader").fadeOut(400);
+            }, 800); // 800ms is enough for a quick brand glimpse
         }
         
         loader();
