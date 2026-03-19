@@ -436,8 +436,8 @@
             <tr>
                 <td style="padding-left:28px;">Total Mobile Collected</td>
                 <td class="amount">{{ number_format($mobileTotal, 0) }}</td>
-                <td class="amount">--</td>
-                <td class="amount">--</td>
+                <td class="amount">{{ number_format($mobileTotal, 0) }}</td>
+                <td class="amount">0</td>
             </tr>
 
             {{-- BANK --}}
@@ -446,8 +446,8 @@
             <tr>
                 <td style="padding-left:28px;">Total Bank Collected</td>
                 <td class="amount">{{ number_format($bankTotal, 0) }}</td>
-                <td class="amount">--</td>
-                <td class="amount">--</td>
+                <td class="amount">{{ number_format($bankTotal, 0) }}</td>
+                <td class="amount">0</td>
             </tr>
 
             {{-- CARD --}}
@@ -456,20 +456,23 @@
             <tr>
                 <td style="padding-left:28px;">Total Card Collected</td>
                 <td class="amount">{{ number_format($cardTotal, 0) }}</td>
-                <td class="amount">--</td>
-                <td class="amount">--</td>
+                <td class="amount">{{ number_format($cardTotal, 0) }}</td>
+                <td class="amount">0</td>
             </tr>
 
             {{-- GRAND TOTAL --}}
             @php
-                $grandTotal = ($cashExpected) + $mobileTotal + $bankTotal + $cardTotal;
+                $nonCashTotal = $mobileTotal + $bankTotal + $cardTotal;
+                $grandTotalExpected = ($cashExpected) + $nonCashTotal;
+                $grandTotalActual = ($cashActual) + $nonCashTotal;
+                $grandTotalDiff = $cashActual - $cashExpected; 
             @endphp
             <tr class="total-row">
                 <td>GRAND TOTAL REVENUE</td>
-                <td class="amount">TZS {{ number_format($grandTotal, 0) }}</td>
-                <td class="amount">TZS {{ number_format($cashActual, 0) }}</td>
-                <td class="amount {{ $cashDiff >= 0 ? '' : 'diff-negative' }}">
-                    {{ ($cashDiff >= 0 ? '+' : '') }}{{ number_format($cashDiff, 0) }}
+                <td class="amount">TZS {{ number_format($grandTotalExpected, 0) }}</td>
+                <td class="amount">TZS {{ number_format($grandTotalActual, 0) }}</td>
+                <td class="amount {{ $grandTotalDiff >= 0 ? '' : 'diff-negative' }}">
+                    {{ ($grandTotalDiff >= 0 ? '+' : '') }}{{ number_format($grandTotalDiff, 0) }}
                 </td>
             </tr>
         </tbody>
