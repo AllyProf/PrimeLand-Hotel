@@ -301,6 +301,15 @@
         }
         .footer strong { color: var(--brand); }
 
+        .amount .usd-eq {
+            display: block;
+            font-size: 10px;
+            font-weight: 400;
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+            margin-top: 2px;
+            opacity: 0.85;
+        }
         /* ── PRINT OVERRIDES ── */
         @media print {
             .toolbar { display: none !important; }
@@ -406,6 +415,7 @@
     </div>
 
     {{-- PAYMENT BREAKDOWN TABLE --}}
+    @php $usdRate = $rate > 0 ? $rate : 2500; @endphp
     <div class="section-header">Payment Collection Breakdown</div>
     <table class="data-table">
         <thead>
@@ -418,15 +428,21 @@
         </thead>
         <tbody>
 
-            {{-- CASH --}}
             <tr class="section-group"><td colspan="4">💵 Cash Payments Total</td></tr>
             <tr>
                 <td style="padding-left:28px;">Total Cash Collected</td>
                 @php $cashExpected = $shift->closing_cash_expected ?? 0; $cashActual = $shift->closing_cash_actual ?? 0; $cashDiff = $cashActual - $cashExpected; @endphp
-                <td class="amount">{{ number_format($cashExpected, 0) }}</td>
-                <td class="amount">{{ number_format($cashActual, 0) }}</td>
+                <td class="amount">
+                    {{ number_format($cashExpected, 0) }}
+                    <span class="usd-eq">≈ USD {{ number_format($cashExpected / $usdRate, 2) }}</span>
+                </td>
+                <td class="amount">
+                    {{ number_format($cashActual, 0) }}
+                    <span class="usd-eq">≈ USD {{ number_format($cashActual / $usdRate, 2) }}</span>
+                </td>
                 <td class="amount {{ $cashDiff >= 0 ? 'diff-positive' : 'diff-negative' }}">
                     {{ ($cashDiff >= 0 ? '+' : '') }}{{ number_format($cashDiff, 0) }}
+                    <span class="usd-eq">≈ USD {{ ($cashDiff >= 0 ? '+' : '') }}{{ number_format($cashDiff / $usdRate, 2) }}</span>
                 </td>
             </tr>
 
@@ -435,8 +451,14 @@
             <tr class="section-group"><td colspan="4">📱 Mobile Money Total</td></tr>
             <tr>
                 <td style="padding-left:28px;">Total Mobile Collected</td>
-                <td class="amount">{{ number_format($mobileTotal, 0) }}</td>
-                <td class="amount">{{ number_format($mobileTotal, 0) }}</td>
+                <td class="amount">
+                    {{ number_format($mobileTotal, 0) }}
+                    <span class="usd-eq">≈ USD {{ number_format($mobileTotal / $usdRate, 2) }}</span>
+                </td>
+                <td class="amount">
+                    {{ number_format($mobileTotal, 0) }}
+                    <span class="usd-eq">≈ USD {{ number_format($mobileTotal / $usdRate, 2) }}</span>
+                </td>
                 <td class="amount">0</td>
             </tr>
 
@@ -445,8 +467,14 @@
             <tr class="section-group"><td colspan="4">🏦 Bank Transfers Total</td></tr>
             <tr>
                 <td style="padding-left:28px;">Total Bank Collected</td>
-                <td class="amount">{{ number_format($bankTotal, 0) }}</td>
-                <td class="amount">{{ number_format($bankTotal, 0) }}</td>
+                <td class="amount">
+                    {{ number_format($bankTotal, 0) }}
+                    <span class="usd-eq">≈ USD {{ number_format($bankTotal / $usdRate, 2) }}</span>
+                </td>
+                <td class="amount">
+                    {{ number_format($bankTotal, 0) }}
+                    <span class="usd-eq">≈ USD {{ number_format($bankTotal / $usdRate, 2) }}</span>
+                </td>
                 <td class="amount">0</td>
             </tr>
 
@@ -455,8 +483,14 @@
             <tr class="section-group"><td colspan="4">💳 Card Payments Total</td></tr>
             <tr>
                 <td style="padding-left:28px;">Total Card Collected</td>
-                <td class="amount">{{ number_format($cardTotal, 0) }}</td>
-                <td class="amount">{{ number_format($cardTotal, 0) }}</td>
+                <td class="amount">
+                    {{ number_format($cardTotal, 0) }}
+                    <span class="usd-eq">≈ USD {{ number_format($cardTotal / $usdRate, 2) }}</span>
+                </td>
+                <td class="amount">
+                    {{ number_format($cardTotal, 0) }}
+                    <span class="usd-eq">≈ USD {{ number_format($cardTotal / $usdRate, 2) }}</span>
+                </td>
                 <td class="amount">0</td>
             </tr>
 
@@ -469,10 +503,17 @@
             @endphp
             <tr class="total-row">
                 <td>GRAND TOTAL REVENUE</td>
-                <td class="amount">TZS {{ number_format($grandTotalExpected, 0) }}</td>
-                <td class="amount">TZS {{ number_format($grandTotalActual, 0) }}</td>
+                <td class="amount">
+                    TZS {{ number_format($grandTotalExpected, 0) }}
+                    <span class="usd-eq" style="color: rgba(255,255,255,0.7);">≈ USD {{ number_format($grandTotalExpected / $usdRate, 2) }}</span>
+                </td>
+                <td class="amount">
+                    TZS {{ number_format($grandTotalActual, 0) }}
+                    <span class="usd-eq" style="color: rgba(255,255,255,0.7);">≈ USD {{ number_format($grandTotalActual / $usdRate, 2) }}</span>
+                </td>
                 <td class="amount {{ $grandTotalDiff >= 0 ? '' : 'diff-negative' }}">
                     {{ ($grandTotalDiff >= 0 ? '+' : '') }}{{ number_format($grandTotalDiff, 0) }}
+                    <span class="usd-eq" style="color: rgba(255,255,255,0.7);">≈ USD {{ ($grandTotalDiff >= 0 ? '+' : '') }}{{ number_format($grandTotalDiff / $usdRate, 2) }}</span>
                 </td>
             </tr>
         </tbody>
