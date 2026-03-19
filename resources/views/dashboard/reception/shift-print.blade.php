@@ -333,7 +333,6 @@
     {{-- HEADER --}}
     <div class="header">
         <div class="header-left">
-            <img src="{{ asset('dashboard_assets/images/Logo.png') }}" alt="PrimeLand Logo" class="hotel-logo" onerror="this.style.display='none'">
             <div>
                 <div class="hotel-name">Prime Land Hotel</div>
                 <div class="hotel-sub">Plot No. 123, Opposite Main Market, Tanzania</div>
@@ -420,15 +419,9 @@
         <tbody>
 
             {{-- CASH --}}
-            <tr class="section-group"><td colspan="4">💵 Cash Payments</td></tr>
+            <tr class="section-group"><td colspan="4">💵 Cash Payments Total</td></tr>
             <tr>
-                <td style="padding-left:28px;">Opening Float</td>
-                <td class="amount">{{ number_format($shift->opening_cash ?? 0, 0) }}</td>
-                <td class="amount">--</td>
-                <td class="amount">--</td>
-            </tr>
-            <tr>
-                <td style="padding-left:28px;">Cash Collected (Bookings + Services)</td>
+                <td style="padding-left:28px;">Total Cash Collected</td>
                 @php $cashExpected = $shift->closing_cash_expected ?? 0; $cashActual = $shift->closing_cash_actual ?? 0; $cashDiff = $cashActual - $cashExpected; @endphp
                 <td class="amount">{{ number_format($cashExpected, 0) }}</td>
                 <td class="amount">{{ number_format($cashActual, 0) }}</td>
@@ -438,76 +431,38 @@
             </tr>
 
             {{-- MOBILE --}}
-            <tr class="section-group"><td colspan="4">📱 Mobile Money</td></tr>
             @php $mobileTotal = array_sum($breakdown['mobile']); @endphp
-            @foreach($breakdown['mobile'] as $platform => $amount)
-                @if($amount > 0)
-                <tr class="sub-row">
-                    <td>• {{ strtoupper($platform) }}</td>
-                    <td class="amount">{{ number_format($amount, 0) }}</td>
-                    <td class="amount">--</td>
-                    <td class="amount">--</td>
-                </tr>
-                @endif
-            @endforeach
-            @if($mobileTotal == 0)
-            <tr class="sub-row"><td class="text-muted" colspan="4">No mobile transactions recorded</td></tr>
-            @endif
+            <tr class="section-group"><td colspan="4">📱 Mobile Money Total</td></tr>
+            <tr>
+                <td style="padding-left:28px;">Total Mobile Collected</td>
+                <td class="amount">{{ number_format($mobileTotal, 0) }}</td>
+                <td class="amount">--</td>
+                <td class="amount">--</td>
+            </tr>
 
             {{-- BANK --}}
-            <tr class="section-group"><td colspan="4">🏦 Bank Transfers</td></tr>
             @php $bankTotal = array_sum($breakdown['bank']); @endphp
-            @foreach($breakdown['bank'] as $platform => $amount)
-                @if($amount > 0)
-                <tr class="sub-row">
-                    <td>• {{ strtoupper($platform) }}</td>
-                    <td class="amount">{{ number_format($amount, 0) }}</td>
-                    <td class="amount">--</td>
-                    <td class="amount">--</td>
-                </tr>
-                @endif
-            @endforeach
-            @if($bankTotal == 0)
-            <tr class="sub-row"><td class="text-muted" colspan="4">No bank transactions recorded</td></tr>
-            @endif
+            <tr class="section-group"><td colspan="4">🏦 Bank Transfers Total</td></tr>
+            <tr>
+                <td style="padding-left:28px;">Total Bank Collected</td>
+                <td class="amount">{{ number_format($bankTotal, 0) }}</td>
+                <td class="amount">--</td>
+                <td class="amount">--</td>
+            </tr>
 
             {{-- CARD --}}
-            <tr class="section-group"><td colspan="4">💳 Card Payments</td></tr>
             @php $cardTotal = array_sum($breakdown['card']); @endphp
-            @foreach($breakdown['card'] as $platform => $amount)
-                @if($amount > 0)
-                <tr class="sub-row">
-                    <td>• {{ strtoupper($platform) }}</td>
-                    <td class="amount">{{ number_format($amount, 0) }}</td>
-                    <td class="amount">--</td>
-                    <td class="amount">--</td>
-                </tr>
-                @endif
-            @endforeach
-            @if($cardTotal == 0)
-            <tr class="sub-row"><td class="text-muted" colspan="4">No card transactions recorded</td></tr>
-            @endif
-
-            {{-- ONLINE --}}
-            <tr class="section-group"><td colspan="4">🌐 Online Bookings</td></tr>
-            @php $onlineTotal = array_sum($breakdown['online']); @endphp
-            @foreach($breakdown['online'] as $platform => $amount)
-                @if($amount > 0)
-                <tr class="sub-row">
-                    <td>• {{ strtoupper($platform) }}</td>
-                    <td class="amount">{{ number_format($amount, 0) }}</td>
-                    <td class="amount">--</td>
-                    <td class="amount">--</td>
-                </tr>
-                @endif
-            @endforeach
-            @if($onlineTotal == 0)
-            <tr class="sub-row"><td class="text-muted" colspan="4">No online bookings recorded</td></tr>
-            @endif
+            <tr class="section-group"><td colspan="4">💳 Card Payments Total</td></tr>
+            <tr>
+                <td style="padding-left:28px;">Total Card Collected</td>
+                <td class="amount">{{ number_format($cardTotal, 0) }}</td>
+                <td class="amount">--</td>
+                <td class="amount">--</td>
+            </tr>
 
             {{-- GRAND TOTAL --}}
             @php
-                $grandTotal = ($cashExpected) + $mobileTotal + $bankTotal + $cardTotal + $onlineTotal;
+                $grandTotal = ($cashExpected) + $mobileTotal + $bankTotal + $cardTotal;
             @endphp
             <tr class="total-row">
                 <td>GRAND TOTAL REVENUE</td>
@@ -520,32 +475,7 @@
         </tbody>
     </table>
 
-    {{-- STAFF BREAKDOWN --}}
-    @if(!empty($servicePaymentsByStaff))
-    <div class="section-header">Restaurant & Bar Collections by Staff</div>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Staff Member</th>
-                <th class="r">Cash Collected</th>
-                <th class="r">Non-Cash (M/B/C)</th>
-                <th class="r">Total Collections</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($servicePaymentsByStaff as $sData)
-            <tr>
-                <td>{{ $sData['name'] }}</td>
-                <td class="amount">{{ number_format($sData['cash']) }} TZS</td>
-                <td class="amount">{{ number_format($sData['non_cash']) }} TZS</td>
-                <td class="amount" style="font-weight:700;">{{ number_format($sData['total']) }} TZS</td>
-            </tr>
-            @empty
-            <tr><td colspan="4" class="text-muted" style="text-align:center; padding: 14px;">No staff collections recorded this shift.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
-    @endif
+
 
     {{-- NOTES --}}
     <div class="section-header">Shift Notes</div>
