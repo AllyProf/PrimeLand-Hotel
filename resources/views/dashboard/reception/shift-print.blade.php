@@ -460,19 +460,6 @@
                 <td class="amount">0</td>
             </tr>
 
-            {{-- STAFF BREAKDOWN (RE-INTEGRATED INTO MAIN TABLE) --}}
-            @if(!empty($servicePaymentsByStaff))
-                <tr class="section-group"><td colspan="4">🍽️ Restaurant & Bar Collections by Staff</td></tr>
-                @foreach($servicePaymentsByStaff as $sData)
-                <tr class="sub-row">
-                    <td>• {{ $sData['name'] }}</td>
-                    <td class="amount">{{ number_format($sData['total']) }}</td>
-                    <td class="amount">--</td>
-                    <td class="amount">--</td>
-                </tr>
-                @endforeach
-            @endif
-
             {{-- GRAND TOTAL --}}
             @php
                 $nonCashTotal = $mobileTotal + $bankTotal + $cardTotal;
