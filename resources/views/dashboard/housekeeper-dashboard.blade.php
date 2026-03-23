@@ -20,7 +20,7 @@
 
 <!-- Statistics Cards -->
 <div class="row mb-3">
-  <div class="col-md-3 col-lg-3">
+  <div class="col-6 col-md-3">
     <div class="widget-small warning coloured-icon">
       <i class="icon fa fa-bed fa-2x"></i>
       <div class="info">
@@ -29,7 +29,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3 col-lg-3">
+  <div class="col-6 col-md-3">
     <div class="widget-small danger coloured-icon">
       <i class="icon fa fa-exclamation-triangle fa-2x"></i>
       <div class="info">
@@ -38,7 +38,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3 col-lg-3">
+  <div class="col-6 col-md-3">
     <div class="widget-small info coloured-icon">
       <i class="icon fa fa-wrench fa-2x"></i>
       <div class="info">
@@ -47,7 +47,7 @@
       </div>
     </div>
   </div>
-  <div class="col-md-3 col-lg-3">
+  <div class="col-6 col-md-3">
     <div class="widget-small success coloured-icon">
       <i class="icon fa fa-check-circle fa-2x"></i>
       <div class="info">
@@ -62,11 +62,11 @@
 <div class="row mb-3">
   <div class="col-md-12">
     <div class="tile">
-      <div class="tile-title-w-btn">
+      <div class="tile-title-w-btn flex-wrap gap-2">
         <h3 class="title"><i class="fa fa-bed"></i> All Rooms Overview</h3>
-        <div class="btn-group">
+        <div class="filter-btn-group d-flex flex-wrap gap-1 mt-2 mt-md-0">
           <button class="btn btn-sm btn-secondary" id="filterAll" onclick="filterRooms('all')">All</button>
-          <button class="btn btn-sm btn-warning" id="filterNeedsCleaning" onclick="filterRooms('needs_cleaning')">Needs Cleaning</button>
+          <button class="btn btn-sm btn-warning" id="filterNeedsCleaning" onclick="filterRooms('needs_cleaning')">Cleaning</button>
           <button class="btn btn-sm btn-success" id="filterAvailable" onclick="filterRooms('available')">Available</button>
           <button class="btn btn-sm btn-info" id="filterOccupied" onclick="filterRooms('occupied')">Occupied</button>
           <button class="btn btn-sm btn-primary" id="filterReserved" onclick="filterRooms('reserved')">Reserved</button>
@@ -179,7 +179,7 @@
             if ($roomStatus === 'closed') $statusClass = 'closed';
             if ($room->has_immediate_booking) $statusClass = 'reserved';
           @endphp
-          <div class="col-md-3 col-sm-6 mb-4 room-card" data-status="{{ $statusClass }}">
+          <div class="col-6 col-md-3 mb-3 room-card" data-status="{{ $statusClass }}">
             <div class="card shadow-sm room-card-status {{ $bgClass }} h-100">
                <!-- Room Image Section -->
                <div class="room-image-container" style="background-color: rgba(255,255,255,0.05);">
@@ -475,24 +475,24 @@
       <h3 class="tile-title"><i class="fa fa-bolt"></i> Quick Actions</h3>
       <div class="tile-body">
         <div class="row">
-          <div class="col-md-3">
-            <a href="{{ route('housekeeper.rooms.cleaning') }}" class="btn btn-warning btn-block">
-              <i class="fa fa-bed"></i><br>Rooms Needing Cleaning
+          <div class="col-6 col-md-3 mb-2">
+            <a href="{{ route('housekeeper.rooms.cleaning') }}" class="btn btn-warning btn-block quick-action-btn">
+              <i class="fa fa-bed fa-lg"></i><br><span>Rooms Cleaning</span>
             </a>
           </div>
-          <div class="col-md-3">
-            <a href="{{ route('housekeeper.inventory') }}" class="btn btn-info btn-block">
-              <i class="fa fa-cubes"></i><br>Inventory Management
+          <div class="col-6 col-md-3 mb-2">
+            <a href="{{ route('housekeeper.inventory') }}" class="btn btn-info btn-block quick-action-btn">
+              <i class="fa fa-cubes fa-lg"></i><br><span>Inventory</span>
             </a>
           </div>
-          <div class="col-md-3">
-            <a href="{{ route('housekeeper.room-issues') }}" class="btn btn-danger btn-block">
-              <i class="fa fa-wrench"></i><br>Room Issues
+          <div class="col-6 col-md-3 mb-2">
+            <a href="{{ route('housekeeper.room-issues') }}" class="btn btn-danger btn-block quick-action-btn">
+              <i class="fa fa-wrench fa-lg"></i><br><span>Room Issues</span>
             </a>
           </div>
-          <div class="col-md-3">
-            <a href="{{ route('housekeeper.purchase-requests.create') }}" class="btn btn-primary btn-block">
-              <i class="fa fa-shopping-cart"></i><br>Request Purchase
+          <div class="col-6 col-md-3 mb-2">
+            <a href="{{ route('housekeeper.purchase-requests.create') }}" class="btn btn-primary btn-block quick-action-btn">
+              <i class="fa fa-shopping-cart fa-lg"></i><br><span>Request Purchase</span>
             </a>
           </div>
         </div>
@@ -620,39 +620,30 @@
     color: #fff !important;
 }
 .room-card-status:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
 }
-
 .room-card-status .card-body {
-    padding: 1.25rem !important;
+    padding: 0.85rem !important;
 }
+.room-card-status .text-muted { color: rgba(255,255,255,0.8) !important; }
+.room-card-status .text-dark  { color: #fff !important; }
 
-.room-card-status .text-muted {
-    color: rgba(255,255,255,0.8) !important;
-}
-
-.room-card-status .text-dark {
-    color: #fff !important;
-}
-
-.status-bg-available { background-color: #28a745 !important; }
-.status-bg-occupied { background-color: #dc3545 !important; }
-.status-bg-reserved { background-color: #007bff !important; }
-.status-bg-cleaning { background-color: #ffc107 !important; color: #333 !important; }
+.status-bg-available   { background-color: #28a745 !important; }
+.status-bg-occupied    { background-color: #dc3545 !important; }
+.status-bg-reserved    { background-color: #007bff !important; }
+.status-bg-cleaning    { background-color: #ffc107 !important; color: #333 !important; }
 .status-bg-maintenance { background-color: #6c757d !important; }
-.status-bg-closed { background-color: #343a40 !important; }
-.status-bg-urgent { background-color: #f39c12 !important; } /* Orange for urgent checkout */
+.status-bg-closed      { background-color: #343a40 !important; }
+.status-bg-urgent      { background-color: #f39c12 !important; }
 
 .room-card-status.status-bg-cleaning .text-muted,
 .room-card-status.status-bg-cleaning .text-dark,
 .room-card-status.status-bg-cleaning .small,
 .room-card-status.status-bg-cleaning h5,
-.room-card-status.status-bg-cleaning .card-title {
-    color: #333 !important;
-}
+.room-card-status.status-bg-cleaning .card-title { color: #333 !important; }
 
-.room-card-status .btn-outline-primary, 
+.room-card-status .btn-outline-primary,
 .room-card-status .btn-outline-danger,
 .room-card-status .btn-outline-success,
 .room-card-status .btn-outline-info,
@@ -661,8 +652,7 @@
     border-color: rgba(255,255,255,0.5);
     color: #fff !important;
 }
-
-.room-card-status .btn-outline-primary:hover, 
+.room-card-status .btn-outline-primary:hover,
 .room-card-status .btn-outline-danger:hover,
 .room-card-status .btn-outline-success:hover,
 .room-card-status .btn-outline-info:hover,
@@ -670,7 +660,6 @@
     background: rgba(255,255,255,0.4);
     border-color: #fff;
 }
-
 .room-card-status.status-bg-cleaning .btn-outline-success,
 .room-card-status.status-bg-cleaning .btn-outline-info,
 .room-card-status.status-bg-cleaning .btn-outline-danger,
@@ -682,13 +671,73 @@
 
 .room-image-container {
     position: relative;
-    height: 160px;
+    height: 140px;
     overflow: hidden;
 }
 
 .filter-active {
-  background-color: #007bff !important;
-  color: white !important;
+    background-color: #007bff !important;
+    color: white !important;
+}
+
+.filter-btn-group { gap: 4px; }
+.filter-btn-group .btn { flex: 0 0 auto; }
+
+/* Quick action buttons */
+.quick-action-btn {
+    padding: 12px 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.quick-action-btn i { display: block; margin-bottom: 4px; }
+
+/* ── MOBILE OVERRIDES ── */
+@media (max-width: 575.98px) {
+    /* Stats widgets: tighter on mobile */
+    .widget-small {
+        padding: 10px 8px;
+        margin-bottom: 10px;
+    }
+    .widget-small .icon { font-size: 1.4rem !important; }
+    .widget-small .info h4 { font-size: 0.7rem; margin-bottom: 2px; }
+    .widget-small .info p  { font-size: 1.1rem; }
+
+    /* Room cards: smaller image, tighter body */
+    .room-image-container { height: 100px; }
+    .room-card-status .card-body { padding: 0.6rem !important; }
+    .room-details { min-height: auto !important; margin-bottom: 8px !important; }
+    .room-details .small { font-size: 0.72rem; }
+    .room-actions .btn  { font-size: 0.7rem; padding: 4px 6px; }
+    .room-actions .btn i { display: none; } /* hide icons in buttons on tiny screens */
+
+    /* Room number heading */
+    .room-image-container h4 { font-size: 0.9rem; }
+
+    /* Tile headers */
+    .tile-title-w-btn {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    .tile-title-w-btn .title { margin-bottom: 8px; font-size: 1rem; }
+
+    /* Filter buttons: scroll horizontally if too many */
+    .filter-btn-group {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .filter-btn-group .btn { font-size: 0.7rem; padding: 4px 7px; }
+
+    /* Quick actions */
+    .quick-action-btn { font-size: 0.75rem; padding: 10px 4px; }
+
+    /* Tables: reduce font size */
+    .table th, .table td { font-size: 0.78rem; padding: 6px 5px; }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+    .room-image-container { height: 120px; }
+    .room-card-status .card-body { padding: 0.8rem !important; }
+    .room-details .small { font-size: 0.78rem; }
 }
 </style>
 @endsection
