@@ -24,28 +24,30 @@
       <h3 class="tile-title"><i class="fa fa-cubes"></i> Inventory Items</h3>
       <div class="tile-body">
         <!-- Search Input -->
-        <div class="row mb-4 align-items-center">
-          <div class="col-md-5">
+        <div class="row mb-3 align-items-center">
+          <div class="col-12 col-md-5 mb-2 mb-md-0">
             <div class="input-group">
               <div class="input-group-prepend">
                 <span class="input-group-text"><i class="fa fa-search"></i></span>
               </div>
-              <input type="text" id="inventorySearch" class="form-control" placeholder="Search by item name, category, or unit...">
+              <input type="text" id="inventorySearch" class="form-control" placeholder="Search items...">
             </div>
           </div>
-          <div class="col-md-7 d-flex justify-content-between align-items-center">
-            <div id="searchResults" class="text-muted">
-              <span id="resultCount">{{ $items->count() }}</span> item(s) found
-            </div>
-            <div class="bulk-actions d-flex align-items-center">
-              <div class="animated-checkbox mr-3">
-                <label class="mb-0">
-                  <input type="checkbox" id="selectAllInventory"><span class="label-text font-weight-bold text-primary">Select All</span>
-                </label>
+          <div class="col-12 col-md-7">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div id="searchResults" class="text-muted">
+                <span id="resultCount">{{ $items->count() }}</span> item(s) found
               </div>
-              <button class="btn btn-warning btn-sm" id="bulkRestockBtn" disabled>
-                <i class="fa fa-shopping-cart"></i> Restock Selected (<span id="selectedCount">0</span>)
-              </button>
+              <div class="bulk-actions d-flex align-items-center">
+                <div class="animated-checkbox mr-2">
+                  <label class="mb-0">
+                    <input type="checkbox" id="selectAllInventory"><span class="label-text font-weight-bold text-primary" style="font-size: 0.85rem;">Select All</span>
+                  </label>
+                </div>
+                <button class="btn btn-warning btn-sm" id="bulkRestockBtn" disabled>
+                  <i class="fa fa-shopping-cart"></i> Restock (<span id="selectedCount">0</span>)
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -78,7 +80,7 @@
         }
     }
 @endphp
-<div class="col-md-4 col-sm-6 mb-4 inventory-card" 
+<div class="col-6 col-md-4 mb-3 inventory-card" 
      data-name="{{ strtolower($item->name) }}" 
      data-category="{{ strtolower(str_replace('_', ' ', $item->category)) }}"
      data-unit="{{ strtolower($item->unit) }}"
@@ -507,40 +509,50 @@
   .card {
     transition: transform 0.2s, box-shadow 0.2s;
   }
-  
   .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important;
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12) !important;
   }
-  
-  .badge-lg {
-    font-size: 0.9rem;
-    padding: 0.5rem 0.75rem;
+  .badge-lg { font-size: 0.9rem; padding: 0.5rem 0.75rem; }
+  .card-header h5 { font-size: 1.1rem; }
+  .card-body h4  { font-size: 1.5rem; }
+  .inventory-card { transition: opacity 0.3s ease; }
+  .inventory-card[style*="display: none"] { opacity: 0; }
+  #inventorySearch { border-radius: 0.25rem; }
+  #searchResults { padding-top: 0.5rem; font-size: 0.9rem; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 575.98px) {
+    /* Card header: tighter layout */
+    .card-header .d-flex { flex-wrap: wrap; gap: 4px; }
+    .card-header h6 { font-size: 0.8rem; max-width: 110px !important; }
+    .card-header .btn-group .btn { padding: 3px 7px; font-size: 0.75rem; }
+
+    /* Card body: icon circle smaller, text smaller */
+    .card-body.p-3 { padding: 0.5rem !important; }
+    .col-4 .rounded-circle { width: 40px !important; height: 40px !important; }
+    .col-4 .rounded-circle .fa { font-size: 1rem !important; }
+    .col-4 small { font-size: 0.65rem; }
+    .card-body .col-8 h5 { font-size: 0.9rem; }
+    .card-body .col-8 h4 { font-size: 1rem; }
+    .card-body small { font-size: 9px; }
+
+    /* Update stock button */
+    .p-2.border-top .btn { font-size: 0.75rem; padding: 5px 8px; }
+
+    /* Tables */
+    .table th, .table td { font-size: 0.75rem; padding: 5px 4px; }
+
+    /* Tile header with button - stack on mobile */
+    .d-flex.justify-content-between.align-items-center { flex-wrap: wrap; gap: 8px; }
+    #receiveAllBtn { width: 100%; }
   }
-  
-  .card-header h5 {
-    font-size: 1.1rem;
-  }
-  
-  .card-body h4 {
-    font-size: 1.5rem;
-  }
-  
-  .inventory-card {
-    transition: opacity 0.3s ease;
-  }
-  
-  .inventory-card[style*="display: none"] {
-    opacity: 0;
-  }
-  
-  #inventorySearch {
-    border-radius: 0.25rem;
-  }
-  
-  #searchResults {
-    padding-top: 0.5rem;
-    font-size: 0.9rem;
+
+  @media (min-width: 576px) and (max-width: 767.98px) {
+    .card-header h6 { font-size: 0.85rem; max-width: 130px !important; }
+    .card-body.p-3 { padding: 0.75rem !important; }
+    .card-body .col-8 h5 { font-size: 1rem; }
+    .card-body .col-8 h4 { font-size: 1.2rem; }
   }
 </style>
 @endsection
