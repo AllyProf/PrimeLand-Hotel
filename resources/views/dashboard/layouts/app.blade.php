@@ -138,6 +138,91 @@
         50% { width: 70%; }
         100% { width: 100%; }
       }
+
+      /* Sidebar & Menu Optimization */
+      .app-sidebar {
+        background: #000000 !important; /* Pure black background */
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+      }
+      
+      .app-sidebar__user {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        padding: 20px 15px;
+        margin-bottom: 10px;
+      }
+      
+      .app-sidebar__user-name {
+        color: #ffffff !important;
+      }
+      
+      .app-sidebar__user-designation {
+        color: rgba(255,255,255,0.7) !important;
+      }
+      
+      .app-menu__item {
+        border-left: 3px solid transparent;
+        transition: all 0.2s ease;
+        padding: 12px 15px !important;
+      }
+      
+      .app-menu__item:not(.active) {
+        color: #ffffff !important;
+      }
+      
+      .app-menu__item:hover, .app-menu__item:focus {
+        background: rgba(255,255,255,0.05) !important;
+        border-right: 3px solid #e77a3a;
+        color: #ffffff !important;
+        text-decoration: none;
+      }
+      
+      .app-menu__item.active {
+        background: rgba(231, 122, 58, 0.1) !important;
+        border-left-color: #e77a3a;
+        color: #e77a3a !important;
+        font-weight: 600;
+      }
+      
+      .nav-header {
+        padding: 15px 20px 5px !important;
+        color: #e77a3a !important;
+        font-size: 10px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1.5px !important;
+        font-weight: 700 !important;
+        opacity: 0.8;
+      }
+      
+      .treeview-menu {
+        background: rgba(0,0,0,0.15) !important;
+      }
+      
+      .treeview-item {
+        padding: 8px 15px 8px 45px !important;
+        font-size: 13px !important;
+        transition: all 0.2s;
+        color: #ffffff !important;
+      }
+      
+      .treeview-item:hover {
+        background: rgba(255,255,255,0.05) !important;
+        color: #e77a3a !important;
+      }
+
+      .treeview-item.active {
+        color: #e77a3a !important;
+        font-weight: 600;
+      }
+      
+      .treeview-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.05);
+        margin: 5px 15px;
+      }
+
+      .treeview.is-expanded > .app-menu__item {
+        background: rgba(255,255,255,0.02);
+      }
       
       /* Mobile Header Logo - White Color and Centered */
       @media (max-width: 768px) {

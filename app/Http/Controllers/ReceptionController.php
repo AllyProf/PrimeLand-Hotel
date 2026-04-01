@@ -783,7 +783,7 @@ class ReceptionController extends Controller
                     $guestPaidServicesTsh = $serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
                     
                     // Total amount recorded in the booking (includes room payments + service payments at reception)
-                    $totalPaidTsh = ($booking->amount_paid ?? 0) * $bookingExchangeRate;
+                    $totalPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $bookingExchangeRate);
                     
                     // The company's contribution to the room is the total paid in the booking MINUS 
                     // anything the guest paid for services.
@@ -932,7 +932,7 @@ class ReceptionController extends Controller
                 $totalBillTsh = ($booking->total_price * $bookingExchangeRate) + $totalServiceChargesTsh;
                 
                 // Amount paid (Booking deposit + any settled service payments)
-                $amountPaidTsh = ($booking->amount_paid ?? 0) * $bookingExchangeRate;
+                $amountPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $bookingExchangeRate);
                 
                 // Add payments for completed/paid services to show correct outstanding balance
                 foreach ($serviceRequests as $sr) {
@@ -1518,7 +1518,7 @@ class ReceptionController extends Controller
             }
         } else {
             // Individual booking - they owe everything
-            $amountPaidTsh = ($booking->amount_paid ?? 0) * $exchangeRate;
+            $amountPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $exchangeRate);
             $outstandingBalanceTsh = max(0, $totalBookingBillTsh - $amountPaidTsh);
         }
         
@@ -1646,7 +1646,7 @@ class ReceptionController extends Controller
         }
     } else {
         // Individual booking - they owe everything
-        $amountPaidTsh = ($booking->amount_paid ?? 0) * $exchangeRate;
+        $amountPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $exchangeRate);
         $outstandingBalanceTsh = max(0, $totalBookingBillTsh - $amountPaidTsh);
     }
     
@@ -2101,7 +2101,7 @@ class ReceptionController extends Controller
             $guestPaidServicesTsh = $serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
 
             // Total amount recorded in the booking (including service payments at reception/bar)
-            $totalPaidTsh = ($booking->amount_paid ?? 0) * $bookingExchangeRate;
+            $totalPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $bookingExchangeRate);
             
             // The company's contribution is the total paid in the booking MINUS 
             // anything the guest paid for services.
@@ -2241,7 +2241,7 @@ class ReceptionController extends Controller
             $guestPaidServicesTsh = $serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
 
             // Total amount recorded in the booking (including service payments at reception/bar)
-            $totalPaidTsh = ($booking->amount_paid ?? 0) * $bookingExchangeRate;
+            $totalPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $bookingExchangeRate);
             
             // The company's contribution is the total paid in the booking MINUS 
             // anything the guest paid for services.
@@ -2420,7 +2420,7 @@ class ReceptionController extends Controller
                 // Company's bill for THIS booking
                 $companyBookingBillTsh = $roomBillTsh + $companyResponsibleServiceTsh;
                 
-                $totalPaidTsh = ($booking->amount_paid ?? 0) * $bookingExchangeRate;
+                $totalPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $bookingExchangeRate);
                 
                 // Identify total amount already paid for services by the guest
                 $guestPaidServicesTsh = $serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
@@ -2806,7 +2806,9 @@ class ReceptionController extends Controller
         $rate = $currencyService->getUsdToTshRate();
 
         foreach ($bookingPayments as $bp) {
-            $amountTsh = ($bp->amount_paid ?? 0) * ($bp->locked_exchange_rate ?? $rate);
+            $bookingRate = $bp->locked_exchange_rate ?? $rate;
+            // Locally recorded amounts for Tanzanians are already in TZS. Foreigners are in USD.
+            $amountTsh = ($bp->guest_type === 'tanzanian') ? ($bp->amount_paid ?? 0) : (($bp->amount_paid ?? 0) * $bookingRate);
             $meth = strtolower($bp->payment_method ?? '');
             
             if ($meth === 'cash') {
@@ -3132,7 +3134,9 @@ class ReceptionController extends Controller
 
         // Process Booking Payments
         foreach ($bookingPayments as $bp) {
-            $amt = ($bp->amount_paid ?? 0) * ($bp->locked_exchange_rate ?? $rate);
+            $bookingRate = $bp->locked_exchange_rate ?? $rate;
+            // Only convert foreigners (non-tanzanian) from USD to TZS
+            $amt = ($bp->guest_type === 'tanzanian') ? ($bp->amount_paid ?? 0) : (($bp->amount_paid ?? 0) * $bookingRate);
             $meth = strtolower($bp->payment_method ?? '');
             
             $this->categorizePayment($meth, $amt, $platformBreakdown);
@@ -3162,8 +3166,7 @@ class ReceptionController extends Controller
 
         // Process Day Service Payments
         foreach ($dayServicePayments as $ds) {
-            $amt = $ds->amount_paid * ($ds->exchange_rate ?? $rate);
-            if ($ds->guest_type === 'tanzanian') $amt = $ds->amount_paid;
+            $amt = ($ds->guest_type === 'tanzanian') ? ($ds->amount_paid ?? 0) : (($ds->amount_paid ?? 0) * ($ds->exchange_rate ?? $rate));
             $meth = strtolower($ds->payment_method ?? 'cash');
             
             $this->categorizePayment($meth, $amt, $platformBreakdown);
