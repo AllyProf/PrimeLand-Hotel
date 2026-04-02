@@ -55,12 +55,14 @@ class AdminController extends Controller
             
             // Calculate total revenue (bookings + service requests)
             // Include both paid and partial payments
-            $totalBookingRevenueUSD = Booking::whereIn('payment_status', ['paid', 'partial'])
+            $totalBookingRevenueTZS = Booking::whereIn('payment_status', ['paid', 'partial'])
                 ->whereNotNull('amount_paid')
                 ->where('amount_paid', '>', 0)
                 ->get()
-                ->sum(function($booking) {
-                    return $booking->amount_paid ?? 0;
+                ->sum(function($booking) use ($exchangeRate) {
+                    $amount = $booking->amount_paid ?? 0;
+                    $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+                    return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
                 });
             $totalServiceRevenueTZS = ServiceRequest::where('status', 'completed')->sum('total_price_tsh');
             
@@ -71,10 +73,10 @@ class AdminController extends Controller
                 return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
             });
 
-            $totalRevenueTZS = ($totalBookingRevenueUSD * $exchangeRate) + $totalServiceRevenueTZS + $totalDayServiceRevenueTZS;
+            $totalRevenueTZS = $totalBookingRevenueTZS + $totalServiceRevenueTZS + $totalDayServiceRevenueTZS;
             
             // Calculate today's revenue (use paid_at if available, otherwise created_at)
-            $todayBookingRevenueUSD = Booking::whereIn('payment_status', ['paid', 'partial'])
+            $todayBookingRevenueTZS = Booking::whereIn('payment_status', ['paid', 'partial'])
                 ->whereNotNull('amount_paid')
                 ->where('amount_paid', '>', 0)
                 ->where(function($q) use ($today) {
@@ -85,8 +87,10 @@ class AdminController extends Controller
                       });
                 })
                 ->get()
-                ->sum(function($booking) {
-                    return $booking->amount_paid ?? 0;
+                ->sum(function($booking) use ($exchangeRate) {
+                    $amount = $booking->amount_paid ?? 0;
+                    $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+                    return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
                 });
             $todayServiceRevenueTZS = ServiceRequest::where('status', 'completed')
                 ->whereDate('completed_at', $today)
@@ -99,10 +103,10 @@ class AdminController extends Controller
                     return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
                 });
 
-            $todayRevenueTZS = ($todayBookingRevenueUSD * $exchangeRate) + $todayServiceRevenueTZS + $todayDayServiceRevenueTZS;
+            $todayRevenueTZS = $todayBookingRevenueTZS + $todayServiceRevenueTZS + $todayDayServiceRevenueTZS;
             
             // Calculate this month's revenue
-            $monthBookingRevenueUSD = Booking::whereIn('payment_status', ['paid', 'partial'])
+            $monthBookingRevenueTZS = Booking::whereIn('payment_status', ['paid', 'partial'])
                 ->whereNotNull('amount_paid')
                 ->where('amount_paid', '>', 0)
                 ->where(function($q) use ($thisMonth) {
@@ -113,8 +117,10 @@ class AdminController extends Controller
                       });
                 })
                 ->get()
-                ->sum(function($booking) {
-                    return $booking->amount_paid ?? 0;
+                ->sum(function($booking) use ($exchangeRate) {
+                    $amount = $booking->amount_paid ?? 0;
+                    $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+                    return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
                 });
             $monthServiceRevenueTZS = ServiceRequest::where('status', 'completed')
                 ->where('completed_at', '>=', $thisMonth)
@@ -127,7 +133,7 @@ class AdminController extends Controller
                     return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
                 });
 
-            $monthRevenueTZS = ($monthBookingRevenueUSD * $exchangeRate) + $monthServiceRevenueTZS + $monthDayServiceRevenueTZS;
+            $monthRevenueTZS = $monthBookingRevenueTZS + $monthServiceRevenueTZS + $monthDayServiceRevenueTZS;
             
             // Statistics
             $stats = [
@@ -520,12 +526,14 @@ class AdminController extends Controller
         $thisMonth = Carbon::now()->startOfMonth();
         
         // Total revenue (all time) - include partial payments
-        $bookingRevenueUSD = Booking::whereIn('payment_status', ['paid', 'partial'])
+        $bookingRevenueTZS = Booking::whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get()
-            ->sum(function($booking) {
-                return $booking->amount_paid ?? 0;
+            ->sum(function($booking) use ($exchangeRate) {
+                $amount = $booking->amount_paid ?? 0;
+                $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+                return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
             });
         
         // Add all-time Service Revenue
@@ -537,11 +545,11 @@ class AdminController extends Controller
             return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
         });
 
-        $totalRevenueTZS = ($bookingRevenueUSD * $exchangeRate) + $serviceRevenueTZS + $dayServiceRevenueTZS;
+        $totalRevenueTZS = $bookingRevenueTZS + $serviceRevenueTZS + $dayServiceRevenueTZS;
         $totalRevenueUSD = $exchangeRate > 0 ? ($totalRevenueTZS / $exchangeRate) : 0;
         
         // Today's revenue
-        $todayBookingUSD = Booking::whereIn('payment_status', ['paid', 'partial'])
+        $todayBookingTZS = Booking::whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->where(function($q) use ($today) {
@@ -552,8 +560,10 @@ class AdminController extends Controller
                   });
             })
             ->get()
-            ->sum(function($booking) {
-                return $booking->amount_paid ?? 0;
+            ->sum(function($booking) use ($exchangeRate) {
+                $amount = $booking->amount_paid ?? 0;
+                $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+                return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
             });
             
         $todayServiceTZS = ServiceRequest::where('status', 'completed')
@@ -567,11 +577,11 @@ class AdminController extends Controller
                 return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
             });
 
-        $todayRevenueTZS = ($todayBookingUSD * $exchangeRate) + $todayServiceTZS + $todayDayServiceTZS;
+        $todayRevenueTZS = $todayBookingTZS + $todayServiceTZS + $todayDayServiceTZS;
         $todayRevenueUSD = $exchangeRate > 0 ? ($todayRevenueTZS / $exchangeRate) : 0;
         
         // This month's revenue
-        $monthBookingUSD = Booking::whereIn('payment_status', ['paid', 'partial'])
+        $monthBookingTZS = Booking::whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->where(function($q) use ($thisMonth) {
@@ -582,8 +592,10 @@ class AdminController extends Controller
                   });
             })
             ->get()
-            ->sum(function($booking) {
-                return $booking->amount_paid ?? 0;
+            ->sum(function($booking) use ($exchangeRate) {
+                $amount = $booking->amount_paid ?? 0;
+                $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+                return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
             });
 
         $monthServiceTZS = ServiceRequest::where('status', 'completed')
@@ -597,7 +609,7 @@ class AdminController extends Controller
                 return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
             });
 
-        $monthRevenueTZS = ($monthBookingUSD * $exchangeRate) + $monthServiceTZS + $monthDayServiceTZS;
+        $monthRevenueTZS = $monthBookingTZS + $monthServiceTZS + $monthDayServiceTZS;
         $monthRevenueUSD = $exchangeRate > 0 ? ($monthRevenueTZS / $exchangeRate) : 0;
         
         // Total payments count
@@ -758,8 +770,12 @@ class AdminController extends Controller
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0);
         
-        $totalRevenueUSD = $paidBookingsQuery->sum('amount_paid');
-        $totalRevenueTZS = $totalRevenueUSD * $exchangeRate;
+        $totalRevenueTZS = $paidBookingsQuery->get()->sum(function($booking) use ($exchangeRate) {
+            $amount = $booking->amount_paid ?? 0;
+            $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+            return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
+        });
+        $totalRevenueUSD = $exchangeRate > 0 ? ($totalRevenueTZS / $exchangeRate) : 0;
         $paidBookingsCount = $paidBookingsQuery->count();
 
         // Calculate monthly stats
@@ -776,10 +792,12 @@ class AdminController extends Controller
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $monthRevenueUSD = $monthBookingsData->sum(function($booking) {
-            return $booking->amount_paid ?? 0;
+        $monthRevenueTZS = $monthBookingsData->sum(function($booking) use ($exchangeRate) {
+            $amount = $booking->amount_paid ?? 0;
+            $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+            return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
         });
-        $monthRevenueTZS = $monthRevenueUSD * $exchangeRate;
+        $monthRevenueUSD = $exchangeRate > 0 ? ($monthRevenueTZS / $exchangeRate) : 0;
         
         // Last month revenue (include partial payments)
         $lastMonthBookingsData = Booking::whereBetween('created_at', [$lastMonth, $lastMonthEnd])
@@ -787,27 +805,37 @@ class AdminController extends Controller
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $lastMonthRevenueUSD = $lastMonthBookingsData->sum(function($booking) {
-            return $booking->amount_paid ?? 0;
+        $lastMonthRevenueTZS = $lastMonthBookingsData->sum(function($booking) use ($exchangeRate) {
+            $amount = $booking->amount_paid ?? 0;
+            $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+            return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
         });
-        $lastMonthRevenueTZS = $lastMonthRevenueUSD * $exchangeRate;
+        $lastMonthRevenueUSD = $exchangeRate > 0 ? ($lastMonthRevenueTZS / $exchangeRate) : 0;
 
         // Calculate top performing rooms (include partial payments)
         $topRoomsData = Booking::whereBetween('created_at', [$dateFromCarbon, $dateToCarbon])
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
-            ->select('room_id', DB::raw('count(*) as booking_count'), 
-                     DB::raw('sum(COALESCE(amount_paid, 0)) as total_revenue_usd'))
+            ->get()
             ->groupBy('room_id')
-            ->orderBy('total_revenue_usd', 'desc')
-            ->limit(10)
-            ->get();
+            ->map(function ($bookings, $roomId) use ($exchangeRate) {
+                return (object)[
+                    'room_id' => $roomId,
+                    'booking_count' => $bookings->count(),
+                    'total_revenue' => $bookings->sum(function($booking) use ($exchangeRate) {
+                        $amount = $booking->amount_paid ?? 0;
+                        $rate = $booking->locked_exchange_rate ?? $exchangeRate;
+                        return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
+                    })
+                ];
+            })
+            ->sortByDesc('total_revenue')
+            ->take(10)
+            ->values();
         
-        $topRooms = $topRoomsData->map(function($item) use ($exchangeRate) {
-            $room = Room::find($item->room_id);
-            $item->room = $room;
-            $item->total_revenue = ($item->total_revenue_usd ?? 0) * $exchangeRate;
+        $topRooms = $topRoomsData->map(function($item) {
+            $item->room = Room::find($item->room_id);
             return $item;
         });
 

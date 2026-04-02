@@ -52,11 +52,10 @@
   </div>
   <div class="col-md-6 col-lg-3">
     <div class="widget-small danger coloured-icon">
-      <i class="icon fa fa-dollar fa-3x"></i>
+      <i class="icon fa fa-calendar-check-o fa-3x"></i>
       <div class="info">
-        <h4>Total Revenue</h4>
-        <p><b>{{ number_format($stats['total_revenue'] ?? 0, 0) }} TZS</b></p>
-        <small style="font-size: 12px; color: #666;"><b>≈ ${{ number_format(($stats['total_revenue'] ?? 0) / ($exchangeRate ?? 2500), 2) }}</b></small>
+        <h4>Today's Bookings</h4>
+        <p><b>{{ $stats['today_bookings'] ?? 0 }}</b></p>
       </div>
     </div>
   </div>
