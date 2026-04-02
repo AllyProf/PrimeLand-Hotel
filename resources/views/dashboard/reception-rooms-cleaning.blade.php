@@ -101,13 +101,9 @@
                   @if($isUpcoming)
                     <span class="text-muted small"><i class="fa fa-clock-o"></i> Waiting for check-out</span>
                   @else
-                    @if($role === 'reception')
-                      <span class="badge badge-secondary p-1"><i class="fa fa-eye"></i> View Only</span>
-                    @else
-                      <button onclick="markRoomCleaned({{ $room->id }}, '{{ $room->room_number }}')" class="btn btn-sm btn-success" title="Mark as Cleaned">
-                        <i class="fa fa-check"></i> Done
-                      </button>
-                    @endif
+                    <button onclick="markRoomCleaned({{ $room->id }}, '{{ $room->room_number }}')" class="btn btn-sm btn-success" title="Mark as Cleaned">
+                      <i class="fa fa-check"></i> Done
+                    </button>
                   @endif
                 </td>
               </tr>

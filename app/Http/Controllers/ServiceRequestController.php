@@ -386,6 +386,7 @@ class ServiceRequestController extends Controller
                 }
             }
 
+            /* 
             // Send email notification to managers and super admins
             try {
                 $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
@@ -406,6 +407,7 @@ class ServiceRequestController extends Controller
             } catch (\Exception $e) {
                 \Log::error('Failed to send service request emails to managers/admins: ' . $e->getMessage());
             }
+            */
 
             // Send WhatsApp service request confirmation
             if (!$isWalkIn && isset($booking->guest_phone)) {
@@ -792,6 +794,7 @@ class ServiceRequestController extends Controller
                     \Log::error('Failed to send service request status email: ' . $e->getMessage());
                 }
 
+                /* 
                 // Send email notification to managers and super admins
                 try {
                     $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
@@ -812,6 +815,7 @@ class ServiceRequestController extends Controller
                 } catch (\Exception $e) {
                     \Log::error('Failed to send service request status emails to managers/admins: ' . $e->getMessage());
                 }
+                */
 
             }
         } catch (\Exception $e) {

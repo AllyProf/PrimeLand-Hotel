@@ -7,51 +7,51 @@
 @endphp
 
 @section('content')
-<div class="app-title">
+<div class="app-title mb-3 mb-md-4">
   <div>
-    <h1><i class="fa fa-dashboard"></i> Housekeeper Dashboard</h1>
-    <p>Welcome back, {{ $currentUser->name }}!@if($isObserver) <span class="badge badge-info">Read-Only Mode</span>@endif</p>
+    <h1><i class="fa fa-dashboard"></i> Housekeeper</h1>
+    <p class="d-none d-md-block">Welcome back, {{ $currentUser->name }}!@if($isObserver) <span class="badge badge-info">Read-Only Mode</span>@endif</p>
   </div>
-  <ul class="app-breadcrumb breadcrumb">
+  <ul class="app-breadcrumb breadcrumb d-none d-md-flex">
     <li class="breadcrumb-item"><i class="fa fa-home fa-lg"></i></li>
     <li class="breadcrumb-item"><a href="#">Dashboard</a></li>
   </ul>
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-3">
-  <div class="col-6 col-md-3">
-    <div class="widget-small warning coloured-icon">
+<div class="row mb-2 mb-md-3">
+  <div class="col-6 col-lg-3 mb-3">
+    <div class="widget-small warning coloured-icon mb-0 h-100 shadow-sm">
       <i class="icon fa fa-bed fa-2x"></i>
       <div class="info">
-        <h4>Rooms Needing Cleaning</h4>
+        <h4 class="small-text">To Clean</h4>
         <p><b>{{ $stats['rooms_needing_cleaning'] ?? 0 }}</b></p>
       </div>
     </div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="widget-small danger coloured-icon">
+  <div class="col-6 col-lg-3 mb-3">
+    <div class="widget-small danger coloured-icon mb-0 h-100 shadow-sm">
       <i class="icon fa fa-exclamation-triangle fa-2x"></i>
       <div class="info">
-        <h4>Low Stock Items</h4>
+        <h4 class="small-text">Low Stock</h4>
         <p><b>{{ $stats['low_stock_items'] ?? 0 }}</b></p>
       </div>
     </div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="widget-small info coloured-icon">
+  <div class="col-6 col-lg-3 mb-3">
+    <div class="widget-small info coloured-icon mb-0 h-100 shadow-sm">
       <i class="icon fa fa-wrench fa-2x"></i>
       <div class="info">
-        <h4>Pending Issues</h4>
+        <h4 class="small-text">Issues</h4>
         <p><b>{{ $stats['pending_issues'] ?? 0 }}</b></p>
       </div>
     </div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="widget-small success coloured-icon">
+  <div class="col-6 col-lg-3 mb-3">
+    <div class="widget-small success coloured-icon mb-0 h-100 shadow-sm">
       <i class="icon fa fa-check-circle fa-2x"></i>
       <div class="info">
-        <h4>Cleaned Today</h4>
+        <h4 class="small-text">Cleaned</h4>
         <p><b>{{ $stats['cleaned_today'] ?? 0 }}</b></p>
       </div>
     </div>
@@ -61,19 +61,19 @@
 <!-- All Rooms Overview -->
 <div class="row mb-3">
   <div class="col-md-12">
-    <div class="tile">
-      <div class="tile-title-w-btn flex-wrap gap-2">
-        <h3 class="title"><i class="fa fa-bed"></i> All Rooms Overview</h3>
-        <div class="filter-btn-group d-flex flex-wrap gap-1 mt-2 mt-md-0">
-          <button class="btn btn-sm btn-secondary" id="filterAll" onclick="filterRooms('all')">All</button>
-          <button class="btn btn-sm btn-warning" id="filterNeedsCleaning" onclick="filterRooms('needs_cleaning')">Cleaning</button>
-          <button class="btn btn-sm btn-success" id="filterAvailable" onclick="filterRooms('available')">Available</button>
-          <button class="btn btn-sm btn-info" id="filterOccupied" onclick="filterRooms('occupied')">Occupied</button>
-          <button class="btn btn-sm btn-primary" id="filterReserved" onclick="filterRooms('reserved')">Reserved</button>
-          <button class="btn btn-sm btn-dark" id="filterClosed" onclick="filterRooms('closed')">Closed</button>
+    <div class="tile shadow-sm border-0" style="border-radius: 12px;">
+      <div class="tile-title-w-btn flex-column flex-md-row">
+        <h3 class="title mb-3 mb-md-0"><i class="fa fa-bed"></i> Room Status</h3>
+        <div class="btn-group btn-group-sm flex-wrap w-100 w-md-auto" role="group">
+          <button class="btn btn-secondary px-3 active-filter" id="filterAll" onclick="filterRooms('all')">All</button>
+          <button class="btn btn-warning px-3" id="filterNeedsCleaning" onclick="filterRooms('needs_cleaning')">Clean</button>
+          <button class="btn btn-success px-3" id="filterAvailable" onclick="filterRooms('available')">Free</button>
+          <button class="btn btn-danger px-3" id="filterOccupied" onclick="filterRooms('occupied')">Busy</button>
+          <button class="btn btn-primary px-3" id="filterReserved" onclick="filterRooms('reserved')">Booked</button>
         </div>
       </div>
-      <div class="tile-body">
+      
+      <div class="tile-body mt-2">
         <div class="row" id="roomsGrid">
           @foreach($allRooms as $room)
           @php
@@ -96,82 +96,37 @@
             } elseif ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning') {
               $statusBadge = 'warning';
               $statusIcon = 'fa-broom';
-              $statusText = 'Needs Cleaning';
+              $statusText = 'Clean Me';
               $bgClass = 'status-bg-cleaning';
             } elseif ($room->is_occupied) {
-              $statusBadge = 'danger'; // Use danger for occupied to match reception
+                // Determine if they are checking out today
+                $isCheckingOutToday = false;
+                if ($room->currentBooking && $room->currentBooking->check_out) {
+                    $isCheckingOutToday = \Carbon\Carbon::parse($room->currentBooking->check_out)->isToday();
+                }
+              $statusBadge = 'danger';
               $statusIcon = 'fa-user';
-              $statusText = 'Occupied';
-              $bgClass = 'status-bg-occupied';
+              $statusText = $isCheckingOutToday ? 'Checkout today' : 'Occupied';
+              $bgClass = $isCheckingOutToday ? 'status-bg-urgent' : 'status-bg-occupied';
             } elseif ($room->has_immediate_booking) {
               $statusBadge = 'primary';
-              $statusIcon = 'fa-calendar-check-o';
-              $statusText = 'Reserved';
+              $statusIcon = 'fa-calendar';
+              $statusText = 'Arriving today';
               $bgClass = 'status-bg-reserved';
-              
-              // Check if in today
-              if ($room->upcoming_checkin && \Carbon\Carbon::parse($room->upcoming_checkin->check_in)->isToday()) {
-                  $statusText = 'In Today';
-              }
             }
             
-            // Check for active issues
             $hasIssues = $room->activeIssues && $room->activeIssues->count() > 0;
             if ($hasIssues) {
-                $statusText = 'Issue Reported';
-                $bgClass = 'status-bg-maintenance'; // Maintain red/grey look
+                $statusText = 'Fix Needed';
+                $bgClass = 'status-bg-maintenance';
                 $statusIcon = 'fa-exclamation-triangle';
             }
 
-            // Get room image
             $bgImage = null;
             if ($room->images && is_array($room->images) && count($room->images) > 0) {
-                $firstImage = $room->images[0];
-                $bgImage = asset('storage/' . ltrim($firstImage, '/'));
-            }
-            
-            // Get check-in/check-out info
-            $checkInTime = null;
-            $checkOutTime = null;
-            $guestName = null;
-            $isUrgent = false;
-            
-            if ($room->is_occupied && $room->currentBooking) {
-              $checkInTime = $room->currentBooking->checked_in_at ? \Carbon\Carbon::parse($room->currentBooking->checked_in_at)->format('M d, H:i') : ($room->currentBooking->check_in ? \Carbon\Carbon::parse($room->currentBooking->check_in)->format('M d') : null);
-              if ($room->currentBooking->check_out) {
-                $checkOutDate = \Carbon\Carbon::parse($room->currentBooking->check_out);
-                if ($room->checkout_time) {
-                  $timeParts = explode(':', $room->checkout_time);
-                  $checkOutTime = $checkOutDate->format('M d') . ', ' . ($room->checkout_time);
-                } else {
-                  $checkOutDate->setTime(11, 0); 
-                  $checkOutTime = $checkOutDate->format('M d, H:i');
-                }
-                
-                // Urgent if checking out today
-                if ($checkOutDate->isToday()) {
-                  $isUrgent = true;
-                  $bgClass = 'status-bg-urgent';
-                  $statusText = 'Checkout Today!';
-                }
-              }
-              $guestName = $room->currentBooking->guest_name;
-            } elseif ($room->upcoming_checkin) {
-                $guestName = $room->upcoming_checkin->guest_name;
-                $checkInDate = \Carbon\Carbon::parse($room->upcoming_checkin->check_in);
-                $checkInTime = $checkInDate->format('M d');
-                if ($checkInDate->isToday()) {
-                    $isUrgent = true;
-                    $checkInTime .= ' Today!';
-                }
-            } elseif ($room->lastCheckout && ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning')) {
-                $guestName = $room->lastCheckout->guest_name;
-                if ($room->lastCheckout->checked_out_at) {
-                    $checkOutTime = \Carbon\Carbon::parse($room->lastCheckout->checked_out_at)->format('H:i');
-                }
+                $bgImage = asset('storage/' . ltrim($room->images[0], '/'));
             }
 
-            // Status string for JS filtering
             $statusClass = 'available';
             if ($roomStatus === 'maintenance') $statusClass = 'maintenance';
             if ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning') $statusClass = 'needs_cleaning';
@@ -179,323 +134,157 @@
             if ($roomStatus === 'closed') $statusClass = 'closed';
             if ($room->has_immediate_booking) $statusClass = 'reserved';
           @endphp
-          <div class="col-6 col-md-3 mb-3 room-card" data-status="{{ $statusClass }}">
-            <div class="card shadow-sm room-card-status {{ $bgClass }} h-100">
-               <!-- Room Image Section -->
-               <div class="room-image-container" style="background-color: rgba(255,255,255,0.05);">
-                   @if($bgImage)
-                       <img src="{{ $bgImage }}" alt="Room {{ $room->room_number }}" class="w-100 h-100" style="object-fit: cover; transition: transform 0.5s;">
-                   @else
-                       <div class="w-100 h-100 d-flex align-items-center justify-content-center flex-column" style="color: rgba(255,255,255,0.7) !important;">
-                           <i class="fa fa-bed fa-4x mb-2" style="opacity: 0.5;"></i>
-                           <span class="small font-weight-bold" style="font-size: 10px; letter-spacing: 2px; opacity: 0.8;">PRIME LAND HOTEL</span>
-                       </div>
-                   @endif
-                   <div class="position-absolute" style="top: 10px; right: 10px;">
-                       <span class="badge badge-light p-2 shadow-sm" style="color: #333 !important;">
-                           <i class="fa {{ $statusIcon }}"></i> {{ $statusText }}
-                       </span>
-                   </div>
-                   <div class="position-absolute" style="bottom: 0px; left: 0px; background: {{ $bgImage ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.2)' }}; width: 100%; padding: 8px 15px;">
-                       <h4 class="text-white mb-0" style="text-shadow: 0 1px 2px rgba(0,0,0,0.3);">
-                           <i class="fa fa-bed mr-2"></i>{{ $room->room_number }} 
-                           <span class="badge badge-light ml-2" style="font-size: 0.6em; vertical-align: middle;">
-                               <i class="fa fa-tag mr-1 text-muted"></i>{{ $room->room_type }}
-                           </span>
-                       </h4>
-                   </div>
+          
+          <div class="col-6 col-md-4 col-lg-3 mb-3 room-card px-2" data-status="{{ $statusClass }}">
+            <div class="card shadow-sm border-0 room-card-status {{ $bgClass }} h-100" style="border-radius: 12px; overflow: hidden;">
+               <!-- Mini Header -->
+               <div class="p-2 d-flex justify-content-between align-items-center bg-black-transparent">
+                  <span class="font-weight-bold text-white">#{{ $room->room_number }}</span>
+                  <i class="fa {{ $statusIcon }} text-white-50 small"></i>
                </div>
-               
-               <!-- Room Info -->
-               <div class="card-body">
-                 <div class="room-details mb-3" style="min-height: 60px;">
-                    @if($hasIssues)
-                        <div class="small font-weight-bold text-white">
-                            <i class="fa fa-wrench"></i> Issue: {{ Str::limit($room->activeIssues->first()->issue_type, 25) }}
-                        </div>
-                    @endif
 
-                    @if($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning')
-                        <div class="small font-weight-bold">
-                            <i class="fa fa-broom"></i> Needs Cleaning
-                            @if($checkOutTime)
-                                <span class="d-block mt-1 opacity-75">Checked out at {{ $checkOutTime }}</span>
-                            @endif
-                        </div>
-                    @elseif($room->is_occupied && $room->currentBooking)
-                        <div class="small">
-                            <strong class="text-white"><i class="fa fa-user"></i> {{ Str::limit($guestName, 18) }}</strong>
-                            <div class="d-flex justify-content-between mt-1 opacity-75">
-                                <span>Out: {{ $checkOutTime }}</span>
-                                @if($isUrgent)
-                                    <span class="font-weight-bold ml-1">Today!</span>
-                                @endif
-                            </div>
-                        </div>
-                    @elseif($room->has_immediate_booking && $room->upcoming_checkin)
-                        <div class="small">
-                            <strong class="text-white"><i class="fa fa-user"></i> {{ Str::limit($guestName, 18) }}</strong>
-                            <div class="d-flex justify-content-between mt-1 opacity-75 text-uppercase" style="letter-spacing: 0.5px; font-size: 0.85em;">
-                                <span>In: {{ $checkInTime }}</span>
-                            </div>
-                        </div>
-                    @elseif($roomStatus === 'closed')
-                         <div class="small">
-                            <i class="fa fa-ban"></i> Room Closed
-                        </div>
-                    @else
-                        <div class="small">
-                            <i class="fa fa-check-circle"></i> Ready for Guests
-                        </div>
-                    @endif
-                 </div>
-                 
-                 <!-- Actions -->
-                 <div class="room-actions">
-                   @if(!$isObserver && ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning'))
-                   <button class="btn btn-sm btn-outline-success btn-block mark-cleaned-btn" 
-                           data-room-id="{{ $room->id }}" 
-                           data-room-number="{{ $room->room_number }}">
-                     <i class="fa fa-check"></i> Mark Cleaned
-                   </button>
-                   @endif
-                   
-                   @if($hasIssues)
-                   <a href="{{ route('housekeeper.room-issues') }}" class="btn btn-sm btn-outline-danger btn-block mt-1">
-                     <i class="fa fa-exclamation-triangle"></i> View Issues
-                   </a>
-                   @endif
+               <!-- Status Overlay -->
+               <div class="card-body p-2 d-flex flex-column justify-content-center text-center text-white" style="min-height: 100px;">
+                  <div class="mb-2" style="opacity: 0.3;">
+                      <i class="fa fa-bed fa-2x"></i>
+                  </div>
+                  <span class="small font-weight-bold text-uppercase d-block mb-1" style="font-size: 10px; opacity: 0.9;">{{ $statusText }}</span>
+                  <div class="small font-italic opacity-75" style="font-size: 11px; line-height: 1.2;">
+                      @if($room->is_occupied && $room->currentBooking)
+                          {{ Str::limit($room->currentBooking->guest_name, 15) }}
+                      @elseif($room->has_immediate_booking && ($room->currentBooking ?: $room->upcoming_checkin))
+                         Arr: {{ ($room->currentBooking ?: $room->upcoming_checkin)->guest_name }}
+                      @elseif($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning')
+                          Needs attention
+                      @else
+                          &nbsp;
+                      @endif
+                  </div>
+               </div>
 
-                   <button class="btn btn-sm btn-outline-secondary btn-block mt-1 view-details-btn" 
-                           data-room-id="{{ $room->id }}"
-                           data-room-number="{{ $room->room_number }}"
-                           data-room-type="{{ $room->room_type }}"
-                           data-capacity="{{ $room->capacity }}"
-                           data-bed-type="{{ $room->bed_type ?? 'N/A' }}"
-                           data-floor="{{ $room->floor_location ?? 'N/A' }}"
-                           data-status="{{ $statusText }}"
-                           data-guest-name="{{ $guestName ?? 'N/A' }}"
-                           data-check-in="{{ $checkInTime ?? 'N/A' }}"
-                           data-check-out="{{ $checkOutTime ?? 'N/A' }}"
-                           data-last-cleaned="{{ $lastCleaned ?? 'Never' }}"
-                           data-has-issues="{{ $hasIssues ? 'Yes' : 'No' }}">
-                     <i class="fa fa-info-circle"></i> Details
-                   </button>
-                 </div>
+               <!-- Mobile Quick Actions -->
+               <div class="card-footer p-1 bg-white border-0">
+                  @if(!$isObserver && ($roomStatus === 'to_be_cleaned' || $roomStatus === 'needs_cleaning'))
+                  <button class="btn btn-sm btn-success btn-block py-2 font-weight-bold mb-1 mark-cleaned-btn" 
+                          data-room-id="{{ $room->id }}" 
+                          data-room-number="{{ $room->room_number }}" style="border-radius: 8px;">
+                    <i class="fa fa-check mr-1"></i> CLEAN
+                  </button>
+                  @else
+                    <div class="py-2 text-center text-muted small"><i class="fa fa-info-circle"></i> Tap for info</div>
+                  @endif
+                  
+                  <div class="d-none">
+                      <button class="view-details-btn" 
+                              data-room-id="{{ $room->id }}"
+                              data-room-number="{{ $room->room_number }}"
+                              data-room-type="{{ $room->room_type }}"
+                              data-status="{{ $statusText }}"></button>
+                  </div>
                </div>
             </div>
           </div>
           @endforeach
         </div>
-        
-        @if($allRooms->count() === 0)
-        <div class="text-center" style="padding: 50px;">
-          <i class="fa fa-bed fa-4x text-muted mb-3"></i>
-          <h3>No Rooms Found</h3>
-          <p class="text-muted">No rooms are available in the system.</p>
-        </div>
-        @endif
       </div>
     </div>
   </div>
 </div>
 
-<!-- Rooms Needing Cleaning -->
-@if($roomsNeedingCleaning->count() > 0)
-<div class="row mb-3">
-  <div class="col-md-12">
-    <div class="tile">
-      <h3 class="tile-title"><i class="fa fa-bed"></i> Rooms Needing Cleaning</h3>
-      <div class="tile-body">
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered">
-            <thead>
-              <tr>
-                <th>Room Number</th>
-                <th>Room Type</th>
-                <th>Last Guest</th>
-                <th>Check-out Time</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($roomsNeedingCleaning as $room)
-              <tr>
-                <td><strong>{{ $room->room_number }}</strong></td>
-                <td>{{ $room->room_type }}</td>
-                <td>
-                  @if($room->bookings->count() > 0)
-                    {{ $room->bookings->first()->guest_name }}
-                  @else
-                    N/A
-                  @endif
-                </td>
-                <td>
-                  @if($room->bookings->count() > 0 && $room->bookings->first()->checked_out_at)
-                    {{ \Carbon\Carbon::parse($room->bookings->first()->checked_out_at)->format('M d, Y H:i') }}
-                  @else
-                    N/A
-                  @endif
-                </td>
-                <td>
-                  <span class="badge badge-warning">Needs Cleaning</span>
-                </td>
-                <td>
-                  @if(!$isObserver)
-                  <button class="btn btn-sm btn-success mark-cleaned-btn" data-room-id="{{ $room->id }}" data-room-number="{{ $room->room_number }}">
-                    <i class="fa fa-check"></i> Mark Cleaned
-                  </button>
-                  @else
-                  <span class="text-muted"><i class="fa fa-eye"></i> View Only</span>
-                  @endif
-                </td>
-              </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-@endif
-
-<!-- Low Stock Items -->
-@if($lowStockItems->count() > 0)
-<div class="row mb-3">
-  <div class="col-md-12">
-    <div class="tile">
-      <h3 class="tile-title"><i class="fa fa-exclamation-triangle text-danger"></i> Low Stock Alert</h3>
-      <div class="tile-body">
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered">
-            <thead>
-              <tr>
-                <th>Item Name</th>
-                <th>Category</th>
-                <th>Current Stock</th>
-                <th>Minimum Stock</th>
-                <th>Unit</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($lowStockItems as $item)
-              <tr>
-                <td><strong>{{ $item->name }}</strong></td>
-                <td>{{ ucfirst(str_replace('_', ' ', $item->category)) }}</td>
-                <td><strong class="text-danger">{{ $item->current_stock }}</strong></td>
-                <td>{{ $item->minimum_stock }}</td>
-                <td>{{ $item->unit }}</td>
-                <td>
-                  <span class="badge badge-danger">Low Stock</span>
-                </td>
-                <td>
-                  @if(!$isObserver)
-                  <a href="{{ route('housekeeper.purchase-requests.create', ['housekeeping_ids' => $item->id]) }}" class="btn btn-sm btn-primary">
-                    <i class="fa fa-shopping-cart"></i> Restock
-                  </a>
-                  @else
-                  <span class="text-muted"><i class="fa fa-eye"></i> View Only</span>
-                  @endif
-                </td>
-              </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-@endif
-
-<!-- Recent Room Issues -->
-@if($recentIssues->count() > 0)
-<div class="row mb-3">
-  <div class="col-md-12">
-    <div class="tile">
-      <h3 class="tile-title"><i class="fa fa-wrench"></i> Recent Room Issues</h3>
-      <div class="tile-body">
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered">
-            <thead>
-              <tr>
-                <th>Room</th>
-                <th>Issue Type</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Reported At</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach($recentIssues as $issue)
-              <tr>
-                <td><strong>{{ $issue->room->room_number }}</strong></td>
-                <td>{{ $issue->issue_type }}</td>
-                <td>
-                  @if($issue->priority === 'urgent')
-                    <span class="badge badge-danger">Urgent</span>
-                  @elseif($issue->priority === 'high')
-                    <span class="badge badge-warning">High</span>
-                  @elseif($issue->priority === 'medium')
-                    <span class="badge badge-info">Medium</span>
-                  @else
-                    <span class="badge badge-secondary">Low</span>
-                  @endif
-                </td>
-                <td>
-                  @if($issue->status === 'reported')
-                    <span class="badge badge-warning">Reported</span>
-                  @elseif($issue->status === 'in_progress')
-                    <span class="badge badge-info">In Progress</span>
-                  @elseif($issue->status === 'resolved')
-                    <span class="badge badge-success">Resolved</span>
-                  @endif
-                </td>
-                <td>{{ $issue->created_at->format('M d, Y H:i') }}</td>
-              </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-@endif
-
-<!-- Quick Actions -->
-@if(!$isObserver)
+<!-- Low Stock & Issues (Mobile Optimized Table) -->
+@if($lowStockItems->count() > 0 || $recentIssues->count() > 0)
 <div class="row">
-  <div class="col-md-12">
-    <div class="tile">
-      <h3 class="tile-title"><i class="fa fa-bolt"></i> Quick Actions</h3>
-      <div class="tile-body">
-        <div class="row">
-          <div class="col-6 col-md-3 mb-2">
-            <a href="{{ route('housekeeper.rooms.cleaning') }}" class="btn btn-warning btn-block quick-action-btn">
-              <i class="fa fa-bed fa-lg"></i><br><span>Rooms Cleaning</span>
-            </a>
-          </div>
-          <div class="col-6 col-md-3 mb-2">
-            <a href="{{ route('housekeeper.inventory') }}" class="btn btn-info btn-block quick-action-btn">
-              <i class="fa fa-cubes fa-lg"></i><br><span>Inventory</span>
-            </a>
-          </div>
-          <div class="col-6 col-md-3 mb-2">
-            <a href="{{ route('housekeeper.room-issues') }}" class="btn btn-danger btn-block quick-action-btn">
-              <i class="fa fa-wrench fa-lg"></i><br><span>Room Issues</span>
-            </a>
-          </div>
-          <div class="col-6 col-md-3 mb-2">
-            <a href="{{ route('housekeeper.purchase-requests.create') }}" class="btn btn-primary btn-block quick-action-btn">
-              <i class="fa fa-shopping-cart fa-lg"></i><br><span>Request Purchase</span>
-            </a>
-          </div>
+    @if($lowStockItems->count() > 0)
+    <div class="col-md-6 mb-3">
+        <div class="tile shadow-sm border-0" style="border-radius: 12px;">
+            <h4 class="tile-title small font-weight-bold text-danger"><i class="fa fa-warning"></i> Low Stock Alert</h4>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Item</th><th>Stock</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($lowStockItems as $item)
+                        <tr>
+                            <td>{{ $item->name }}</td>
+                            <td class="text-danger font-weight-bold">{{ $item->current_stock }} {{ $item->unit }}</td>
+                            <td>
+                                <a href="{{ route('housekeeper.purchase-requests.create', ['housekeeping_ids' => $item->id]) }}" class="btn btn-xs btn-primary p-1 px-2">
+                                    <i class="fa fa-cart-plus"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
+    </div>
+    @endif
+
+    @if($recentIssues->count() > 0)
+    <div class="col-md-6 mb-3">
+        <div class="tile shadow-sm border-0" style="border-radius: 12px;">
+            <h4 class="tile-title small font-weight-bold text-info"><i class="fa fa-wrench"></i> Recent Issues</h4>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr><th>Room</th><th>Issue</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($recentIssues as $issue)
+                        <tr>
+                            <td><strong>{{ $issue->room->room_number }}</strong></td>
+                            <td><small>{{ Str::limit($issue->issue_type, 15) }}</small></td>
+                            <td><span class="badge badge-{{ $issue->status === 'reported' ? 'warning' : 'info' }}">{{ $issue->status }}</span></td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+</div>
+@endif
+
+<!-- Quick Actions Grid (Mobile Specific) -->
+@if(!$isObserver)
+<div class="row mb-4">
+  <div class="col-md-12">
+    <div class="tile shadow-sm border-0" style="border-radius: 12px; background: #f8f9fa;">
+      <h4 class="tile-title small font-weight-bold mb-3"><i class="fa fa-bolt"></i> Menu Essentials</h4>
+      <div class="row no-gutters">
+        <div class="col-4 p-1">
+          <a href="{{ route('housekeeper.rooms.cleaning') }}" class="btn btn-light btn-block py-3 shadow-none border bg-white h-100 d-flex flex-column align-items-center justify-content-center">
+            <i class="fa fa-bed text-warning fa-lg mb-1"></i><span class="extra-small font-weight-bold">CLEANING</span>
+          </a>
+        </div>
+        <div class="col-4 p-1">
+          <a href="{{ route('housekeeper.inventory') }}" class="btn btn-light btn-block py-3 shadow-none border bg-white h-100 d-flex flex-column align-items-center justify-content-center">
+            <i class="fa fa-cubes text-info fa-lg mb-1"></i><span class="extra-small font-weight-bold">STOCKS</span>
+          </a>
+        </div>
+        <div class="col-4 p-1">
+          <a href="{{ route('housekeeper.room-issues') }}" class="btn btn-light btn-block py-3 shadow-none border bg-white h-100 d-flex flex-column align-items-center justify-content-center">
+            <i class="fa fa-wrench text-danger fa-lg mb-1"></i><span class="extra-small font-weight-bold">ISSUES</span>
+          </a>
+        </div>
+        <div class="col-4 p-1">
+          <a href="{{ route('housekeeper.purchase-requests.create') }}" class="btn btn-light btn-block py-3 shadow-none border bg-white h-100 d-flex flex-column align-items-center justify-content-center">
+            <i class="fa fa-shopping-cart text-primary fa-lg mb-1"></i><span class="extra-small font-weight-bold">PURCHASE</span>
+          </a>
+        </div>
+        <div class="col-4 p-1">
+          <a href="{{ route('housekeeper.lost-found.index') }}" class="btn btn-light btn-block py-3 shadow-none border bg-white h-100 d-flex flex-column align-items-center justify-content-center">
+            <i class="fa fa-search text-secondary fa-lg mb-1"></i><span class="extra-small font-weight-bold">LOST & FOUND</span>
+          </a>
+        </div>
+        <div class="col-4 p-1">
+            <a href="{{ route('housekeeper.lost-found.create') }}" class="btn btn-primary btn-block py-3 shadow-none h-100 d-flex flex-column align-items-center justify-content-center">
+              <i class="fa fa-plus-circle fa-lg mb-1"></i><span class="extra-small font-weight-bold">REPORT FOUND</span>
+            </a>
+          </div>
       </div>
     </div>
   </div>
@@ -504,369 +293,156 @@
 
 <!-- Mark Room Cleaned Modal -->
 <div class="modal fade" id="markCleanedModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fa fa-check-circle"></i> Mark Room as Cleaned</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <form id="markCleanedForm">
-        <div class="modal-body">
-          <input type="hidden" id="room_id" name="room_id">
-          <p>Are you sure you want to mark <strong id="room_number_display"></strong> as cleaned?</p>
-          <div class="form-group">
-            <label for="notes">Notes (Optional)</label>
-            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Add any notes about the cleaning..."></textarea>
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
+        <div class="modal-header bg-success text-white border-0 py-3">
+          <h5 class="modal-title font-weight-bold"><i class="fa fa-check-circle"></i> Confirm Cleaning</h5>
+          <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+        </div>
+        <form id="markCleanedForm">
+          <div class="modal-body py-4">
+            <input type="hidden" id="room_id" name="room_id">
+            <p class="mb-3">Are you sure room <strong id="room_number_display" class="text-primary h4"></strong> is now clean and available?</p>
+            <div class="form-group">
+              <label for="notes" class="small font-weight-bold text-muted">HOUSEKEEPER NOTES (OPTIONAL)</label>
+              <textarea class="form-control bg-light border-0" id="notes" name="notes" rows="2" placeholder="e.g., Linens changed, Mini-bar restocked" style="border-radius: 8px;"></textarea>
+            </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success">
-            <i class="fa fa-check"></i> Mark as Cleaned
-          </button>
-        </div>
-      </form>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-light px-4 mr-2" data-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-success px-4 font-weight-bold shadow-sm">CONFIRM CLEAN</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
-</div>
+  
+  <!-- Room Details Mini Modal -->
+  <div class="modal fade" id="roomDetailsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
+        <div class="modal-header border-0 py-3 bg-secondary text-white">
+          <h5 class="modal-title font-weight-bold"><i class="fa fa-bed"></i> Room <span id="detail_room_number"></span></h5>
+          <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body py-3">
+            <div class="row no-gutters mb-3 pb-3 border-bottom">
+                <div class="col-6">
+                    <small class="text-muted d-block uppercase font-weight-bold" style="font-size: 10px;">ROOM TYPE</small>
+                    <span id="detail_room_type" class="font-weight-bold"></span>
+                </div>
+                <div class="col-6">
+                    <small class="text-muted d-block uppercase font-weight-bold" style="font-size: 10px;">CURRENT STATUS</small>
+                    <span id="detail_status" class="badge"></span>
+                </div>
+            </div>
+            <div class="booking-info p-3 bg-light rounded" style="border-left: 4px solid #6c757d;">
+                <small class="text-muted d-block uppercase font-weight-bold mb-2" style="font-size: 10px;">GUEST DETAILS</small>
+                <div class="row">
+                    <div class="col-12">
+                        <span id="detail_guest_name" class="font-weight-bold h6 mb-0 text-dark"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary px-5 w-100" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<!-- Room Details Modal -->
-<div class="modal fade" id="roomDetailsModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="fa fa-bed"></i> Room <span id="detail_room_number"></span> Details</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-          <!-- Room Specifications -->
-          <div class="col-md-6">
-            <h6 class="font-weight-bold mb-3"><i class="fa fa-info-circle text-primary"></i> Room Specifications</h6>
-            <table class="table table-sm table-bordered">
-              <tr>
-                <th width="40%">Room Type</th>
-                <td id="detail_room_type"></td>
-              </tr>
-              <tr>
-                <th>Capacity</th>
-                <td id="detail_capacity"></td>
-              </tr>
-              <tr>
-                <th>Bed Type</th>
-                <td id="detail_bed_type"></td>
-              </tr>
-              <tr>
-                <th>Floor Location</th>
-                <td id="detail_floor"></td>
-              </tr>
-              <tr>
-                <th>Current Status</th>
-                <td><span id="detail_status" class="badge"></span></td>
-              </tr>
-            </table>
-          </div>
-          
-          <!-- Current Booking Info -->
-          <div class="col-md-6">
-            <h6 class="font-weight-bold mb-3"><i class="fa fa-user text-success"></i> Current Booking</h6>
-            <table class="table table-sm table-bordered">
-              <tr>
-                <th width="40%">Guest Name</th>
-                <td id="detail_guest_name"></td>
-              </tr>
-              <tr>
-                <th>Check-in</th>
-                <td id="detail_check_in"></td>
-              </tr>
-              <tr>
-                <th>Check-out</th>
-                <td id="detail_check_out"></td>
-              </tr>
-            </table>
-            
-            <h6 class="font-weight-bold mb-3 mt-4"><i class="fa fa-check-circle text-info"></i> Cleaning Status</h6>
-            <table class="table table-sm table-bordered">
-              <tr>
-                <th width="40%">Last Cleaned</th>
-                <td id="detail_last_cleaned"></td>
-              </tr>
-              <tr>
-                <th>Active Issues</th>
-                <td id="detail_has_issues"></td>
-              </tr>
-            </table>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
 @endsection
 
 @section('styles')
 <style>
-/* Status Card Styles */
-.room-card-status {
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: none !important;
-    color: #fff !important;
-}
-.room-card-status:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15) !important;
-}
-.room-card-status .card-body {
-    padding: 0.85rem !important;
-}
-.room-card-status .text-muted { color: rgba(255,255,255,0.8) !important; }
-.room-card-status .text-dark  { color: #fff !important; }
+    .status-bg-available { background: linear-gradient(135deg, #28a745, #218838); }
+    .status-bg-cleaning { background: linear-gradient(135deg, #ffc107, #e0a800); }
+    .status-bg-occupied { background: linear-gradient(135deg, #dc3545, #c82333); }
+    .status-bg-reserved { background: linear-gradient(135deg, #007bff, #0069d9); }
+    .status-bg-closed { background: linear-gradient(135deg, #343a40, #23272b); }
+    .status-bg-maintenance { background: linear-gradient(135deg, #6c757d, #5a6268); }
+    .status-bg-urgent { background: linear-gradient(135deg, #fd7e14, #e8590c); }
 
-.status-bg-available   { background-color: #28a745 !important; }
-.status-bg-occupied    { background-color: #dc3545 !important; }
-.status-bg-reserved    { background-color: #007bff !important; }
-.status-bg-cleaning    { background-color: #ffc107 !important; color: #333 !important; }
-.status-bg-maintenance { background-color: #6c757d !important; }
-.status-bg-closed      { background-color: #343a40 !important; }
-.status-bg-urgent      { background-color: #f39c12 !important; }
-
-.room-card-status.status-bg-cleaning .text-muted,
-.room-card-status.status-bg-cleaning .text-dark,
-.room-card-status.status-bg-cleaning .small,
-.room-card-status.status-bg-cleaning h5,
-.room-card-status.status-bg-cleaning .card-title { color: #333 !important; }
-
-.room-card-status .btn-outline-primary,
-.room-card-status .btn-outline-danger,
-.room-card-status .btn-outline-success,
-.room-card-status .btn-outline-info,
-.room-card-status .btn-outline-secondary {
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.5);
-    color: #fff !important;
-}
-.room-card-status .btn-outline-primary:hover,
-.room-card-status .btn-outline-danger:hover,
-.room-card-status .btn-outline-success:hover,
-.room-card-status .btn-outline-info:hover,
-.room-card-status .btn-outline-secondary:hover {
-    background: rgba(255,255,255,0.4);
-    border-color: #fff;
-}
-.room-card-status.status-bg-cleaning .btn-outline-success,
-.room-card-status.status-bg-cleaning .btn-outline-info,
-.room-card-status.status-bg-cleaning .btn-outline-danger,
-.room-card-status.status-bg-cleaning .btn-outline-secondary {
-    border-color: #333;
-    color: #333 !important;
-    background: rgba(0,0,0,0.05);
-}
-
-.room-image-container {
-    position: relative;
-    height: 140px;
-    overflow: hidden;
-}
-
-.filter-active {
-    background-color: #007bff !important;
-    color: white !important;
-}
-
-.filter-btn-group { gap: 4px; }
-.filter-btn-group .btn { flex: 0 0 auto; }
-
-/* Quick action buttons */
-.quick-action-btn {
-    padding: 12px 8px;
-    font-size: 0.82rem;
-    font-weight: 600;
-}
-.quick-action-btn i { display: block; margin-bottom: 4px; }
-
-/* ── MOBILE OVERRIDES ── */
-@media (max-width: 575.98px) {
-    /* Stats widgets: tighter on mobile */
-    .widget-small {
-        padding: 10px 8px;
-        margin-bottom: 10px;
+    .bg-black-transparent { background-color: rgba(0,0,0,0.15); }
+    .extra-small { font-size: 9px; letter-spacing: 0.5px; }
+    .small-text { font-size: 12px; margin-bottom: 2px; }
+    .active-filter { border-bottom: 3px solid #fff !important; }
+    
+    .room-card-status { transition: transform 0.2s; cursor: pointer; }
+    .room-card-status:active { transform: scale(0.95); }
+    
+    @media (max-width: 768px) {
+        .widget-small .info h4 { font-size: 11px; }
+        .widget-small .info p { font-size: 16px; }
+        .app-title h1 { font-size: 20px; }
     }
-    .widget-small .icon { font-size: 1.4rem !important; }
-    .widget-small .info h4 { font-size: 0.7rem; margin-bottom: 2px; }
-    .widget-small .info p  { font-size: 1.1rem; }
-
-    /* Room cards: smaller image, tighter body */
-    .room-image-container { height: 100px; }
-    .room-card-status .card-body { padding: 0.6rem !important; }
-    .room-details { min-height: auto !important; margin-bottom: 8px !important; }
-    .room-details .small { font-size: 0.72rem; }
-    .room-actions .btn  { font-size: 0.7rem; padding: 4px 6px; }
-    .room-actions .btn i { display: none; } /* hide icons in buttons on tiny screens */
-
-    /* Room number heading */
-    .room-image-container h4 { font-size: 0.9rem; }
-
-    /* Tile headers */
-    .tile-title-w-btn {
-        flex-direction: column;
-        align-items: flex-start !important;
-    }
-    .tile-title-w-btn .title { margin-bottom: 8px; font-size: 1rem; }
-
-    /* Filter buttons: scroll horizontally if too many */
-    .filter-btn-group {
-        flex-wrap: wrap;
-        width: 100%;
-    }
-    .filter-btn-group .btn { font-size: 0.7rem; padding: 4px 7px; }
-
-    /* Quick actions */
-    .quick-action-btn { font-size: 0.75rem; padding: 10px 4px; }
-
-    /* Tables: reduce font size */
-    .table th, .table td { font-size: 0.78rem; padding: 6px 5px; }
-}
-
-@media (min-width: 576px) and (max-width: 767.98px) {
-    .room-image-container { height: 120px; }
-    .room-card-status .card-body { padding: 0.8rem !important; }
-    .room-details .small { font-size: 0.78rem; }
-}
 </style>
 @endsection
 
 @section('scripts')
-<script src="{{ asset('dashboard_assets/js/plugins/sweetalert.min.js') }}"></script>
 <script>
-$(document).ready(function() {
-    // Room filtering
-    window.filterRooms = function(status) {
-        $('.room-card').each(function() {
-            var roomStatus = $(this).data('status');
-            if (status === 'all' || roomStatus === status) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
-        
-        // Update button states
-        $('.btn-group button').removeClass('filter-active');
+    function filterRooms(status) {
+        $('.btn-group .btn').removeClass('active-filter bg-dark text-white');
         if (status === 'all') {
-            $('#filterAll').addClass('filter-active');
-        } else if (status === 'needs_cleaning') {
-            $('#filterNeedsCleaning').addClass('filter-active');
-        } else if (status === 'available') {
-            $('#filterAvailable').addClass('filter-active');
-        } else if (status === 'occupied') {
-            $('#filterOccupied').addClass('filter-active');
-        } else if (status === 'reserved') {
-            $('#filterReserved').addClass('filter-active');
-        } else if (status === 'closed') {
-            $('#filterClosed').addClass('filter-active');
-        }
-    };
-    
-    // Set initial filter
-    filterRooms('all');
-    
-    // Mark cleaned functionality
-    $(document).on('click', '.mark-cleaned-btn', function() {
-        var roomId = $(this).data('room-id');
-        var roomNumber = $(this).data('room-number');
-        
-        $('#room_id').val(roomId);
-        $('#room_number_display').text(roomNumber);
-        $('#markCleanedModal').modal('show');
-    });
-    
-    $('#markCleanedForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        var roomId = $('#room_id').val();
-        var notes = $('#notes').val();
-        
-        $.ajax({
-            url: '/housekeeper/rooms/' + roomId + '/mark-cleaned',
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                notes: notes
-            },
-            success: function(response) {
-                if (response.success) {
-                    swal({
-                        title: "Success!",
-                        text: response.message,
-                        type: "success",
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    $('#markCleanedModal').modal('hide');
-                    setTimeout(function() {
-                        location.reload();
-                    }, 2000);
-                }
-            },
-            error: function(xhr) {
-                var errorMsg = xhr.responseJSON?.message || 'Failed to mark room as cleaned.';
-                swal("Error!", errorMsg, "error");
-            }
-        });
-    
-    // View room details functionality
-    $(document).on('click', '.view-details-btn', function() {
-        var roomNumber = $(this).data('room-number');
-        var roomType = $(this).data('room-type');
-        var capacity = $(this).data('capacity');
-        var bedType = $(this).data('bed-type');
-        var floor = $(this).data('floor');
-        var status = $(this).data('status');
-        var guestName = $(this).data('guest-name');
-        var checkIn = $(this).data('check-in');
-        var checkOut = $(this).data('check-out');
-        var lastCleaned = $(this).data('last-cleaned');
-        var hasIssues = $(this).data('has-issues');
-        
-        // Populate modal
-        $('#detail_room_number').text(roomNumber);
-        $('#detail_room_type').text(roomType);
-        $('#detail_capacity').text(capacity + ' Guests');
-        $('#detail_bed_type').text(bedType);
-        $('#detail_floor').text(floor);
-        
-        // Set status badge with appropriate color
-        var statusBadge = $('#detail_status');
-        statusBadge.text(status);
-        statusBadge.removeClass('badge-success badge-warning badge-info badge-danger badge-secondary');
-        if (status.includes('Available')) {
-            statusBadge.addClass('badge-success');
-        } else if (status.includes('Cleaning')) {
-            statusBadge.addClass('badge-warning');
-        } else if (status.includes('Occupied')) {
-            statusBadge.addClass('badge-info');
-        } else if (status.includes('Maintenance')) {
-            statusBadge.addClass('badge-danger');
+            $('.room-card').fadeIn();
+            $('#filterAll').addClass('active-filter');
         } else {
-            statusBadge.addClass('badge-secondary');
+            $('.room-card').hide();
+            $('.room-card[data-status="' + status + '"]').fadeIn();
+            $('#filter' + status.charAt(0).toUpperCase() + status.slice(1).replace('_', '')).addClass('active-filter');
         }
-        
-        $('#detail_guest_name').text(guestName);
-        $('#detail_check_in').text(checkIn);
-        $('#detail_check_out').text(checkOut);
-        $('#detail_last_cleaned').text(lastCleaned);
-        $('#detail_has_issues').html(hasIssues === 'Yes' ? '<span class="badge badge-danger">Yes</span>' : '<span class="badge badge-success">No</span>');
-        
-        $('#roomDetailsModal').modal('show');
+    }
+
+    $(document).ready(function() {
+        // Mark Cleaned
+        $('.mark-cleaned-btn').on('click', function(e) {
+            e.stopPropagation();
+            const id = $(this).data('room-id');
+            const num = $(this).data('room-number');
+            $('#room_id').val(id);
+            $('#room_number_display').text(num);
+            $('#markCleanedModal').modal('show');
+        });
+
+        $('#markCleanedForm').on('submit', function(e) {
+            e.preventDefault();
+            const id = $('#room_id').val();
+            const notes = $('#notes').val();
+            
+            $.ajax({
+                url: "{{ url('housekeeper/rooms') }}/" + id + "/mark-cleaned",
+                method: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    notes: notes
+                },
+                success: function() {
+                    location.reload();
+                }
+            });
+        });
+
+        // View Details
+        $('.view-details-btn').on('click', function(e) {
+            e.stopPropagation();
+            const data = $(this).data();
+            $('#detail_room_number').text(data.roomNumber);
+        });
+
+        // Room Card Click -> Details
+        $('.room-card').on('click', function() {
+            const data = $(this).find('.view-details-btn').data();
+            $('#detail_room_number').text(data.roomNumber);
+            $('#detail_room_type').text(data.roomType);
+            $('#detail_status').text(data.status);
+            $('#detail_status').removeClass('badge-success badge-warning badge-danger badge-info');
+            
+            const guestName = $(this).find('.opacity-75').text().trim();
+            $('#detail_guest_name').text(guestName || 'No guest presently');
+            
+            $('#roomDetailsModal').modal('show');
+        });
     });
-    });
-});
 </script>
 @endsection

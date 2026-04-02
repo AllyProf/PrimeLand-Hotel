@@ -1,4 +1,4 @@
-{{-- Housekeeper Sidebar Menu (Clean & Organized) --}}
+{{-- Housekeeper Sidebar Menu (Modern & Organized) --}}
 @php
   $activePage = request()->path();
 @endphp
@@ -13,28 +13,46 @@
 
 <li class="nav-header">Room Operations</li>
 
-<li><a class="app-menu__item {{ str_contains($activePage, 'housekeeper/rooms/cleaning') ? 'active' : '' }}" href="{{ route('housekeeper.rooms.cleaning') }}"><i class="app-menu__icon fa fa-broom"></i><span class="app-menu__label">Needs Cleaning</span></a></li>
+<li>
+    <a class="app-menu__item {{ str_contains($activePage, 'housekeeper/rooms/cleaning') ? 'active' : '' }}" href="{{ route('housekeeper.rooms.cleaning') }}">
+        <i class="app-menu__icon fa fa-broom"></i>
+        <span class="app-menu__label">Needs Cleaning</span>
+    </a>
+</li>
 
-<li class="treeview {{ str_contains($activePage, 'housekeeper/rooms') && !str_contains($activePage, 'cleaning') ? 'is-expanded' : '' }}">
-    <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-bed"></i><span class="app-menu__label">Rooms</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+<li class="treeview {{ (str_contains($activePage, 'housekeeper/rooms') && !str_contains($activePage, 'cleaning')) || str_contains($activePage, 'housekeeper/room-issues') ? 'is-expanded' : '' }}">
+    <a class="app-menu__item" href="#" data-toggle="treeview">
+        <i class="app-menu__icon fa fa-bed"></i>
+        <span class="app-menu__label">Rooms Management</span>
+        <i class="treeview-indicator fa fa-angle-right"></i>
+    </a>
     <ul class="treeview-menu">
         <li><a class="treeview-item" href="{{ route('housekeeper.rooms.status') }}"><i class="icon fa fa-info-circle"></i> Room Status</a></li>
         <li><a class="treeview-item" href="{{ route('housekeeper.room-issues') }}"><i class="icon fa fa-wrench"></i> Room Issues</a></li>
+        <li><a class="treeview-item" href="{{ route('housekeeper.lost-found.index') }}"><i class="icon fa fa-search"></i> Lost & Found</a></li>
     </ul>
 </li>
 
-<li class="nav-header">Inventory</li>
+<li class="nav-header">Inventory & Stock</li>
 
-<li class="treeview {{ str_contains($activePage, 'housekeeper/inventory') || str_contains($activePage, 'housekeeper/consumption') ? 'is-expanded' : '' }}">
-    <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-cubes"></i><span class="app-menu__label">HK Inventory</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+<li class="treeview {{ str_contains($activePage, 'housekeeper/inventory') || str_contains($activePage, 'housekeeper/reports') ? 'is-expanded' : '' }}">
+    <a class="app-menu__item" href="#" data-toggle="treeview">
+        <i class="app-menu__icon fa fa-cubes"></i>
+        <span class="app-menu__label">HK Inventory</span>
+        <i class="treeview-indicator fa fa-angle-right"></i>
+    </a>
     <ul class="treeview-menu">
         <li><a class="treeview-item" href="{{ route('housekeeper.inventory') }}"><i class="icon fa fa-list"></i> Manage Stock</a></li>
-        <li><a class="treeview-item" href="{{ route('housekeeper.consumption.index') }}"><i class="icon fa fa-file-text-o"></i> Consumption Reports</a></li>
+        <li><a class="treeview-item" href="{{ route('housekeeper.reports') }}"><i class="icon fa fa-file-text-o"></i> Stock Reports</a></li>
     </ul>
 </li>
 
 <li class="treeview {{ str_contains($activePage, 'housekeeper/purchase-requests') ? 'is-expanded' : '' }}">
-    <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-shopping-cart"></i><span class="app-menu__label">Purchasing</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+    <a class="app-menu__item" href="#" data-toggle="treeview">
+        <i class="app-menu__icon fa fa-shopping-cart"></i>
+        <span class="app-menu__label">Purchasing</span>
+        <i class="treeview-indicator fa fa-angle-right"></i>
+    </a>
     <ul class="treeview-menu">
         <li><a class="treeview-item" href="{{ route('housekeeper.purchase-requests.create') }}"><i class="icon fa fa-plus-circle"></i> New Request</a></li>
         <li><a class="treeview-item" href="{{ route('housekeeper.purchase-requests.my') }}"><i class="icon fa fa-tasks"></i> My Requests</a></li>
@@ -43,6 +61,11 @@
     </ul>
 </li>
 
-<li class="nav-header">Account</li>
+<li class="nav-header">My Account</li>
 
-<li><a class="app-menu__item {{ str_contains($activePage, 'profile') ? 'active' : '' }}" href="{{ route('reception.profile') }}"><i class="app-menu__icon fa fa-user-circle"></i><span class="app-menu__label">My Profile</span></a></li>
+<li>
+    <a class="app-menu__item {{ str_contains($activePage, 'profile') ? 'active' : '' }}" href="{{ route('housekeeper.profile') }}">
+        <i class="app-menu__icon fa fa-user-circle"></i>
+        <span class="app-menu__label">Profile Settings</span>
+    </a>
+</li>

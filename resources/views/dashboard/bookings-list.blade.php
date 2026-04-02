@@ -425,32 +425,56 @@
                     </span>
                   </td>
                   <td class="text-center align-middle">
-                    <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                      <button class="btn btn-sm btn-white border" onclick="viewCompanyBookingGroup({{ $company->id ?? 'null' }}, {{ $firstBooking->id }})" title="View Group">
-                        <i class="fa fa-eye text-primary"></i>
+                    <div class="dropdown">
+                      <button class="btn btn-primary btn-sm dropdown-toggle shadow-sm text-white border-0" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Actions
                       </button>
-                      @if(!$allCheckedOut)
-                        <button class="btn btn-sm btn-white border" onclick="openGroupExtensionModal({{ $company->id ?? 'null' }}, '{{ $firstBooking->check_in->format('Y-m-d') }}', '{{ $firstBooking->check_out->format('Y-m-d') }}')" title="Extend Stay">
-                          <i class="fa fa-calendar-plus-o text-info"></i>
-                        </button>
-                      @endif
-                      @if($allConfirmed)
-                        <a href="{{ route('payment.receipt.download', $firstBooking) }}?download=1" class="btn btn-sm btn-white border" target="_blank" title="Receipt">
-                          <i class="fa fa-download text-success"></i>
+                      <div class="dropdown-menu dropdown-menu-right shadow border-0" style="border-radius: 8px;">
+                        <a class="dropdown-item py-2" href="javascript:void(0)" onclick="viewCompanyBookingGroup({{ $company->id ?? 'null' }}, {{ $firstBooking->id }})">
+                          <i class="fa fa-eye text-primary mr-2"></i> View Group
                         </a>
-                      @endif
+                        
+                        @if(!$allCheckedOut)
+                          <a class="dropdown-item py-2" href="javascript:void(0)" onclick="openGroupExtensionModal({{ $company->id ?? 'null' }}, '{{ $firstBooking->check_in->format('Y-m-d') }}', '{{ $firstBooking->check_out->format('Y-m-d') }}')">
+                            <i class="fa fa-calendar-plus-o text-info mr-2"></i> Extend Stay
+                          </a>
+                        @endif
+
+                        @if($allConfirmed)
+                          <a class="dropdown-item py-2" href="{{ route('payment.receipt.download', $firstBooking) }}?download=1" target="_blank">
+                            <i class="fa fa-download text-success mr-2"></i> Download Receipt
+                          </a>
+                        @endif
+
+                        <div class="dropdown-divider"></div>
+
+                        @if(!$allCheckedOut && ($firstBooking->status ?? '') != 'cancelled')
+                          <a class="dropdown-item py-2 text-danger" href="javascript:void(0)" onclick="openCancelGroupModal({{ $company->id ?? 'null' }})">
+                            <i class="fa fa-times mr-2"></i> Cancel Entire Group
+                          </a>
+                        @endif
+                      </div>
                     </div>
                   </td>
+>
                 </tr>
               @endforeach
             @endif
             @if(($bookingType ?? 'individual') == 'individual')
               @foreach($bookings as $booking)
               @php
-                  $isTanzanian = ($booking->guest_type === 'tanzanian');
-                  $rate = $booking->locked_exchange_rate ?? $exchangeRate;
-                  $tzsValue = round($booking->total_price * $rate, -3);
-                  $totalNights = $booking->check_in->diffInDays($booking->check_out);
+                $isTanzanian = ($booking->guest_type === 'tanzanian');
+                $rate = $booking->locked_exchange_rate ?? $exchangeRate ?? 2500;
+                $serviceChargesTsh = $booking->serviceRequests->where('status', '!=', 'cancelled')->sum('total_price_tsh');
+                
+                if ($isTanzanian) {
+                    $totalBillTsh = (float)$booking->total_price + $serviceChargesTsh;
+                    $displayPrice = "TZS " . number_format($totalBillTsh, 0);
+                } else {
+                    $totalBillUsd = (float)$booking->total_price + ($serviceChargesTsh / $rate);
+                    $displayPrice = "$" . number_format($totalBillUsd, 2);
+                }
+                $totalNights = $booking->check_in->diffInDays($booking->check_out);
               @endphp
               <tr class="booking-row"
                   data-status="{{ $booking->status }}"
@@ -497,26 +521,34 @@
                    @endif
                 </td>
                 <td class="align-middle">
-                   <div class="font-weight-bold text-dark" style="font-size: 1.1em;">
-                     @if($isTanzanian)
-                       TZS {{ number_format($tzsValue, 0) }}
-                     @else
-                       ${{ number_format($booking->total_price, 2) }}
-                     @endif
-                   </div>
-                   @php
-                     $pStatus = $booking->payment_status;
-                     $pClass = match($pStatus) {
-                       'paid' => 'success',
-                       'partial' => 'info',
-                       'pending' => 'warning',
-                       default => 'secondary'
-                     };
-                   @endphp
-                   <span class="badge badge-{{ $pClass }} mt-1 px-3" style="border-radius: 4px;">{{ strtoupper($pStatus) }}</span>
-                   @if($booking->payment_method)
-                     <div class="small text-muted mt-1">{{ ucfirst($booking->payment_method) }}</div>
-                   @endif
+                    <div class="font-weight-bold text-dark" style="font-size: 1.1em;">
+                      {{ $displayPrice }}
+                    </div>
+                    @if($serviceChargesTsh > 0)
+                      <div class="small text-muted" style="line-height: 1.1;">
+                        Room: {{ $isTanzanian ? number_format($booking->total_price, 0) . ' TZS' : '$' . number_format($booking->total_price, 2) }}
+                        @foreach($booking->serviceRequests->where('status', '!=', 'cancelled') as $req)
+                          @php
+                            $svcName = $req->service ? $req->service->name : 'Other Service';
+                            $svcPrice = $isTanzanian ? number_format($req->total_price_tsh, 0) . ' TZS' : '$' . number_format($req->total_price_tsh / $rate, 2);
+                          @endphp
+                          <br>{{ $svcName }}: {{ $svcPrice }}
+                        @endforeach
+                      </div>
+                    @endif
+                    @php
+                      $pStatus = $booking->payment_status;
+                      $pClass = match($pStatus) {
+                        'paid' => 'success',
+                        'partial' => 'info',
+                        'pending' => 'warning',
+                        default => 'secondary'
+                      };
+                    @endphp
+                    <span class="badge badge-{{ $pClass }} mt-1 px-3" style="border-radius: 4px;">{{ strtoupper($pStatus) }}</span>
+                    @if($booking->payment_method)
+                      <div class="small text-muted mt-1">{{ ucfirst($booking->payment_method) }}</div>
+                    @endif
                 </td>
                 <td class="align-middle">
                   @php
@@ -540,23 +572,42 @@
                   </div>
                 </td>
                 <td class="text-center align-middle">
-                  <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                    <button class="btn btn-sm btn-white border" onclick="viewBooking({{ $booking->id }})" title="View">
-                      <i class="fa fa-eye text-primary"></i>
+                  <div class="dropdown">
+                    <button class="btn btn-info btn-sm dropdown-toggle shadow-sm text-white border-0" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: #3e819b;">
+                      Actions
                     </button>
-                    @if(($booking->check_in_status ?? 'pending') === 'checked_in')
-                      <button class="btn btn-sm btn-white border" onclick="openManagerExtensionModal({{ $booking->id }}, '{{ $booking->check_in->format('Y-m-d') }}', '{{ $booking->check_out->format('Y-m-d') }}')" title="Extend">
-                        <i class="fa fa-calendar-plus-o text-info"></i>
-                      </button>
-                    @endif
-                    @if(in_array($booking->payment_status, ['paid', 'partial']) || $booking->status == 'confirmed')
-                      <a href="{{ route('payment.receipt.download', $booking) }}?download=1" class="btn btn-sm btn-white border" target="_blank" title="Receipt">
-                        <i class="fa fa-download text-success"></i>
+                    <div class="dropdown-menu dropdown-menu-right shadow border-0" style="border-radius: 8px;">
+                      <a class="dropdown-item py-2" href="javascript:void(0)" onclick="viewBooking({{ $booking->id }})">
+                        <i class="fa fa-eye text-primary mr-2"></i> View Details
                       </a>
-                    @endif
-                    <button class="btn btn-sm btn-white border" onclick="showNotesModal({{ $booking->id }})" title="Notes">
-                      <i class="fa fa-sticky-note text-secondary"></i>
-                    </button>
+
+                      @if(($booking->check_in_status ?? 'pending') === 'checked_in')
+                        <a class="dropdown-item py-2" href="javascript:void(0)" onclick="openManagerExtensionModal({{ $booking->id }}, '{{ $booking->check_in->format('Y-m-d') }}', '{{ $booking->check_out->format('Y-m-d') }}')">
+                          <i class="fa fa-calendar-plus-o text-info mr-2"></i> Extend Stay
+                        </a>
+                        <a class="dropdown-item py-2" href="javascript:void(0)" onclick="openLateCheckoutModal({{ $booking->id }}, '{{ $booking->guest_name }}', '{{ $booking->room->room_number ?? '' }}')">
+                          <i class="fa fa-clock-o text-warning mr-2"></i> Late Check-out
+                        </a>
+                      @endif
+
+                      @if(in_array($booking->payment_status, ['paid', 'partial']) || $booking->status == 'confirmed')
+                        <a class="dropdown-item py-2" href="{{ route('payment.receipt.download', $booking) }}?download=1" target="_blank">
+                          <i class="fa fa-download text-success mr-2"></i> Receipt
+                        </a>
+                      @endif
+
+                      <a class="dropdown-item py-2" href="javascript:void(0)" onclick="showNotesModal({{ $booking->id }})">
+                        <i class="fa fa-sticky-note text-secondary mr-2"></i> Notes
+                      </a>
+
+                      <div class="dropdown-divider"></div>
+
+                      @if($booking->status != 'cancelled' && ($booking->check_in_status ?? 'pending') === 'pending')
+                        <a class="dropdown-item py-2 text-danger font-weight-bold" href="javascript:void(0)" onclick="openCancelModal({{ $booking->id }})">
+                          <i class="fa fa-times mr-2"></i> Cancel Booking
+                        </a>
+                      @endif
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -617,8 +668,16 @@
           @foreach($bookings as $booking)
             @php
               $isTanzanian = ($booking->guest_type === 'tanzanian');
-              $rate = $booking->locked_exchange_rate ?? $exchangeRate;
-              $tzsValue = round($booking->total_price * $rate, -3);
+              $rate = $booking->locked_exchange_rate ?? $exchangeRate ?? 2500;
+              $serviceChargesTsh = $booking->serviceRequests->where('status', '!=', 'cancelled')->sum('total_price_tsh');
+              
+              if ($isTanzanian) {
+                  $totalBillTsh = (float)$booking->total_price + $serviceChargesTsh;
+                  $displayPrice = "TZS " . number_format($totalBillTsh, 0);
+              } else {
+                  $totalBillUsd = (float)$booking->total_price + ($serviceChargesTsh / $rate);
+                  $displayPrice = "$" . number_format($totalBillUsd, 2);
+              }
             @endphp
             <div class="card shadow-sm mb-3" style="border-radius: 12px; border: none; overflow: hidden; border-left: 4px solid {{ $booking->status == 'confirmed' ? '#28a745' : '#ffc107' }};">
               <div class="card-header bg-light border-bottom-0 d-flex justify-content-between align-items-center p-3">
@@ -634,11 +693,7 @@
                     <i class="fa fa-calendar-o"></i> {{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d, Y') }}
                   </div>
                   <div class="col-5 text-right font-weight-bold text-dark" style="font-size: 1.05rem;">
-                    @if($isTanzanian)
-                      TZS {{ number_format($tzsValue, 0) }}
-                    @else
-                      ${{ number_format($booking->total_price, 2) }}
-                    @endif
+                    {{ $displayPrice }}
                   </div>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
@@ -848,6 +903,7 @@
       <div class="modal-body">
         <form id="cancelBookingForm">
           <input type="hidden" id="cancel_booking_id" name="booking_id">
+          <input type="hidden" id="cancel_company_id" name="company_id">
           <div class="form-group">
             <label for="cancellation_reason">Cancellation Reason *</label>
             <textarea class="form-control" id="cancellation_reason" name="cancellation_reason" rows="4" required placeholder="Enter reason for cancellation..."></textarea>
@@ -858,6 +914,66 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
         <button type="button" class="btn btn-danger" onclick="confirmCancel()">Cancel Booking</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Late Check-out Modal -->
+<div class="modal fade" id="lateCheckoutModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content shadow-lg border-0" style="border-radius: 12px;">
+      <div class="modal-header bg-warning text-dark" style="border-radius: 12px 12px 0 0;">
+        <h5 class="modal-title font-weight-bold"><i class="fa fa-clock-o mr-2"></i> Late Check-out Charge</h5>
+        <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="alert alert-info py-2 small mb-3">
+          <i class="fa fa-info-circle mr-1"></i> Add additional hours and the associated fee for late checkout.
+        </div>
+        <form id="lateCheckoutForm">
+          <input type="hidden" id="late_checkout_booking_id">
+          
+          <div class="form-group mb-3 text-center">
+            <span class="badge badge-light px-3 py-2 border" id="lateCheckoutGuestInfo" style="font-size: 0.9rem;"></span>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="font-weight-bold small text-uppercase" for="late_checkout_hours">Extra Hours *</label>
+                <div class="input-group">
+                  <input type="number" class="form-control text-center" id="late_checkout_hours" step="0.5" min="0" placeholder="e.g. 2" required>
+                  <div class="input-group-append">
+                    <span class="input-group-text bg-light border-left-0"><i class="fa fa-hourglass-half"></i></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label class="font-weight-bold small text-uppercase" for="late_checkout_amount">Charge Amount (TZS) *</label>
+                <div class="input-group">
+                  <input type="number" class="form-control text-right pr-3" id="late_checkout_amount" min="0" placeholder="e.g. 20000" required>
+                  <div class="input-group-append">
+                    <span class="input-group-text bg-light border-left-0"><strong>TSh</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group mb-0">
+            <label class="font-weight-bold small text-uppercase" for="late_checkout_notes">Internal Notes</label>
+            <textarea class="form-control" id="late_checkout_notes" rows="2" placeholder="Reason for late check-out..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+        <button type="button" class="btn btn-light px-4 border" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-warning px-4 font-weight-bold shadow-sm" onclick="submitLateCheckout()">Apply Charge</button>
       </div>
     </div>
   </div>
@@ -2558,6 +2674,16 @@ function viewCompanyBookingGroup(companyId, firstBookingId) {
           html += '</div>';
         }
 
+        // Footer Actions for Booking
+        html += '<div class="d-flex justify-content-end mt-4 pt-3 border-top">';
+        if (booking.check_in_status === 'checked_in') {
+          html += '<button class="btn btn-outline-warning btn-sm px-4 mr-2" onclick="openLateCheckoutModal(' + booking.id + ', \'' + (booking.guest_name || 'Guest').replace(/'/g, "\\'") + '\', \'' + (room.room_number || '') + '\')"><i class="fa fa-clock-o mr-1"></i> Late Check-out</button>';
+        }
+        if (booking.status !== 'cancelled' && booking.check_in_status === 'pending') {
+          html += '<button class="btn btn-outline-danger btn-sm px-4" onclick="openCancelModal(' + booking.id + ')"><i class="fa fa-times mr-1"></i> Cancel Guest Booking</button>';
+        }
+        html += '</div>';
+
         html += '</div></div>'; // end tab pane
       });
       
@@ -3240,6 +3366,175 @@ function submitManagerDecrease(btn) {
     swal("Error", "A system error occurred.", "error");
     submitBtn.disabled = false;
     submitBtn.innerHTML = 'Save Changes';
+  });
+}
+
+/**
+ * Cancellation Logic
+ */
+function openCancelModal(bookingId) {
+  document.getElementById('cancel_booking_id').value = bookingId;
+  document.getElementById('cancel_company_id').value = '';
+  document.getElementById('cancellation_reason').value = '';
+  $('#cancelBookingModal .modal-title').html('<i class="fa fa-times-circle"></i> Cancel Booking');
+  $('#cancelBookingModal .btn-danger').text('Cancel Booking');
+  $('#cancelBookingModal').modal('show');
+}
+
+function openCancelGroupModal(companyId) {
+  document.getElementById('cancel_booking_id').value = '';
+  document.getElementById('cancel_company_id').value = companyId;
+  document.getElementById('cancellation_reason').value = '';
+  $('#cancelBookingModal .modal-title').html('<i class="fa fa-users"></i> Cancel Group Booking');
+  $('#cancelBookingModal .btn-danger').text('Cancel Entire Group');
+  $('#cancelBookingModal').modal('show');
+}
+
+function confirmCancel() {
+  const bookingId = document.getElementById('cancel_booking_id').value;
+  const companyId = document.getElementById('cancel_company_id').value;
+  const reason = document.getElementById('cancellation_reason').value;
+  
+  if (!reason) {
+    swal("Required", "Please provide a reason for cancellation.", "warning");
+    return;
+  }
+
+  const isGroup = !!companyId;
+  const isReception = {{ $isReception ? 'true' : 'false' }};
+  
+  let url;
+  if (isGroup) {
+      url = isReception 
+        ? '{{ url("/reception/companies") }}/' + companyId + '/cancel'
+        : '{{ url("/manager/companies") }}/' + companyId + '/cancel';
+  } else {
+      url = isReception
+        ? '{{ url("/reception/bookings") }}/' + bookingId + '/status'
+        : '{{ url("/manager/bookings") }}/' + bookingId + '/status';
+  }
+
+  swal({
+    title: "Are you sure?",
+    text: isGroup ? "You are about to cancel ALL bookings for this corporate group." : "You are about to cancel this booking.",
+    type: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#dc3545",
+    confirmButtonText: "Yes, Cancel Now!",
+    closeOnConfirm: false,
+    showLoaderOnConfirm: true
+  }, function(isConfirm) {
+    if (isConfirm) {
+      fetch(url, {
+        method: isGroup ? 'POST' : 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            status: isGroup ? null : 'cancelled', 
+            cancellation_reason: reason 
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          swal({
+            title: "Cancelled!",
+            text: data.message,
+            type: "success"
+          }, function() {
+            location.reload();
+          });
+        } else {
+          swal("Failed", data.message || "Cancellation failed.", "error");
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        swal("Error", "A system error occurred while processing the request.", "error");
+      });
+    }
+  });
+}
+
+/**
+ * Late Check-out Logic
+ */
+function openLateCheckoutModal(bookingId, guestName, roomNumber) {
+  document.getElementById('late_checkout_booking_id').value = bookingId;
+  document.getElementById('lateCheckoutGuestInfo').innerHTML = '<i class="fa fa-user"></i> ' + guestName + ' <span class="mx-2">|</span> <i class="fa fa-bed"></i> Room ' + roomNumber;
+  document.getElementById('late_checkout_hours').value = '';
+  document.getElementById('late_checkout_amount').value = '';
+  document.getElementById('late_checkout_notes').value = '';
+  $('#lateCheckoutModal').modal('show');
+}
+
+function submitLateCheckout() {
+  const bookingId = document.getElementById('late_checkout_booking_id').value;
+  const hours = document.getElementById('late_checkout_hours').value;
+  const amount = document.getElementById('late_checkout_amount').value;
+  const notes = document.getElementById('late_checkout_notes').value;
+  
+  if (!hours || isNaN(hours) || hours <= 0) {
+    swal("Required", "Please enter valid number of extra hours.", "warning");
+    return;
+  }
+  
+  if (!amount || isNaN(amount) || amount < 0) {
+    swal("Required", "Please enter a valid charge amount.", "warning");
+    return;
+  }
+
+  const isReception = {{ empty($isReception) ? 'false' : 'true' }};
+  const url = isReception 
+    ? '{{ url("/reception/bookings") }}/' + bookingId + '/late-checkout'
+    : '{{ url("/manager/bookings") }}/' + bookingId + '/late-checkout';
+
+  swal({
+    title: "Confirm Late Check-out?",
+    text: "Add " + hours + " hours extra stay for " + Number(amount).toLocaleString() + " TZS?",
+    type: "info",
+    showCancelButton: true,
+    confirmButtonColor: "#ffc107",
+    confirmButtonText: "Yes, Apply Charge",
+    closeOnConfirm: false,
+    showLoaderOnConfirm: true
+  }, function(isConfirm) {
+    if (isConfirm) {
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+            hours: hours, 
+            amount: amount,
+            notes: notes 
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          swal({
+            title: "Applied!",
+            text: data.message,
+            type: "success"
+          }, function() {
+            location.reload();
+          });
+        } else {
+          swal("Failed", data.message || "Operation failed.", "error");
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        swal("Error", "A system error occurred while processing the request.", "error");
+      });
+    }
   });
 }
 </script>

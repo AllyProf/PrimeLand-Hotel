@@ -164,18 +164,35 @@
                 <td>{{ $payment->room->room_number ?? 'N/A' }} ({{ $payment->room->room_type ?? 'N/A' }})</td>
                 <td>
                   @php
+                    $isTanzanian = ($payment->guest_type ?? 'international') === 'guest_tanzanian' || ($payment->guest_type ?? 'international') === 'tanzanian';
                     $exchangeRate = $exchangeRate ?? 2500;
                   @endphp
                   @if($payment->payment_status == 'pending')
-                    <strong style="color: #ffc107;">${{ number_format($payment->total_price, 2) }}</strong>
-                    <br><small class="text-muted">(≈ {{ number_format($payment->total_price * $exchangeRate, 0) }} TZS - Pending)</small>
+                    @if($isTanzanian)
+                      <strong>{{ number_format($payment->total_price, 0) }} TZS</strong>
+                      <br><small class="text-muted">(≈ ${{ number_format($payment->total_price / $exchangeRate, 2) }} USD - Pending)</small>
+                    @else
+                      <strong style="color: #ffc107;">${{ number_format($payment->total_price, 2) }}</strong>
+                      <br><small class="text-muted">(≈ {{ number_format($payment->total_price * $exchangeRate, 0) }} TZS - Pending)</small>
+                    @endif
                   @elseif($payment->payment_status == 'partial')
-                    <strong>${{ number_format($payment->amount_paid ?? 0, 2) }}</strong>
-                    <br><small class="text-muted">of ${{ number_format($payment->total_price, 2) }}</small>
-                    <br><small class="text-info">Outstanding: ${{ number_format($payment->total_price - ($payment->amount_paid ?? 0), 2) }}</small>
+                    @if($isTanzanian)
+                      <strong>{{ number_format($payment->amount_paid ?? 0, 0) }} TZS</strong>
+                      <br><small class="text-muted">of {{ number_format($payment->total_price, 0) }} TZS</small>
+                      <br><small class="text-info">Outstanding: {{ number_format($payment->total_price - ($payment->amount_paid ?? 0), 0) }} TZS</small>
+                    @else
+                      <strong>${{ number_format($payment->amount_paid ?? 0, 2) }}</strong>
+                      <br><small class="text-muted">of ${{ number_format($payment->total_price, 2) }}</small>
+                      <br><small class="text-info">Outstanding: ${{ number_format($payment->total_price - ($payment->amount_paid ?? 0), 2) }}</small>
+                    @endif
                   @else
-                    <strong>${{ number_format($payment->amount_paid ?? 0, 2) }}</strong>
-                    <br><small class="text-muted">(≈ {{ number_format(($payment->amount_paid ?? 0) * $exchangeRate, 0) }} TZS)</small>
+                    @if($isTanzanian)
+                      <strong>{{ number_format($payment->amount_paid ?? 0, 0) }} TZS</strong>
+                      <br><small class="text-muted">(≈ ${{ number_format(($payment->amount_paid ?? 0) / $exchangeRate, 2) }} USD)</small>
+                    @else
+                      <strong>${{ number_format($payment->amount_paid ?? 0, 2) }}</strong>
+                      <br><small class="text-muted">(≈ {{ number_format(($payment->amount_paid ?? 0) * $exchangeRate, 0) }} TZS)</small>
+                    @endif
                   @endif
                 </td>
                 <td>

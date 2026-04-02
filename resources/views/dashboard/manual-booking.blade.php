@@ -997,15 +997,16 @@
 
 .room-availability-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 0;
+  left: 0;
   color: white;
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 9px;
-  font-weight: 600;
-  z-index: 2;
-  line-height: 1.4;
+  padding: 4px 8px;
+  border-bottom-right-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  z-index: 5;
+  line-height: normal;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .room-availability-badge.available-now {
@@ -1021,30 +1022,10 @@
   background: #dc3545;
 }
 
+/* Room Unselectable State */
 .room-card.unselectable {
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-.room-card.unselectable:hover .room-card-inner {
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  border-color: #e0e0e0;
-}
-
-.room-card.unselectable .room-image-container::after {
-  content: 'N/A';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(220, 53, 69, 0.85);
-  color: white;
-  padding: 2px 6px;
-  font-weight: bold;
-  font-size: 9px;
-  border-radius: 3px;
-  z-index: 4;
-  pointer-events: none;
 }
 
 .room-availability-badge i {
@@ -1882,8 +1863,8 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCurrencyValues();
   };
 
-  // Populate nationality dropdown with flags (excluding Tanzania for International guests)
-  function populateNationalityList(excludeTanzania = true) {
+  // Populate nationality dropdown with all countries including Tanzania
+  function populateNationalityList() {
     if (!nationalitySelect) return;
     
     // Clear existing options except placeholder
@@ -1894,11 +1875,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     window.countries.forEach(country => {
-      // Skip Tanzania if excludeTanzania is true
-      if (excludeTanzania && country.name === 'Tanzania') {
-        return;
-      }
-      
       const option = document.createElement('option');
       option.value = country.name;
       option.textContent = `${country.flag} ${country.name}`;
@@ -1906,22 +1882,10 @@ document.addEventListener('DOMContentLoaded', function() {
       option.setAttribute('data-code', country.code);
       nationalitySelect.appendChild(option);
     });
-    
-    // Always add Tanzania option (even if hidden) so form can submit it for Tanzanian guests
-    const tanzaniaCountry = window.countries.find(c => c.name === 'Tanzania');
-    if (tanzaniaCountry) {
-      const tanzaniaOption = document.createElement('option');
-      tanzaniaOption.value = 'Tanzania';
-      tanzaniaOption.textContent = `${tanzaniaCountry.flag} ${tanzaniaCountry.name}`;
-      tanzaniaOption.setAttribute('data-flag', tanzaniaCountry.flag);
-      tanzaniaOption.setAttribute('data-code', tanzaniaCountry.code);
-      tanzaniaOption.style.display = excludeTanzania ? 'none' : 'block';
-      nationalitySelect.appendChild(tanzaniaOption);
-    }
   }
   
-  // Initial population (excluding Tanzania from visible list for International guests)
-  populateNationalityList(true);
+  // Initial population (all countries including Tanzania)
+  populateNationalityList();
 
   // Function to toggle nationality field and filter countries based on guest type
   function toggleNationalityField() {
@@ -1980,14 +1944,13 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCurrencyDisplay();
   }
 
-  // Function to filter out Tanzania from nationality list for International guests
+  // Function to refresh the nationality list - now shows ALL countries
   function filterNationalityList() {
     const guestTypeEl = document.getElementById('guest_type');
     const nationalitySelect = document.getElementById('nationality');
     
     if (!guestTypeEl || !nationalitySelect) return;
     
-    const isTanzanian = guestTypeEl.value === 'tanzanian';
     const currentValue = nationalitySelect.value;
     
     // Remove all options except the placeholder
@@ -1997,13 +1960,8 @@ document.addEventListener('DOMContentLoaded', function() {
       nationalitySelect.appendChild(placeholder);
     }
     
-    // Re-populate with countries, excluding Tanzania for International guests
+    // Re-populate with ALL countries including Tanzania
     countries.forEach(country => {
-      // Skip Tanzania if guest type is International
-      if (!isTanzanian && country.name === 'Tanzania') {
-        return;
-      }
-      
       const option = document.createElement('option');
       option.value = country.name;
       option.textContent = `${country.flag} ${country.name}`;
@@ -2012,7 +1970,10 @@ document.addEventListener('DOMContentLoaded', function() {
       nationalitySelect.appendChild(option);
     });
     
-    // Re-initialize Select2 if it exists (using jQuery ready to ensure it's available)
+    // Restore previous selection
+    if (currentValue) nationalitySelect.value = currentValue;
+    
+    // Re-initialize Select2 if available
     if (typeof jQuery !== 'undefined' && typeof jQuery.fn.select2 !== 'undefined') {
       jQuery(function($) {
         if ($('#nationality').hasClass('select2-hidden-accessible')) {
@@ -2472,7 +2433,14 @@ document.addEventListener('DOMContentLoaded', function() {
             // Count by type
             const counts = {};
             allAvailable.forEach(room => {
-              counts[room.room_type] = (counts[room.room_type] || 0) + 1;
+              if (!counts[room.room_type]) {
+                counts[room.room_type] = { selectable: 0, reserved: 0 };
+              }
+              if (room.is_available_for_dates) {
+                counts[room.room_type].selectable++;
+              } else {
+                counts[room.room_type].reserved++;
+              }
             });
             
             // Order types: Single, Double, Twins, then others
@@ -2499,8 +2467,8 @@ document.addEventListener('DOMContentLoaded', function() {
               pill.style.transition = 'all 0.2s ease-in-out';
               
               const icon = type === 'Single' ? 'user' : (type === 'Double' ? 'users' : 'bed');
-              pill.innerHTML = `<i class="fa fa-${icon} mr-2"></i> ${type}: <strong>${count}</strong>`;
-              pill.title = isSelectedType ? 'Current selection' : `Switch to ${type} rooms`;
+              pill.innerHTML = `<i class="fa fa-${icon} mr-2"></i> ${type}: <strong>${count.selectable}</strong> <span class="ml-1" style="font-size: 11px; opacity: 0.8;">(${count.reserved} Res)</span>`;
+              pill.title = isSelectedType ? 'Current selection' : `Switch to ${type} rooms (${count.selectable} selectable)`;
               
               // Add click event to switch type
               pill.onclick = function() {
@@ -2538,14 +2506,49 @@ document.addEventListener('DOMContentLoaded', function() {
             roomSelectHint.textContent = 'No rooms available for the selected room type and dates';
             if (hiddenRoomInput) hiddenRoomInput.value = '';
           } else {
-            roomSelectHint.textContent = `${rooms.length} room(s) available - Select a room below`;
+            // Group rooms logic
+            const availableNowRooms = rooms.filter(r => r.is_available_for_dates && r.is_available_now);
+            const soonAvailableRooms = rooms.filter(r => r.is_available_for_dates && !r.is_available_now);
+            const reservedRooms = rooms.filter(r => !r.is_available_for_dates);
+            
+            roomSelectHint.textContent = `${availableNowRooms.length + soonAvailableRooms.length} selectable room(s) available for these dates`;
             roomsGrid.innerHTML = '';
             
-            // Create room cards
-            rooms.forEach(room => {
-              const roomCard = createRoomCard(room);
-              roomsGrid.appendChild(roomCard);
-            });
+            // 1. Display Available Now rooms
+            if (availableNowRooms.length > 0) {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'col-12 mb-3';
+                sectionDiv.innerHTML = '<h6 class="text-success font-weight-bold"><i class="fa fa-check-circle"></i> Available for Selected Dates (' + availableNowRooms.length + ')</h6>';
+                roomsGrid.appendChild(sectionDiv);
+                
+                availableNowRooms.forEach(room => {
+                    roomsGrid.appendChild(createRoomCard(room));
+                });
+            }
+            
+            // 2. Display Soon Available rooms
+            if (soonAvailableRooms.length > 0) {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'col-12 mb-3 mt-3';
+                sectionDiv.innerHTML = '<h6 class="text-warning font-weight-bold"><i class="fa fa-clock-o"></i> Selectable After Cleaning/Checkout (' + soonAvailableRooms.length + ')</h6>';
+                roomsGrid.appendChild(sectionDiv);
+                
+                soonAvailableRooms.forEach(room => {
+                    roomsGrid.appendChild(createRoomCard(room));
+                });
+            }
+
+            // 3. Display Reserved rooms
+            if (reservedRooms.length > 0) {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'col-12 mb-3 mt-3';
+                sectionDiv.innerHTML = '<h6 class="text-secondary font-weight-bold"><i class="fa fa-calendar-times-o"></i> Reserved / Blocked for these Dates (' + reservedRooms.length + ')</h6>';
+                roomsGrid.appendChild(sectionDiv);
+                
+                reservedRooms.forEach(room => {
+                    roomsGrid.appendChild(createRoomCard(room));
+                });
+            }
             
             if (hiddenRoomInput) hiddenRoomInput.setAttribute('required', 'required');
           }
@@ -2583,7 +2586,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Determine availability status
     const isAvailableNow = room.status === 'available';
-    const canSelect = room.can_select !== false;
     let availabilityBadge = '';
     
     if (isAvailableNow) {
@@ -2591,30 +2593,40 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (room.status === 'to_be_cleaned') {
       availabilityBadge = '<div class="room-availability-badge cleaning-required"><i class="fa fa-broom"></i> Needs Cleaning</div>';
     } else if (room.status === 'occupied') {
-      let checkoutDisplay = 'Today';
-      if (room.checkout_date && room.checkout_date !== 'Today') {
+      let checkoutDisplay = 'Soon';
+      if (room.checkout_date) {
         try {
           const dateObj = new Date(room.checkout_date + 'T12:00:00');
           if (!isNaN(dateObj.getTime())) {
             checkoutDisplay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           }
-        } catch (e) {
-          checkoutDisplay = room.checkout_date;
-        }
+        } catch (e) { checkoutDisplay = room.checkout_date; }
       }
       availabilityBadge = '<div class="room-availability-badge occupied"><i class="fa fa-user"></i> Occupied - Leaves ' + checkoutDisplay + '</div>';
+    } else if (room.status === 'reserved') {
+        let checkoutDisplay = 'Soon';
+        if (room.checkout_date) {
+          try {
+            const dateObj = new Date(room.checkout_date + 'T12:00:00');
+            if (!isNaN(dateObj.getTime())) {
+              checkoutDisplay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+          } catch (e) { checkoutDisplay = room.checkout_date; }
+        }
+        availabilityBadge = '<div class="room-availability-badge occupied" style="background: #f39c12;"><i class="fa fa-calendar-check-o"></i> Reserved - Until ' + checkoutDisplay + '</div>';
     } else {
       let checkoutDateDisplay = room.checkout_date === 'Today' ? 'Today' : (room.checkout_date || '');
       availabilityBadge = '<div class="room-availability-badge soon-available"><i class="fa fa-clock-o"></i> Available ' + checkoutDateDisplay + '</div>';
     }
     
+    const isSelectable = room.can_select !== false;
     const card = document.createElement('div');
-    card.className = 'room-card' + (canSelect ? '' : ' unselectable');
+    card.className = 'room-card' + (isSelectable ? '' : ' unselectable');
     card.setAttribute('data-room-id', room.id);
     card.setAttribute('data-room-price', room.price_per_night);
     card.setAttribute('data-room-price-tzs', room.price_per_night_tzs || (parseFloat(room.price_per_night) * window.activeExchangeRate));
     card.setAttribute('data-room-capacity', room.capacity || 1);
-    card.setAttribute('data-can-select', canSelect);
+    card.setAttribute('data-can-select', isSelectable);
     
     // Build HTML using string concatenation to avoid template literal issues
     let cardHtml = '<div class="room-card-inner">';
@@ -2662,8 +2674,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Select room function (with toggle/deselect capability)
   function selectRoom(roomId, cardElement) {
-    const canSelect = cardElement.getAttribute('data-can-select') !== 'false';
-    if (!canSelect) {
+    const isRoomSelectable = cardElement.getAttribute('data-can-select') !== 'false';
+    if (!isRoomSelectable) {
       swal({
         title: "Room Not Ready",
         text: "This room is currently occupied or needs cleaning and cannot be selected for today. Please choose an available room or contact housekeeping.",

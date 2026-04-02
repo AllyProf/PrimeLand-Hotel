@@ -86,6 +86,7 @@
     <ul class="treeview-menu">
         <li><a class="treeview-item" href="{{ route('reception.rooms') }}"><i class="icon fa fa-info-circle"></i> Room Occupancy</a></li>
         <li><a class="treeview-item" href="{{ route('reception.rooms.cleaning') }}"><i class="icon fa fa-broom"></i> Cleaning Schedule</a></li>
+        <li><a class="treeview-item" href="{{ route('reception.lost-found.index') }}"><i class="icon fa fa-suitcase"></i> Lost & Found</a></li>
         <li class="treeview-divider"></li>
         <li><a class="treeview-item" href="{{ route('reception.orders.monitor') }}"><i class="icon fa fa-television"></i> Live Order Monitor</a></li>
         <li><a class="treeview-item" href="{{ route('reception.service-requests') }}"><i class="icon fa fa-bell"></i> Service Requests @if($badges['service_requests'] > 0)<span class="badge badge-warning badge-pill ml-2">{{ $badges['service_requests'] }}</span>@endif</a></li>

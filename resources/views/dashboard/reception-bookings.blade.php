@@ -157,16 +157,55 @@
                   </div>
                 </td>
                 <td>
-                  @if($booking->guest_type === 'tanzanian')
-                    <strong>{{ number_format($booking->total_price, 0) }} TZS</strong><br>
-                    <small class="text-muted">
-                      ≈ ${{ number_format($booking->total_price / ($booking->locked_exchange_rate ?? $exchangeRate ?? 2500), 2) }}
-                    </small>
+                  @php
+                    $isTanzanian = $booking->guest_type === 'tanzanian';
+                    $exchangeRateUsed = $booking->locked_exchange_rate ?? $exchangeRate ?? 2500;
+                    $serviceChargesTsh = $booking->serviceRequests->where('status', '!=', 'cancelled')->sum('total_price_tsh');
+                    
+                    if ($isTanzanian) {
+                        $roomPriceTsh = (float)$booking->total_price;
+                        $totalBillTsh = $roomPriceTsh + $serviceChargesTsh;
+                        $amountPaidTsh = (float)($booking->amount_paid ?? 0);
+                        $outstandingTsh = max(0, $totalBillTsh - $amountPaidTsh);
+                    } else {
+                        $roomPriceUsd = (float)$booking->total_price;
+                        $totalBillUsd = $roomPriceUsd + ($serviceChargesTsh / $exchangeRateUsed);
+                        $amountPaidUsd = (float)($booking->amount_paid ?? 0);
+                        $outstandingUsd = max(0, $totalBillUsd - $amountPaidUsd);
+                        
+                        $totalBillTsh = $totalBillUsd * $exchangeRateUsed;
+                        $amountPaidTsh = $amountPaidUsd * $exchangeRateUsed;
+                    }
+                  @endphp
+
+                  @if($isTanzanian)
+                    <div class="mb-1">
+                      <strong>{{ number_format($totalBillTsh, 0) }} TZS</strong><br>
+                      <small class="text-muted">Total Bill</small>
+                    </div>
+                    @if($serviceChargesTsh > 0)
+                      <div style="font-size: 0.8rem; line-height: 1.1;">
+                        <span class="text-muted">Room: {{ number_format($roomPriceTsh, 0) }} TZS</span><br>
+                        <span class="text-muted">Services: {{ number_format($serviceChargesTsh, 0) }} TZS</span>
+                      </div>
+                    @endif
+                    <div class="mt-1 pt-1 border-top" style="font-size: 0.85rem;">
+                       <span class="text-success">Paid: {{ number_format($amountPaidTsh, 0) }} TZS</span>
+                    </div>
                   @else
-                    <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                    <small class="text-muted">
-                      ≈ {{ number_format($booking->total_price * ($booking->locked_exchange_rate ?? $exchangeRate ?? 2500), 0) }} TZS
-                    </small>
+                    <div class="mb-1">
+                      <strong>${{ number_format($totalBillUsd, 2) }}</strong><br>
+                      <small class="text-muted">Total Bill</small>
+                    </div>
+                    @if($serviceChargesTsh > 0)
+                      <div style="font-size: 0.8rem; line-height: 1.1;">
+                        <span class="text-muted">Room: ${{ number_format($roomPriceUsd, 2) }}</span><br>
+                        <span class="text-muted">Services: ${{ number_format($serviceChargesTsh / $exchangeRateUsed, 2) }}</span>
+                      </div>
+                    @endif
+                    <div class="mt-1 pt-1 border-top" style="font-size: 0.85rem;">
+                       <span class="text-success">Paid: ${{ number_format($amountPaidUsd, 2) }}</span>
+                    </div>
                   @endif
                 </td>
                 <td>
@@ -192,6 +231,7 @@
                             data-payment-status="{{ $booking->payment_status }}"
                             data-check-in-status="{{ $booking->check_in_status }}"
                             data-total-price="{{ $booking->total_price }}"
+                            data-service-charges="{{ $booking->serviceRequests->where('status', '!=', 'cancelled')->sum('total_price_tsh') }}"
                             data-amount-paid="{{ $booking->amount_paid ?? 0 }}"
                             data-payment-percentage="{{ $booking->payment_percentage ?? 0 }}"
                             data-exchange-rate="{{ $booking->locked_exchange_rate ?? '' }}"
@@ -354,6 +394,7 @@ function viewBookingDetailsModal(bookingId) {
     payment_status: button.getAttribute('data-payment-status'),
     check_in_status: button.getAttribute('data-check-in-status'),
     total_price: parseFloat(button.getAttribute('data-total-price')),
+    service_charges_tsh: parseFloat(button.getAttribute('data-service-charges') || 0),
     amount_paid: parseFloat(button.getAttribute('data-amount-paid') || 0),
     payment_percentage: parseFloat(button.getAttribute('data-payment-percentage') || 0),
     locked_exchange_rate: button.getAttribute('data-exchange-rate') ? parseFloat(button.getAttribute('data-exchange-rate')) : null,
@@ -383,27 +424,52 @@ function viewBookingDetailsModal(bookingId) {
   let primaryPaidValue, secondaryPaidValue;
   
   if (isTanzanian) {
-    // Stored total_price is interpreted as TZS
-    primaryPriceLabel = 'Total Price (TZS)';
-    primaryValue = bookingData.total_price.toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS';
+    // Stored total_price is TZS
+    const roomTsh = bookingData.total_price;
+    const servicesTsh = bookingData.service_charges_tsh;
+    const totalBillTsh = roomTsh + servicesTsh;
+    const amountPaidTsh = bookingData.amount_paid;
+    
+    primaryPriceLabel = 'Total Bill (TZS)';
+    primaryValue = totalBillTsh.toLocaleString() + ' TZS';
+    
+    // Add breakdown details if there are services
+    let breakdownHtml = `<small class="text-muted d-block">Room: ${roomTsh.toLocaleString()} TZS</small>`;
+    if (servicesTsh > 0) {
+      breakdownHtml += `<small class="text-muted d-block">Services: ${servicesTsh.toLocaleString()} TZS</small>`;
+    }
+    primaryValue += breakdownHtml;
+
     secondaryPriceLabel = 'Equivalent (USD)';
-    secondaryValue = '$' + (bookingData.total_price / exchangeRate).toFixed(2);
+    secondaryValue = '$' + (totalBillTsh / exchangeRate).toFixed(2);
     
     primaryPaidLabel = 'Amount Paid (TZS)';
-    primaryPaidValue = bookingData.amount_paid.toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS';
+    primaryPaidValue = amountPaidTsh.toLocaleString() + ' TZS';
     secondaryPaidLabel = 'Amount Paid (USD)';
-    secondaryPaidValue = '$' + (bookingData.amount_paid / exchangeRate).toFixed(2);
+    secondaryPaidValue = '$' + (amountPaidTsh / exchangeRate).toFixed(2);
   } else {
-    // Stored total_price is interpreted as USD
-    primaryPriceLabel = 'Total Price (USD)';
-    primaryValue = '$' + bookingData.total_price.toFixed(2);
+    // Stored total_price is USD
+    const roomUsd = bookingData.total_price;
+    const servicesUsd = (bookingData.service_charges_tsh / exchangeRate);
+    const totalBillUsd = roomUsd + servicesUsd;
+    const amountPaidUsd = bookingData.amount_paid;
+
+    primaryPriceLabel = 'Total Bill (USD)';
+    primaryValue = '$' + totalBillUsd.toFixed(2);
+    
+    let breakdownHtml = `<small class="text-muted d-block">Room: $${roomUsd.toFixed(2)}</small>`;
+    if (servicesUsd > 0) {
+      breakdownHtml += `<small class="text-muted d-block">Services: $${servicesUsd.toFixed(2)}</small>`;
+    }
+    primaryValue += breakdownHtml;
+
     secondaryPriceLabel = 'Equivalent (TZS)';
-    secondaryValue = (bookingData.total_price * exchangeRate).toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS';
+    secondaryValue = (totalBillUsd * exchangeRate).toLocaleString() + ' TZS';
     
     primaryPaidLabel = 'Amount Paid (USD)';
-    primaryPaidValue = '$' + bookingData.amount_paid.toFixed(2);
+    primaryPaidValue = '$' + amountPaidUsd.toFixed(2);
     secondaryPaidLabel = 'Amount Paid (TZS)';
-    secondaryPaidValue = (bookingData.amount_paid * exchangeRate).toLocaleString('en-US', {minimumFractionDigits: 0}) + ' TZS';
+    secondaryPaidValue = (amountPaidUsd * exchangeRate).toLocaleString() + ' TZS';
   }
   
   // Status badges
@@ -534,23 +600,37 @@ function viewBookingDetailsModal(bookingId) {
           ${bookingData.amount_paid > 0 ? `
           <tr>
             <td><strong>${primaryPaidLabel}:</strong></td>
-            <td><strong style="color: #17a2b8;">${primaryPaidValue}</strong></td>
+            <td><strong style="color: #28a745;">${primaryPaidValue}</strong></td>
           </tr>
           <tr>
             <td><strong>${secondaryPaidLabel}:</strong></td>
-            <td><span style="color: #17a2b8;">${secondaryPaidValue}</span></td>
-          </tr>
-          <tr>
-            <td><strong>Payment Status:</strong></td>
-            <td>${paymentBadges[bookingData.payment_status] || bookingData.payment_status}</td>
+            <td><span style="color: #28a745;">${secondaryPaidValue}</span></td>
           </tr>
           ` : ''}
-          ${bookingData.total_price > bookingData.amount_paid ? `
-          <tr>
-            <td><strong>Remaining Balance:</strong></td>
-            <td><strong style="color: #dc3545;">${isTanzanian ? (bookingData.total_price - bookingData.amount_paid).toLocaleString() + ' TZS' : '$' + (bookingData.total_price - bookingData.amount_paid).toFixed(2)}</strong></td>
-          </tr>
-          ` : ''}
+          @php
+            // We use JS context here so we'll just handle it in template
+          @endphp
+          ${(() => {
+             const roomTsh = isTanzanian ? bookingData.total_price : (bookingData.total_price * exchangeRate);
+             const servicesTsh = bookingData.service_charges_tsh;
+             const totalBillTsh = roomTsh + servicesTsh;
+             const paidTsh = isTanzanian ? bookingData.amount_paid : (bookingData.amount_paid * exchangeRate);
+             const balanceTsh = Math.max(0, totalBillTsh - paidTsh);
+             
+             if (balanceTsh > 50) {
+               return `
+               <tr>
+                 <td><strong>Remaining Balance:</strong></td>
+                 <td><strong style="color: #dc3545;">${isTanzanian ? (balanceTsh.toLocaleString() + ' TZS') : ('$' + (balanceTsh / exchangeRate).toFixed(2))}</strong></td>
+               </tr>`;
+             } else {
+               return `
+               <tr>
+                 <td><strong>Balance Status:</strong></td>
+                 <td><span class="badge badge-success">FULLY PAID</span></td>
+               </tr>`;
+             }
+          })()}
           <tr>
             <td><strong>Payment Percentage:</strong></td>
             <td><span class="badge badge-info">${bookingData.payment_percentage.toFixed(0)}%</span></td>

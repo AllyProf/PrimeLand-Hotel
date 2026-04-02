@@ -537,8 +537,13 @@
                     <td>{{ $booking->check_in->format('M d, Y') }}</td>
                     <td>{{ $booking->check_out->format('M d, Y') }}</td>
                     <td style="text-align: right;">
-                        <strong>{{ number_format($booking->total_price * $exchangeRate, 0) }} TZS</strong><br>
-                        <small style="color: #999;">≈ ${{ number_format($booking->total_price, 2) }}</small>
+                        @if($booking->guest_type === 'tanzanian')
+                          <strong>{{ number_format($booking->total_price, 0) }} TZS</strong><br>
+                          <small style="color: #999;">≈ ${{ number_format($booking->total_price / ($booking->locked_exchange_rate ?? $exchangeRate), 2) }}</small>
+                        @else
+                          <strong>{{ number_format($booking->total_price * ($booking->locked_exchange_rate ?? $exchangeRate), 0) }} TZS</strong><br>
+                          <small style="color: #999;">≈ ${{ number_format($booking->total_price, 2) }}</small>
+                        @endif
                     </td>
                     <td>
                         @if($booking->status === 'confirmed')

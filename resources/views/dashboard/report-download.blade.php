@@ -555,9 +555,18 @@
                         </td>
                         <td>{{ $booking->check_in->format('M d, Y') }}</td>
                         <td>{{ $booking->check_out->format('M d, Y') }}</td>
+                        @php
+                            $isTanzanianReport = ($booking->guest_type ?? 'international') === 'guest_tanzanian' || ($booking->guest_type ?? 'international') === 'tanzanian';
+                            $reportExchangeRate = $booking->locked_exchange_rate ?? $exchangeRate ?? 2500;
+                        @endphp
                         <td style="text-align: right;">
-                            <strong>{{ number_format($booking->total_price * $exchangeRate, 2) }} TZS</strong><br>
-                            <small style="color: #999;">≈ ${{ number_format($booking->total_price, 2) }}</small>
+                            @if($isTanzanianReport)
+                                <strong>{{ number_format($booking->total_price, 2) }} TZS</strong><br>
+                                <small style="color: #999;">≈ ${{ number_format($booking->total_price / $reportExchangeRate, 2) }}</small>
+                            @else
+                                <strong>{{ number_format($booking->total_price * $reportExchangeRate, 2) }} TZS</strong><br>
+                                <small style="color: #999;">≈ ${{ number_format($booking->total_price, 2) }}</small>
+                            @endif
                         </td>
                         <td>{{ ucfirst($booking->status) }}</td>
                     </tr>

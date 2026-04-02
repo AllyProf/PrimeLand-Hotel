@@ -78,8 +78,26 @@
                   @endif
                 </td>
                 <td>
-                  <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                  <small>{{ number_format($booking->total_price * $exchangeRate, 2) }} TZS</small>
+                  @php
+                    $isTanzanian = $booking->guest_type === 'tanzanian';
+                    $rate = $booking->locked_exchange_rate ?? $exchangeRate ?? 2500;
+                    $svcTsh = $booking->serviceRequests->where('status', '!=', 'cancelled')->sum('total_price_tsh');
+                    
+                    if ($isTanzanian) {
+                        $totalTsh = (float)$booking->total_price + $svcTsh;
+                        $displayPrice = "<strong>" . number_format($totalTsh, 0) . " TZS</strong>";
+                        $equivalent = "<small class='text-muted'>≈ $" . number_format($totalTsh / $rate, 2) . "</small>";
+                    } else {
+                        $totalUsd = (float)$booking->total_price + ($svcTsh / $rate);
+                        $displayPrice = "<strong>$" . number_format($totalUsd, 2) . "</strong>";
+                        $equivalent = "<small class='text-muted'>≈ " . number_format($totalUsd * $rate, 0) . " TZS</small>";
+                    }
+                  @endphp
+                  {!! $displayPrice !!}<br>
+                  {!! $equivalent !!}
+                  @if($svcTsh > 0)
+                    <div style="font-size: 0.75rem; color: #6c757d;">Incl. Services</div>
+                  @endif
                 </td>
                 <td>
                   <button onclick="viewReservationDetails({{ $booking->id }}, '{{ $booking->booking_reference }}')" class="btn btn-sm btn-info" title="View Details">
@@ -156,10 +174,21 @@
             </div>
             
             <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
-              <span style="font-weight: 600; color: #495057; font-size: 14px; flex: 0 0 40%;">Total Price:</span>
+              <span style="font-weight: 600; color: #495057; font-size: 14px; flex: 0 0 40%;">Total Bill:</span>
               <span style="text-align: right; flex: 1;">
-                <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                <small>{{ number_format($booking->total_price * $exchangeRate, 2) }} TZS</small>
+                @php
+                  $isTanzanian = $booking->guest_type === 'tanzanian';
+                  $rate = $booking->locked_exchange_rate ?? $exchangeRate ?? 2500;
+                  $svcTsh = $booking->serviceRequests->where('status', '!=', 'cancelled')->sum('total_price_tsh');
+                  
+                  if ($isTanzanian) {
+                      $totalTsh = (float)$booking->total_price + $svcTsh;
+                      echo "<strong>" . number_format($totalTsh, 0) . " TZS</strong>";
+                  } else {
+                      $totalUsd = (float)$booking->total_price + ($svcTsh / $rate);
+                      echo "<strong>$" . number_format($totalUsd, 2) . "</strong>";
+                  }
+                @endphp
               </span>
             </div>
             
@@ -499,13 +528,37 @@ function viewReservationDetails(bookingId, bookingRef) {
             <div class="col-md-6">
               <h5 style="color: #e07632; border-bottom: 2px solid #e07632; padding-bottom: 5px; margin-bottom: 15px;"><i class="fa fa-dollar"></i> Payment Information</h5>
               <table class="table table-sm table-bordered">
-                <tr><td width="40%"><strong>Total Price:</strong></td><td><strong>$${parseFloat(booking.total_price || 0).toFixed(2)} USD</strong></td></tr>
-                <tr><td><strong>Total Price (TZS):</strong></td><td><strong>${(parseFloat(booking.total_price || 0) * exchangeRate).toLocaleString()} TZS</strong></td></tr>
-                <tr><td><strong>Amount Paid:</strong></td><td>${booking.amount_paid ? '$' + parseFloat(booking.amount_paid).toFixed(2) + ' USD' : 'N/A'}</td></tr>
-                ${booking.payment_status === 'partial' && booking.amount_paid ? `
-                <tr><td><strong>Remaining Amount:</strong></td><td><strong style="color: #dc3545;">$${parseFloat((booking.total_price || 0) - (booking.amount_paid || 0)).toFixed(2)} USD</strong></td></tr>
-                <tr><td><strong>Payment Percentage:</strong></td><td><span class="badge badge-info">${parseFloat(((booking.amount_paid || 0) / (booking.total_price || 1)) * 100).toFixed(0)}%</span></td></tr>
-                ` : ''}
+                ${(() => {
+                  const isTanzanian = booking.guest_type === 'tanzanian';
+                  const symbol = isTanzanian ? '' : '$';
+                  const suffix = isTanzanian ? ' TZS' : '';
+                  const deco = isTanzanian ? 0 : 2;
+                  
+                  const roomPrice = parseFloat(booking.total_price || 0);
+                  const svcPriceTsh = parseFloat(booking.service_charges_tsh || 0);
+                  const svcPrice = isTanzanian ? svcPriceTsh : (svcPriceTsh / exchangeRate);
+                  const totalBill = roomPrice + svcPrice;
+                  
+                  let html = `<tr><td width="40%"><strong>Room Charge:</strong></td><td>${symbol}${roomPrice.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${suffix}</td></tr>`;
+                  
+                  if (svcPriceTsh > 0) {
+                    html += `<tr><td><strong>Service Charges:</strong></td><td>${symbol}${svcPrice.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${suffix}</td></tr>`;
+                  }
+                  
+                  html += `<tr class="table-info"><td><strong>Total Bill:</strong></td><td><strong>${symbol}${totalBill.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${suffix}</strong></td></tr>`;
+                  
+                  const amountPaid = parseFloat(booking.amount_paid || 0);
+                  html += `<tr><td><strong>Amount Paid:</strong></td><td class="text-success"><strong>${symbol}${amountPaid.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${suffix}</strong></td></tr>`;
+                  
+                  const balance = totalBill - amountPaid;
+                  if (balance > 1) {
+                    html += `<tr class="table-danger"><td><strong>Remaining:</strong></td><td class="text-danger"><strong>${symbol}${balance.toLocaleString('en-US', {minimumFractionDigits: deco, maximumFractionDigits: deco})}${suffix}</strong></td></tr>`;
+                  } else {
+                    html += `<tr><td><strong>Balance Status:</strong></td><td><span class="badge badge-success">FULLY PAID</span></td></tr>`;
+                  }
+                  
+                  return html;
+                })()}
                 <tr><td><strong>Payment Method:</strong></td><td>${booking.payment_method ? booking.payment_method.charAt(0).toUpperCase() + booking.payment_method.slice(1) : 'N/A'}</td></tr>
               </table>
             </div>

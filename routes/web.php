@@ -445,6 +445,8 @@ Route::prefix('manager')->group(function () {
         Route::post('/invoices/store', [BookingController::class, 'storeInvoice'])->name('admin.invoices.store');
         Route::get('/bookings/{booking}', [BookingController::class, 'show'])->name('admin.bookings.show');
         Route::put('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('admin.bookings.update-status');
+        Route::post('/bookings/{booking}/late-checkout', [BookingController::class, 'handleLateCheckout'])->name('admin.bookings.late-checkout');
+        Route::post('/companies/{company}/cancel', [BookingController::class, 'cancelCompanyGroup'])->name('admin.companies.cancel');
         Route::put('/bookings/{booking}/notes', [BookingController::class, 'updateNotes'])->name('admin.bookings.update-notes');
         Route::post('/bookings/{booking}/extension', [BookingController::class, 'handleExtension'])->name('admin.bookings.extension');
         Route::put('/bookings/{booking}/modify-dates', [BookingController::class, 'modifyBookingDates'])->name('admin.bookings.modify-dates');
@@ -691,6 +693,9 @@ Route::prefix('reception')->group(function () {
         Route::post('/invoices/store', [\App\Http\Controllers\BookingController::class, 'storeInvoice'])->name('reception.invoices.store');
         Route::get('/invoices/{booking}/download', [\App\Http\Controllers\BookingController::class, 'downloadInvoice'])->name('reception.invoices.download');
         Route::get('/bookings/{booking}', [\App\Http\Controllers\BookingController::class, 'show'])->name('reception.bookings.show');
+        Route::put('/bookings/{booking}/status', [\App\Http\Controllers\BookingController::class, 'updateStatus'])->name('reception.bookings.update-status');
+        Route::post('/bookings/{booking}/late-checkout', [\App\Http\Controllers\BookingController::class, 'handleLateCheckout'])->name('reception.bookings.late-checkout');
+        Route::post('/companies/{company}/cancel', [\App\Http\Controllers\BookingController::class, 'cancelCompanyGroup'])->name('reception.companies.cancel');
         Route::put('/bookings/{booking}/check-in', [\App\Http\Controllers\BookingController::class, 'updateCheckInStatus'])->name('reception.bookings.update-checkin');
         Route::post('/bookings/{booking}/generate-token', [\App\Http\Controllers\BookingController::class, 'generateCheckInToken'])->name('reception.bookings.generate-token');
         Route::post('/bookings/{booking}/generate-checkout-token', [\App\Http\Controllers\BookingController::class, 'generateCheckoutToken'])->name('reception.bookings.generate-checkout-token');
@@ -757,6 +762,10 @@ Route::prefix('reception')->group(function () {
         // Corporate Group Checkout
         Route::post('/bookings/checkout-company-group/{company}', [\App\Http\Controllers\ReceptionController::class, 'checkoutCompanyGroup'])->name('reception.bookings.checkout-company-group');
         Route::post('/bookings/checkout-company-payment/{company}', [\App\Http\Controllers\ReceptionController::class, 'processCompanyPayment'])->name('reception.bookings.checkout-company-payment');
+
+        // Lost & Found (Reception)
+        Route::get('/lost-found', [\App\Http\Controllers\LostAndFoundController::class, 'receptionIndex'])->name('reception.lost-found.index');
+        Route::post('/lost-found/{item}/update', [\App\Http\Controllers\LostAndFoundController::class, 'receptionUpdate'])->name('reception.lost-found.update');
     });
 
 
@@ -818,6 +827,11 @@ Route::prefix('housekeeper')->group(function () {
         Route::get('/purchase-requests/templates/{id}', [\App\Http\Controllers\PurchaseRequestController::class, 'getTemplate'])->name('housekeeper.purchase-requests.templates.get');
         Route::put('/purchase-requests/templates/{id}', [\App\Http\Controllers\PurchaseRequestController::class, 'updateTemplate'])->name('housekeeper.purchase-requests.templates.update');
         Route::delete('/purchase-requests/templates/{id}', [\App\Http\Controllers\PurchaseRequestController::class, 'deleteTemplate'])->name('housekeeper.purchase-requests.templates.delete');
+
+        // Lost & Found (Housekeeper)
+        Route::get('/lost-found', [\App\Http\Controllers\LostAndFoundController::class, 'housekeeperIndex'])->name('housekeeper.lost-found.index');
+        Route::get('/lost-found/report', [\App\Http\Controllers\LostAndFoundController::class, 'housekeeperCreate'])->name('housekeeper.lost-found.create');
+        Route::post('/lost-found', [\App\Http\Controllers\LostAndFoundController::class, 'housekeeperStore'])->name('housekeeper.lost-found.store');
     });
 });
 

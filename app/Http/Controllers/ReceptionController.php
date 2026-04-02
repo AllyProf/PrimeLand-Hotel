@@ -928,8 +928,9 @@ class ReceptionController extends Controller
                 $extensionCostTsh = $extensionCostUsd * $bookingExchangeRate;
                 
                 // Total bill
-                // Note: extensionCostTsh is already included in booking->total_price
-                $totalBillTsh = ($booking->total_price * $bookingExchangeRate) + $totalServiceChargesTsh;
+                // Note: if Tanzanian, total_price is already polymorphically stored in TZS. If international, it's in USD.
+                $roomCostTsh = ($booking->guest_type === 'tanzanian') ? $booking->total_price : ($booking->total_price * $bookingExchangeRate);
+                $totalBillTsh = $roomCostTsh + $totalServiceChargesTsh;
                 
                 // Amount paid (Booking deposit + any settled service payments)
                 $amountPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $bookingExchangeRate);
@@ -1121,52 +1122,36 @@ class ReceptionController extends Controller
 
         // Calculate room status
         $rooms = $rooms->map(function($room) use ($today) {
-            // Active bookings (checked in AND today is between check-in and check-out dates)
+            // 1. Active bookings (physically checked in)
             $activeBookings = $room->bookings->filter(function($booking) use ($today) {
-                if ($booking->check_in_status !== 'checked_in') {
-                    return false;
-                }
-                $checkIn = Carbon::parse($booking->check_in);
-                $checkOut = Carbon::parse($booking->check_out);
-                // Room is occupied only if today is between check-in and check-out dates
-                return $today->gte($checkIn) && $today->lte($checkOut);
+                return $booking->check_in_status === 'checked_in' &&
+                       $today->gte(Carbon::parse($booking->check_in)) &&
+                       $today->lte(Carbon::parse($booking->check_out));
             });
+
+            // 2. Reserved bookings (confirmed/paid but not yet checked in)
+            $reservedBookings = $room->bookings->filter(function($booking) use ($today) {
+                return $booking->check_in_status !== 'checked_in' &&
+                       $booking->status === 'confirmed' &&
+                       $today->gte(Carbon::parse($booking->check_in)) &&
+                       $today->lte(Carbon::parse($booking->check_out));
+            });
+
             $room->is_occupied = $activeBookings->count() > 0 || $room->status === 'occupied';
-            $room->current_booking = $activeBookings->first();
+            $room->is_reserved = $reservedBookings->count() > 0 || $room->status === 'reserved';
+            $room->has_immediate_booking = $room->is_reserved;
+            $room->current_booking = $activeBookings->first() ?: $reservedBookings->first();
             
-            // Upcoming bookings (future check-ins or pending payment bookings)
+            // Upcoming bookings (future check-ins)
             $upcomingBookings = $room->bookings->filter(function($booking) use ($today) {
                 $checkInDate = \Carbon\Carbon::parse($booking->check_in);
-                return $checkInDate->gte($today) && 
+                return $checkInDate->gt($today) && 
                        ($booking->check_in_status === 'pending' || 
                         ($booking->status === 'pending' && $booking->payment_status === 'pending'));
             })->sortBy('check_in')->first();
             $room->upcoming_checkin = $upcomingBookings;
             
-            // Pending payment booking (for status display) - only show if check-in is within 3 days
-            $pendingPaymentBooking = $room->bookings->filter(function($booking) use ($today) {
-                $checkInDate = \Carbon\Carbon::parse($booking->check_in);
-                $daysUntilCheckIn = $today->diffInDays($checkInDate, false);
-                return $booking->status === 'pending' && 
-                       $booking->payment_status === 'pending' &&
-                       $checkInDate->gte($today) &&
-                       $daysUntilCheckIn <= 3 && // Only show if check-in is within 3 days
-                       is_null($booking->cancelled_at);
-            })->sortBy('check_in')->first();
-            $room->pending_payment_booking = $pendingPaymentBooking;
-            
-            // Check if room has any bookings that affect current availability (today or within next 3 days)
-            $room->has_immediate_booking = $room->status === 'reserved';
-            if ($room->upcoming_checkin) {
-                $checkInDate = \Carbon\Carbon::parse($room->upcoming_checkin->check_in);
-                $daysUntilCheckIn = $today->diffInDays($checkInDate, false);
-                // Only mark as having immediate booking if check-in is today or within 3 days
-                if ($daysUntilCheckIn <= 3) {
-                    $room->has_immediate_booking = true;
-                }
-            }
-            
-            // Get last checked out booking for rooms that need cleaning
+            // Get last checked out booking
             $room->last_checked_out_booking = $room->bookings()
                 ->where('check_in_status', 'checked_out')
                 ->orderBy('checked_out_at', 'desc')
@@ -1178,31 +1163,13 @@ class ReceptionController extends Controller
         // Calculate statistics
         $stats = [
             'total' => $rooms->count(),
-            'available' => $rooms->filter(function($room) {
-                // Room is available if not occupied, doesn't have immediate bookings, AND not in maintenance or needing cleaning
-                return !in_array($room->status, ['maintenance', 'to_be_cleaned', 'closed']) && 
-                       !$room->is_occupied && 
-                       !$room->has_immediate_booking;
+            'available' => $rooms->filter(function($r) { 
+                return !$r->is_occupied && !$r->is_reserved && $r->status === 'available'; 
             })->count(),
-            'occupied' => $rooms->filter(function($room) {
-                return $room->is_occupied;
-            })->count(),
-            'needs_cleaning' => $rooms->filter(function($room) {
-                return $room->status === 'to_be_cleaned';
-            })->count(),
-            'maintenance' => $rooms->filter(function($room) {
-                return $room->status === 'maintenance';
-            })->count(),
-            'reserved' => $rooms->filter(function($room) {
-                // Reserved if has immediate booking (within 3 days) and not occupied
-                return $room->has_immediate_booking && !$room->is_occupied;
-            })->count(),
-            'waiting_payment' => $rooms->filter(function($room) {
-                // Waiting for payment if has immediate booking with pending payment
-                return $room->has_immediate_booking && 
-                       (($room->pending_payment_booking) || 
-                        ($room->upcoming_checkin && $room->upcoming_checkin->payment_status === 'pending'));
-            })->count(),
+            'occupied' => $rooms->filter(function($r) { return $r->is_occupied; })->count(),
+            'reserved' => $rooms->filter(function($r) { return $r->is_reserved; })->count(),
+            'cleaning' => $rooms->filter(function($r) { return $r->status === 'to_be_cleaned'; })->count(),
+            'maintenance' => $rooms->filter(function($r) { return $r->status === 'maintenance'; })->count(),
         ];
 
         // Get rooms with check-out today or overdue
@@ -1501,24 +1468,25 @@ class ReceptionController extends Controller
         }
         $extensionCostTsh = $extensionCostUsd * $exchangeRate;
         
+        // Determine if this is a Tanzanian guest for polymorphic pricing
+        $isTanzanian = ($booking->guest_type ?? 'international') === 'guest_tanzanian' || ($booking->guest_type ?? 'international') === 'tanzanian';
+
         // Calculate total bill for the whole booking (Room + Services)
-        // Note: extensionCostTsh is already included in booking->total_price
-        $totalBookingBillTsh = ($booking->total_price * $exchangeRate) + $totalServiceChargesTsh;
+        // Note: Room total must be polymorphic
+        $roomTotalTsh = $isTanzanian ? (float)$booking->total_price : ($booking->total_price * $exchangeRate);
+        $totalBookingBillTsh = $roomTotalTsh + $totalServiceChargesTsh;
         
         // Calculate outstanding balance for THIS SPECIFIC payment action
         if ($isCorporate) {
             if ($paymentResponsibility === 'self') {
-                // For a self-paying corporate guest, they only owe for their UNPAID services.
-                // We track their debt based on the total of unpaid requests.
                 $unpaidServiceRequests = $serviceRequests->filter(fn($sr) => ($sr->payment_status ?? 'pending') !== 'paid');
                 $outstandingBalanceTsh = $unpaidServiceRequests->sum('total_price_tsh');
             } else {
-                // If company pays everything, guest owes 0 at reception.
                 $outstandingBalanceTsh = 0;
             }
         } else {
-            // Individual booking - they owe everything
-            $amountPaidTsh = ($booking->guest_type === 'tanzanian') ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $exchangeRate);
+            // Individual booking - calculate total paid in TTZS
+            $amountPaidTsh = $isTanzanian ? ($booking->amount_paid ?? 0) : (($booking->amount_paid ?? 0) * $exchangeRate);
             $outstandingBalanceTsh = max(0, $totalBookingBillTsh - $amountPaidTsh);
         }
         
@@ -1526,19 +1494,20 @@ class ReceptionController extends Controller
         $paymentAmountUsd = (float) $request->amount;
         $paymentAmountTsh = $paymentAmountUsd * $exchangeRate;
         
-        // Check if this payment covers the remainder of the guest's debt
-        $isGuestPortionCleared = ($paymentAmountTsh >= $outstandingBalanceTsh - 50);
-        
-        // Update money
-        $newAmountPaidUsd = ($booking->amount_paid ?? 0) + $paymentAmountUsd;
-        $newAmountPaidTsh = $newAmountPaidUsd * $exchangeRate;
+        // Update money in polymorphic field
+        if ($isTanzanian) {
+            // If Tanzanian, amount_paid is in TZS. Add the received USD converted to TZS.
+            $newAmountPaidValue = ($booking->amount_paid ?? 0) + $paymentAmountTsh;
+        } else {
+            // If International, amount_paid is in USD. Add the received USD.
+            $newAmountPaidValue = ($booking->amount_paid ?? 0) + $paymentAmountUsd;
+        }
         
         // Calculate remaining balance after this payment
         $remainingBalanceTsh = max(0, $outstandingBalanceTsh - $paymentAmountTsh);
         $remainingBalanceUsd = $remainingBalanceTsh / $exchangeRate;
         
         // Threshold for considering fully paid (50 TZS or $0.05)
-        $minOutstandingThresholdUsd = 0.05;
         $minOutstandingThresholdTsh = 50;
         
         // --- Guest Portion Logic (Corporate Self-Payers) ---
@@ -1561,9 +1530,8 @@ class ReceptionController extends Controller
         }
         
         // --- Overall Booking Payment Status (Room + Services) ---
-        $totalBillTsh = ($booking->total_price * $exchangeRate) + $totalServiceChargesTsh;
-        $newTotalPaidTsh = $newAmountPaidUsd * $exchangeRate;
-        $overallRemainingTsh = max(0, $totalBillTsh - $newTotalPaidTsh);
+        $currentTotalPaidTsh = $isTanzanian ? $newAmountPaidValue : ($newAmountPaidValue * $exchangeRate);
+        $overallRemainingTsh = max(0, $totalBookingBillTsh - $currentTotalPaidTsh);
         
         $isOverallFullyPaid = ($overallRemainingTsh < $minOutstandingThresholdTsh);
         
@@ -1582,7 +1550,7 @@ class ReceptionController extends Controller
             'payment_method' => $request->payment_method,
             'payment_provider' => $request->payment_provider ?? null,
             'payment_transaction_id' => $request->payment_reference ?? null,
-            'amount_paid' => $newAmountPaidUsd,
+            'amount_paid' => $newAmountPaidValue,
             'paid_at' => $booking->paid_at ?? now(),
             'total_service_charges_tsh' => $totalServiceChargesTsh,
         ]);
@@ -2233,9 +2201,8 @@ class ReceptionController extends Controller
                 if ($nights > 0 && $booking->room) $extensionCostUsd = $booking->room->price_per_night * $nights;
             }
             
-            // Company's total bill (room + company-responsible services + extensions)
-            // Note: extensionCostTsh is already included in booking->total_price according to logic
-            $companyBillTsh = ($booking->total_price * $bookingExchangeRate) + $companyServiceChargesTsh;
+            $isTanzanianInGroup = ($booking->guest_type ?? 'international') === 'guest_tanzanian' || ($booking->guest_type ?? 'international') === 'tanzanian';
+            $companyBillTsh = ($isTanzanianInGroup ? (float)$booking->total_price : ($booking->total_price * $bookingExchangeRate)) + $companyServiceChargesTsh;
 
             // Identify total amount already paid for services by the guest
             $guestPaidServicesTsh = $serviceRequests->where('payment_status', 'paid')->sum('total_price_tsh');
@@ -2279,33 +2246,39 @@ class ReceptionController extends Controller
 
             $booking = $data['booking'];
             $bookingExchangeRate = $data['bookingExchangeRate'];
+            $isBookingTanzanian = ($booking->guest_type ?? 'international') === 'guest_tanzanian' || ($booking->guest_type ?? 'international') === 'tanzanian';
             
             // Pay as much as possible for this booking
             $payForThisBookingUsd = min($remainingPaymentUsd, $data['outstanding_usd']);
             $remainingPaymentUsd -= $payForThisBookingUsd;
             
-            // Increment amount_paid
-            $newAmountPaidUsd = ($booking->amount_paid ?? 0) + $payForThisBookingUsd;
-            
-            // Check if fully paid (including services if company-responsible)
-            $totalServiceChargesTsh = $data['total_service_charges_tsh'];
-            $totalBillTsh = ($booking->total_price * $bookingExchangeRate) + ($data['responsibility'] === 'company' ? $totalServiceChargesTsh : 0);
-            
-            // For 'self' responsibility, fully paid means room is paid
-            if ($data['responsibility'] === 'self') {
-                $totalBillTsh = ($booking->total_price * $bookingExchangeRate);
+            // Increment amount_paid in polymorphic field
+            if ($isBookingTanzanian) {
+                // If Tanzanian, amount_paid is in TZS. Convert USD payment to TZS.
+                $newAmountPaidValue = ($booking->amount_paid ?? 0) + ($payForThisBookingUsd * $bookingExchangeRate);
+                $totalBillTsh = (float)$booking->total_price + ($data['responsibility'] === 'company' ? $data['total_service_charges_tsh'] : 0);
+                if ($data['responsibility'] === 'self') {
+                    $totalBillTsh = (float)$booking->total_price;
+                }
+                $isFullyPaid = ($newAmountPaidValue >= ($totalBillTsh - 50));
+            } else {
+                // If International, amount_paid is in USD.
+                $newAmountPaidValue = ($booking->amount_paid ?? 0) + $payForThisBookingUsd;
+                $totalBillTsh = ($booking->total_price * $bookingExchangeRate) + ($data['responsibility'] === 'company' ? $data['total_service_charges_tsh'] : 0);
+                if ($data['responsibility'] === 'self') {
+                    $totalBillTsh = ($booking->total_price * $bookingExchangeRate);
+                }
+                $isFullyPaid = (($newAmountPaidValue * $bookingExchangeRate) >= ($totalBillTsh - 50));
             }
-
-            $isFullyPaid = ( ($newAmountPaidUsd * $bookingExchangeRate) >= ($totalBillTsh - 50) );
             
             $booking->update([
                 'payment_status' => $isFullyPaid ? 'paid' : 'partial',
                 'payment_method' => $request->payment_method,
                 'payment_provider' => $request->payment_provider ?? null,
                 'payment_transaction_id' => $request->payment_reference ?? null,
-                'amount_paid' => $newAmountPaidUsd,
+                'amount_paid' => $newAmountPaidValue,
                 'paid_at' => $booking->paid_at ?? now(),
-                'total_service_charges_tsh' => $totalServiceChargesTsh,
+                'total_service_charges_tsh' => $data['total_service_charges_tsh'],
             ]);
         }
         

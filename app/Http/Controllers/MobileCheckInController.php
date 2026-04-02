@@ -178,6 +178,7 @@ class MobileCheckInController extends Controller
     private function calculateBill(Booking $booking)
     {
         $nights = $booking->check_in->diffInDays($booking->check_out);
+        $isTanzanian = $booking->guest_type === 'tanzanian';
         
         // Use locked exchange rate or fetch current
         $exchangeRate = $booking->locked_exchange_rate;
@@ -192,12 +193,17 @@ class MobileCheckInController extends Controller
         }
 
         // 1. Calculate Room Charge
-        $roomChargeUsd = $booking->total_price; // USD
-        $roomChargeTsh = $roomChargeUsd * $exchangeRate;
+        if ($isTanzanian) {
+            $roomChargeTsh = (float)$booking->total_price;
+            $roomChargeUsd = $roomChargeTsh / $exchangeRate;
+        } else {
+            $roomChargeUsd = (float)$booking->total_price;
+            $roomChargeTsh = $roomChargeUsd * $exchangeRate;
+        }
         
         // 2. Fetch Services
         $serviceRequests = ServiceRequest::where('booking_id', $booking->id)
-            ->whereIn('status', ['completed', 'delivered', 'approved'])
+            ->whereIn('status', ['completed', 'delivered', 'approved', 'preparing', 'pending'])
             ->get();
             
         $servicesTotalTsh = $serviceRequests->sum('total_price_tsh');
@@ -215,8 +221,11 @@ class MobileCheckInController extends Controller
         $totalBillTsh = $roomChargeTsh + $servicesTotalTsh;
         
         // 5. Calculate Paid Amount (for display to guest)
-        // We start with what they actually paid
-        $amountPaidTsh = ($booking->amount_paid ?? 0) * $exchangeRate;
+        if ($isTanzanian) {
+            $amountPaidTsh = (float)($booking->amount_paid ?? 0);
+        } else {
+            $amountPaidTsh = (float)($booking->amount_paid ?? 0) * $exchangeRate;
+        }
         
         // Add individual service payments already marked as paid
         foreach ($serviceRequests as $sr) {
@@ -244,7 +253,6 @@ class MobileCheckInController extends Controller
         }
 
         $totalAmountUsd = $totalBillTsh / $exchangeRate;
-        // Adjust display "PaidAmount" to show what has been covered (by guest or company)
         $paidAmountUsd = $amountPaidTsh / $exchangeRate;
         $balanceUsd = $balanceTsh / $exchangeRate;
 

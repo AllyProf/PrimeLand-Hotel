@@ -257,9 +257,10 @@
                       <tr>
                         <th class="pl-4">Room Type</th>
                         <th class="text-center">Needed</th>
-                        <th class="text-center">Available Now</th>
-                        <th class="text-center">Soon Available</th>
-                        <th class="text-center">Total Available</th>
+                        <th class="text-center text-success">Available Now</th>
+                        <th class="text-center text-warning">Wait (Clean/CO)</th>
+                        <th class="text-center text-danger">Reserved</th>
+                        <th class="text-center font-weight-bold">Selectable</th>
                         <th class="pr-4 text-center">Status</th>
                       </tr>
                     </thead>
@@ -808,15 +809,16 @@
 
 .room-availability-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 0;
+  left: 0;
   color: white;
-  padding: 2px 5px;
-  border-radius: 6px;
-  font-size: 9px;
-  font-weight: 600;
-  z-index: 2;
-  line-height: 1.4;
+  padding: 4px 8px;
+  border-bottom-right-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  z-index: 5;
+  line-height: normal;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .room-availability-badge.available-now {
@@ -832,25 +834,10 @@
   background: #dc3545;
 }
 
+/* Room Unselectable State */
 .room-card.unselectable {
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-.room-card.unselectable .room-image-container::after {
-  content: 'N/A';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(220, 53, 69, 0.85);
-  color: white;
-  padding: 2px 6px;
-  font-weight: bold;
-  font-size: 9px;
-  border-radius: 3px;
-  z-index: 4;
-  pointer-events: none;
 }
 
 .room-availability-badge i {
@@ -1648,14 +1635,17 @@ function searchAvailableRooms() {
         const roomStatus = {};
         allPossibleTypes.forEach(type => {
           const needed = roomTypesNeeded[type] || 0;
-          const available = (roomsByType[type] || []).filter(r => r.is_available_now).length;
-          const soon = (roomsByType[type] || []).filter(r => r.is_soon_available).length;
+          const typeRooms = roomsByType[type] || [];
+          const availableForDates = typeRooms.filter(r => r.is_available_for_dates && r.is_available_now).length;
+          const soon = typeRooms.filter(r => r.is_available_for_dates && !r.is_available_now).length;
+          const reserved = typeRooms.filter(r => !r.is_available_for_dates).length;
           
           roomStatus[type] = {
             needed: needed,
-            available_now: available,
+            available_now: availableForDates,
             soon_available: soon,
-            total_available: available + soon
+            reserved_count: reserved,
+            total_selectable: availableForDates + soon
           };
         });
 
@@ -1678,7 +1668,7 @@ function searchAvailableRooms() {
             } else if (hasEnough) {
               statusBadge = '<span class="badge badge-success"><i class="fa fa-check"></i> Sufficient</span>';
             } else if (canMeetWithSoon) {
-              statusBadge = '<span class="badge badge-warning text-white"><i class="fa fa-clock-o"></i> Partial</span>';
+              statusBadge = '<span class="badge badge-warning text-white"><i class="fa fa-clock-o"></i> Available with cleaning/checkout</span>';
             } else {
               statusBadge = '<span class="badge badge-danger"><i class="fa fa-times"></i> Insufficient</span>';
             }
@@ -1689,7 +1679,8 @@ function searchAvailableRooms() {
               <td class="text-center">${status.needed}</td>
               <td class="text-center text-success" style="font-weight: 600;">${status.available_now}</td>
               <td class="text-center text-warning" style="font-weight: 600;">${status.soon_available}</td>
-              <td class="text-center font-weight-bold">${status.total_available}</td>
+              <td class="text-center text-danger" style="font-weight: 600; opacity: 0.6;">${status.reserved_count}</td>
+              <td class="text-center font-weight-bold" style="background: rgba(0,0,0,0.02);">${status.total_selectable}</td>
               <td class="pr-4 text-center">${statusBadge}</td>
             `;
             summaryTableBody.appendChild(row);
@@ -1778,20 +1769,20 @@ function displayRoomCards(rooms, roomStatus, roomTypesNeeded) {
     roomsGrid.innerHTML = statusHtml;
   }
   
-  // Group rooms by availability status
-  const availableNowRooms = rooms.filter(r => r.is_available_now);
-  const soonAvailableRooms = rooms.filter(r => r.is_soon_available);
+  // Group rooms logic
+  const availableNowRooms = rooms.filter(r => r.is_available_for_dates && r.is_available_now);
+  const soonAvailableRooms = rooms.filter(r => r.is_available_for_dates && !r.is_available_now);
+  const reservedRooms = rooms.filter(r => !r.is_available_for_dates);
   
-  // Display available now rooms
+  // 1. Display Available Now rooms
   if (availableNowRooms.length > 0) {
     const sectionDiv = document.createElement('div');
     sectionDiv.className = 'col-12 mb-3';
-    sectionDiv.innerHTML = '<h5 class="text-success"><i class="fa fa-check-circle"></i> Available Now (' + availableNowRooms.length + ' rooms)</h5>';
+    sectionDiv.innerHTML = '<h5 class="text-success"><i class="fa fa-check-circle"></i> Available for Selected Dates (' + availableNowRooms.length + ' rooms)</h5>';
     roomsGrid.appendChild(sectionDiv);
     
     const rowDiv = document.createElement('div');
     rowDiv.className = 'row';
-    // Ensure proper flex layout for single cards - prevents narrow display
     rowDiv.style.display = 'flex';
     rowDiv.style.flexWrap = 'wrap';
     
@@ -1803,20 +1794,39 @@ function displayRoomCards(rooms, roomStatus, roomTypesNeeded) {
     roomsGrid.appendChild(rowDiv);
   }
   
-  // Display soon available rooms
+  // 2. Display Soon Available rooms
   if (soonAvailableRooms.length > 0) {
     const sectionDiv = document.createElement('div');
     sectionDiv.className = 'col-12 mb-3 mt-4';
-    sectionDiv.innerHTML = '<h5 class="text-warning"><i class="fa fa-clock-o"></i> Soon Available (' + soonAvailableRooms.length + ' rooms)</h5>';
+    sectionDiv.innerHTML = '<h5 class="text-warning"><i class="fa fa-clock-o"></i> Selectable After Cleaning/Checkout (' + soonAvailableRooms.length + ' rooms)</h5>';
     roomsGrid.appendChild(sectionDiv);
     
     const rowDiv = document.createElement('div');
     rowDiv.className = 'row';
-    // Ensure proper flex layout for single cards - prevents narrow display
     rowDiv.style.display = 'flex';
     rowDiv.style.flexWrap = 'wrap';
     
     soonAvailableRooms.forEach(room => {
+      const roomCard = createRoomCard(room);
+      rowDiv.appendChild(roomCard);
+    });
+    
+    roomsGrid.appendChild(rowDiv);
+  }
+
+  // 3. Display Reserved rooms
+  if (reservedRooms.length > 0) {
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = 'col-12 mb-3 mt-4';
+    sectionDiv.innerHTML = '<h5 class="text-secondary"><i class="fa fa-calendar-times-o"></i> Reserved / Blocked for these Dates (' + reservedRooms.length + ' rooms)</h5>';
+    roomsGrid.appendChild(sectionDiv);
+    
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'row';
+    rowDiv.style.display = 'flex';
+    rowDiv.style.flexWrap = 'wrap';
+    
+    reservedRooms.forEach(room => {
       const roomCard = createRoomCard(room);
       rowDiv.appendChild(roomCard);
     });
@@ -1859,14 +1869,14 @@ function createRoomCard(room) {
   }
   
   // Determine selection availability
-  const canSelect = room.can_select !== false;
+  const isSelectable = room.can_select !== false;
 
   const card = document.createElement('div');
-  card.className = 'room-card' + (canSelect ? '' : ' unselectable');
+  card.className = 'room-card' + (isSelectable ? '' : ' unselectable');
   card.setAttribute('data-room-id', room.id);
   card.setAttribute('data-room-price', room.price_per_night);
   card.setAttribute('data-room-capacity', room.capacity || 1);
-  card.setAttribute('data-can-select', canSelect);
+  card.setAttribute('data-can-select', isSelectable);
   
   // Check if room has assigned guest
   const hasGuest = bookingData.guests.some(g => g.room_id == room.id);
@@ -1892,7 +1902,18 @@ function createRoomCard(room) {
       }
     }
     availabilityBadge = '<div class="room-availability-badge occupied"><i class="fa fa-user"></i> Occupied - Leaves ' + checkoutDisplay + '</div>';
-  } else if (room.is_soon_available) {
+  } else if (room.status === 'reserved') {
+      let checkoutDisplay = 'Soon';
+      if (room.checkout_date) {
+        try {
+          const dateObj = new Date(room.checkout_date + 'T12:00:00');
+          if (!isNaN(dateObj.getTime())) {
+            checkoutDisplay = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }
+        } catch (e) { checkoutDisplay = room.checkout_date; }
+      }
+      availabilityBadge = '<div class="room-availability-badge occupied" style="background: #f39c12;"><i class="fa fa-calendar-check-o"></i> Reserved - Until ' + checkoutDisplay + '</div>';
+  } else if (room.checkout_date) {
     let checkoutDateDisplay = room.checkout_date === 'Today' ? 'Today' : (room.checkout_date || '');
     availabilityBadge = '<div class="room-availability-badge soon-available"><i class="fa fa-clock-o"></i> Available ' + checkoutDateDisplay + '</div>';
   }

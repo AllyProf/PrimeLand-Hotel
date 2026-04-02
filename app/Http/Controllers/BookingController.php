@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use App\Services\SmsService;
 
 class BookingController extends Controller
@@ -385,7 +386,7 @@ class BookingController extends Controller
             Mail::to($validated['guest_email'])->queue(new BookingConfirmationMail($booking, $password));
         } catch (\Exception $e) {
             // Log error but don't fail the booking
-            \Log::error('Failed to send booking confirmation email: ' . $e->getMessage());
+            Log::error('Failed to send booking confirmation email: ' . $e->getMessage());
         }
 
         // Send welcome email if this is a new user account
@@ -393,7 +394,7 @@ class BookingController extends Controller
             try {
                 Mail::to($validated['guest_email'])->queue(new \App\Mail\WelcomeMail($user, $password));
             } catch (\Exception $e) {
-                \Log::error('Failed to send welcome email: ' . $e->getMessage());
+                Log::error('Failed to send welcome email: ' . $e->getMessage());
             }
         }
 
@@ -402,29 +403,29 @@ class BookingController extends Controller
             $notificationService = new NotificationService();
             $notificationService->createBookingNotification($booking->load('room'));
         } catch (\Exception $e) {
-            \Log::error('Failed to create booking notification: ' . $e->getMessage());
+            Log::error('Failed to create booking notification: ' . $e->getMessage());
         }
 
         // Send email notification to managers and super admins for new booking
-        try {
-            $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
-                ->where('is_active', true)
-                ->get();
-            
-                foreach ($managersAndAdmins as $staff) {
-                    // Check if user has notifications enabled
-                    if ($staff->isNotificationEnabled('booking')) {
-                        try {
-                            \Illuminate\Support\Facades\Mail::to($staff->email)
-                                ->send(new \App\Mail\StaffNewBookingMail($booking->fresh()->load('room')));
-                        } catch (\Exception $e) {
-                            \Log::error('Failed to send new booking email to staff: ' . $staff->email . ' - ' . $e->getMessage());
-                        }
-                    }
-                }
-        } catch (\Exception $e) {
-            \Log::error('Failed to send new booking emails to managers/admins: ' . $e->getMessage());
-        }
+        // try {
+        //     $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
+        //         ->where('is_active', true)
+        //         ->get();
+        //     
+        //         foreach ($managersAndAdmins as $staff) {
+        //             // Check if user has notifications enabled
+        //             if ($staff->isNotificationEnabled('booking')) {
+        //                 try {
+        //                     \Illuminate\Support\Facades\Mail::to($staff->email)
+        //                         ->send(new \App\Mail\StaffNewBookingMail($booking->fresh()->load('room')));
+        //                 } catch (\Exception $e) {
+        //                     Log::error('Failed to send new booking email to staff: ' . $staff->email . ' - ' . $e->getMessage());
+        //                 }
+        //             }
+        //         }
+        // } catch (\Exception $e) {
+        //     Log::error('Failed to send new booking emails to managers/admins: ' . $e->getMessage());
+        // }
 
         return response()->json([
             'success' => true,
@@ -892,7 +893,7 @@ class BookingController extends Controller
                 }),
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error fetching company bookings', [
+            Log::error('Error fetching company bookings', [
                 'company_id' => $companyId,
                 'error' => $e->getMessage(),
             ]);
@@ -969,7 +970,7 @@ class BookingController extends Controller
                 'booking' => $bookingData
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error loading booking details', [
+            Log::error('Error loading booking details', [
                 'booking_id' => $booking->id,
                 'booking_reference' => $booking->booking_reference ?? 'N/A',
                 'error' => $e->getMessage(),
@@ -1078,7 +1079,7 @@ class BookingController extends Controller
                     'manager'
                 );
             } catch (\Exception $e) {
-                \Log::error('Failed to mark booking notification as read: ' . $e->getMessage());
+                Log::error('Failed to mark booking notification as read: ' . $e->getMessage());
             }
         }
 
@@ -1157,7 +1158,7 @@ class BookingController extends Controller
                 $wifiNetworkName = \App\Models\HotelSetting::getWifiNetworkName();
                 Mail::to($booking->guest_email)->send(new \App\Mail\CheckInConfirmationMail($booking->fresh(), $wifiPassword, $wifiNetworkName));
             } catch (\Exception $e) {
-                \Log::error('Failed to send check-in confirmation email: ' . $e->getMessage());
+                Log::error('Failed to send check-in confirmation email: ' . $e->getMessage());
             }
 
             // Send email notification to managers and super admins for check-in (send immediately)
@@ -1173,12 +1174,12 @@ class BookingController extends Controller
                             \Illuminate\Support\Facades\Mail::to($staff->email)
                                 ->send(new \App\Mail\StaffCheckInMail($booking->fresh()->load('room')));
                         } catch (\Exception $e) {
-                            \Log::error('Failed to send check-in email to staff: ' . $staff->email . ' - ' . $e->getMessage());
+                            Log::error('Failed to send check-in email to staff: ' . $staff->email . ' - ' . $e->getMessage());
                         }
                     }
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to send check-in emails to managers/admins: ' . $e->getMessage());
+                Log::error('Failed to send check-in emails to managers/admins: ' . $e->getMessage());
             }
 
             // Send SMS notification to housekeepers for check-in
@@ -1200,7 +1201,7 @@ class BookingController extends Controller
                     }
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to send check-in SMS to housekeepers: ' . $e->getMessage());
+                Log::error('Failed to send check-in SMS to housekeepers: ' . $e->getMessage());
             }
         } elseif ($request->check_in_status === 'checked_out') {
             // Check if there's outstanding balance before allowing checkout
@@ -1291,7 +1292,7 @@ class BookingController extends Controller
                                 new \App\Mail\RoomNeedsCleaningMail($booking->room, $booking)
                             );
                         } catch (\Exception $e) {
-                            \Log::error('Failed to send room cleaning notification: ' . $e->getMessage());
+                            Log::error('Failed to send room cleaning notification: ' . $e->getMessage());
                         }
                     }
 
@@ -1304,7 +1305,7 @@ class BookingController extends Controller
                                 $booking->room->room_number ?? 'N/A'
                             );
                         } catch (\Exception $e) {
-                            \Log::error('Failed to send checkout SMS to housekeeper: ' . $e->getMessage());
+                            Log::error('Failed to send checkout SMS to housekeeper: ' . $e->getMessage());
                         }
                     }
                 }
@@ -1321,7 +1322,7 @@ class BookingController extends Controller
                 $totalBillUsd = $booking->total_price;
                 Mail::to($booking->guest_email)->send(new \App\Mail\CheckOutConfirmationMail($booking->fresh(), $totalBillUsd, $totalBillTsh, $amountPaidTsh));
             } catch (\Exception $e) {
-                \Log::error('Failed to send check-out confirmation email: ' . $e->getMessage());
+                Log::error('Failed to send check-out confirmation email: ' . $e->getMessage());
             }
 
             // Send email notification to managers and super admins for check-out (send immediately)
@@ -1337,12 +1338,12 @@ class BookingController extends Controller
                             \Illuminate\Support\Facades\Mail::to($staff->email)
                                 ->send(new \App\Mail\StaffCheckOutMail($booking->fresh()->load('room')));
                         } catch (\Exception $e) {
-                            \Log::error('Failed to send check-out email to staff: ' . $staff->email . ' - ' . $e->getMessage());
+                            Log::error('Failed to send check-out email to staff: ' . $staff->email . ' - ' . $e->getMessage());
                         }
                     }
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to send check-out emails to managers/admins: ' . $e->getMessage());
+                Log::error('Failed to send check-out emails to managers/admins: ' . $e->getMessage());
             }
 
             return response()->json([
@@ -1977,7 +1978,7 @@ class BookingController extends Controller
             $booking->load('room');
             Mail::to($booking->guest_email)->send(new \App\Mail\CheckInConfirmationMail($booking->fresh(), $wifiPassword, $wifiNetworkName));
         } catch (\Exception $e) {
-            \Log::error('Failed to send check-in confirmation email: ' . $e->getMessage());
+            Log::error('Failed to send check-in confirmation email: ' . $e->getMessage());
         }
 
         // Send SMS notification to housekeepers for guest self check-in
@@ -1999,7 +2000,7 @@ class BookingController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            \Log::error('Failed to send check-in SMS to housekeepers (self check-in): ' . $e->getMessage());
+            Log::error('Failed to send check-in SMS to housekeepers (self check-in): ' . $e->getMessage());
         }
 
         return response()->json([
@@ -2046,7 +2047,7 @@ class BookingController extends Controller
             $bookingReference = $booking->booking_reference;
             $booking->delete();
 
-            \Log::info('Booking deleted', [
+            Log::info('Booking deleted', [
                 'booking_reference' => $bookingReference,
                 'deleted_by' => auth()->guard('staff')->user()->name ?? 'System'
             ]);
@@ -2056,7 +2057,7 @@ class BookingController extends Controller
                 'message' => 'Booking deleted successfully!'
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to delete booking', [
+            Log::error('Failed to delete booking', [
                 'booking_id' => $booking->id,
                 'error' => $e->getMessage()
             ]);
@@ -2405,7 +2406,7 @@ class BookingController extends Controller
                     Mail::to($booking->guest_email)->queue(new \App\Mail\ExpirationWarningMail($booking, null, '24h'));
                     $results[] = "Email sent to {$booking->guest_email}";
                 } catch (\Exception $e) {
-                    \Log::error('Failed to send reminder email: ' . $e->getMessage());
+                    Log::error('Failed to send reminder email: ' . $e->getMessage());
                     $results[] = "Email failed: " . $e->getMessage();
                 }
                 
@@ -2442,7 +2443,7 @@ class BookingController extends Controller
                 'message' => $message
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send reminder: ' . $e->getMessage());
+            Log::error('Failed to send reminder: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to send reminder: ' . $e->getMessage()
@@ -2725,7 +2726,7 @@ class BookingController extends Controller
                 ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Failed to create extension notification: ' . $e->getMessage());
+            Log::error('Failed to create extension notification: ' . $e->getMessage());
         }
 
         // Send email notification for extension request (queued for async processing)
@@ -2733,7 +2734,7 @@ class BookingController extends Controller
             \Illuminate\Support\Facades\Mail::to($booking->guest_email)
                 ->queue(new \App\Mail\ExtensionRequestSubmittedMail($booking->fresh()->load('room')));
         } catch (\Exception $e) {
-            \Log::error('Failed to queue extension request submitted email: ' . $e->getMessage());
+            Log::error('Failed to queue extension request submitted email: ' . $e->getMessage());
         }
 
         // Notify reception via SMS (Instead of email for faster response)
@@ -2751,7 +2752,7 @@ class BookingController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            \Log::error('Failed to send extension request SMS to reception: ' . $e->getMessage());
+            Log::error('Failed to send extension request SMS to reception: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -2886,7 +2887,7 @@ class BookingController extends Controller
                 }
             }
         } catch (\Exception $e) {
-            \Log::error('Failed to create decrease notification or SMS: ' . $e->getMessage());
+            Log::error('Failed to create decrease notification or SMS: ' . $e->getMessage());
         }
 
         // Calculate nights difference for frontend display
@@ -2983,7 +2984,7 @@ class BookingController extends Controller
 
         // Log the modification
         try {
-            \Log::info('Booking dates modified by staff', [
+            Log::info('Booking dates modified by staff', [
                 'booking_id' => $booking->id,
                 'booking_reference' => $booking->booking_reference,
                 'staff_id' => $user->id,
@@ -2995,7 +2996,7 @@ class BookingController extends Controller
                 'reason' => $validated['reason'] ?? null,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Failed to log booking date modification: ' . $e->getMessage());
+            Log::error('Failed to log booking date modification: ' . $e->getMessage());
         }
 
         // If extending, send email notification to guest
@@ -3018,7 +3019,7 @@ class BookingController extends Controller
                     ]);
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to create extension notification: ' . $e->getMessage());
+                Log::error('Failed to create extension notification: ' . $e->getMessage());
             }
 
             // Send email notification (queued for async processing)
@@ -3026,7 +3027,7 @@ class BookingController extends Controller
                 \Illuminate\Support\Facades\Mail::to($booking->guest_email)
                     ->queue(new \App\Mail\ExtensionRequestStatusMail($booking, 'approved'));
             } catch (\Exception $e) {
-                \Log::error('Failed to queue extension approved email: ' . $e->getMessage());
+                Log::error('Failed to queue extension approved email: ' . $e->getMessage());
             }
         }
 
@@ -3171,6 +3172,80 @@ class BookingController extends Controller
     }
 
     /**
+     * Cancel all bookings in a company group (Reception/Admin)
+     */
+    public function cancelCompanyGroup(Request $request, \App\Models\Company $company)
+    {
+        // Verify user is staff (manager or reception)
+        $user = auth()->guard('staff')->user();
+        if (!$user || !in_array(strtolower($user->role ?? ''), ['manager', 'reception', 'super_admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only staff can cancel group bookings.',
+            ], 403);
+        }
+
+        $request->validate([
+            'cancellation_reason' => 'nullable|string|max:500',
+        ]);
+
+        $reason = $request->cancellation_reason ?? 'Cancelled by administrator (Group Cancellation).';
+
+        // Find all bookings for this company that are NOT completed/cancelled/checked_out
+        $bookings = \App\Models\Booking::where('company_id', $company->id)
+            ->where('is_corporate_booking', true)
+            ->whereNotIn('status', ['cancelled', 'completed'])
+            ->whereNotIn('check_in_status', ['checked_out'])
+            ->get();
+
+        if ($bookings->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active bookings found for this company group that can be cancelled.',
+            ], 400);
+        }
+
+        $cancelledCount = 0;
+        $now = \Carbon\Carbon::now();
+
+        foreach ($bookings as $booking) {
+            $updateData = [
+                'status' => 'cancelled',
+                'cancelled_at' => $now,
+                'payment_status' => 'cancelled',
+                'cancellation_reason' => $reason
+            ];
+
+            $booking->update($updateData);
+            $cancelledCount++;
+            
+            // Mark notifications as read
+            try {
+                $notificationService = new NotificationService();
+                $notificationService->markNotificationAsReadByNotifiable(
+                    \App\Models\Booking::class,
+                    $booking->id,
+                    'booking',
+                    'reception'
+                );
+                $notificationService->markNotificationAsReadByNotifiable(
+                    \App\Models\Booking::class,
+                    $booking->id,
+                    'booking',
+                    'manager'
+                );
+            } catch (\Exception $e) {
+                Log::error('Failed to mark group booking notification as read: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully cancelled $cancelledCount bookings for company '{$company->name}'.",
+        ]);
+    }
+
+    /**
      * Approve or reject extension (Reception/Admin)
      */
     public function handleExtension(Request $request, Booking $booking)
@@ -3249,7 +3324,7 @@ class BookingController extends Controller
                     'manager'
                 );
             } catch (\Exception $e) {
-                \Log::error('Failed to mark request notification as read: ' . $e->getMessage());
+                Log::error('Failed to mark request notification as read: ' . $e->getMessage());
             }
 
             // Notify guest
@@ -3280,13 +3355,13 @@ class BookingController extends Controller
                         'link' => route('customer.dashboard'),
                     ]);
                 } else {
-                    \Log::warning('Could not create extension notification - guest user not found', [
+                    Log::warning('Could not create extension notification - guest user not found', [
                         'booking_id' => $booking->id,
                         'guest_email' => $booking->guest_email
                     ]);
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to create approval notification: ' . $e->getMessage());
+                Log::error('Failed to create approval notification: ' . $e->getMessage());
             }
 
             // Send email notification to guest (Queued)
@@ -3294,7 +3369,7 @@ class BookingController extends Controller
                 \Illuminate\Support\Facades\Mail::to($booking->guest_email)
                     ->queue(new \App\Mail\ExtensionRequestStatusMail($booking->fresh()->load('room'), 'approved'));
             } catch (\Exception $e) {
-                \Log::error('Failed to queue extension approved email: ' . $e->getMessage());
+                Log::error('Failed to queue extension approved email: ' . $e->getMessage());
             }
 
             // Send SMS notification to guest (Faster)
@@ -3309,7 +3384,7 @@ class BookingController extends Controller
                     );
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to send extension approval SMS: ' . $e->getMessage());
+                Log::error('Failed to send extension approval SMS: ' . $e->getMessage());
             }
 
             // Note: Staff email notifications removed for faster response (O(n) SMTP delay eliminated).
@@ -3347,7 +3422,7 @@ class BookingController extends Controller
                     'manager'
                 );
             } catch (\Exception $e) {
-                \Log::error('Failed to mark extension request notification as read: ' . $e->getMessage());
+                Log::error('Failed to mark extension request notification as read: ' . $e->getMessage());
             }
 
             // Notify guest
@@ -3373,13 +3448,13 @@ class BookingController extends Controller
                         'link' => route('customer.dashboard'),
                     ]);
                 } else {
-                    \Log::warning('Could not create extension rejection notification - guest user not found', [
+                    Log::warning('Could not create extension rejection notification - guest user not found', [
                         'booking_id' => $booking->id,
                         'guest_email' => $booking->guest_email
                     ]);
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to create rejection notification: ' . $e->getMessage());
+                Log::error('Failed to create rejection notification: ' . $e->getMessage());
             }
 
             // Send email notification to guest (Queued)
@@ -3387,7 +3462,7 @@ class BookingController extends Controller
                 \Illuminate\Support\Facades\Mail::to($booking->guest_email)
                     ->queue(new \App\Mail\ExtensionRequestStatusMail($booking->fresh()->load('room'), 'rejected'));
             } catch (\Exception $e) {
-                \Log::error('Failed to queue extension rejected email: ' . $e->getMessage());
+                Log::error('Failed to queue extension rejected email: ' . $e->getMessage());
             }
 
             // Send SMS notification to guest (Faster)
@@ -3402,7 +3477,7 @@ class BookingController extends Controller
                     );
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to send extension rejection SMS: ' . $e->getMessage());
+                Log::error('Failed to send extension rejection SMS: ' . $e->getMessage());
             }
 
             // Note: Staff email notifications removed for faster response.
@@ -3413,6 +3488,74 @@ class BookingController extends Controller
                 'booking' => $booking->fresh(),
             ]);
         }
+    }
+
+    /**
+     * Process late checkout hours and charges (Reception/Admin)
+     */
+    public function handleLateCheckout(Request $request, Booking $booking)
+    {
+        // Verify user is staff (manager or reception)
+        $user = auth()->guard('staff')->user();
+        if (!$user || !in_array(strtolower($user->role ?? ''), ['manager', 'reception', 'super_admin', 'owner'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Only staff can handle late checkouts.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'hours' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        // Find or create late checkout service
+        $lateCheckoutService = \App\Models\Service::where('name', 'Late Checkout')->first();
+        if (!$lateCheckoutService) {
+            $lateCheckoutService = \App\Models\Service::create([
+                'name' => 'Late Checkout', 
+                'category' => 'other', 
+                'price_tsh' => 0, 
+                'unit' => 'per_hour', 
+                'is_active' => true
+            ]);
+        }
+
+        // Create the ServiceRequest to document this charge on the guest's bill
+        $serviceRequest = new \App\Models\ServiceRequest([
+            'booking_id' => $booking->id,
+            'service_id' => $lateCheckoutService->id,
+            'guest_request' => "Late Checkout ({$validated['hours']} hours)",
+            'quantity' => 1,
+            'unit_price_tsh' => $validated['amount'],
+            'total_price_tsh' => $validated['amount'],
+            'status' => 'completed',
+            'payment_status' => 'pending',
+            'reception_notes' => $validated['notes'],
+            'requested_at' => now(),
+            'approved_at' => now(),
+            'completed_at' => now(),
+            'approved_by' => $user->id,
+        ]);
+
+        $serviceRequest->save();
+
+        // Update booking running totals
+        $booking->total_service_charges_tsh += $validated['amount'];
+        $booking->total_bill_tsh += $validated['amount'];
+        
+        // If they had already paid in full, status becomes partial again to allow checkout balance settlement
+        if ($booking->payment_status === 'paid' && $validated['amount'] > 0) {
+            $booking->payment_status = 'partial';
+        }
+        
+        $booking->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Late checkout fee of " . number_format($validated['amount']) . " TZS added successfully for {$validated['hours']} extra hour(s).",
+        ]);
     }
 
     /**
@@ -3730,6 +3873,7 @@ class BookingController extends Controller
                                 'link' => $role === 'reception' ? route('reception.bookings') : ($role === 'bar_keeper' ? route('bar-keeper.dashboard') : route('chef-master.dashboard')),
                             ]);
                             
+                            /* 
                             // Send email notification to all staff members of this department
                             try {
                                 $departmentStaff = \App\Models\Staff::where('role', $role)
@@ -3752,18 +3896,23 @@ class BookingController extends Controller
                                             $message->to($staff->email)
                                                 ->subject($emailSubject);
                                         });
+                                        Log::info('Special request email notification sent to staff member', [
+                                            'staff_email' => $staff->email,
+                                            'role' => $role
+                                        ]);
                                     } catch (\Exception $e) {
-                                        \Log::error('Failed to send special request email to staff', [
+                                        Log::error('Failed to send special request email to staff', [
                                             'staff_email' => $staff->email,
                                             'error' => $e->getMessage()
                                         ]);
                                     }
                                 }
                             } catch (\Exception $e) {
-                                \Log::error('Failed to send special request notifications', [
+                                Log::error('Failed to send special request notifications', [
                                     'error' => $e->getMessage()
                                 ]);
                             }
+                            */
                         }
                     }
                 }
@@ -3783,7 +3932,7 @@ class BookingController extends Controller
                         $generalNotes
                     ));
                 } catch (\Exception $e) {
-                    \Log::error('Failed to send booking confirmation email to guest', [
+                    Log::error('Failed to send booking confirmation email to guest', [
                         'booking_reference' => $bookingReference,
                         'guest_email' => $guestData['email'],
                         'error' => $e->getMessage()
@@ -3799,7 +3948,7 @@ class BookingController extends Controller
                         ];
                         Mail::to($guestData['email'])->send(new \App\Mail\WelcomeMail($guestForEmail, $password));
                     } catch (\Exception $e) {
-                        \Log::error('Failed to send welcome email', [
+                        Log::error('Failed to send welcome email', [
                             'guest_email' => $guestData['email'],
                             'error' => $e->getMessage()
                         ]);
@@ -3886,7 +4035,7 @@ class BookingController extends Controller
                 ]);
                 $corporatePdfData = $corporatePdf->output();
             } catch (\Exception $e) {
-                \Log::error('Corporate PDF generation failed in storeCorporate: ' . $e->getMessage());
+                Log::error('Corporate PDF generation failed in storeCorporate: ' . $e->getMessage());
             }
 
             // Send booking confirmation emails to all guests (with updated payment info)
@@ -3911,7 +4060,7 @@ class BookingController extends Controller
                         ]);
                         $guestPdfData = $guestPdf->output();
                     } catch (\Exception $ge) {
-                        \Log::error('Guest PDF generation failed in storeCorporate: ' . $ge->getMessage());
+                        Log::error('Guest PDF generation failed in storeCorporate: ' . $ge->getMessage());
                     }
 
                     Mail::to($booking->guest_email)->send(new BookingConfirmationMail(
@@ -3923,7 +4072,7 @@ class BookingController extends Controller
                         $guestPdfData
                     ));
                     
-                    \Log::info('Corporate booking confirmation email sent to guest', [
+                    Log::info('Corporate booking confirmation email sent to guest', [
                         'booking_reference' => $booking->booking_reference,
                         'guest_email' => $booking->guest_email
                     ]);
@@ -3939,11 +4088,11 @@ class BookingController extends Controller
                             $booking->room->room_number
                         );
                     } catch (\Exception $se) {
-                        \Log::error('Guest SMS failed in storeCorporate: ' . $se->getMessage());
+                        Log::error('Guest SMS failed in storeCorporate: ' . $se->getMessage());
                     }
 
                 } catch (\Exception $e) {
-                    \Log::error('Failed to process guest notification in storeCorporate', [
+                    Log::error('Failed to process guest notification in storeCorporate', [
                         'booking_reference' => $booking->booking_reference,
                         'guest_email' => $booking->guest_email,
                         'error' => $e->getMessage()
@@ -3964,12 +4113,12 @@ class BookingController extends Controller
                     $generalNotes,
                     $corporatePdfData
                 ));
-                \Log::info('Company invoice email sent', [
+                Log::info('Company invoice email sent', [
                     'company_email' => $validated['company_email'],
                     'company_name' => $company->name
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to send company invoice email', [
+                Log::error('Failed to send company invoice email', [
                     'company_id' => $company->id,
                     'error' => $e->getMessage()
                 ]);
@@ -3985,7 +4134,7 @@ class BookingController extends Controller
                     $checkOut,
                     $generalNotes
                 ));
-                \Log::info('Guider confirmation email sent', [
+                Log::info('Guider confirmation email sent', [
                     'guider_email' => $validated['guider_email'],
                     'guider_name' => $validated['guider_name']
                 ]);
@@ -3996,11 +4145,11 @@ class BookingController extends Controller
                         . count($createdBookings) . " guests, Check-in: " . $checkIn->format('Y-m-d') . ". Ref: " . $company->name;
                     $smsService->sendSingle($validated['guider_phone'], $smsMessage);
                 } catch (\Exception $se) {
-                    \Log::error('Guider SMS failed in storeCorporate: ' . $se->getMessage());
+                    Log::error('Guider SMS failed in storeCorporate: ' . $se->getMessage());
                 }
 
             } catch (\Exception $e) {
-                \Log::error('Failed to send guider confirmation email', [
+                Log::error('Failed to send guider confirmation email', [
                     'guider_email' => $validated['guider_email'],
                     'error' => $e->getMessage()
                 ]);
@@ -4026,7 +4175,7 @@ class BookingController extends Controller
                     ]);
                 }
             } catch (\Exception $e) {
-                \Log::error('Failed to create reception notification', [
+                Log::error('Failed to create reception notification', [
                     'error' => $e->getMessage()
                 ]);
             }
@@ -4041,7 +4190,7 @@ class BookingController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Failed to create corporate booking', [
+            Log::error('Failed to create corporate booking', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -4069,85 +4218,56 @@ class BookingController extends Controller
         $checkOut = Carbon::parse($validated['check_out']);
         $roomTypes = $validated['room_types'];
 
-        // Base query for all potentially available rooms
-        $baseQuery = Room::whereIn('room_type', $roomTypes)
+        // Base query: get all rooms of the selected types
+        $allRoomsResult = Room::whereIn('room_type', $roomTypes)
             ->whereIn('status', ['available', 'occupied', 'to_be_cleaned'])
-            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                $query->whereIn('status', ['pending', 'confirmed'])
-                      ->where(function ($q) use ($checkIn, $checkOut) {
-                          $q->where('check_in', '<', $checkOut)
-                            ->where('check_out', '>', $checkIn);
-                      })
-                      ->where(function ($q) {
-                          $q->where(function ($statusQ) {
-                              $statusQ->where('status', 'confirmed')
-                                      ->where(function ($paymentQ) {
-                                          $paymentQ->whereIn('payment_status', ['paid', 'partial'])
-                                                  ->orWhere(function ($subQ) {
-                                                      $subQ->where('payment_status', 'pending')
-                                                           ->where(function ($deadlineQ) {
-                                                               $deadlineQ->whereNull('payment_deadline')
-                                                                        ->orWhere('payment_deadline', '>', Carbon::now());
-                                                           });
-                                                  });
-                                      });
-                          })
-                          ->orWhere(function ($pendingQ) {
-                              $pendingQ->where('status', 'pending')
-                                      ->where(function ($expireQ) {
-                                          $expireQ->whereNull('expires_at')
-                                                 ->orWhere('expires_at', '>', Carbon::now());
-                                      });
-                          });
-                      });
-            });
-
-        $allAvailableRooms = $baseQuery->orderBy('room_type', 'asc')
+            ->orderBy('room_type', 'asc')
             ->orderBy('status', 'asc')
             ->orderBy('room_number', 'asc')
             ->get();
 
-        $mapRoom = function ($room) use ($checkIn) {
+        $mapRoom = function ($room) use ($checkIn, $checkOut) {
             $images = $room->images ?? [];
             $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
 
-            // Check for actual active occupancy (guest currently checked in)
+            // 1. Check for ACTUAL active occupancy (physically checked in)
             $activeGuestBooking = $room->bookings()
                 ->where('check_in_status', 'checked_in')
                 ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
                 ->first();
 
-            // Room is available now ONLY if its DB status is 'available' AND no one is actually checked in
+            // 2. Check for overlapping bookings for selected dates
+            $blockingBooking = $room->bookings()
+                ->where('status', 'confirmed')
+                ->whereIn('payment_status', ['paid', 'partial', 'pending'])
+                ->where(function ($q) use ($checkIn, $checkOut) {
+                    $q->where('check_in', '<', $checkOut->format('Y-m-d'))
+                      ->where('check_out', '>', $checkIn->format('Y-m-d'));
+                })
+                ->orderBy('check_in', 'asc')
+                ->first();
+
+            $isAvailableForDates = !$blockingBooking;
             $isAvailableNow = ($room->status === 'available' && !$activeGuestBooking);
             
-            // For soon available, find current checkout date
             $checkoutDate = null;
-            $isSoonAvailable = !$isAvailableNow;
-            
-            if ($isSoonAvailable) {
-                if ($activeGuestBooking) {
-                    $checkoutDate = Carbon::parse($activeGuestBooking->check_out)->format('Y-m-d');
-                } else {
-                    // Fallback to checking for recently checked out or soon to check out bookings
-                    $lastOrNextBooking = $room->bookings()
-                        ->whereIn('status', ['confirmed'])
-                        ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                        ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
-                        ->orderBy('check_out', 'desc')
-                        ->first();
+            $displayStatus = $room->status;
 
-                    if ($lastOrNextBooking) {
-                        $checkoutDate = Carbon::parse($lastOrNextBooking->check_out)->format('Y-m-d');
-                    } else if ($room->status === 'to_be_cleaned') {
-                        $checkoutDate = 'Today';
-                    }
-                }
+            if ($activeGuestBooking) {
+                $displayStatus = 'occupied';
+                $checkoutDate = Carbon::parse($activeGuestBooking->check_out)->format('Y-m-d');
+            } else if ($blockingBooking) {
+                $displayStatus = 'reserved';
+                $checkoutDate = Carbon::parse($blockingBooking->check_out)->format('Y-m-d');
+            } else if ($room->status === 'to_be_cleaned') {
+                $checkoutDate = 'Today';
             }
 
-            // Logic for selectable:
-            // If check-in is today, and room is NOT available now (due to cleaning OR current occupancy), disallow selection.
-            $canSelect = true;
-            if ($checkIn->isToday() && !$isAvailableNow) {
+            // A room is selectable if:
+            // - It has no overlapping booking for the selected dates
+            // - AND if check-in is today, it must be 'available' (cleaned and empty)
+            $canSelect = $isAvailableForDates;
+            if ($canSelect && $checkIn->isToday() && !$isAvailableNow) {
                 $canSelect = false;
             }
 
@@ -4155,24 +4275,24 @@ class BookingController extends Controller
                 'id' => $room->id,
                 'room_number' => $room->room_number,
                 'room_type' => $room->room_type,
-                'price_per_night' => $room->price_per_night,
-                'price_per_night_tzs' => $room->price_per_night_tzs,
+                'price_per_night' => (float)$room->price_per_night,
+                'price_per_night_tzs' => (float)$room->price_per_night_tzs,
                 'capacity' => $room->capacity ?? 1,
                 'bed_type' => $room->bed_type ?? null,
                 'floor_location' => $room->floor_location ?? null,
                 'image' => $firstImage,
                 'images' => $images,
                 'is_available_now' => $isAvailableNow,
-                'is_soon_available' => $isSoonAvailable,
+                'is_available_for_dates' => $isAvailableForDates,
                 'checkout_date' => $checkoutDate,
-                'status' => $activeGuestBooking ? 'occupied' : $room->status, // Use active status if checked in
+                'status' => $displayStatus,
                 'can_select' => $canSelect,
             ];
         };
 
         return response()->json([
             'success' => true,
-            'available_rooms' => $allAvailableRooms->map($mapRoom)->values(),
+            'available_rooms' => $allRoomsResult->map($mapRoom)->values(),
         ]);
     }
 
@@ -4190,37 +4310,8 @@ class BookingController extends Controller
         $checkIn = Carbon::parse($validated['check_in']);
         $checkOut = Carbon::parse($validated['check_out']);
 
-        // Base query for all potentially available rooms (available, occupied, to_be_cleaned)
-        $baseQuery = Room::whereIn('status', ['available', 'occupied', 'to_be_cleaned'])
-            ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut) {
-                $query->whereIn('status', ['pending', 'confirmed'])
-                      ->where(function ($q) use ($checkIn, $checkOut) {
-                          $q->where('check_in', '<', $checkOut)
-                            ->where('check_out', '>', $checkIn);
-                      })
-                      ->where(function ($q) {
-                          $q->where(function ($statusQ) {
-                              $statusQ->where('status', 'confirmed')
-                                      ->where(function ($paymentQ) {
-                                          $paymentQ->whereIn('payment_status', ['paid', 'partial'])
-                                                  ->orWhere(function ($subQ) {
-                                                      $subQ->where('payment_status', 'pending')
-                                                           ->where(function ($deadlineQ) {
-                                                               $deadlineQ->whereNull('payment_deadline')
-                                                                        ->orWhere('payment_deadline', '>', Carbon::now());
-                                                           });
-                                                  });
-                                      });
-                          })
-                          ->orWhere(function ($pendingQ) {
-                              $pendingQ->where('status', 'pending')
-                                      ->where(function ($expireQ) {
-                                          $expireQ->whereNull('expires_at')
-                                                 ->orWhere('expires_at', '>', Carbon::now());
-                                      });
-                          });
-                      });
-            });
+        // Base query: get all rooms of the selected type
+        $baseQuery = Room::whereIn('status', ['available', 'occupied', 'to_be_cleaned']);
 
         // Get rooms for the selected type
         $allRoomsOfType = (clone $baseQuery)->where('room_type', $validated['room_type'])
@@ -4235,47 +4326,53 @@ class BookingController extends Controller
             ->orderBy('room_number', 'asc')
             ->get();
 
-        $mapRoom = function ($room) use ($checkIn) {
+        $mapRoom = function ($room) use ($checkIn, $checkOut) {
             $images = $room->images ?? [];
             $firstImage = !empty($images) && is_array($images) ? $images[0] : null;
 
-            // Check for actual active occupancy (guest currently checked in)
+            // 1. Check for ACTUAL active occupancy (guest currently physically in the room)
             $activeGuestBooking = $room->bookings()
                 ->where('check_in_status', 'checked_in')
                 ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
                 ->first();
 
-            // Room is available now ONLY if its DB status is 'available' AND no one is actually checked in
+            // 2. Check for ANY overlapping booking for the SELECTED date range
+            $blockingBooking = $room->bookings()
+                ->where('status', 'confirmed')
+                ->whereIn('payment_status', ['paid', 'partial', 'pending'])
+                ->where(function ($q) use ($checkIn, $checkOut) {
+                    $q->where('check_in', '<', $checkOut->format('Y-m-d'))
+                      ->where('check_out', '>', $checkIn->format('Y-m-d'));
+                })
+                ->orderBy('check_in', 'asc')
+                ->first();
+
+            // Room status strictly for the SELECTED DATES
+            $isAvailableForDates = !$blockingBooking;
+            
+            // Room availability NOW (for display purposes)
             $isAvailableNow = ($room->status === 'available' && !$activeGuestBooking);
             
-            // For soon available, find current checkout date
+            // Determine display status and checkout date hint
             $checkoutDate = null;
-            $isSoonAvailable = !$isAvailableNow;
-            
-            if ($isSoonAvailable) {
-                if ($activeGuestBooking) {
-                    $checkoutDate = Carbon::parse($activeGuestBooking->check_out)->format('Y-m-d');
-                } else {
-                    // Fallback to checking for recently checked out or soon to check out bookings
-                    $lastOrNextBooking = $room->bookings()
-                        ->whereIn('status', ['confirmed'])
-                        ->where('check_out', '<=', $checkIn->format('Y-m-d'))
-                        ->where('check_out', '>=', Carbon::now()->format('Y-m-d'))
-                        ->orderBy('check_out', 'desc')
-                        ->first();
+            $displayStatus = $room->status;
 
-                    if ($lastOrNextBooking) {
-                        $checkoutDate = Carbon::parse($lastOrNextBooking->check_out)->format('Y-m-d');
-                    } else if ($room->status === 'to_be_cleaned') {
-                        $checkoutDate = 'Today';
-                    }
-                }
+            if ($activeGuestBooking) {
+                $displayStatus = 'occupied';
+                $checkoutDate = Carbon::parse($activeGuestBooking->check_out)->format('Y-m-d');
+            } else if ($blockingBooking) {
+                // If it's not active but blocked for these dates
+                $displayStatus = 'reserved'; 
+                $checkoutDate = Carbon::parse($blockingBooking->check_out)->format('Y-m-d');
+            } else if ($room->status === 'to_be_cleaned') {
+                $checkoutDate = 'Today';
             }
 
-            // Logic for selectable:
-            // If check-in is today, and room is NOT available now (due to cleaning OR current occupancy), disallow selection.
-            $canSelect = true;
-            if ($checkIn->isToday() && !$isAvailableNow) {
+            // A room is selectable if:
+            // - It has no overlapping booking for the selected dates
+            // - AND if check-in is today, it must be 'available' (meaning cleaned and physically empty)
+            $canSelect = $isAvailableForDates;
+            if ($canSelect && $checkIn->isToday() && !$isAvailableNow) {
                 $canSelect = false;
             }
 
@@ -4291,10 +4388,11 @@ class BookingController extends Controller
                 'image' => $firstImage,
                 'images' => $images,
                 'is_available_now' => $isAvailableNow,
-                'is_soon_available' => $isSoonAvailable,
+                'is_available_for_dates' => $isAvailableForDates,
                 'checkout_date' => $checkoutDate,
-                'status' => $activeGuestBooking ? 'occupied' : $room->status, // Use active status if checked in
+                'status' => $displayStatus,
                 'can_select' => $canSelect,
+                'blocking_booking_id' => $blockingBooking ? $blockingBooking->id : null,
             ];
         };
 
@@ -4435,16 +4533,8 @@ class BookingController extends Controller
         $recommendedPrice = $room->price_per_night * $nights;
 
         // Calculate payment amounts from amount_paid
-        $totalPrice = $validated['total_price'];
+        $totalPriceInput = $validated['total_price'];
         $amountPaid = $validated['amount_paid'];
-        $paymentPercentage = $totalPrice > 0 ? ($amountPaid / $totalPrice) * 100 : 0;
-        $remainingAmount = $totalPrice - $amountPaid;
-
-        // Generate unique booking reference
-        $bookingReference = 'BK' . strtoupper(Str::random(8));
-        
-        // Generate unique guest ID
-        $guestId = $this->generateGuestId();
 
         // Get exchange rate — prefer staff override if provided
         $currencyService    = new CurrencyExchangeService();
@@ -4455,6 +4545,20 @@ class BookingController extends Controller
         $lockedExchangeRate = $customRate ?? $systemRate;
         $rateSource         = $request->input('rate_source') ?? null;
         $exchangeRateNote   = $request->input('exchange_rate_note') ?? null;
+
+        // If guest is Tanzanian, the UI sends total_price in TZS. 
+        // We leave it as TZS since the views (receipt, bookings list) dynamically handle it based on guest_type.
+        $totalPrice = $totalPriceInput;
+
+        $paymentPercentage = $totalPriceInput > 0 ? ($amountPaid / $totalPriceInput) * 100 : 0;
+        $remainingAmount = $totalPriceInput - $amountPaid;
+
+        // Generate unique booking reference
+        $bookingReference = 'BK' . strtoupper(Str::random(8));
+        
+        // Generate unique guest ID
+        $guestId = $this->generateGuestId();
+
 
         // Calculate payment deadline based on new policy
         $daysUntilArrival = Carbon::now()->diffInDays($checkIn, false);
@@ -4559,7 +4663,7 @@ class BookingController extends Controller
             ]);
             $pdfData = $pdf->output();
         } catch (\Exception $e) {
-            \Log::error('PDF generation failed in storeManual: ' . $e->getMessage());
+            Log::error('PDF generation failed in storeManual: ' . $e->getMessage());
         }
 
         // Send booking confirmation email
@@ -4573,7 +4677,7 @@ class BookingController extends Controller
             // Added pdfData as the 6th argument
             Mail::to($validated['guest_email'])->send(new BookingConfirmationMail($booking, $password, $paymentPercentage, $remainingAmount, null, $pdfData));
             $emailSent = true;
-            \Log::info('Manual booking confirmation email sent successfully', [
+            Log::info('Manual booking confirmation email sent successfully', [
                 'booking_reference' => $bookingReference,
                 'guest_email' => $validated['guest_email'],
                 'guest_name' => $fullName,
@@ -4592,7 +4696,7 @@ class BookingController extends Controller
                 $userFriendlyError = 'Email authentication failed. Please check SMTP credentials.';
             }
             
-            \Log::error('Failed to send manual booking confirmation email', [
+            Log::error('Failed to send manual booking confirmation email', [
                 'booking_reference' => $bookingReference,
                 'guest_email' => $validated['guest_email'],
                 'error' => $e->getMessage(),
@@ -4613,9 +4717,9 @@ class BookingController extends Controller
                 $checkOut->format('Y-m-d'),
                 $room->room_number
             );
-            \Log::info('Manual booking SMS sent successfully', ['booking_reference' => $bookingReference]);
+            Log::info('Manual booking SMS sent successfully', ['booking_reference' => $bookingReference]);
         } catch (\Exception $e) {
-            \Log::error('Failed to send manual booking SMS: ' . $e->getMessage());
+            Log::error('Failed to send manual booking SMS: ' . $e->getMessage());
         }
 
 
@@ -4635,14 +4739,14 @@ class BookingController extends Controller
                 ];
                 // Send welcome email immediately (not queued)
                 Mail::to($validated['guest_email'])->send(new \App\Mail\WelcomeMail($guestForEmail, $password));
-                \Log::info('Welcome email sent successfully for manual booking', [
+                Log::info('Welcome email sent successfully for manual booking', [
                     'booking_reference' => $bookingReference,
                     'guest_email' => $validated['guest_email'],
                     'guest_name' => $fullName,
                     'is_new_guest' => $isNewGuest
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to send welcome email for manual booking', [
+                Log::error('Failed to send welcome email for manual booking', [
                     'booking_reference' => $bookingReference,
                     'guest_email' => $validated['guest_email'],
                     'error' => $e->getMessage(),
@@ -4651,7 +4755,7 @@ class BookingController extends Controller
             }
         }
  else {
-            \Log::info('Welcome email skipped - guest already exists', [
+            Log::info('Welcome email skipped - guest already exists', [
                 'booking_reference' => $bookingReference,
                 'guest_email' => $validated['guest_email'],
                 'is_new_guest' => $isNewGuest
@@ -4667,7 +4771,7 @@ class BookingController extends Controller
             $notificationService = new NotificationService();
             $notificationService->createBookingNotification($booking->load('room'));
         } catch (\Exception $e) {
-            \Log::error('Failed to create booking notification: ' . $e->getMessage());
+            Log::error('Failed to create booking notification: ' . $e->getMessage());
         }
 
         // Send special requests notifications to selected departments
@@ -4699,12 +4803,12 @@ class BookingController extends Controller
                     }
                 }
                 
-                \Log::info('Special requests notifications (DB only) sent to departments', [
+                Log::info('Special requests notifications (DB only) sent to departments', [
                     'booking_reference' => $bookingReference,
                     'departments' => $departments
                 ]);
             } catch (\Exception $e) {
-                \Log::error('Failed to process special requests notifications: ' . $e->getMessage());
+                Log::error('Failed to process special requests notifications: ' . $e->getMessage());
             }
         }
 
@@ -5230,7 +5334,7 @@ class BookingController extends Controller
             }
             $pdfData = $pdf->output();
         } catch (\Exception $e) {
-            \Log::error('PDF generation failed in storeInvoice: ' . $e->getMessage());
+            Log::error('PDF generation failed in storeInvoice: ' . $e->getMessage());
         }
 
         // ---------------------------------------------------------
@@ -5256,14 +5360,14 @@ class BookingController extends Controller
             
             Mail::to($validated['guest_email'])->send($mailable);
             $emailSent = true;
-            \Log::info('Invoice email sent successfully', [
+            Log::info('Invoice email sent successfully', [
                 'booking_reference' => $bookingReference,
                 'guest_email' => $validated['guest_email'],
                 'has_pdf' => !empty($pdfData)
             ]);
         } catch (\Throwable $e) {
             $emailError = $e->getMessage();
-            \Log::error('Invoice email failed: ' . $e->getMessage());
+            Log::error('Invoice email failed: ' . $e->getMessage());
         }
 
         try {
@@ -5272,7 +5376,7 @@ class BookingController extends Controller
             $smsMessage = "Dear {$firstName}, we've sent your PrimeLand Hotel {$label} invoice to {$validated['guest_email']}. Ref: {$bookingReference}. Valid for 48h.";
             $smsService->sendSingle($validated['guest_phone'], $smsMessage);
         } catch (\Throwable $e) {
-            \Log::error('Invoice SMS failed: ' . $e->getMessage());
+            Log::error('Invoice SMS failed: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -5396,7 +5500,7 @@ class BookingController extends Controller
             }
             return $pdf->download($booking->booking_reference . '.pdf');
         } catch (\Exception $e) {
-            \Log::error('PDF download failed: ' . $e->getMessage());
+            Log::error('PDF download failed: ' . $e->getMessage());
             return back()->with('error', 'Could not generate PDF: ' . $e->getMessage());
         }
     }

@@ -103,6 +103,7 @@
             <li><a class="treeview-item" href="{{ route('admin.rooms.index') }}"><i class="icon fa fa-list"></i> Room List</a></li>
             <li><a class="treeview-item" href="{{ route('admin.rooms.status') }}"><i class="icon fa fa-info-circle"></i> Occupancy Status</a></li>
             <li><a class="treeview-item" href="{{ route('admin.rooms.cleaning') }}"><i class="icon fa fa-broom"></i> Housekeeping</a></li>
+            <li><a class="treeview-item" href="{{ route('reception.lost-found.index') }}"><i class="icon fa fa-suitcase"></i> Lost & Found</a></li>
         </ul>
     </li>
 

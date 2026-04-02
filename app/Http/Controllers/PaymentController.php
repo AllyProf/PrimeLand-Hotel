@@ -473,6 +473,7 @@ class PaymentController extends Controller
                 Log::error('Failed to send payment confirmation SMS: ' . $e->getMessage());
             }
 
+            /* 
             // Send email notification to managers and super admins for payment received
             try {
                 $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
@@ -496,6 +497,7 @@ class PaymentController extends Controller
             } catch (\Exception $e) {
                 Log::error('Failed to send payment received emails to managers/admins: ' . $e->getMessage());
             }
+            */
 
             // Create notification for payment completion
             try {
@@ -810,6 +812,7 @@ class PaymentController extends Controller
             Log::error('Failed to send WhatsApp payment confirmation: ' . $e->getMessage());
         }
 
+        /* 
         // Send email notification to managers and super admins for payment received
         try {
             $managersAndAdmins = \App\Models\Staff::whereIn('role', ['manager', 'super_admin'])
@@ -830,6 +833,7 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to send payment received emails to managers/admins: ' . $e->getMessage());
         }
+        */
 
         // Create notification for payment completion
         try {

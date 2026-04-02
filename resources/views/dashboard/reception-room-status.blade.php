@@ -27,7 +27,7 @@
     
     .status-bg-available { background-color: #28a745 !important; }
     .status-bg-occupied { background-color: #dc3545 !important; }
-    .status-bg-reserved { background-color: #007bff !important; }
+    .status-bg-reserved { background-color: #e77a3a !important; }
     .status-bg-cleaning { background-color: #ffc107 !important; color: #333 !important; }
     .status-bg-maintenance { background-color: #6c757d !important; }
     .status-bg-closed { background-color: #343a40 !important; }
@@ -446,15 +446,23 @@
                                                 <div class="text-muted small mt-1">Status set by reception</div>
                                             @endif
                                         </div>
-                                    @elseif($room->has_immediate_booking && $room->upcoming_checkin)
+                                    @elseif($room->has_immediate_booking)
                                         <div class="small">
-                                            <strong class="text-primary"><i class="fa fa-suitcase"></i> {{ Str::limit($room->upcoming_checkin->guest_name, 18) }}</strong>
-                                            <div class="d-flex justify-content-between mt-1 text-muted">
-                                                <span>In: {{ \Carbon\Carbon::parse($room->upcoming_checkin->check_in)->format('M d') }}</span>
-                                                @if($isUpcomingCheckin)
-                                                    <span class="text-info font-weight-bold">Today!</span>
-                                                @endif
-                                            </div>
+                                            @php
+                                                $bookingDetails = $room->current_booking ?: $room->upcoming_checkin;
+                                            @endphp
+                                            @if($bookingDetails)
+                                                <strong class="text-primary"><i class="fa fa-suitcase"></i> {{ Str::limit($bookingDetails->guest_name, 18) }}</strong>
+                                                <div class="d-flex justify-content-between mt-1 text-muted">
+                                                    <span>In: {{ \Carbon\Carbon::parse($bookingDetails->check_in)->format('M d') }}</span>
+                                                    @if($isUpcomingCheckin || $room->has_immediate_booking)
+                                                        <span class="text-info font-weight-bold">Today!</span>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <strong class="text-primary"><i class="fa fa-calendar-check-o"></i> Reserved (Manual)</strong>
+                                                <div class="text-muted small mt-1">Status set by reception</div>
+                                            @endif
                                         </div>
                                     @elseif($room->status === 'closed')
                                          <div class="small text-dark font-weight-bold">
@@ -479,7 +487,7 @@
                                     @elseif($room->has_immediate_booking)
                                          <a href="{{ route('reception.reservations.check-in') }}" class="btn btn-sm btn-outline-info w-100" title="Check In"><i class="fa fa-sign-in"></i> Check In</a>
                                     @elseif($room->status === 'to_be_cleaned')
-                                         <button disabled class="btn btn-sm btn-outline-secondary w-100" title="Cleaning in Progress"><i class="fa fa-hourglass-half"></i> Cleaning...</button>
+                                         <button onclick="markRoomCleaned({{ $room->id }}, '{{ $room->room_number }}')" class="btn btn-sm btn-outline-dark w-100" title="Mark as Cleaned"><i class="fa fa-broom"></i> Mark Cleaned</button>
                                     @else
                                         <button disabled class="btn btn-sm btn-outline-secondary w-100">Unavailable</button>
                                     @endif
@@ -498,6 +506,62 @@
 
 @section('scripts')
 <script>
+    /**
+     * Mark room as cleaned (reception/manager capability)
+     */
+    function markRoomCleaned(roomId, roomNumber) {
+        Swal.fire({
+            title: 'Mark Room ' + roomNumber + ' as Cleaned?',
+            text: "This will make the room available for new bookings.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Cleaned',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#28a745',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Show loading
+                Swal.fire({
+                    title: 'Processing...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const url = `{{ $role === 'manager' ? url('manager/rooms') : url('reception/rooms') }}/${roomId}/mark-cleaned`;
+                
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Success!',
+                            text: data.message || 'Room marked as cleaned.',
+                            icon: 'success',
+                            confirmButtonColor: '#e77a3a'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', data.message || 'Could not update room status.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                });
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const statusFilter = document.getElementById('statusFilter');
         const typeFilter = document.getElementById('typeFilter');

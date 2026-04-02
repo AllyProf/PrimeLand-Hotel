@@ -250,14 +250,29 @@
             <div class="section">
                 <h2 class="section-title"><i class="fas fa-dollar-sign"></i> Payment Information</h2>
                 <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Total Price</span>
-                        <span class="info-value">${{ number_format($booking->total_price, 2) }} USD</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Total Price (TZS)</span>
-                        <span class="info-value">{{ number_format($booking->total_price * $exchangeRate, 2) }} TZS</span>
-                    </div>
+                    @php
+                        $isTanzanian = ($booking->guest_type ?? 'international') === 'guest_tanzanian' || ($booking->guest_type ?? 'international') === 'tanzanian';
+                        $effectiveRate = $booking->locked_exchange_rate ?? $exchangeRate ?? 2500;
+                    @endphp
+                    @if($isTanzanian)
+                        <div class="info-item">
+                            <span class="info-label">Total Price</span>
+                            <span class="info-value">{{ number_format($booking->total_price, 2) }} TZS</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Total Price (USD)</span>
+                            <span class="info-value">${{ number_format($booking->total_price / $effectiveRate, 2) }} USD</span>
+                        </div>
+                    @else
+                        <div class="info-item">
+                            <span class="info-label">Total Price</span>
+                            <span class="info-value">${{ number_format($booking->total_price, 2) }} USD</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Total Price (TZS)</span>
+                            <span class="info-value">{{ number_format($booking->total_price * $effectiveRate, 2) }} TZS</span>
+                        </div>
+                    @endif
                     <div class="info-item">
                         <span class="info-label">Amount Paid</span>
                         <span class="info-value">${{ number_format($booking->amount_paid ?? 0, 2) }} USD</span>

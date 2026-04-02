@@ -1539,8 +1539,13 @@
                     $bookingPriceTZS = $guestBillTZSMobile;
                     $bookingPriceUSD = $guestBillUSDMobile;
                   } else {
-                    $bookingPriceTZS = $booking->total_price * $bookingRate;
-                    $bookingPriceUSD = $booking->total_price;
+                    if ($isBookingTanzanian) {
+                        $bookingPriceTZS = (float)$booking->total_price;
+                        $bookingPriceUSD = $bookingPriceTZS / $bookingRate;
+                    } else {
+                        $bookingPriceTZS = $booking->total_price * $bookingRate;
+                        $bookingPriceUSD = (float)$booking->total_price;
+                    }
                   }
                 @endphp
                 @if($isCorporateMobile)
@@ -1628,7 +1633,11 @@
                   $bookingGuestType = $booking->guest_type ?? 'international';
                   $isBookingTanzanian = $bookingGuestType === 'tanzanian';
                   $bookingRate = $booking->locked_exchange_rate ?? $exchangeRate ?? 2500;
-                  $bookingPriceTZS = $booking->total_price * $bookingRate;
+                  if ($isBookingTanzanian) {
+                      $bookingPriceTZS = (float)$booking->total_price;
+                  } else {
+                      $bookingPriceTZS = $booking->total_price * $bookingRate;
+                  }
                 @endphp
                 <div class="mb-2"><strong>Total Price:</strong> 
                   @if($isBookingTanzanian)
@@ -1787,8 +1796,13 @@
                       $bookingPriceTZS = $guestBillTZS;
                       $bookingPriceUSD = $guestBillUSD;
                     } else {
-                      $bookingPriceTZS = $booking->total_price * $bookingRate;
-                      $bookingPriceUSD = $booking->total_price;
+                      if ($isBookingTanzanian) {
+                          $bookingPriceTZS = (float)$booking->total_price;
+                          $bookingPriceUSD = $bookingPriceTZS / $bookingRate;
+                      } else {
+                          $bookingPriceTZS = $booking->total_price * $bookingRate;
+                          $bookingPriceUSD = (float)$booking->total_price;
+                      }
                     }
                   @endphp
                   @if($isCorporate)

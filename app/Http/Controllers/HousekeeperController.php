@@ -36,12 +36,13 @@ class HousekeeperController extends Controller
             'bookings' => function($query) use ($today) {
                 // Same logic as ReceptionController: Active bookings OR pending future bookings
                 $query->where(function($q) use ($today) {
-                    $q->where(function($subQ) {
-                        $subQ->where('check_in_status', 'checked_in');
-                    })
-                    // OR checked out bookings for history/cleaning context
-                    ->orWhere(function($subQ) {
-                        $subQ->where('check_in_status', 'checked_out');
+                    // 1. Current stays or those within booking dates (In-House or Reserved)
+                    $q->where(function($subQ) use ($today) {
+                        $subQ->where('status', 'confirmed')
+                              ->whereIn('payment_status', ['paid', 'partial', 'pending'])
+                              ->where('check_in_status', '!=', 'checked_out')
+                              ->whereDate('check_in', '<=', $today)
+                              ->whereDate('check_out', '>=', $today);
                     })
                     // OR pending bookings (waiting for payment) for future dates
                     ->orWhere(function($subQ) use ($today) {
@@ -50,12 +51,18 @@ class HousekeeperController extends Controller
                               ->whereDate('check_in', '>=', $today)
                               ->whereNull('cancelled_at');
                     })
-                    // OR confirmed paid/partial/pending bookings for future dates (upcoming check-ins)
+                    // OR confirmed paid/partial bookings for future dates (upcoming check-ins)
                     ->orWhere(function($subQ) use ($today) {
                         $subQ->where('status', 'confirmed')
                               ->whereIn('payment_status', ['paid', 'partial', 'pending'])
                               ->where('check_in_status', 'pending')
                               ->whereDate('check_in', '>=', $today);
+                    })
+                    // OR checked out bookings for history/cleaning context
+                    ->orWhere(function($subQ) {
+                        $subQ->where('check_in_status', 'checked_out')
+                              ->latest('checked_out_at')
+                              ->limit(1);
                     });
                 });
             }
@@ -72,22 +79,32 @@ class HousekeeperController extends Controller
                 $checkOut = Carbon::parse($booking->check_out);
                 return $today->gte($checkIn) && $today->lte($checkOut);
             });
+            // 2. Reserved bookings (confirmed/paid but not yet checked in)
+            $reservedBookings = $room->bookings->filter(function($booking) use ($today) {
+                return $booking->check_in_status !== 'checked_in' &&
+                       $booking->status === 'confirmed' &&
+                       $today->gte(Carbon::parse($booking->check_in)) &&
+                       $today->lte(Carbon::parse($booking->check_out));
+            });
+
             $room->is_occupied = $activeBookings->count() > 0 || $room->status === 'occupied';
-            $room->currentBooking = $activeBookings->first();
+            $room->is_reserved = $reservedBookings->count() > 0 || $room->status === 'reserved';
+            $room->has_immediate_booking = $room->is_reserved;
             
-            // Upcoming bookings (Reserved)
+            // Priority for current/active guest info
+            $room->currentBooking = $activeBookings->first() ?: $reservedBookings->first();
+            
+            // Upcoming bookings (future check-ins)
             $upcomingBookings = $room->bookings->filter(function($booking) use ($today) {
                 $checkInDate = \Carbon\Carbon::parse($booking->check_in);
-                return $checkInDate->gte($today) && 
+                return $checkInDate->gt($today) && 
                        ($booking->check_in_status === 'pending' || 
-                        ($booking->status === 'pending' && $booking->payment_status === 'pending')) &&
-                       is_null($booking->cancelled_at);
+                        ($booking->status === 'pending' && $booking->payment_status === 'pending'));
             })->sortBy('check_in')->first();
             $room->upcoming_checkin = $upcomingBookings;
             
-            // Check if room is "Reserved" for statistics (same as Reception logic)
-            $room->has_immediate_booking = ($room->status === 'reserved');
-            if ($room->upcoming_checkin) {
+            // If no immediate reserved booking found above, check if upcoming check-in is very soon
+            if (!$room->has_immediate_booking && $room->upcoming_checkin) {
                 $checkInDate = \Carbon\Carbon::parse($room->upcoming_checkin->check_in);
                 $daysUntilCheckIn = $today->diffInDays($checkInDate, false);
                 if ($daysUntilCheckIn <= 3) {

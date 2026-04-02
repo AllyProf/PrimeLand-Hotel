@@ -310,8 +310,13 @@
                       @endif
                     </td>
                     <td>
-                      <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                      <small>{{ number_format($booking->total_price * $exchangeRate, 2) }} TZS</small>
+                      @if($booking->guest_type === 'tanzanian')
+                        <strong>{{ number_format($booking->total_price, 0) }} TZS</strong><br>
+                        <small class="text-muted">≈ ${{ number_format($booking->total_price / ($booking->locked_exchange_rate ?? $exchangeRate), 2) }}</small>
+                      @else
+                        <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
+                        <small class="text-muted">{{ number_format($booking->total_price * ($booking->locked_exchange_rate ?? $exchangeRate), 2) }} TZS</small>
+                      @endif
                     </td>
                     <td>
                       <button class="btn btn-sm btn-success" onclick="checkInGuest({{ $booking->id }}, '{{ $booking->booking_reference }}', {{ $booking->mobile_checkin_submitted_at ? 'true' : 'false' }})">
@@ -524,8 +529,13 @@
             <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0;">
               <span style="font-weight: 600; color: #495057; font-size: 14px; flex: 0 0 40%;">Total Price:</span>
               <span style="text-align: right; flex: 1;">
-                <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
-                <small>{{ number_format($booking->total_price * $exchangeRate, 2) }} TZS</small>
+                @if($booking->guest_type === 'tanzanian')
+                  <strong>{{ number_format($booking->total_price, 0) }} TZS</strong><br>
+                  <small class="text-muted">≈ ${{ number_format($booking->total_price / ($booking->locked_exchange_rate ?? $exchangeRate), 2) }}</small>
+                @else
+                  <strong>${{ number_format($booking->total_price, 2) }}</strong><br>
+                  <small class="text-muted">{{ number_format($booking->total_price * ($booking->locked_exchange_rate ?? $exchangeRate), 2) }} TZS</small>
+                @endif
               </span>
             </div>
             
