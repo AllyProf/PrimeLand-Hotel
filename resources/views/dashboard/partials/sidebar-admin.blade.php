@@ -122,6 +122,14 @@
         </ul>
     </li>
 
+    <li class="treeview {{ str_contains($activePage, 'restaurants/products') ? 'is-expanded' : '' }}">
+        <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-cube"></i><span class="app-menu__label">Products</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+        <ul class="treeview-menu">
+            <li><a class="treeview-item {{ str_contains($activePage, 'restaurants/products') && !str_contains($activePage, 'create') && !str_contains($activePage, 'edit') ? 'active' : '' }}" href="{{ route('admin.products.index') }}"><i class="icon fa fa-list"></i> All Products</a></li>
+            <li><a class="treeview-item {{ str_contains($activePage, 'restaurants/products/create') ? 'active' : '' }}" href="{{ route('admin.products.create') }}"><i class="icon fa fa-plus-circle"></i> Register Product</a></li>
+        </ul>
+    </li>
+
     <li class="nav-header">Analytics & Admin</li>
     <li><a class="app-menu__item {{ str_contains($activePage, 'admin/reports') ? 'active' : '' }}" href="{{ route('admin.reports.index') }}"><i class="app-menu__icon fa fa-bar-chart"></i><span class="app-menu__label">Business Insights</span></a></li>
     <li><a class="app-menu__item {{ str_contains($activePage, 'admin/users') ? 'active' : '' }}" href="{{ route('admin.users') }}"><i class="app-menu__icon fa fa-user-secret"></i><span class="app-menu__label">Staff Access</span></a></li>

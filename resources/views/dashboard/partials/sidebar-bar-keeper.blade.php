@@ -17,6 +17,16 @@
 
 <li><a class="app-menu__item {{ str_contains($activePage, 'orders/monitor') ? 'active' : '' }}" href="{{ route('reception.orders.monitor') }}"><i class="app-menu__icon fa fa-television"></i><span class="app-menu__label">Order Monitor</span></a></li>
 
+<li class="nav-header">Products</li>
+
+<li class="treeview {{ str_contains($activePage, 'bar-keeper/products') ? 'is-expanded' : '' }}">
+    <a class="app-menu__item" href="#" data-toggle="treeview"><i class="app-menu__icon fa fa-cube"></i><span class="app-menu__label">Products</span><i class="treeview-indicator fa fa-angle-right"></i></a>
+    <ul class="treeview-menu">
+        <li><a class="treeview-item {{ str_contains($activePage, 'bar-keeper/products') && !str_contains($activePage, 'create') && !str_contains($activePage, 'edit') ? 'active' : '' }}" href="{{ route('bar-keeper.products.index') }}"><i class="icon fa fa-list"></i> All Products</a></li>
+        <li><a class="treeview-item {{ str_contains($activePage, 'bar-keeper/products/create') ? 'active' : '' }}" href="{{ route('bar-keeper.products.create') }}"><i class="icon fa fa-plus-circle"></i> Register Product</a></li>
+    </ul>
+</li>
+
 <li class="nav-header">Shift & Sales</li>
 
 <li class="treeview {{ str_contains($activePage, 'bar-keeper/shift') ? 'is-expanded' : '' }}">

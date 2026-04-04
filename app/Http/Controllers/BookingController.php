@@ -1230,27 +1230,36 @@ class BookingController extends Controller
             
             // Total bill
             // Note: extensionCostTsh is already included in booking->total_price
-            $totalBillTsh = ($booking->total_price * $exchangeRate) + $totalServiceChargesTsh;
+            // For Tanzanian guests, total_price is stored directly in TZS; for international guests it's in USD.
+            $roomCostTsh = ($booking->guest_type === 'tanzanian')
+                ? (float) $booking->total_price
+                : (float) $booking->total_price * $exchangeRate;
+            $totalBillTsh = $roomCostTsh + $totalServiceChargesTsh;
             
-            // Amount paid
             // Amount paid (Booking deposit + any settled service payments)
-            $amountPaidTsh = ($booking->amount_paid ?? 0) * $exchangeRate;
+            // Apply same guest_type distinction to avoid double-converting TZS amounts.
+            $amountPaidTsh = ($booking->guest_type === 'tanzanian')
+                ? (float) ($booking->amount_paid ?? 0)
+                : (float) ($booking->amount_paid ?? 0) * $exchangeRate;
             
             // Add payments for completed/paid services to show correct outstanding balance
             foreach ($serviceRequests as $sr) {
-                if ($sr->payment_status === 'paid') {
-                    $amountPaidTsh += $sr->total_price_tsh;
+                if (($sr->payment_status ?? '') === 'paid') {
+                    $amountPaidTsh += (float)$sr->total_price_tsh;
                 }
             }
             
-            // Outstanding balance
-            $outstandingBalanceTsh = max(0, $totalBillTsh - $amountPaidTsh);
-            $outstandingBalanceUsd = $outstandingBalanceTsh / $exchangeRate;
+            // Outstanding balance with robust rounding to 2 decimal places to prevent floating point noise
+            $outstandingBalanceTsh = round(max(0, $totalBillTsh - $amountPaidTsh), 2);
+            $outstandingBalanceUsd = round($outstandingBalanceTsh / $exchangeRate, 2);
             
-            // Treat very small amounts (less than $0.05 or 50 TZS) as fully paid (rounding differences)
-            $minOutstandingThresholdUsd = 0.05;
-            $minOutstandingThresholdTsh = 50;
-            if ($outstandingBalanceUsd < $minOutstandingThresholdUsd || $outstandingBalanceTsh < $minOutstandingThresholdTsh) {
+            // Treat small amounts as fully paid (rounding/floating-point differences).
+            // Use 5000 TZS / $2.00 to safely cover floating-point errors on large TZS numbers
+            // and cases where tiny discrepancies (like 0.78 TZS vs $0.78) cause blockers.
+            $minOutstandingThresholdUsd = 2.00;
+            $minOutstandingThresholdTsh = 5000;
+            
+            if ($outstandingBalanceTsh < $minOutstandingThresholdTsh || $outstandingBalanceUsd < $minOutstandingThresholdUsd) {
                 // Negligible amount, treat as fully paid
                 $outstandingBalanceTsh = 0;
                 $outstandingBalanceUsd = 0;
@@ -1260,7 +1269,7 @@ class BookingController extends Controller
             if ($outstandingBalanceTsh >= $minOutstandingThresholdTsh || $outstandingBalanceUsd >= $minOutstandingThresholdUsd) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot check out. Outstanding balance of $' . number_format($outstandingBalanceUsd, 2) . ' (' . number_format($outstandingBalanceTsh, 2) . ' TZS) must be paid first.',
+                    'message' => 'Cannot check out. Outstanding balance of ' . number_format($outstandingBalanceTsh, 2) . ' TZS ($' . number_format($outstandingBalanceUsd, 2) . ') must be paid first.',
                 ], 400);
             }
             

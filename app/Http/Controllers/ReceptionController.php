@@ -813,12 +813,13 @@ class ReceptionController extends Controller
                     
                     // Total bill for display (room + services)
                     // Note: total_price already includes extensions if they were approved
-                    $totalBillTsh = ($booking->total_price * $bookingExchangeRate) + $totalServiceChargesTsh;
-                    $totalBillUsd = $totalBillTsh / $bookingExchangeRate;
+                    $totalBillTsh = round(($booking->total_price * $bookingExchangeRate) + $totalServiceChargesTsh, 2);
+                    $totalBillUsd = round($totalBillTsh / $bookingExchangeRate, 2);
                     
-                    // Treat very small amounts (less than $0.05 or 50 TZS) as fully paid (rounding differences)
-                    $minOutstandingThresholdUsd = 0.05;
-                    $minOutstandingThresholdTsh = 50;
+                    // Treat very small amounts (less than $2.00 or 5000 TZS) as fully paid (rounding differences)
+                    $minOutstandingThresholdUsd = 2.00;
+                    $minOutstandingThresholdTsh = 5000;
+                    
                     if ($companyOutstandingBalanceUsd < $minOutstandingThresholdUsd || $companyOutstandingBalanceTsh < $minOutstandingThresholdTsh) {
                         $companyOutstandingBalanceTsh = 0;
                         $companyOutstandingBalanceUsd = 0;
@@ -943,12 +944,13 @@ class ReceptionController extends Controller
                 }
                 
                 // Outstanding balance
-                $outstandingBalanceTsh = max(0, $totalBillTsh - $amountPaidTsh);
-                $outstandingBalanceUsd = $outstandingBalanceTsh / $bookingExchangeRate;
+                $outstandingBalanceTsh = round(max(0, $totalBillTsh - $amountPaidTsh), 2);
+                $outstandingBalanceUsd = round($outstandingBalanceTsh / $bookingExchangeRate, 2);
                 
-                // Treat very small amounts (less than $0.05 or 50 TZS) as fully paid (rounding differences)
-                $minOutstandingThresholdUsd = 0.05;
-                $minOutstandingThresholdTsh = 50;
+                // Treat very small amounts (less than $2.00 or 5000 TZS) as fully paid (rounding differences)
+                $minOutstandingThresholdUsd = 2.00;
+                $minOutstandingThresholdTsh = 5000;
+                
                 if ($outstandingBalanceUsd < $minOutstandingThresholdUsd || $outstandingBalanceTsh < $minOutstandingThresholdTsh) {
                     $outstandingBalanceTsh = 0;
                     $outstandingBalanceUsd = 0;
@@ -2075,10 +2077,10 @@ class ReceptionController extends Controller
             // anything the guest paid for services.
             $companyPaidTsh = max(0, $totalPaidTsh - $guestPaidServicesTsh);
             
-            $outstandingBalanceTsh = max(0, $companyBillTsh - $companyPaidTsh);
+            $outstandingBalanceTsh = round(max(0, $companyBillTsh - $companyPaidTsh), 2);
             
-            // Treat very small amounts as fully paid
-            if ($outstandingBalanceTsh >= 50) {
+            // Treat very small amounts as fully paid (Match global threshold)
+            if ($outstandingBalanceTsh >= 5000) {
                 $hasOutstanding = true;
                 break;
             }
@@ -2214,10 +2216,10 @@ class ReceptionController extends Controller
             // anything the guest paid for services.
             $companyPaidTsh = max(0, $totalPaidTsh - $guestPaidServicesTsh);
             
-            $outstandingTsh = max(0, $companyBillTsh - $companyPaidTsh);
-            $outstandingUsd = $outstandingTsh / $bookingExchangeRate;
+            $outstandingTsh = round(max(0, $companyBillTsh - $companyPaidTsh), 2);
+            $outstandingUsd = round($outstandingTsh / $bookingExchangeRate, 2);
             
-            if ($outstandingTsh > 50) {
+            if ($outstandingTsh >= 5000) {
                 $companyBookingsData[] = [
                     'booking' => $booking,
                     'outstanding_usd' => $outstandingUsd,
@@ -2260,7 +2262,7 @@ class ReceptionController extends Controller
                 if ($data['responsibility'] === 'self') {
                     $totalBillTsh = (float)$booking->total_price;
                 }
-                $isFullyPaid = ($newAmountPaidValue >= ($totalBillTsh - 50));
+                $isFullyPaid = ($newAmountPaidValue >= ($totalBillTsh - 5000));
             } else {
                 // If International, amount_paid is in USD.
                 $newAmountPaidValue = ($booking->amount_paid ?? 0) + $payForThisBookingUsd;
@@ -2268,7 +2270,7 @@ class ReceptionController extends Controller
                 if ($data['responsibility'] === 'self') {
                     $totalBillTsh = ($booking->total_price * $bookingExchangeRate);
                 }
-                $isFullyPaid = (($newAmountPaidValue * $bookingExchangeRate) >= ($totalBillTsh - 50));
+                $isFullyPaid = (($newAmountPaidValue * $bookingExchangeRate) >= ($totalBillTsh - 5000));
             }
             
             $booking->update([
@@ -2402,10 +2404,10 @@ class ReceptionController extends Controller
                 // anything the guest paid for services.
                 $companyBookingPaidTsh = max(0, $totalPaidTsh - $guestPaidServicesTsh);
 
-                $companyBookingOutstandingTsh = max(0, $companyBookingBillTsh - $companyBookingPaidTsh);
+                $companyBookingOutstandingTsh = round(max(0, $companyBookingBillTsh - $companyBookingPaidTsh), 2);
 
-                // Threshold handling (Hide rounding errors under 50 TZS)
-                if ($companyBookingOutstandingTsh < 50) {
+                // Threshold handling (Hide rounding errors under 5000 TZS)
+                if ($companyBookingOutstandingTsh < 5000) {
                     $companyBookingOutstandingTsh = 0;
                     $companyBookingPaidTsh = $companyBookingBillTsh; // Adjust display to show full payment
                 }
