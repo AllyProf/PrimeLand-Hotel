@@ -340,8 +340,7 @@
                                     <small>{{ $booking->check_in->format('M d') }} - {{ $booking->check_out->format('M d') }}</small>
                                 </td>
                                 <td>
-                                    <strong>${{ number_format($booking->total_price, 2) }}</strong>
-                                    <br><small class="text-muted">{{ number_format($booking->total_price * ($booking->locked_exchange_rate ?? $exchangeRate ?? 2500), 0) }} TZS</small>
+                                    <strong>TZS {{ number_format($booking->total_price, 0) }}</strong>
                                 </td>
                                 <td>
                                     @if($booking->status === 'confirmed') <span class="badge badge-success">Confirmed</span>
