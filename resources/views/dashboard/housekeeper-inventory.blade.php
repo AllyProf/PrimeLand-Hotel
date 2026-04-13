@@ -137,13 +137,13 @@
           <div class="mb-1">
             <small class="text-muted d-block" style="font-size: 10px;">TOTAL RECEIVED</small>
             <h5 class="mb-0 text-info" style="font-weight: bold;">
-              {{ number_format($item->total_received ?? 0, 1) }} <small>{{ $item->unit }}</small>
+              {{ $item->total_received == floor($item->total_received) ? number_format($item->total_received ?? 0, 0) : number_format($item->total_received ?? 0, 1) }} <small>{{ $item->unit }}</small>
             </h5>
           </div>
           <div class="mb-1">
             <small class="text-muted d-block" style="font-size: 10px;">CURRENT STOCK</small>
             <h4 class="mb-0 text-{{ $statusColor }}" id="current-stock-text-{{ $item->id }}" style="font-weight: 800;">
-              {{ number_format($item->current_stock, 1) }} <small>{{ $item->unit }}</small>
+              {{ $item->current_stock == floor($item->current_stock) ? number_format($item->current_stock, 0) : number_format($item->current_stock, 1) }} <small>{{ $item->unit }}</small>
             </h4>
           </div>
           <div id="status-badge-{{ $item->id }}">
