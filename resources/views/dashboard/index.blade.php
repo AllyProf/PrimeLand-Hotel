@@ -299,11 +299,21 @@
               </div>
             </div>
             <div class="col-md-6 col-lg-3">
-              <div class="widget-small primary coloured-icon">
+              <div class="widget-small info coloured-icon">
                 <i class="icon fa fa-calendar fa-2x"></i>
                 <div class="info">
-                  <h4>This Month Bookings</h4>
+                  <h4>This Month's Bookings</h4>
                   <p><b>{{ $stats['month_bookings'] ?? 0 }}</b></p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+              <div class="widget-small primary coloured-icon">
+                <i class="icon fa fa-money fa-2x"></i>
+                <div class="info">
+                  <h4>This Month's Revenue</h4>
+                  <p><b>{{ number_format($stats['month_revenue'] ?? 0, 0) }} TZS</b></p>
+                  <small style="font-size: 12px; color: #666;"><b>≈ ${{ number_format(($stats['month_revenue'] ?? 0) / ($exchangeRate ?? 2500), 2) }}</b></small>
                 </div>
               </div>
             </div>
@@ -482,18 +492,40 @@
                 </td>
                 <td>
                   @php
+                    $isTanzanian = strtolower($booking->guest_type ?? '') === 'tanzanian' || strtolower($booking->guest_type ?? '') === 'guest_tanzanian';
                     $lockedRate = $isGrouped ? ($firstBooking->locked_exchange_rate ?? $exchangeRate ?? 2500) : ($booking->locked_exchange_rate ?? $exchangeRate ?? 2500);
                     $displayTotalPrice = $isGrouped ? $totalPrice : ($booking->total_price ?? 0);
                     $displayTotalPaid = $isGrouped ? $totalPaid : ($booking->amount_paid ?? 0);
-                    $totalPriceTsh = $displayTotalPrice * $lockedRate;
+                    
+                    if ($isTanzanian) {
+                        $totalPriceTsh = $displayTotalPrice;
+                        $totalPriceUsd = $lockedRate > 0 ? $displayTotalPrice / $lockedRate : 0;
+                        $totalPaidTsh = $displayTotalPaid;
+                        $totalPaidUsd = $lockedRate > 0 ? $displayTotalPaid / $lockedRate : 0;
+                    } else {
+                        $totalPriceUsd = $displayTotalPrice;
+                        $totalPriceTsh = $displayTotalPrice * $lockedRate;
+                        $totalPaidUsd = $displayTotalPaid;
+                        $totalPaidTsh = $displayTotalPaid * $lockedRate;
+                    }
                   @endphp
-                  <strong>${{ number_format($displayTotalPrice, 2) }}</strong>
+                  
+                  @if($isTanzanian)
+                    <strong>{{ number_format($totalPriceTsh, 0) }} TZS</strong>
+                    <br><small style="font-size: 11px; color: #666;">≈ ${{ number_format($totalPriceUsd, 2) }}</small>
+                  @else
+                    <strong>${{ number_format($totalPriceUsd, 2) }}</strong>
+                    <br><small style="font-size: 11px; color: #666;">≈ {{ number_format($totalPriceTsh, 0) }} TZS</small>
+                  @endif
+
                   @if($isGrouped)
                     <br><small class="text-muted">Total for all guests</small>
                   @endif
-                  <br><small style="font-size: 11px; color: #666;">{{ number_format($totalPriceTsh, 0) }} TZS</small>
+
                   @if($displayTotalPaid > 0)
-                    <br><small style="font-size: 10px; color: #999;">Paid: ${{ number_format($displayTotalPaid, 2) }}</small>
+                    <br><small style="font-size: 10px; color: #999;">
+                        Paid: {{ $isTanzanian ? number_format($totalPaidTsh, 0) . ' TZS' : '$' . number_format($totalPaidUsd, 2) }}
+                    </small>
                   @endif
                 </td>
                 <td>
@@ -770,8 +802,11 @@ function viewBooking(bookingId) {
             <div class="col-md-6">
               <h5><i class="fa fa-dollar"></i> Payment Information</h5>
               <table class="table table-sm table-bordered">
-                <tr><td><strong>Total Price:</strong></td><td>$${parseFloat(booking.total_price || 0).toFixed(2)}</td></tr>
-                <tr><td><strong>Amount Paid:</strong></td><td>${booking.amount_paid ? '$' + parseFloat(booking.amount_paid).toFixed(2) : 'N/A'}</td></tr>
+                @php
+                    // We need to determine if it's Tanzanian in JS, but for now we fix the labels
+                @endphp
+                <tr><td><strong>Total Price:</strong></td><td id="modal-total-price">...</td></tr>
+                <tr><td><strong>Amount Paid:</strong></td><td id="modal-amount-paid">...</td></tr>
                 <tr><td><strong>Payment Method:</strong></td><td>${booking.payment_method ? booking.payment_method.charAt(0).toUpperCase() + booking.payment_method.slice(1) : 'N/A'}</td></tr>
                 <tr><td><strong>Payment Status:</strong></td><td><span class="badge badge-${booking.payment_status === 'paid' ? 'success' : booking.payment_status === 'partial' ? 'info' : booking.payment_status === 'pending' ? 'warning' : 'danger'}">${booking.payment_status ? (booking.payment_status.charAt(0).toUpperCase() + booking.payment_status.slice(1) + (booking.payment_status === 'partial' && booking.payment_percentage ? ` (${booking.payment_percentage}% paid)` : '')) : 'N/A'}</span></td></tr>
                 ${booking.payment_transaction_id ? `<tr><td><strong>Transaction ID:</strong></td><td><small>${booking.payment_transaction_id}</small></td></tr>` : ''}
@@ -814,6 +849,27 @@ function viewBooking(bookingId) {
       `;
       
       document.getElementById('bookingDetailsContent').innerHTML = detailsHtml;
+
+      // Update the price and amount paid with currency logic
+      const isTanzanian = (booking.guest_type === 'tanzanian' || booking.guest_type === 'guest_tanzanian');
+      const exchangeRate = {{ $exchangeRate ?? 2500 }};
+      const lockedRate = booking.locked_exchange_rate || exchangeRate;
+      
+      const totalPrice = parseFloat(booking.total_price || 0);
+      const amountPaid = parseFloat(booking.amount_paid || 0);
+      
+      if (isTanzanian) {
+          const priceUSD = lockedRate > 0 ? (totalPrice / lockedRate).toFixed(2) : '0.00';
+          const paidUSD = lockedRate > 0 ? (amountPaid / lockedRate).toFixed(2) : '0.00';
+          document.getElementById('modal-total-price').innerHTML = `<strong>${totalPrice.toLocaleString()} TZS</strong> <small class="text-muted">(≈ $${priceUSD})</small>`;
+          document.getElementById('modal-amount-paid').innerHTML = amountPaid > 0 ? `<strong>${amountPaid.toLocaleString()} TZS</strong> <small class="text-muted">(≈ $${paidUSD})</small>` : 'N/A';
+      } else {
+          const priceTZS = Math.round(totalPrice * lockedRate);
+          const paidTZS = Math.round(amountPaid * lockedRate);
+          document.getElementById('modal-total-price').innerHTML = `<strong>$${totalPrice.toFixed(2)}</strong> <small class="text-muted">(≈ ${priceTZS.toLocaleString()} TZS)</small>`;
+          document.getElementById('modal-amount-paid').innerHTML = amountPaid > 0 ? `<strong>$${amountPaid.toFixed(2)}</strong> <small class="text-muted">(≈ ${paidTZS.toLocaleString()} TZS)</small>` : 'N/A';
+      }
+
       $('#bookingDetailsModal').modal('show');
     } else {
       swal({

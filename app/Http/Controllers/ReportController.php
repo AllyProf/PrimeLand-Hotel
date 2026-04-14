@@ -38,25 +38,28 @@ class ReportController extends Controller
         // Get quick stats for today
         $today = Carbon::today();
         $todayBookings = Booking::whereDate('created_at', $today)->count();
-        $todayRevenueUSD = Booking::whereDate('created_at', $today)
+        $todayBookingRevenueTZS = Booking::whereDate('paid_at', $today)
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
-            ->sum('amount_paid');
-        $todayBookingRevenueTZS = $todayRevenueUSD * $this->exchangeRate;
+            ->get()
+            ->sum(function($b) {
+                return $b->guest_type === 'international' 
+                    ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                    : $b->amount_paid;
+            });
 
-        // Add Service Revenue (Bar/Kitchen)
-        $todayServiceRevenueTZS = ServiceRequest::whereDate('requested_at', $today)
+        // Add Service Revenue (Bar/Kitchen) - ONLY Walk-ins to avoid double counting room bills
+        $todayServiceRevenueTZS = ServiceRequest::whereDate('completed_at', $today)
             ->where('status', 'completed')
+            ->whereNull('booking_id')
             ->sum('total_price_tsh');
 
         // Add Day Service Revenue
-    $todayDayServiceRevenueTZS = \App\Models\DayService::whereDate('service_date', $today)
+    $todayDayServiceRevenueTZS = \App\Models\DayService::whereDate('paid_at', $today)
         ->where('payment_status', 'paid')
         ->get()
         ->sum(function($ds) {
-             // If exchange rate is recorded (International), amount is USD -> Convert to TZS
-             // If no exchange rate (Local), amount is TZS already -> Use as is
              return $ds->exchange_rate 
                 ? ($ds->amount_paid ?? $ds->amount) * $ds->exchange_rate 
                 : ($ds->amount_paid ?? $ds->amount);
@@ -71,20 +74,25 @@ class ReportController extends Controller
         $occupancyRate = $totalRooms > 0 ? round(($occupiedRooms / $totalRooms) * 100, 1) : 0;
         
         $thisMonth = Carbon::now()->startOfMonth();
-        $monthRevenueUSD = Booking::where('created_at', '>=', $thisMonth)
+        $monthBookingRevenueTZS = Booking::where('paid_at', '>=', $thisMonth)
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
-            ->sum('amount_paid');
-        $monthBookingRevenueTZS = $monthRevenueUSD * $this->exchangeRate;
+            ->get()
+            ->sum(function($b) {
+                return $b->guest_type === 'international' 
+                    ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                    : $b->amount_paid;
+            });
 
-        // Add Month Service Revenue
+        // Add Month Service Revenue - ONLY Walk-ins
         $monthServiceRevenueTZS = ServiceRequest::where('completed_at', '>=', $thisMonth)
             ->where('status', 'completed')
+            ->whereNull('booking_id')
             ->sum('total_price_tsh');
 
         // Add Month Day Service Revenue
-        $monthDayServiceRevenueTZS = \App\Models\DayService::where('service_date', '>=', $thisMonth)
+        $monthDayServiceRevenueTZS = \App\Models\DayService::where('paid_at', '>=', $thisMonth)
             ->where('payment_status', 'paid')
             ->get()
             ->sum(function($ds) {
@@ -94,7 +102,6 @@ class ReportController extends Controller
             });
 
         $monthRevenueTZS = $monthBookingRevenueTZS + $monthServiceRevenueTZS + $monthDayServiceRevenueTZS;
-        // Recalculate USD for display based on total TZS
         $monthRevenueUSD = $this->exchangeRate > 0 ? ($monthRevenueTZS / $this->exchangeRate) : 0;
 
         // Chart Data (Last 7 Days)
@@ -106,13 +113,25 @@ class ReportController extends Controller
             $date = Carbon::now()->subDays($i);
             $chartLabels[] = $date->format('D d');
             
-            // Revenue (TZS)
-            $dailyUSD = Booking::whereDate('created_at', $date)
+            // Revenue (TZS) - Use paid_at
+            $dailyTZS = Booking::whereDate('paid_at', $date)
                 ->whereIn('payment_status', ['paid', 'partial'])
-                ->sum('amount_paid');
-            $chartRevenue[] = $dailyUSD * $this->exchangeRate;
+                ->get()
+                ->sum(function($b) {
+                    return $b->guest_type === 'international' 
+                        ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                        : $b->amount_paid;
+                });
             
-            // Bookings
+            // Add walk-in services for the chart too
+            $dailyTZS += ServiceRequest::whereDate('completed_at', $date)
+                ->where('status', 'completed')
+                ->whereNull('booking_id')
+                ->sum('total_price_tsh');
+                
+            $chartRevenue[] = $dailyTZS;
+            
+            // Bookings (Creation count)
             $chartBookings[] = Booking::whereDate('created_at', $date)->count();
         }
 
@@ -242,22 +261,26 @@ class ReportController extends Controller
         $end = $dateRange['end'];
 
         // Room bookings revenue
-        $roomBookings = Booking::whereBetween('created_at', [$start, $end])
+        $roomBookings = Booking::whereBetween('paid_at', [$start, $end])
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $roomRevenueUSD = $roomBookings->sum('amount_paid');
-        $roomRevenueTZS = $roomRevenueUSD * $this->exchangeRate;
+        $roomRevenueTZS = $roomBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : $b->amount_paid;
+        });
 
-        // Restaurant/Bar service requests revenue
+        // Restaurant/Bar service requests revenue - ONLY Walk-ins
         $serviceRequests = ServiceRequest::whereBetween('completed_at', [$start, $end])
             ->where('status', 'completed')
+            ->whereNull('booking_id')
             ->get();
         $serviceRevenueTZS = $serviceRequests->sum('total_price_tsh');
 
         // Day services revenue
-        $dayServices = DayService::whereBetween('service_date', [$start, $end])
+        $dayServices = DayService::whereBetween('paid_at', [$start, $end])
             ->where('payment_status', 'paid')
             ->get();
         $dayServiceRevenueTZS = $dayServices->sum(function($ds) {
@@ -278,7 +301,7 @@ class ReportController extends Controller
                 $paymentMethods[$method] = ['count' => 0, 'revenue_tzs' => 0];
             }
             $paymentMethods[$method]['count']++;
-            $paymentMethods[$method]['revenue_tzs'] += ($b->amount_paid * $this->exchangeRate);
+            $paymentMethods[$method]['revenue_tzs'] += ($b->amount_paid);
         }
 
         // Add Service Requests (Categorize all completed requests)
@@ -312,7 +335,7 @@ class ReportController extends Controller
                 $guestTypeData[$type] = ['count' => 0, 'revenue_tzs' => 0];
             }
             $guestTypeData[$type]['count']++;
-            $guestTypeData[$type]['revenue_tzs'] += ($b->amount_paid * $this->exchangeRate);
+            $guestTypeData[$type]['revenue_tzs'] += ($b->amount_paid);
         }
         
         // Add Service Requests to Guest Type (Inherit from booking if available)
@@ -345,16 +368,16 @@ class ReportController extends Controller
         // Add Booking Revenue to trend
         foreach ($roomBookings as $b) {
             $date = Carbon::parse($b->paid_at ?? $b->created_at)->format('Y-m-d');
-            $trendData[$date] = ($trendData[$date] ?? 0) + ($b->amount_paid * $this->exchangeRate);
+            $trendData[$date] = ($trendData[$date] ?? 0) + ($b->amount_paid);
         }
-        // Add Service Revenue to trend
+        // Add Service Revenue (Walk-ins) to trend
         foreach ($serviceRequests as $sr) {
             $date = $sr->completed_at ? $sr->completed_at->format('Y-m-d') : $sr->created_at->format('Y-m-d');
             $trendData[$date] = ($trendData[$date] ?? 0) + $sr->total_price_tsh;
         }
         // Add Day Service Revenue to trend
         foreach ($dayServices as $ds) {
-            $date = $ds->service_date->format('Y-m-d');
+            $date = $ds->paid_at ? $ds->paid_at->format('Y-m-d') : $ds->service_date->format('Y-m-d');
             $rev = $ds->exchange_rate ? ($ds->amount_paid ?? $ds->amount) * $ds->exchange_rate : ($ds->amount_paid ?? $ds->amount);
             $trendData[$date] = ($trendData[$date] ?? 0) + $rev;
         }
@@ -406,22 +429,26 @@ class ReportController extends Controller
         $end = $dateRange['end'];
 
         // Total revenue
-        $bookings = Booking::whereBetween('created_at', [$start, $end])
+        $bookings = Booking::whereBetween('paid_at', [$start, $end])
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $totalRevenueUSD = $bookings->sum('amount_paid');
-        $totalRevenueTZS = $totalRevenueUSD * $this->exchangeRate;
+        $totalRevenueTZS = $bookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : $b->amount_paid;
+        });
 
-        // Service requests revenue
+        // Service requests revenue - ONLY Walk-ins
         $serviceRequests = ServiceRequest::whereBetween('completed_at', [$start, $end])
             ->where('status', 'completed')
+            ->whereNull('booking_id')
             ->get();
         $serviceRevenueTZS = $serviceRequests->sum('total_price_tsh');
 
         // Day services revenue
-        $dayServices = DayService::whereBetween('service_date', [$start, $end])
+        $dayServices = DayService::whereBetween('paid_at', [$start, $end])
             ->where('payment_status', 'paid')
             ->get();
         $dayServiceRevenueTZS = $dayServices->sum(function($ds) {
@@ -449,7 +476,7 @@ class ReportController extends Controller
         $profitabilityByRoomType = $bookings->groupBy(function($booking) {
             return $booking->room->room_type ?? 'Unknown';
         })->map(function($group) {
-            $revenue = $group->sum('amount_paid') * $this->exchangeRate;
+            $revenue = $group->sum('amount_paid');
             return [
                 'count' => $group->count(),
                 'revenue' => $revenue,
@@ -499,19 +526,20 @@ class ReportController extends Controller
         $end = $dateRange['end'];
 
         // 1. Get Room Bookings revenue
-        $roomBookings = Booking::whereBetween('created_at', [$start, $end])
+        $roomBookings = Booking::whereBetween('paid_at', [$start, $end])
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
 
-        // 2. Get Service Requests revenue
+        // 2. Get Service Requests revenue - ONLY Walk-ins
         $serviceRequests = ServiceRequest::whereBetween('completed_at', [$start, $end])
             ->where('status', 'completed')
+            ->whereNull('booking_id')
             ->get();
 
         // 3. Get Day Services revenue
-        $dayServices = DayService::whereBetween('service_date', [$start, $end])
+        $dayServices = DayService::whereBetween('paid_at', [$start, $end])
             ->where('payment_status', 'paid')
             ->get();
 
@@ -525,7 +553,7 @@ class ReportController extends Controller
                 $paymentMethods[$method] = ['count' => 0, 'revenue_tzs' => 0];
             }
             $paymentMethods[$method]['count']++;
-            $paymentMethods[$method]['revenue_tzs'] += ($b->amount_paid * $this->exchangeRate);
+            $paymentMethods[$method]['revenue_tzs'] += ($b->amount_paid);
         }
 
         // Add Services
@@ -560,19 +588,29 @@ class ReportController extends Controller
             }
         }
 
-        // Pending payments (from Bookings)
-        $pendingPayments = Booking::whereBetween('created_at', [$start, $end])
+        // Pending payments (from Bookings) - Multi-currency sum
+        $pendingPayments = Booking::whereBetween('paid_at', [$start, $end])
             ->where('payment_status', 'pending')
             ->get();
-        $pendingAmountTZS = $pendingPayments->sum('total_price') * $this->exchangeRate;
+        $pendingAmountTZS = $pendingPayments->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? ($b->total_price ?? 0) * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : ($b->total_price ?? 0);
+        });
 
-        // Outstanding receivables (partial payments from Bookings)
-        $partialPayments = Booking::whereBetween('created_at', [$start, $end])
+        // Outstanding receivables (partial payments from Bookings) - Multi-currency
+        $partialPayments = Booking::whereBetween('paid_at', [$start, $end])
             ->where('payment_status', 'partial')
             ->whereNotNull('amount_paid')
             ->get();
-        $outstandingTZS = $partialPayments->sum(function($booking) {
-            return (($booking->total_price ?? 0) - ($booking->amount_paid ?? 0)) * $this->exchangeRate;
+        $outstandingTZS = $partialPayments->sum(function($b) {
+            $total = ($b->guest_type === 'international') 
+                ? ($b->total_price ?? 0) * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : ($b->total_price ?? 0);
+            $paid = ($b->guest_type === 'international') 
+                ? ($b->amount_paid ?? 0) * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : ($b->amount_paid ?? 0);
+            return max(0, $total - $paid);
         });
 
         // Payment method distribution for view
@@ -588,7 +626,10 @@ class ReportController extends Controller
         $trendData = [];
         foreach ($roomBookings as $b) {
             $date = Carbon::parse($b->paid_at ?? $b->created_at)->format('Y-m-d');
-            $trendData[$date] = ($trendData[$date] ?? 0) + ($b->amount_paid * $this->exchangeRate);
+            $rev = ($b->guest_type === 'international') 
+                ? ($b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate))
+                : ($b->amount_paid);
+            $trendData[$date] = ($trendData[$date] ?? 0) + $rev;
         }
         foreach ($serviceRequests as $sr) {
             $date = $sr->completed_at ? $sr->completed_at->format('Y-m-d') : $sr->created_at->format('Y-m-d');
@@ -642,14 +683,17 @@ class ReportController extends Controller
             $monthStart = Carbon::now()->subMonths($i)->startOfMonth();
             $monthEnd = Carbon::now()->subMonths($i)->endOfMonth();
             
-            $monthBookings = Booking::whereBetween('created_at', [$monthStart, $monthEnd])
+            $monthBookings = Booking::whereBetween('paid_at', [$monthStart, $monthEnd])
                 ->whereIn('payment_status', ['paid', 'partial'])
                 ->whereNotNull('amount_paid')
                 ->where('amount_paid', '>', 0)
                 ->get();
             
-            $monthRevenueUSD = $monthBookings->sum('amount_paid');
-            $monthRevenueTZS = $monthRevenueUSD * $this->exchangeRate;
+            $monthRevenueTZS = $monthBookings->sum(function($b) {
+                return $b->guest_type === 'international' 
+                    ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                    : $b->amount_paid;
+            });
             
             $historicalRevenue[] = [
                 'month' => $monthStart->format('M Y'),
@@ -670,13 +714,16 @@ class ReportController extends Controller
 
         // Current month revenue (partial)
         $currentMonthStart = Carbon::now()->startOfMonth();
-        $currentMonthBookings = Booking::where('created_at', '>=', $currentMonthStart)
+        $currentMonthBookings = Booking::where('paid_at', '>=', $currentMonthStart)
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $currentMonthRevenueUSD = $currentMonthBookings->sum('amount_paid');
-        $currentMonthRevenueTZS = $currentMonthRevenueUSD * $this->exchangeRate;
+        $currentMonthRevenueTZS = $currentMonthBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : $b->amount_paid;
+        });
         $daysInMonth = Carbon::now()->daysInMonth;
         $daysElapsed = Carbon::now()->day;
         $projectedCurrentMonthRevenue = $daysElapsed > 0 
@@ -698,13 +745,16 @@ class ReportController extends Controller
             ];
         }
 
-        // Booking pipeline (upcoming bookings)
+        // Booking pipeline (upcoming bookings) - Multi-currency
         $upcomingBookings = Booking::where('check_in', '>=', Carbon::now())
             ->where('status', '!=', 'cancelled')
             ->whereIn('payment_status', ['paid', 'partial', 'pending'])
             ->get();
-        $pipelineRevenueUSD = $upcomingBookings->sum('total_price');
-        $pipelineRevenueTZS = $pipelineRevenueUSD * $this->exchangeRate;
+        $pipelineRevenueTZS = $upcomingBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? ($b->total_price ?? 0) * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : ($b->total_price ?? 0);
+        });
 
         $user = Auth::guard('staff')->user() ?? Auth::guard('guest')->user();
         
@@ -883,11 +933,17 @@ class ReportController extends Controller
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $todayRevenueUSD = $todayPaidBookings->sum('amount_paid');
-        $todayRevenueTZS = $todayRevenueUSD * $this->exchangeRate;
+        $todayRevenueTZS = $todayPaidBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : $b->amount_paid;
+        });
 
         // Today's service requests
-    $todayServiceRequests = ServiceRequest::with('service')->whereBetween('requested_at', [$start, $end])->get();
+    $todayServiceRequests = ServiceRequest::with('service')
+        ->whereBetween('completed_at', [$start, $end])
+        ->whereNull('booking_id') // Walk-ins only
+        ->get();
     $todayServiceRequestsCount = $todayServiceRequests->count();
     $todayServiceRequestsCompleted = $todayServiceRequests->where('status', 'completed')->count();
     $todayServiceRevenueTZS = $todayServiceRequests->where('status', 'completed')->sum('total_price_tsh');
@@ -914,7 +970,7 @@ class ReportController extends Controller
     $otherServiceRevenueTZS = max(0, $todayServiceRevenueTZS - $barRevenueTZS - $kitchenRevenueTZS);
 
         // Today's day services
-    $todayDayServices = DayService::whereDate('service_date', $selectedDate)->get();
+    $todayDayServices = DayService::whereDate('paid_at', $selectedDate)->get();
     $todayDayServicesCount = $todayDayServices->count();
     $todayDayServicesPaid = $todayDayServices->where('payment_status', 'paid')->count();
     $todayDayServiceRevenueTZS = $todayDayServices->where('payment_status', 'paid')
@@ -950,10 +1006,14 @@ class ReportController extends Controller
             ->count();
         
         // Expected revenue tomorrow (Total price of bookings starting tomorrow + any due payments)
-        $tomorrowExpectedRevenueUSD = Booking::whereDate('check_in', $tomorrow)
+        $tomorrowBookings = Booking::whereDate('check_in', $tomorrow)
             ->where('status', '!=', 'cancelled')
-            ->sum('total_price');
-        $tomorrowExpectedRevenueTZS = $tomorrowExpectedRevenueUSD * $this->exchangeRate;
+            ->get();
+        $tomorrowExpectedRevenueTZS = $tomorrowBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? ($b->total_price ?? 0) * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : ($b->total_price ?? 0);
+        });
 
         // Pending tasks
         $pendingServiceRequests = ServiceRequest::where('status', 'pending')->count();
@@ -1020,23 +1080,28 @@ class ReportController extends Controller
         $weekConfirmedBookings = $weekBookings->where('status', 'confirmed')->count();
         $weekCancelledBookings = $weekBookings->where('status', 'cancelled')->count();
 
-        $weekPaidBookings = Booking::whereBetween('created_at', [$weekStartDate, $weekEndDate])
+        $weekPaidBookings = Booking::whereBetween('paid_at', [$weekStartDate, $weekEndDate])
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $weekRevenueUSD = $weekPaidBookings->sum('amount_paid');
-        $weekRevenueTZS = $weekRevenueUSD * $this->exchangeRate;
+        $weekRevenueTZS = $weekPaidBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : $b->amount_paid;
+        });
 
         $weekCheckIns = Booking::whereBetween('checked_in_at', [$weekStartDate, $weekEndDate])->count();
         $weekCheckOuts = Booking::whereBetween('checked_out_at', [$weekStartDate, $weekEndDate])->count();
 
-        $weekServiceRequests = ServiceRequest::whereBetween('requested_at', [$weekStartDate, $weekEndDate])->get();
+        $weekServiceRequests = ServiceRequest::whereBetween('completed_at', [$weekStartDate, $weekEndDate])
+            ->whereNull('booking_id') // Walk-ins only
+            ->get();
         $weekServiceRequestsCount = $weekServiceRequests->count();
         $weekServiceRequestsCompleted = $weekServiceRequests->where('status', 'completed')->count();
         $weekServiceRevenueTZS = $weekServiceRequests->where('status', 'completed')->sum('total_price_tsh');
 
-        $weekDayServices = DayService::whereBetween('service_date', [$weekStartDate, $weekEndDate])->get();
+        $weekDayServices = DayService::whereBetween('paid_at', [$weekStartDate, $weekEndDate])->get();
         $weekDayServicesCount = $weekDayServices->count();
         $weekDayServiceRevenueTZS = $weekDayServices->where('payment_status', 'paid')
             ->sum(function($ds) {
@@ -1047,13 +1112,16 @@ class ReportController extends Controller
         $lastWeekBookings = Booking::whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->get();
         $lastWeekBookingsCount = $lastWeekBookings->count();
 
-        $lastWeekPaidBookings = Booking::whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])
+        $lastWeekPaidBookings = Booking::whereBetween('paid_at', [$lastWeekStart, $lastWeekEnd])
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $lastWeekRevenueUSD = $lastWeekPaidBookings->sum('amount_paid');
-        $lastWeekRevenueTZS = $lastWeekRevenueUSD * $this->exchangeRate;
+        $lastWeekRevenueTZS = $lastWeekPaidBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : $b->amount_paid;
+        });
 
         // Calculate changes
         $revenueChange = $lastWeekRevenueTZS > 0 
@@ -1070,7 +1138,7 @@ class ReportController extends Controller
             $dayStart = $day->copy()->startOfDay();
             $dayEnd = $day->copy()->endOfDay();
             
-            $dayBookings = Booking::whereBetween('created_at', [$dayStart, $dayEnd])
+            $dayBookings = Booking::whereBetween('paid_at', [$dayStart, $dayEnd])
                 ->whereIn('payment_status', ['paid', 'partial'])
                 ->whereNotNull('amount_paid')
                 ->where('amount_paid', '>', 0)
@@ -1080,7 +1148,11 @@ class ReportController extends Controller
                 'day' => $day->format('D'),
                 'date' => $day->format('M d'),
                 'bookings' => $dayBookings->count(),
-                'revenue' => $dayBookings->sum('amount_paid') * $this->exchangeRate
+                'revenue' => $dayBookings->sum(function($b) {
+                    return $b->guest_type === 'international' 
+                        ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                        : $b->amount_paid;
+                })
             ];
         }
 
@@ -1120,11 +1192,15 @@ class ReportController extends Controller
             ->whereDate('check_in', '<=', $nextWeekStart->copy()->endOfWeek())
             ->where('status', '!=', 'cancelled')
             ->count();
-        $nextWeekExpectedRevenueUSD = Booking::whereDate('check_in', '>=', $nextWeekStart)
+        $nextWeekExpectedRevenueTZS = Booking::whereDate('check_in', '>=', $nextWeekStart)
             ->whereDate('check_in', '<=', $nextWeekStart->copy()->endOfWeek())
             ->where('status', '!=', 'cancelled')
-            ->sum('total_price');
-        $nextWeekExpectedRevenueTZS = $nextWeekExpectedRevenueUSD * $this->exchangeRate;
+            ->get()
+            ->sum(function($b) {
+                return $b->guest_type === 'international' 
+                    ? ($b->total_price ?? 0) * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                    : ($b->total_price ?? 0);
+            });
 
         $user = Auth::guard('staff')->user() ?? Auth::guard('guest')->user();
         
@@ -1217,7 +1293,7 @@ class ReportController extends Controller
                 'type' => $type->room_type,
                 'total_rooms' => $type->total,
                 'occupancy_rate' => $totalDays > 0 ? round(($occupiedDays / $totalDays) * 100, 1) : 0,
-                'revenue_usd' => $bookings->whereIn('payment_status', ['paid', 'partial'])->sum('amount_paid'),
+                'revenue_tzs' => $bookings->whereIn('payment_status', ['paid', 'partial'])->sum('amount_paid'),
             ];
         }
         
@@ -1228,9 +1304,9 @@ class ReportController extends Controller
             ->where('amount_paid', '>', 0)
             ->whereNotNull('room_id')
             ->select('room_id', DB::raw('count(*) as booking_count'), 
-                     DB::raw('sum(COALESCE(amount_paid, 0)) as total_revenue_usd'))
+                     DB::raw('sum(COALESCE(amount_paid, 0)) as total_revenue_tzs'))
             ->groupBy('room_id')
-            ->orderBy('total_revenue_usd', 'desc')
+            ->orderBy('total_revenue_tzs', 'desc')
             ->limit(10)
             ->get()
             ->map(function($item) {
@@ -1238,8 +1314,7 @@ class ReportController extends Controller
                 return [
                     'room' => $room,
                     'booking_count' => $item->booking_count,
-                    'revenue_usd' => $item->total_revenue_usd,
-                    'revenue_tzs' => $item->total_revenue_usd * $this->exchangeRate,
+                    'revenue_tzs' => $item->total_revenue_tzs,
                 ];
             })
             ->filter(function($item) {
@@ -1313,17 +1388,21 @@ class ReportController extends Controller
             ->count();
         
         // Revenue from bookings
-        $paidBookings = Booking::whereBetween('created_at', [$start, $end])
+        $paidBookings = Booking::whereBetween('paid_at', [$start, $end])
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $totalRevenueUSD = $paidBookings->sum('amount_paid');
-        $totalRevenueTZS = $totalRevenueUSD * $this->exchangeRate;
+        $totalRevenueTZS = $paidBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : $b->amount_paid;
+        });
         
         // Average booking value
-        $avgBookingValueUSD = $paidBookings->count() > 0 ? $totalRevenueUSD / $paidBookings->count() : 0;
-        $avgBookingValueTZS = $avgBookingValueUSD * $this->exchangeRate;
+        $totalRevenueUSD = $this->exchangeRate > 0 ? $totalRevenueTZS / $this->exchangeRate : 0;
+        $avgBookingValueTZS = $paidBookings->count() > 0 ? $totalRevenueTZS / $paidBookings->count() : 0;
+        $avgBookingValueUSD = $this->exchangeRate > 0 ? $avgBookingValueTZS / $this->exchangeRate : 0;
         
         // Booking lead time (days in advance)
         $bookingsWithLeadTime = Booking::whereBetween('created_at', [$start, $end])
@@ -1407,21 +1486,26 @@ class ReportController extends Controller
         $end = $dateRange['end'];
         
         // 1. Room Revenue
-        $roomBookings = Booking::whereBetween('created_at', [$start, $end])
+        $roomBookings = Booking::whereBetween('paid_at', [$start, $end])
             ->whereIn('payment_status', ['paid', 'partial'])
             ->whereNotNull('amount_paid')
             ->where('amount_paid', '>', 0)
             ->get();
-        $roomRevenueTZS = $roomBookings->sum('amount_paid') * $this->exchangeRate;
+        $roomRevenueTZS = $roomBookings->sum(function($b) {
+            return $b->guest_type === 'international' 
+                ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                : $b->amount_paid;
+        });
         
-        // 2. Service Revenue
+        // 2. Service Revenue - ONLY Walk-ins
         $serviceRequests = ServiceRequest::whereBetween('completed_at', [$start, $end])
             ->where('status', 'completed')
+            ->whereNull('booking_id')
             ->get();
         $serviceRevenueTZS = $serviceRequests->sum('total_price_tsh');
 
         // 3. Day Service Revenue
-        $dayServices = DayService::whereBetween('service_date', [$start, $end])
+        $dayServices = DayService::whereBetween('paid_at', [$start, $end])
             ->where('payment_status', 'paid')
             ->get();
         $dayServiceRevenueTZS = $dayServices->sum(function($ds) {
@@ -1451,9 +1535,16 @@ class ReportController extends Controller
 
                 $trendLabels[] = $mStart->format('M Y');
                 
-                $mRoomRev = Booking::whereBetween('created_at', [$mStart, $mEnd])->whereIn('payment_status', ['paid', 'partial'])->sum('amount_paid') * $this->exchangeRate;
-                $mServRev = ServiceRequest::whereBetween('completed_at', [$mStart, $mEnd])->where('status', 'completed')->sum('total_price_tsh');
-                $mDayRev = DayService::whereBetween('service_date', [$mStart, $mEnd])->where('payment_status', 'paid')->get()->sum(function($ds) {
+                $mRoomRev = Booking::whereBetween('paid_at', [$mStart, $mEnd])
+                    ->whereIn('payment_status', ['paid', 'partial'])
+                    ->get()
+                    ->sum(function($b) {
+                        return $b->guest_type === 'international' 
+                            ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                            : $b->amount_paid;
+                    });
+                $mServRev = ServiceRequest::whereBetween('completed_at', [$mStart, $mEnd])->where('status', 'completed')->whereNull('booking_id')->sum('total_price_tsh');
+                $mDayRev = DayService::whereBetween('paid_at', [$mStart, $mEnd])->where('payment_status', 'paid')->get()->sum(function($ds) {
                     return $ds->exchange_rate ? ($ds->amount_paid ?? $ds->amount) * $ds->exchange_rate : ($ds->amount_paid ?? $ds->amount);
                 });
 
@@ -1470,9 +1561,16 @@ class ReportController extends Controller
                 $dStart = $current->copy()->startOfDay();
                 $dEnd = $current->copy()->endOfDay();
 
-                $dRoomRev = Booking::whereBetween('created_at', [$dStart, $dEnd])->whereIn('payment_status', ['paid', 'partial'])->sum('amount_paid') * $this->exchangeRate;
-                $dServRev = ServiceRequest::whereBetween('completed_at', [$dStart, $dEnd])->where('status', 'completed')->sum('total_price_tsh');
-                $dDayRev = DayService::whereBetween('service_date', [$dStart, $dEnd])->where('payment_status', 'paid')->get()->sum(function($ds) {
+                $dRoomRev = Booking::whereBetween('paid_at', [$dStart, $dEnd])
+                    ->whereIn('payment_status', ['paid', 'partial'])
+                    ->get()
+                    ->sum(function($b) {
+                        return $b->guest_type === 'international' 
+                            ? $b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate) 
+                            : $b->amount_paid;
+                    });
+                $dServRev = ServiceRequest::whereBetween('completed_at', [$dStart, $dEnd])->where('status', 'completed')->whereNull('booking_id')->sum('total_price_tsh');
+                $dDayRev = DayService::whereBetween('paid_at', [$dStart, $dEnd])->where('payment_status', 'paid')->get()->sum(function($ds) {
                     return $ds->exchange_rate ? ($ds->amount_paid ?? $ds->amount) * $ds->exchange_rate : ($ds->amount_paid ?? $ds->amount);
                 });
 
@@ -1639,17 +1737,17 @@ class ReportController extends Controller
             })
             ->get();
 
-        // 2. Fetch Service Request Transactions
+        // 2. Fetch Service Request Transactions - ONLY Walk-ins to avoid double counting room bills
         if ($request->has('waiter')) {
             $waiterName = $request->get('waiter');
-            // When filtering by waiter, we match the logic in ReceptionController::waiterSales
-            // which looks for 'completed' status and uses 'requested_at' date
-            $servicesQuery = ServiceRequest::whereDate('requested_at', $start->format('Y-m-d'))
+            $servicesQuery = ServiceRequest::whereDate('completed_at', $start->format('Y-m-d'))
                 ->where('status', 'completed')
+                ->whereNull('booking_id')
                 ->where('reception_notes', 'like', "%Waiter: {$waiterName}%");
         } else {
             $servicesQuery = ServiceRequest::whereBetween('completed_at', [$start, $end])
                 ->where('payment_status', 'paid')
+                ->whereNull('booking_id')
                 ->where(function($q) use ($targetMethods) {
                     foreach($targetMethods as $m) {
                         $q->orWhere('payment_method', 'like', "%{$m}%");
@@ -1659,7 +1757,7 @@ class ReportController extends Controller
         $services = $servicesQuery->get();
 
         // 3. Fetch Day Service Transactions
-        $dayServices = DayService::whereBetween('service_date', [$start, $end])
+        $dayServices = DayService::whereBetween('paid_at', [$start, $end])
             ->where('payment_status', 'paid')
             ->where(function($q) use ($targetMethods) {
                 foreach($targetMethods as $m) {
@@ -1672,13 +1770,17 @@ class ReportController extends Controller
         $transactions = collect();
 
         foreach ($bookings as $b) {
+            $amountTsh = ($b->guest_type === 'international') 
+                ? ($b->amount_paid * ($b->locked_exchange_rate ?? $this->exchangeRate))
+                : ($b->amount_paid ?? 0);
+
             $transactions->push([
                 'date' => $b->paid_at ?? $b->created_at,
                 'source' => 'Room Booking',
                 'description' => "Booking #{$b->booking_reference} - {$b->guest_name}",
                 'method' => $b->payment_method,
-                'amount_tsh' => ($b->amount_paid ?? 0) * ($b->locked_exchange_rate ?? $this->exchangeRate),
-                'amount_usd' => ($b->amount_paid ?? 0),
+                'amount_tsh' => $amountTsh,
+                'amount_usd' => $amountTsh / ($this->exchangeRate > 0 ? $this->exchangeRate : 1),
                 'link' => route('admin.bookings.show', $b->id)
             ]);
         }
@@ -1697,7 +1799,7 @@ class ReportController extends Controller
 
         foreach ($dayServices as $ds) {
             $transactions->push([
-                'date' => $ds->service_date,
+                'date' => $ds->paid_at ?? $ds->service_date,
                 'source' => 'Day Service',
                 'description' => "{$ds->service_name} - {$ds->guest_name}",
                 'method' => $ds->payment_method,

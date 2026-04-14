@@ -1601,8 +1601,10 @@ class ReceptionController extends Controller
     
     // Calculate total bill for the whole booking (Room + Services)
     // Note: total_price already includes any approved extensions
+    $isTanzanian = ($booking->guest_type ?? 'international') === 'guest_tanzanian' || ($booking->guest_type ?? 'international') === 'tanzanian';
     $totalServiceChargesTsh = $serviceRequests->sum('total_price_tsh');
-    $totalBookingBillTsh = ($booking->total_price * $exchangeRate) + $totalServiceChargesTsh;
+    $roomBillTsh = $isTanzanian ? (float)$booking->total_price : ($booking->total_price * $exchangeRate);
+    $totalBookingBillTsh = $roomBillTsh + $totalServiceChargesTsh;
     
     // Calculate outstanding balance
     if ($booking->is_corporate_booking) {
@@ -2782,8 +2784,9 @@ class ReceptionController extends Controller
 
         foreach ($bookingPayments as $bp) {
             $bookingRate = $bp->locked_exchange_rate ?? $rate;
+            $isTanzanian = strtolower($bp->guest_type ?? '') === 'tanzanian' || strtolower($bp->guest_type ?? '') === 'guest_tanzanian';
             // Locally recorded amounts for Tanzanians are already in TZS. Foreigners are in USD.
-            $amountTsh = ($bp->guest_type === 'tanzanian') ? ($bp->amount_paid ?? 0) : (($bp->amount_paid ?? 0) * $bookingRate);
+            $amountTsh = $isTanzanian ? ($bp->amount_paid ?? 0) : (($bp->amount_paid ?? 0) * $bookingRate);
             $meth = strtolower($bp->payment_method ?? '');
             
             if ($meth === 'cash') {
@@ -2861,8 +2864,9 @@ class ReceptionController extends Controller
 
         foreach ($dayServicePayments as $ds) {
             $meth = strtolower($ds->payment_method ?? 'cash');
+            $isTanzanian = strtolower($ds->guest_type ?? '') === 'tanzanian' || strtolower($ds->guest_type ?? '') === 'guest_tanzanian';
             // If TZS, use amount_paid. If USD, convert using exchange_rate
-            $amt = ($ds->guest_type === 'tanzanian') ? ($ds->amount_paid ?? 0) : (($ds->amount_paid ?? 0) * ($ds->exchange_rate ?? $rate));
+            $amt = $isTanzanian ? ($ds->amount_paid ?? 0) : (($ds->amount_paid ?? 0) * ($ds->exchange_rate ?? $rate));
             
             $staffName = $ds->registeredBy->name ?? 'System/Other';
             $staffId = $ds->registered_by ?? 0;
