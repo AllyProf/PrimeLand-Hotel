@@ -90,7 +90,8 @@ class AdminController extends Controller
                 ->sum(function($booking) use ($exchangeRate) {
                     $amount = $booking->amount_paid ?? 0;
                     $rate = $booking->locked_exchange_rate ?? $exchangeRate;
-                    return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
+                    $isTanzanian = str_contains(strtolower($booking->guest_type ?? ''), 'tanzanian');
+                    return $isTanzanian ? $amount : ($amount * $rate);
                 });
             $todayServiceRevenueTZS = ServiceRequest::where('status', 'completed')
                 ->whereDate('completed_at', $today)
@@ -100,7 +101,8 @@ class AdminController extends Controller
                 ->whereDate('paid_at', $today)
                 ->get()->sum(function($s) use ($exchangeRate) {
                     $amount = $s->amount_paid ?? $s->amount ?? 0;
-                    return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
+                    $isTanzanian = str_contains(strtolower($s->guest_type ?? ''), 'tanzanian');
+                    return $isTanzanian ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
                 });
 
             $todayRevenueTZS = $todayBookingRevenueTZS + $todayServiceRevenueTZS + $todayDayServiceRevenueTZS;
@@ -120,7 +122,8 @@ class AdminController extends Controller
                 ->sum(function($booking) use ($exchangeRate) {
                     $amount = $booking->amount_paid ?? 0;
                     $rate = $booking->locked_exchange_rate ?? $exchangeRate;
-                    return strtolower($booking->guest_type) === 'tanzanian' ? $amount : ($amount * $rate);
+                    $isTanzanian = str_contains(strtolower($booking->guest_type ?? ''), 'tanzanian');
+                    return $isTanzanian ? $amount : ($amount * $rate);
                 });
             $monthServiceRevenueTZS = ServiceRequest::where('status', 'completed')
                 ->where('completed_at', '>=', $thisMonth)
@@ -130,7 +133,8 @@ class AdminController extends Controller
                 ->where('paid_at', '>=', $thisMonth)
                 ->get()->sum(function($s) use ($exchangeRate) {
                     $amount = $s->amount_paid ?? $s->amount ?? 0;
-                    return $s->guest_type === 'tanzanian' ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
+                    $isTanzanian = str_contains(strtolower($s->guest_type ?? ''), 'tanzanian');
+                    return $isTanzanian ? $amount : ($amount * ($s->exchange_rate ?? $exchangeRate));
                 });
 
             $monthRevenueTZS = $monthBookingRevenueTZS + $monthServiceRevenueTZS + $monthDayServiceRevenueTZS;
