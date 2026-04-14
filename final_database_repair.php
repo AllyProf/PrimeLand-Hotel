@@ -30,8 +30,12 @@ DB::beginTransaction();
 
 try {
     // 1. REPAIR BOOKINGS
-    // Deflate TZS bookings that were multiplied by the exchange rate (~2500-2600x)
-    $inflatedBookings = Booking::where('total_price', '>', 5000000)
+    // Deflate TZS bookings/payments that were multiplied by the exchange rate (~2500-2600x)
+    // Target records where EITHER total_price OR amount_paid is suspiciously high for a local guest
+    $inflatedBookings = Booking::where(function($q) {
+            $q->where('total_price', '>', 1000000)
+              ->orWhere('amount_paid', '>', 1000000);
+        })
         ->where(function($q) {
             $q->where('guest_type', 'tanzanian')
               ->orWhere('guest_type', 'guest_tanzanian');
@@ -40,10 +44,14 @@ try {
     echo "1. Checking Bookings...\n";
     foreach ($inflatedBookings as $b) {
         $oldPrice = $b->total_price;
-        $newPrice = round($oldPrice / 2600);
-        $newPaid  = round($b->amount_paid / 2600);
+        $oldPaid  = $b->amount_paid;
+        
+        // Deflate only if they are significantly higher than reasonable (e.g. > 1M)
+        $newPrice = ($oldPrice > 1000000) ? round($oldPrice / 2600) : $oldPrice;
+        $newPaid  = ($oldPaid > 1000000) ? round($oldPaid / 2600) : $oldPaid;
+        
         $b->update(['total_price' => $newPrice, 'amount_paid' => $newPaid]);
-        echo "   [FIXED] Booking #{$b->booking_reference}: " . number_format($oldPrice) . " -> " . number_format($newPrice) . " TZS\n";
+        echo "   [FIXED] Booking #{$b->booking_reference}: Price " . number_format($oldPrice) . " -> " . number_format($newPrice) . " | Paid " . number_format($oldPaid) . " -> " . number_format($newPaid) . " TZS\n";
     }
 
     // 2. REPAIR SERVICE REQUESTS (F&B / Laundry etc)
