@@ -54,6 +54,11 @@
                 }
                 $bookingExchangeRate = $booking->locked_exchange_rate ?? $exchangeRate;
                 $extensionCostTsh = $extensionCostUsd * $bookingExchangeRate;
+              @php
+                // Strict currency detection by price magnitude:
+                // If price is > 1000, it's TZS. If <= 1000, it's USD.
+                $roomPrice = $booking->room->price_per_night ?? 0;
+                $isTanzanian = ($roomPrice > 1000);
               @endphp
               <tr>
                 <td><strong>{{ $booking->booking_reference }}</strong></td>
@@ -93,17 +98,21 @@
                   @endif
                 </td>
                 <td>
-                  @if($extensionCostUsd > 0 && $booking->extension_status === 'approved')
-                    <div><strong>${{ number_format($extensionCostUsd, 2) }}</strong></div>
-                    <div style="color: #e07632; font-size: 11px;">
-                      <strong>≈ {{ number_format($extensionCostTsh, 2) }} TZS</strong>
-                    </div>
-                  @elseif($extensionCostUsd > 0)
-                    <div><strong style="color: #666;">${{ number_format($extensionCostUsd, 2) }}</strong></div>
-                    <div style="color: #666; font-size: 11px;">
-                      <strong>≈ {{ number_format($extensionCostTsh, 2) }} TZS</strong>
-                    </div>
-                    <small class="text-muted">(Estimated)</small>
+                  @if($extensionCostUsd > 0)
+                    @if($isTanzanian)
+                      <div><strong>{{ number_format($extensionCostUsd, 2) }} TZS</strong></div>
+                      <div style="color: #e07632; font-size: 11px;">
+                        <strong>≈ ${{ number_format($extensionCostUsd / $bookingExchangeRate, 2) }}</strong>
+                      </div>
+                    @else
+                      <div><strong>${{ number_format($extensionCostUsd, 2) }}</strong></div>
+                      <div style="color: #e07632; font-size: 11px;">
+                        <strong>≈ {{ number_format($extensionCostUsd * $bookingExchangeRate, 2) }} TZS</strong>
+                      </div>
+                    @endif
+                    @if($booking->extension_status !== 'approved')
+                      <small class="text-muted">(Estimated)</small>
+                    @endif
                   @else
                     <span class="text-muted">-</span>
                   @endif
@@ -123,7 +132,7 @@
                   @if($booking->extension_requested_at)
                     {{ \Carbon\Carbon::parse($booking->extension_requested_at)->format('M d, Y H:i') }}
                   @else
-                    <span class="text-muted">N/A</span>
+                    <span class="badge badge-light text-muted" title="This extension was recorded manually by staff"><i class="fa fa-user-circle"></i> Staff Entry</span>
                   @endif
                 </td>
                 <td>

@@ -26,7 +26,7 @@
                 style="display:flex;align-items:center;gap:12px;margin:18px 0 16px;">
                 <div style="height:2px;width:50px;background:#e77a3a;"></div>
                 <span
-                    style="color:#e77a3a;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-weight:600;">Best Hotel In Moshi for your Stay</span>
+                    style="color:#e77a3a;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-weight:600;">Best Hotel In Kilimanjaro for your Stay</span>
                 <div style="height:2px;width:50px;background:#e77a3a;"></div>
             </div>
 
@@ -560,7 +560,7 @@
 
 <!-- EXCLUSIVE DEALS Section -->
 <section class="gt-offer-section-3 parallaxie fix bg-cover" 
-    style="margin-top: -40px; padding: 80px 0; background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{{ asset('assets/img/new_images/hotel view_.jpg') }}');">
+    style="margin-top: -40px; padding: 20px 0; background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{{ asset('assets/img/new_images/hotel view_.jpg') }}');">
     <div class="left-shape">
         <img src="{{ asset('assets/img/new_images/left-shape (2).png') }}" alt="img">
         <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="

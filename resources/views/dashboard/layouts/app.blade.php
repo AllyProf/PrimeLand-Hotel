@@ -139,91 +139,226 @@
         100% { width: 100%; }
       }
 
-      /* Sidebar & Menu Optimization */
+      /* =====================================================
+         SIDEBAR — Exactly matched to reference picture
+         ===================================================== */
+
+      /* ── Base sidebar ── */
       .app-sidebar {
-        background: #000000 !important; /* Pure black background */
-        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+        background: #1e2d3a !important;
+        box-shadow: 3px 0 18px rgba(0,0,0,0.35);
       }
-      
+
+      /* ── User profile block ── */
       .app-sidebar__user {
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        padding: 20px 15px;
-        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 20px 16px 18px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        margin-bottom: 6px;
       }
-      
+
+      .app-sidebar__user-avatar {
+        width: 52px !important;
+        height: 52px !important;
+        border-radius: 50% !important;
+        border: 2px solid rgba(255,255,255,0.15) !important;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+
       .app-sidebar__user-name {
         color: #ffffff !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px !important;
+        line-height: 1.3 !important;
+        text-transform: uppercase;
+        white-space: normal !important;
+        word-break: break-word;
+        margin: 0; padding: 0;
       }
-      
+
       .app-sidebar__user-designation {
-        color: rgba(255,255,255,0.7) !important;
+        color: #f5c842 !important;
+        font-size: 12px !important;
+        font-weight: 400 !important;
+        letter-spacing: 0.3px !important;
+        margin-top: 2px !important;
+        padding: 0;
       }
-      
+
+      /* ── User info wrapper ── */
+      .app-sidebar__user-info {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      canvas.app-sidebar__user-avatar {
+        border-radius: 50% !important;
+        border: 2px solid rgba(255,255,255,0.15) !important;
+        flex-shrink: 0;
+      }
+
+      /* ── Top-level menu items ── */
       .app-menu__item {
         border-left: 3px solid transparent;
-        transition: all 0.2s ease;
-        padding: 12px 15px !important;
-      }
-      
-      .app-menu__item:not(.active) {
+        transition: background 0.15s ease, color 0.15s ease;
+        padding: 12px 16px !important;
         color: #ffffff !important;
+        font-size: 14px !important;
+        font-weight: 400;
+        letter-spacing: 0.3px;
+        display: flex;
+        align-items: center;
       }
-      
-      .app-menu__item:hover, .app-menu__item:focus {
-        background: rgba(255,255,255,0.05) !important;
-        border-right: 3px solid #e77a3a;
-        color: #ffffff !important;
-        text-decoration: none;
+
+      .app-menu__item .app-menu__icon {
+        color: rgba(255,255,255,0.85);
+        margin-right: 12px;
+        font-size: 15px;
+        width: 18px;
+        text-align: center;
+        flex-shrink: 0;
       }
-      
-      .app-menu__item.active {
-        background: rgba(231, 122, 58, 0.1) !important;
-        border-left-color: #e77a3a;
+
+      .app-menu__label {
+        flex: 1;
+      }
+
+      /* Hover */
+      .app-menu__item:hover,
+      .app-menu__item:focus {
+        background: rgba(231, 122, 58, 0.12) !important;
         color: #e77a3a !important;
-        font-weight: 600;
+        text-decoration: none;
+        border-left-color: #e77a3a;
       }
-      
+
+      .app-menu__item:hover .app-menu__icon,
+      .app-menu__item:focus .app-menu__icon {
+        color: #e77a3a;
+      }
+
+      /* Active */
+      .app-menu__item.active {
+        background: rgba(0,0,0,0.28) !important;
+        border-left-color: #e77a3a !important;
+        color: #ffffff !important;
+        font-weight: 500;
+      }
+
+      .app-menu__item.active .app-menu__icon {
+        color: #e77a3a;
+      }
+
+      /* ── nav-header → branded section labels ── */
       .nav-header {
-        padding: 15px 20px 5px !important;
+        padding: 16px 16px 6px !important;
         color: #e77a3a !important;
         font-size: 10px !important;
         text-transform: uppercase !important;
-        letter-spacing: 1.5px !important;
+        letter-spacing: 1.8px !important;
         font-weight: 700 !important;
-        opacity: 0.8;
+        opacity: 0.95;
+        display: block !important;
+        height: auto !important;
+        margin: 0 !important;
+        background: transparent !important;
+        overflow: visible !important;
+        line-height: normal !important;
       }
-      
-      .treeview-menu {
-        background: rgba(0,0,0,0.15) !important;
-      }
-      
-      .treeview-item {
-        padding: 8px 15px 8px 45px !important;
-        font-size: 13px !important;
-        transition: all 0.2s;
+
+      /* ── Treeview expandable parent ── */
+      .treeview.is-expanded > .app-menu__item {
+        background: rgba(0,0,0,0.22) !important;
+        border-left: 3px solid #e77a3a !important;
         color: #ffffff !important;
       }
-      
+
+      .treeview.is-expanded > .app-menu__item .app-menu__icon {
+        color: rgba(255,255,255,0.9);
+      }
+
+      /* ── Sub-menu container ── */
+      .treeview-menu {
+        background: rgba(0,0,0,0.2) !important;
+        padding: 4px 0 6px;
+        border-left: none;
+      }
+
+      /* ── Sub-menu items ── */
+      .treeview-item {
+        padding: 9px 14px 9px 44px !important;
+        font-size: 13.5px !important;
+        color: #ffffff !important;
+        transition: background 0.15s;
+        display: block;
+        letter-spacing: 0.2px;
+      }
+
+      .treeview-item .icon {
+        font-size: 12px;
+        margin-right: 8px;
+        opacity: 0.8;
+        width: 14px;
+        display: inline-block;
+        text-align: center;
+      }
+
       .treeview-item:hover {
-        background: rgba(255,255,255,0.05) !important;
+        background: rgba(231, 122, 58, 0.08) !important;
         color: #e77a3a !important;
+        text-decoration: none;
       }
 
       .treeview-item.active {
         color: #e77a3a !important;
         font-weight: 600;
       }
-      
-      .treeview-divider {
-        height: 1px;
-        background: rgba(255,255,255,0.05);
-        margin: 5px 15px;
+
+      /* ── Treeview arrow indicator ── */
+      .treeview-indicator {
+        font-size: 12px;
+        opacity: 0.7;
+        transition: transform 0.2s ease;
+        float: right;
+        margin-left: auto;
       }
 
-      .treeview.is-expanded > .app-menu__item {
-        background: rgba(255,255,255,0.02);
+      .treeview.is-expanded > .app-menu__item .treeview-indicator {
+        transform: rotate(90deg);
+        opacity: 1;
       }
-      
+
+      /* Dividers inside sub-menus */
+      .treeview-divider {
+        height: 1px;
+        background: rgba(255,255,255,0.06);
+        margin: 4px 14px;
+      }
+
+      /* Badge pills */
+      .app-menu .badge {
+        font-size: 10px !important;
+        padding: 2px 6px !important;
+      }
+
+      /* Thin scrollbar */
+      .app-sidebar::-webkit-scrollbar { width: 4px; }
+      .app-sidebar::-webkit-scrollbar-track { background: transparent; }
+      .app-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+      /* User info text */
+      .app-sidebar__user-info .app-sidebar__user-name,
+      .app-sidebar__user-info .app-sidebar__user-designation {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
       /* Mobile Header Logo - White Color and Centered */
       @media (max-width: 768px) {
         .app-header {
@@ -518,21 +653,34 @@
         
         // Get user profile photo or use default
         $userPhoto = null;
+        $userNameForAvatar = $userName ?? ($currentAuthUser->name ?? 'User');
         if ($currentAuthUser && $currentAuthUser->profile_photo) {
-          // Add cache-busting parameter to ensure fresh image after update
           $userPhoto = asset('storage/' . $currentAuthUser->profile_photo) . '?v=' . ($currentAuthUser->updated_at ? $currentAuthUser->updated_at->timestamp : time());
-        } else {
-          // Use UI Avatars as fallback with user's name
-          $userNameForAvatar = $userName ?? ($currentAuthUser->name ?? 'User');
-          $userPhoto = 'https://ui-avatars.com/api/?name=' . urlencode($userNameForAvatar) . '&size=128&background=e77a3a&color=fff';
         }
+        // Compute initials for JS canvas fallback
+        $avatarInitials = implode('', array_map(fn($w) => strtoupper($w[0] ?? ''), array_slice(explode(' ', trim($userNameForAvatar)), 0, 2)));
+        if (!$avatarInitials) $avatarInitials = 'U';
       @endphp
       <div class="app-sidebar__user">
-        <img class="app-sidebar__user-avatar" src="{{ $userPhoto }}" alt="User Image" id="sidebarUserAvatar" style="object-fit: cover;">
-        <div>
+        {{-- Avatar: real photo if available, otherwise canvas-drawn initials --}}
+        @if($userPhoto)
+          <img class="app-sidebar__user-avatar"
+               src="{{ $userPhoto }}"
+               alt="{{ $avatarInitials }}"
+               id="sidebarUserAvatar"
+               data-initials="{{ $avatarInitials }}"
+               onerror="sidebarAvatarFallback(this)"
+               style="object-fit:cover;">
+        @else
+          <canvas class="app-sidebar__user-avatar"
+                  id="sidebarUserAvatar"
+                  data-initials="{{ $avatarInitials }}"
+                  width="52" height="52"></canvas>
+        @endif
+
+        <div class="app-sidebar__user-info">
           <p class="app-sidebar__user-name">
             @php
-              // Use passed $userName if available, otherwise use authenticated user's name
               $displayName = null;
               if (!empty($userName)) {
                 $displayName = $userName;
@@ -541,19 +689,17 @@
               } else {
                 $displayName = 'User';
               }
-              echo $displayName;
+              echo e($displayName);
             @endphp
           </p>
           <p class="app-sidebar__user-designation">
             @php
-              // Determine role from authenticated user if not passed
               $displayRole = $role ?? null;
               if (!$displayRole && $currentAuthUser) {
                 if ($currentAuthUser instanceof \App\Models\Staff) {
                   $rawRole = $currentAuthUser->role ?? '';
                   $normalizedRole = strtolower(str_replace([' ', '_'], '', trim($rawRole)));
                   $rawRoleLower = strtolower(trim($rawRole));
-                  
                   if ($normalizedRole === 'superadmin' || $rawRoleLower === 'super_admin' || $rawRoleLower === 'super admin') {
                     $displayRole = 'super_admin';
                   } elseif ($normalizedRole === 'manager' || $rawRoleLower === 'manager') {
@@ -573,19 +719,11 @@
                   $displayRole = 'customer';
                 }
               }
-              
-              // Display role name
-              if ($displayRole === 'customer' || $displayRole === 'Customer') {
-                echo 'Prime Guest';
-              } elseif ($displayRole === 'bar_keeper') {
-                echo 'Bar Keeper';
-              } elseif ($displayRole === 'head_chef') {
-                echo 'Head Chef';
-              } elseif ($displayRole === 'super_admin') {
-                echo 'Super Admin';
-              } else {
-                echo ucfirst($displayRole ?: 'Manager');
-              }
+              if ($displayRole === 'customer' || $displayRole === 'Customer') echo 'Prime Guest';
+              elseif ($displayRole === 'bar_keeper') echo 'Bar Keeper';
+              elseif ($displayRole === 'head_chef') echo 'Head Chef';
+              elseif ($displayRole === 'super_admin') echo 'Super Admin';
+              else echo ucfirst($displayRole ?: 'Manager');
             @endphp
           </p>
         </div>
@@ -710,6 +848,48 @@
     <script src="{{ asset('dashboard_assets/js/popper.min.js') }}"></script>
     <script src="{{ asset('dashboard_assets/js/bootstrap.min.js') }}"></script>
     <script src="{{ asset('dashboard_assets/js/main.js') }}"></script>
+    <script>
+    // ── Sidebar Avatar: Canvas-based initials (works 100% offline) ──────────
+    function drawInitialsAvatar(canvas, initials) {
+        var size = 52;
+        canvas.width  = size;
+        canvas.height = size;
+        var ctx = canvas.getContext('2d');
+
+        // Brand orange circle — matches PrimeLand branding
+        ctx.beginPath();
+        ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#e77a3a';
+        ctx.fill();
+
+        // White initials text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold ' + Math.round(size * 0.38) + 'px Arial, sans-serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(initials.substring(0, 2), size / 2, size / 2);
+    }
+
+    // Fallback when <img> fails to load
+    function sidebarAvatarFallback(imgEl) {
+        var initials = imgEl.getAttribute('data-initials') || '?';
+        var canvas = document.createElement('canvas');
+        canvas.className = imgEl.className;
+        canvas.id        = imgEl.id;
+        drawInitialsAvatar(canvas, initials);
+        imgEl.parentNode.replaceChild(canvas, imgEl);
+    }
+
+    // Auto-init canvas elements (for when no photo is set at all)
+    document.addEventListener('DOMContentLoaded', function () {
+        var canvas = document.getElementById('sidebarUserAvatar');
+        if (canvas && canvas.tagName === 'CANVAS') {
+            var initials = canvas.getAttribute('data-initials') || '?';
+            drawInitialsAvatar(canvas, initials);
+        }
+    });
+    // ────────────────────────────────────────────────────────────────────────
+    </script>
     <!-- SweetAlert2 - Standard Alert System -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

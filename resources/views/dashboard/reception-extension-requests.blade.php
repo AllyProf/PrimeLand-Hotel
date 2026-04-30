@@ -149,6 +149,12 @@
                     $additionalNights = 0;
                     $additionalCost = 0;
                 }
+                
+                $bookingExchangeRate = $extension->locked_exchange_rate ?? $exchangeRate;
+                // Strict currency detection by price magnitude:
+                // If price is > 1000, it's TZS. If <= 1000, it's USD.
+                $roomPrice = $extension->room->price_per_night ?? 0;
+                $isTanzanian = ($roomPrice > 1000);
               @endphp
               <tr class="extension-row"
                   data-status="{{ $extension->extension_status }}"
@@ -191,8 +197,13 @@
                 </td>
                 <td>
                   @if($additionalCost > 0)
-                    <strong class="text-success">+${{ number_format($additionalCost, 2) }}</strong><br>
-                    <small>+{{ number_format($additionalCost * $exchangeRate, 2) }} TZS</small>
+                    @if($isTanzanian)
+                      <strong class="text-success">+{{ number_format($additionalCost, 2) }} TZS</strong><br>
+                      <small>+${{ number_format($additionalCost / $bookingExchangeRate, 2) }}</small>
+                    @else
+                      <strong class="text-success">+${{ number_format($additionalCost, 2) }}</strong><br>
+                      <small>+{{ number_format($additionalCost * $bookingExchangeRate, 2) }} TZS</small>
+                    @endif
                   @elseif($additionalNights < 0)
                     <span class="badge badge-secondary">No Refund</span>
                   @else
@@ -212,7 +223,7 @@
                   @if($extension->extension_requested_at)
                     {{ $extension->extension_requested_at->format('M d, Y H:i') }}
                   @else
-                    <span class="text-muted">N/A</span>
+                    <span class="badge badge-light text-muted" title="This extension was recorded manually by staff"><i class="fa fa-user-circle"></i> Staff Entry</span>
                   @endif
                 </td>
                 <td>

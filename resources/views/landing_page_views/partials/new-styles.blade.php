@@ -76,23 +76,40 @@
         50% { transform: scale(1.4); }
     }
 
+    /* ===== Offer Section: Override main.css large margins ===== */
+    .gt-offer-content-left-3 h2 {
+        margin-top: 8px !important;
+        font-size: 44px !important;
+    }
+    .gt-offer-content-left-3 h4 {
+        font-size: 20px !important;
+        margin-bottom: 8px !important;
+    }
+    .gt-offer-content-left-3 h5 {
+        margin-top: 0 !important;
+        margin-bottom: 6px !important;
+    }
+    .gt-offer-section-3 .offer-btn {
+        margin-top: 0 !important;
+    }
+
     /* Offer Section Enhancement */
     .prl-offer-card {
         background: rgba(0, 0, 0, 0.35);
         backdrop-filter: blur(15px);
         -webkit-backdrop-filter: blur(15px);
         border: 1px solid rgba(255, 255, 255, 0.15);
-        padding: 50px;
+        padding: 28px 36px;
         border-radius: 24px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         max-width: 600px;
     }
 
     .prl-offer-card h2 {
-        font-size: 68px;
+        font-size: 44px;
         font-weight: 800;
         line-height: 1.1;
-        margin-bottom: 20px;
+        margin-bottom: 10px;
         color: #ffffff !important;
     }
 
@@ -105,16 +122,16 @@
 
     .prl-offer-card h4 {
         color: #ffffff !important;
-        font-size: 32px;
+        font-size: 20px;
         font-weight: 600;
-        margin-bottom: 25px;
+        margin-bottom: 12px;
     }
 
     .prl-offer-card p {
         color: rgba(255, 255, 255, 0.95) !important;
-        font-size: 18px;
-        line-height: 1.7;
-        margin-bottom: 35px;
+        font-size: 15px;
+        line-height: 1.6;
+        margin-bottom: 20px;
     }
 
     /* Footer Social Grid Styling */
