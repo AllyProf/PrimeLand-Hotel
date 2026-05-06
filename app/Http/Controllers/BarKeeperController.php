@@ -1159,7 +1159,9 @@ class BarKeeperController extends Controller
             }
 
             $priceNote = "";
-            if (isset($m['unit_cost']) && $m['unit_cost'] > 0) {
+            $isManager = in_array(strtolower(Auth::guard('staff')->user()->role), ['manager', 'admin', 'super_admin', 'owner']);
+
+            if ($isManager && isset($m['unit_cost']) && $m['unit_cost'] > 0) {
                 $priceNote .= " | Buy: " . number_format($m['unit_cost']);
             }
             if (isset($m['selling_price']) && $m['selling_price'] > 0) {

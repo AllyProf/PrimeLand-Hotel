@@ -487,9 +487,13 @@
             </div>
         </div>
         
+        @php
+            $isManager = in_array(strtolower(auth('staff')->user()->role), ['manager', 'admin', 'super_admin', 'owner']);
+        @endphp
+
         <div class="receipt-column">
             <div class="receipt-info-section">
-                <h3>Sales Statistics</h3>
+                <h3>@if($isManager) Sales Statistics @else Operational Summary @endif</h3>
                 @php 
                     $totalSoldQty = collect($salesData)->sum('total_qty'); 
                     $totalRev = collect($salesData)->sum('total_revenue'); 
@@ -504,10 +508,12 @@
                     <span class="receipt-info-label">Sales Variants:</span>
                     <span class="receipt-info-value" style="color: #666;"><strong>{{ collect($salesData)->count() + (isset($ceremonyUsage) ? $ceremonyUsage->groupBy('service_id')->count() : 0) }} Items</strong></span>
                 </div>
+                @if($isManager)
                 <div class="receipt-info-row">
                     <span class="receipt-info-label">Total Revenue:</span>
                     <span class="receipt-info-value" style="color: #e07632; font-size: 16px;"><strong>{{ number_format($totalRev + $eventRev) }} TZS</strong></span>
                 </div>
+                @endif
                 <div class="receipt-info-row" style="margin-top: 5px;">
                     <span class="receipt-info-label">Inventory Items:</span>
                     <span class="receipt-info-value text-muted"><strong>{{ collect($reportData)->count() }} Tracks</strong></span>
@@ -527,7 +533,9 @@
                     <th>Opening</th>
                     <th>New (In)</th>
                     <th>Sold</th>
+                    @if($isManager)
                     <th>Sales (TZS)</th>
+                    @endif
                     <th style="text-align: right;">Closing Bal</th>
                     <th>Expire</th>
                 </tr>
@@ -552,7 +560,7 @@
 
                 @foreach($groupedReport as $category => $items)
                 <tr class="category-row">
-                    <td colspan="6" style="background-color: #fcece2;"><strong>{{ $category }}</strong></td>
+                    <td colspan="{{ $isManager ? 6 : 5 }}" style="background-color: #fcece2;"><strong>{{ $category }}</strong></td>
                     <td style="text-align: right; background-color: #fcece2;"><small>{{ $items->count() }} items</small></td>
                     <td style="background-color: #fcece2;"></td>
                 </tr>
@@ -584,7 +592,9 @@
                             {{ number_format($soldVal, 1) }}
                         @endif
                     </td>
+                    @if($isManager)
                     <td style="text-align: center; font-weight: bold; color: #28a745;">{{ number_format($item->actual_revenue) }}</td>
+                    @endif
                     <td style="text-align: right; background-color: #f8f9fa;">
                         <strong>
                             @if($ratio > 1)
@@ -616,7 +626,9 @@
                     <th style="text-align: left;">Guest / Destination</th>
                     <th style="text-align: left;">Items Ordered</th>
                     <th style="text-align: center; width: 60px;">Qty</th>
+                    @if($isManager)
                     <th style="text-align: right; width: 100px;">Revenue</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -655,25 +667,27 @@
                         <td style="text-align: center;">
                             @php
                                 $isGlass = (int)$item->servings_per_pic > 1 && ($item->total_qty / $item->servings_per_pic) < 1;
-                                // Or check price vs bottle price logic if we had it, but simplified:
-                                // If Qty is clearly a glass qty (e.g. 2 glasses) show G
                             @endphp
                             <strong>{{ $item->total_qty }}</strong><small>{{ (int)$item->servings_per_pic > 1 ? ($item->pic_equivalent < $item->total_qty ? 'G' : 'B') : '' }}</small>
                         </td>
+                        @if($isManager)
                         <td style="text-align: right;">{{ number_format($item->total_revenue) }}</td>
+                        @endif
                     </tr>
                     @endforeach
+                    @if($isManager)
                     <tr style="background-color: #fcfcfc; border-bottom: 2px solid #eee;">
                         <td colspan="4" style="text-align: right; font-weight: bold; padding: 5px 12px;">SUBTOTAL:</td>
                         <td style="text-align: right; font-weight: bold; padding: 5px 12px; color: #e07632;">{{ number_format($groupTotal) }}</td>
                     </tr>
+                    @endif
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center" style="padding: 30px;">No sales records found for this period.</td>
+                        <td colspan="{{ $isManager ? 5 : 4 }}" class="text-center" style="padding: 30px;">No sales records found for this period.</td>
                     </tr>
                 @endforelse
 
-                @if(collect($salesData)->count() > 0)
+                @if($isManager && collect($salesData)->count() > 0)
                 <tr class="total-row" style="background-color: #f8f9fa;">
                     <td colspan="4" style="text-align: right; font-size: 14px;"><strong>TOTAL DIRECT SALES:</strong></td>
                     <td style="text-align: right; color: #e07632; font-size: 16px;"><strong>{{ number_format($totalRev) }} TZS</strong></td>
@@ -694,7 +708,9 @@
                     <th style="text-align: left;">Item</th>
                     <th style="text-align: center;">Qty</th>
                     <th style="text-align: left;">Status / Payment</th>
+                    @if($isManager)
                     <th style="text-align: right;">Total Amount</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -713,7 +729,7 @@
                     @foreach($items as $index => $usage)
                     <tr>
                         @if($index === 0)
-                        <td rowspan="{{ $itemCount + 1 }}" style="vertical-align: top; background-color: #fcfcfc;">
+                        <td rowspan="{{ $itemCount + ($isManager ? 1 : 0) }}" style="vertical-align: top; background-color: #fcfcfc;">
                             <strong>{{ $dayService->service_reference ?? 'N/A' }}</strong><br>
                             <small style="color: #007bff; font-weight: bold;">{{ strtoupper($dayService->guest_name ?? 'Unknown') }}</small><br>
                             <span style="font-size: 9px; background: #eee; padding: 2px 5px; border-radius: 3px; display: inline-block; margin-top: 5px;">{{ $itemCount }} Items</span>
@@ -738,18 +754,23 @@
                                 <span class="status-badge" style="color: #dc3545; border: 1px solid #dc3545; padding: 1px 4px;">UNPAID</span>
                             @endif
                         </td>
+                        @if($isManager)
                         <td style="text-align: right;">{{ number_format($usage->total_price_tsh) }}</td>
+                        @endif
                     </tr>
                     @endforeach
                     
+                    @if($isManager)
                     <tr style="background-color: #f9f9f9; border-bottom: 2px solid #ddd;">
                         <td colspan="3" style="text-align: right; border-left: 1px solid #eee; padding-right: 15px;">
                             <small class="text-muted" style="text-transform: uppercase;">Subtotal:</small>
                         </td>
                         <td style="text-align: right; font-weight: bold; color: #17a2b8;">{{ number_format($subtotal) }}</td>
                     </tr>
+                    @endif
                 @endforeach
                 
+                @if($isManager)
                 @php
                     $totalEvents = $ceremonyUsage->sum('total_price_tsh');
                     $paidEvents = $ceremonyUsage->where('payment_status', 'paid')->sum('total_price_tsh');
@@ -780,11 +801,13 @@
                         </div>
                     </td>
                 </tr>
+                @endif
             </tbody>
         </table>
     </div>
     @endif
 
+    @if($isManager)
     @php
         $totalMaxPotential = collect($reportData)->sum('max_potential_revenue');
         $totalActual = isset($ceremonyUsage) ? ($totalRev + $ceremonyUsage->sum('total_price_tsh')) : $totalRev;
@@ -810,6 +833,7 @@
             </div>
         </div>
     </div>
+    @endif
     
     <!-- Signature Grid -->
     <div class="signature-grid">

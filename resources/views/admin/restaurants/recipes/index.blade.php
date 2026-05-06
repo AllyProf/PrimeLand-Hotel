@@ -14,101 +14,40 @@
 </div>
 
 <!-- Stats Row -->
-<div class="row mb-4">
-    <!-- Total Items -->
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #4e54c8 0%, #8f94fb 100%);">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-utensils text-white fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Total Items</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ $totalCount }}</h3>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Total catalog size</small>
-                </div>
+<div class="row">
+    <div class="col-md-3">
+        <div class="widget-small primary coloured-icon">
+            <i class="icon fa fa-utensils fa-3x"></i>
+            <div class="info">
+                <h4>Total Items</h4>
+                <p><b>{{ $totalCount }}</b></p>
             </div>
         </div>
     </div>
-    
-    <!-- Available -->
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #11998e 0%, #38ef7d 100%);">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-check-circle text-white fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Available</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ $availableCount }}</h3>
-                    </div>
-                </div>
-                @php
-                    $availPercent = $totalCount > 0 ? ($availableCount / $totalCount) * 100 : 0;
-                @endphp
-                <div class="mt-3">
-                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: {{ $availPercent }}%; border-radius: 10px;" aria-valuenow="{{ $availPercent }}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">{{ round($availPercent) }}% of total menu</small>
-                </div>
+    <div class="col-md-3">
+        <div class="widget-small success coloured-icon">
+            <i class="icon fa fa-check-circle fa-3x"></i>
+            <div class="info">
+                <h4>Available</h4>
+                <p><b>{{ $availableCount }}</b></p>
             </div>
         </div>
     </div>
-    
-    <!-- Unavailable -->
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #f85032 0%, #f16232 100%);">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-eye-slash text-white fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Unavailable</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ $unavailableCount }}</h3>
-                    </div>
-                </div>
-                @php
-                    $unavailPercent = $totalCount > 0 ? ($unavailableCount / $totalCount) * 100 : 0;
-                @endphp
-                <div class="mt-3">
-                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: {{ $unavailPercent }}%; border-radius: 10px;" aria-valuenow="{{ $unavailPercent }}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">{{ round($unavailPercent) }}% out of stock</small>
-                </div>
+    <div class="col-md-3">
+        <div class="widget-small danger coloured-icon">
+            <i class="icon fa fa-eye-slash fa-3x"></i>
+            <div class="info">
+                <h4>Unavailable</h4>
+                <p><b>{{ $unavailableCount }}</b></p>
             </div>
         </div>
     </div>
-    
-    <!-- Categories -->
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #1d2b64 0%, #f8cdda 100%);">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-list text-white fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Categories</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ $categories->count() }}</h3>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Active menu groups</small>
-                </div>
+    <div class="col-md-3">
+        <div class="widget-small info coloured-icon">
+            <i class="icon fa fa-list fa-3x"></i>
+            <div class="info">
+                <h4>Categories</h4>
+                <p><b>{{ $categories->count() }}</b></p>
             </div>
         </div>
     </div>
@@ -127,7 +66,7 @@
             <div class="tile-body">
                 <!-- Search Area -->
                 <div class="row mb-3">
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fa fa-search"></i></span>
@@ -135,8 +74,18 @@
                             <input type="text" id="menuSearch" class="form-control" placeholder="Search menu items...">
                         </div>
                     </div>
-                    <div class="col-md-6 text-right pt-2 text-muted">
-                        <span id="resultCount">{{ $totalCount }}</span> items found in total
+                    <div class="col-md-4 pt-2 text-muted">
+                        <span id="resultCount">{{ $totalCount }}</span> items found
+                    </div>
+                    <div class="col-md-3 text-right">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-light" id="btnGridView" title="Grid View">
+                                <i class="fa fa-th-large"></i>
+                            </button>
+                            <button type="button" class="btn btn-light active" id="btnListView" title="List View">
+                                <i class="fa fa-list"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -169,118 +118,195 @@
                     @endforeach
                 </ul>
 
-                <div class="row mt-4" id="menuCards">
-                    @foreach($recipes as $recipe)
-                    @php
-                        $statusColor = $recipe->is_available ? 'success' : 'danger';
-                        $headerClass = $recipe->is_available ? 'bg-success text-white' : 'bg-danger text-white';
-                        $borderClass = $recipe->is_available ? 'border-success' : 'border-danger';
-                    @endphp
-                    <div class="col-xl-4 col-lg-6 col-md-6 mb-4 menu-card" 
-                         data-name="{{ strtolower($recipe->name) }}" 
-                         data-category="{{ strtolower($recipe->category) }}">
-                        <div class="card h-100 {{ $borderClass }}" style="box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; border-width: 2px !important;">
-                            <!-- Card Header -->
-                            <div class="card-header {{ $headerClass }} py-2 px-3">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h6 class="card-title mb-0 text-truncate font-weight-bold" title="{{ $recipe->name }}" style="max-width: 70%; font-size: 14px;">
-                                        <i class="fa fa-utensils mr-1"></i> {{ $recipe->name }}
-                                    </h6>
-                                    <div class="btn-group">
-                                        <a href="{{ route('admin.recipes.edit', $recipe) }}" class="btn btn-sm btn-light py-0 px-2" title="Edit">
-                                            <i class="fa fa-pencil text-primary" style="font-size: 12px;"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-light py-0 px-2 delete-btn" data-form="delete-form-{{ $recipe->id }}" title="Delete">
-                                            <i class="fa fa-trash text-danger" style="font-size: 12px;"></i>
+                <div id="viewContainer">
+                    <!-- Grid View (Cards) -->
+                    <div class="row mt-4" id="menuCards" style="display: none;">
+                        @foreach($recipes as $recipe)
+                        @php
+                            $statusColor = $recipe->is_available ? 'success' : 'danger';
+                            $headerClass = $recipe->is_available ? 'bg-success text-white' : 'bg-danger text-white';
+                            $borderClass = $recipe->is_available ? 'border-success' : 'border-danger';
+                        @endphp
+                        <div class="col-xl-4 col-lg-6 col-md-6 mb-4 menu-card" 
+                             data-name="{{ strtolower($recipe->name) }}" 
+                             data-category="{{ strtolower($recipe->category) }}">
+                            <div class="card h-100 {{ $borderClass }}" style="box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; border-width: 2px !important;">
+                                <!-- Card Header -->
+                                <div class="card-header {{ $headerClass }} py-2 px-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="card-title mb-0 text-truncate font-weight-bold" title="{{ $recipe->name }}" style="max-width: 70%; font-size: 14px;">
+                                            <i class="fa fa-utensils mr-1"></i> {{ $recipe->name }}
+                                        </h6>
+                                        <div class="btn-group">
+                                            <a href="{{ route('admin.recipes.edit', $recipe) }}" class="btn btn-sm btn-light py-0 px-2" title="Edit">
+                                                <i class="fa fa-pencil text-primary" style="font-size: 12px;"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-light py-0 px-2 delete-btn" data-form="delete-form-{{ $recipe->id }}" title="Delete">
+                                                <i class="fa fa-trash text-danger" style="font-size: 12px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Card Body -->
+                                <div class="card-body p-3">
+                                    <div class="row">
+                                        <div class="col-4 pr-1">
+                                            @if($recipe->image)
+                                                <img src="{{ asset('storage/' . ltrim($recipe->image, '/')) }}" class="rounded shadow-sm" alt="{{ $recipe->name }}" style="width: 100%; height: 90px; object-fit: cover; border: 2px solid #f0f0f0;" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($recipe->name) }}&background=fff3e0&color=e77a31&size=200'">
+                                            @else
+                                                @php
+                                                    $foodIcons = [
+                                                        'appetizers' => ['icon' => 'fa-fire', 'grad' => 'linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)'],
+                                                        'main_course' => ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'],
+                                                        'desserts' => ['icon' => 'fa-birthday-cake', 'grad' => 'linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%)'],
+                                                        'beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
+                                                        'breakfast' => ['icon' => 'fa-sun-o', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
+                                                        'lunch' => ['icon' => 'fa-shopping-bag', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
+                                                        'dinner' => ['icon' => 'fa-moon-o', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
+                                                        'snacks' => ['icon' => 'fa-lemon-o', 'grad' => 'linear-gradient(135deg, #f2994a 0%, #f2c94c 100%)'],
+                                                        'salads' => ['icon' => 'fa-leaf', 'grad' => 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)'],
+                                                        'soups' => ['icon' => 'fa-spoon', 'grad' => 'linear-gradient(135deg, #EB3349 0%, #F45C43 100%)'],
+                                                    ];
+                                                    $style = $foodIcons[$recipe->category] ?? ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #009688 0%, #00695c 100%)'];
+                                                @endphp
+                                                <div class="rounded d-flex align-items-center justify-content-center border shadow-sm" style="width: 100%; height: 90px; background: {!! $style['grad'] !!};">
+                                                    <i class="fa {!! $style['icon'] !!} fa-2x text-white opacity-50"></i>
+                                                </div>
+                                            @endif
+                                            <div class="text-center mt-2">
+                                                <span class="badge badge-light text-uppercase border" style="font-size: 9px; letter-spacing: 0.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $recipe->category_name }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-8 pl-2">
+                                            <div class="mb-2 p-2 bg-light rounded" style="min-height: 80px;">
+                                                <div class="d-flex justify-content-between mb-1" style="font-size: 11px;">
+                                                    <span class="text-muted"><i class="fa fa-clock-o mr-1"></i> Prep Time:</span>
+                                                    <span class="font-weight-bold text-dark">{{ $recipe->prep_time ?? '-' }} min</span>
+                                                </div>
+                                                <p class="text-muted small mb-0 mt-1 overflow-hidden" style="font-size: 11px; line-height: 1.3; height: 42px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+                                                    {{ $recipe->description ?: 'No description available for this delicious menu item.' }}
+                                                </p>
+                                            </div>
+                                            
+                                            @if($recipe->is_available)
+                                                <span class="badge badge-success w-100 py-1" style="font-size: 10px;"><i class="fa fa-check-circle"></i> Item Available</span>
+                                            @else
+                                                <span class="badge badge-danger w-100 py-1" style="font-size: 10px;"><i class="fa fa-times-circle"></i> Currently Unavailable</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Card Footer -->
+                                <div class="card-footer bg-white py-2 px-3 border-top-0">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="price-info">
+                                            <small class="text-muted d-block" style="font-size: 10px;">Selling Price</small>
+                                            <h5 class="text-primary font-weight-bold mb-0" id="price-display-grid-{{ $recipe->id }}" style="font-size: 16px;">
+                                                {{ number_format($recipe->selling_price) }} <small class="text-muted" style="font-size: 10px;">TSH</small>
+                                                @if(!empty($recipe->selling_price_usd) && $recipe->selling_price_usd > 0)
+                                                    <span class="text-success ml-2" style="font-size: 14px;">${{ rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') }}</span>
+                                                @endif
+                                            </h5>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-primary btn-sm rounded-circle quick-price-btn" 
+                                                data-id="{{ $recipe->id }}" 
+                                                data-name="{{ $recipe->name }}" 
+                                                data-price="{{ $recipe->selling_price }}"
+                                                data-price-usd="{{ $recipe->selling_price_usd }}"
+                                                style="width: 30px; height: 30px; padding: 0;"
+                                                title="Update Price">
+                                            <i class="fa fa-money" style="font-size: 12px;"></i>
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Card Body -->
-                            <div class="card-body p-3">
-                                <div class="row">
-                                    <div class="col-4 pr-1">
-                                        @if($recipe->image)
-                                            <img src="{{ asset('storage/' . ltrim($recipe->image, '/')) }}" class="rounded shadow-sm" alt="{{ $recipe->name }}" style="width: 100%; height: 90px; object-fit: cover; border: 2px solid #f0f0f0;" onerror="this.onerror=null;this.src='https://ui-avatars.com/api/?name={{ urlencode($recipe->name) }}&background=fff3e0&color=e77a31&size=200'">
-                                        @else
-                                            @php
-                                                $foodIcons = [
-                                                    'appetizers' => ['icon' => 'fa-fire', 'grad' => 'linear-gradient(135deg, #FF9966 0%, #FF5E62 100%)'],
-                                                    'main_course' => ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)'],
-                                                    'desserts' => ['icon' => 'fa-birthday-cake', 'grad' => 'linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%)'],
-                                                    'beverages' => ['icon' => 'fa-coffee', 'grad' => 'linear-gradient(135deg, #3D2B1F 0%, #964B00 100%)'],
-                                                    'breakfast' => ['icon' => 'fa-sun-o', 'grad' => 'linear-gradient(135deg, #fceabb 0%, #f8b500 100%)'],
-                                                    'lunch' => ['icon' => 'fa-shopping-bag', 'grad' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'],
-                                                    'dinner' => ['icon' => 'fa-moon-o', 'grad' => 'linear-gradient(135deg, #243B55 0%, #141E30 100%)'],
-                                                    'snacks' => ['icon' => 'fa-lemon-o', 'grad' => 'linear-gradient(135deg, #f2994a 0%, #f2c94c 100%)'],
-                                                    'salads' => ['icon' => 'fa-leaf', 'grad' => 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)'],
-                                                    'soups' => ['icon' => 'fa-spoon', 'grad' => 'linear-gradient(135deg, #EB3349 0%, #F45C43 100%)'],
-                                                ];
-                                                $style = $foodIcons[$recipe->category] ?? ['icon' => 'fa-cutlery', 'grad' => 'linear-gradient(135deg, #009688 0%, #00695c 100%)'];
-                                            @endphp
-                                            <div class="rounded d-flex align-items-center justify-content-center border shadow-sm" style="width: 100%; height: 90px; background: {!! $style['grad'] !!};">
-                                                <i class="fa {!! $style['icon'] !!} fa-2x text-white opacity-50"></i>
-                                            </div>
-                                        @endif
-                                        <div class="text-center mt-2">
-                                            <span class="badge badge-light text-uppercase border" style="font-size: 9px; letter-spacing: 0.5px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $recipe->category_name }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-8 pl-2">
-                                        <div class="mb-2 p-2 bg-light rounded" style="min-height: 80px;">
-                                            <div class="d-flex justify-content-between mb-1" style="font-size: 11px;">
-                                                <span class="text-muted"><i class="fa fa-clock-o mr-1"></i> Prep Time:</span>
-                                                <span class="font-weight-bold text-dark">{{ $recipe->prep_time ?? '-' }} min</span>
-                                            </div>
-                                            <p class="text-muted small mb-0 mt-1 overflow-hidden" style="font-size: 11px; line-height: 1.3; height: 42px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
-                                                {{ $recipe->description ?: 'No description available for this delicious menu item.' }}
-                                            </p>
-                                        </div>
-                                        
-                                        @if($recipe->is_available)
-                                            <span class="badge badge-success w-100 py-1" style="font-size: 10px;"><i class="fa fa-check-circle"></i> Item Available</span>
-                                        @else
-                                            <span class="badge badge-danger w-100 py-1" style="font-size: 10px;"><i class="fa fa-times-circle"></i> Currently Unavailable</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
 
-                            <!-- Card Footer -->
-                            <div class="card-footer bg-white py-2 px-3 border-top-0">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="price-info">
-                                        <small class="text-muted d-block" style="font-size: 10px;">Selling Price</small>
-                                        <h5 class="text-primary font-weight-bold mb-0" id="price-display-{{ $recipe->id }}" style="font-size: 16px;">
-                                            {{ number_format($recipe->selling_price) }} <small class="text-muted" style="font-size: 10px;">TSH</small>
-                                            @if(!empty($recipe->selling_price_usd) && $recipe->selling_price_usd > 0)
-                                                <span class="text-success ml-2" style="font-size: 14px;">${{ rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') }}</span>
+                                <form action="{{ route('admin.recipes.destroy', $recipe) }}" method="POST" id="delete-form-{{ $recipe->id }}" class="d-none">
+                                    @csrf
+                                    @method('DELETE')
+                                </form>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+
+                    <!-- List View (Table) -->
+                    <div id="menuList">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered bg-white">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 60px;">Image</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Price (TSH)</th>
+                                        <th>Price (USD)</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($recipes as $recipe)
+                                    <tr class="menu-list-row" 
+                                        data-name="{{ strtolower($recipe->name) }}" 
+                                        data-category="{{ strtolower($recipe->category) }}">
+                                        <td class="align-middle">
+                                            @if($recipe->image)
+                                                <img src="{{ asset('storage/' . ltrim($recipe->image, '/')) }}" class="rounded shadow-sm" style="width: 40px; height: 40px; object-fit: cover;">
+                                            @else
+                                                <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="fa fa-utensils text-muted"></i>
+                                                </div>
                                             @endif
-                                        </h5>
-                                    </div>
-                                    <button type="button" class="btn btn-outline-primary btn-sm rounded-circle quick-price-btn" 
-                                            data-id="{{ $recipe->id }}" 
-                                            data-name="{{ $recipe->name }}" 
-                                            data-price="{{ $recipe->selling_price }}"
-                                            data-price-usd="{{ $recipe->selling_price_usd }}"
-                                            style="width: 30px; height: 30px; padding: 0;"
-                                            title="Update Price">
-                                        <i class="fa fa-money" style="font-size: 12px;"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <form action="{{ route('admin.recipes.destroy', $recipe) }}" method="POST" id="delete-form-{{ $recipe->id }}" class="d-none">
-                                @csrf
-                                @method('DELETE')
-                            </form>
+                                        </td>
+                                        <td class="align-middle">
+                                            <div class="font-weight-bold text-primary">{{ $recipe->name }}</div>
+                                            <small class="text-muted">{{ $recipe->prep_time ?? '-' }} min prep</small>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="badge badge-light border">{{ $recipe->category_name }}</span>
+                                        </td>
+                                        <td class="align-middle">
+                                            <span class="font-weight-bold text-dark" id="price-display-list-tsh-{{ $recipe->id }}">{{ number_format($recipe->selling_price) }}</span>
+                                        </td>
+                                        <td class="align-middle text-success">
+                                            <span id="price-display-list-usd-{{ $recipe->id }}">{{ $recipe->selling_price_usd > 0 ? '$' . rtrim(rtrim(number_format($recipe->selling_price_usd, 2), '0'), '.') : '-' }}</span>
+                                        </td>
+                                        <td class="align-middle">
+                                            @if($recipe->is_available)
+                                                <span class="badge badge-success px-2">Available</span>
+                                            @else
+                                                <span class="badge badge-danger px-2">Unavailable</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <div class="btn-group">
+                                                <button type="button" class="btn btn-sm btn-default border quick-price-btn" 
+                                                        data-id="{{ $recipe->id }}" 
+                                                        data-name="{{ $recipe->name }}" 
+                                                        data-price="{{ $recipe->selling_price }}"
+                                                        data-price-usd="{{ $recipe->selling_price_usd }}"
+                                                        title="Update Price">
+                                                    <i class="fa fa-money text-success"></i>
+                                                </button>
+                                                <a href="{{ route('admin.recipes.edit', $recipe) }}" class="btn btn-sm btn-info" title="Edit">
+                                                    <i class="fa fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-danger delete-btn" data-form="delete-form-{{ $recipe->id }}" title="Delete">
+                                                    <i class="fa fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                    @endforeach
                 </div>
 
-                <div class="mt-3">
+                <div class="mt-3" style="display: none;">
                     <div id="clientPaginator" class="d-flex justify-content-center flex-wrap" style="gap: 4px;"></div>
                 </div>
                 @endif
@@ -356,33 +382,74 @@ $(document).ready(function() {
     var selectedCategory = '';
     var ITEMS_PER_PAGE = 12;
     var currentPage = 1;
+    var currentView = 'list'; // 'list' is now default
 
-    // Collect all cards once
+    // Collect all elements once
     var allCards = [];
     $('.menu-card').each(function() { allCards.push(this); });
+    
+    var allRows = [];
+    $('.menu-list-row').each(function() { allRows.push(this); });
+
+    // ── View Switching ───────────────────────────────────────────
+    $('#btnGridView').on('click', function() {
+        currentView = 'grid';
+        $(this).addClass('active').siblings().removeClass('active');
+        $('#menuCards').show();
+        $('#menuList').hide();
+        $('#clientPaginator').parent().show();
+        applyFilterAndPage();
+    });
+
+    $('#btnListView').on('click', function() {
+        currentView = 'list';
+        $(this).addClass('active').siblings().removeClass('active');
+        $('#menuCards').hide();
+        $('#menuList').show();
+        $('#clientPaginator').parent().hide(); // Hide pagination in list view for simplicity or show all
+        applyFilterAndPage();
+    });
 
     // ── Core render ──────────────────────────────────────────────
     function applyFilterAndPage() {
         var searchTerm = $('#menuSearch').val().toLowerCase().trim();
 
-        var matched = allCards.filter(function(card) {
-            var name  = $(card).data('name') || '';
-            var cat   = $(card).data('category') || '';
-            var okS   = searchTerm === '' || name.includes(searchTerm);
-            var okC   = selectedCategory === '' || cat === selectedCategory;
-            return okS && okC;
-        });
+        if (currentView === 'grid') {
+            var matched = allCards.filter(function(card) {
+                var name  = $(card).data('name') || '';
+                var cat   = $(card).data('category') || '';
+                var okS   = searchTerm === '' || name.includes(searchTerm);
+                var okC   = selectedCategory === '' || cat === selectedCategory;
+                return okS && okC;
+            });
 
-        $(allCards).hide();
-        var total      = matched.length;
-        var totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
-        if (currentPage > totalPages) currentPage = 1;
+            $(allCards).hide();
+            var total      = matched.length;
+            var totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+            if (currentPage > totalPages) currentPage = 1;
 
-        var start = (currentPage - 1) * ITEMS_PER_PAGE;
-        $(matched.slice(start, start + ITEMS_PER_PAGE)).show();
+            var start = (currentPage - 1) * ITEMS_PER_PAGE;
+            $(matched.slice(start, start + ITEMS_PER_PAGE)).show();
 
-        $('#resultCount').text(total);
-        renderPaginator(totalPages);
+            $('#resultCount').text(total);
+            renderPaginator(totalPages);
+        } else {
+            var total = 0;
+            allRows.forEach(function(row) {
+                var name  = $(row).data('name') || '';
+                var cat   = $(row).data('category') || '';
+                var okS   = searchTerm === '' || name.includes(searchTerm);
+                var okC   = selectedCategory === '' || cat === selectedCategory;
+                
+                if (okS && okC) {
+                    $(row).show();
+                    total++;
+                } else {
+                    $(row).hide();
+                }
+            });
+            $('#resultCount').text(total);
+        }
     }
 
     // ── Paginator ────────────────────────────────────────────────
@@ -400,7 +467,7 @@ $(document).ready(function() {
                 .on('click', function() {
                     currentPage = page;
                     applyFilterAndPage();
-                    $('html,body').animate({ scrollTop: $('#menuCards').offset().top - 80 }, 200);
+                    $('html,body').animate({ scrollTop: $('#viewContainer').offset().top - 80 }, 200);
                 });
         }
 
@@ -504,14 +571,20 @@ $(document).ready(function() {
                 if (r.success) {
                     $('#quickPriceModal').modal('hide');
                     
-                    var newHtml = r.new_price + ' <small class="text-muted" style="font-size: 10px;">TSH</small>';
+                    // Update Grid Display
+                    var gridPriceHtml = r.new_price + ' <small class="text-muted" style="font-size: 10px;">TSH</small>';
                     if (r.new_price_usd) {
-                        newHtml += ' <span class="text-success ml-2" style="font-size: 14px;">$' + r.new_price_usd + '</span>';
+                        gridPriceHtml += ' <span class="text-success ml-2" style="font-size: 14px;">$' + r.new_price_usd + '</span>';
                     }
+                    $('#price-display-grid-' + id).html(gridPriceHtml);
                     
-                    $('#price-display-' + id).html(newHtml);
+                    // Update List Display
+                    $('#price-display-list-tsh-' + id).text(r.new_price);
+                    $('#price-display-list-usd-' + id).text(r.new_price_usd ? '$' + r.new_price_usd : '-');
+
                     swal("Updated!", name + " price updated to " + r.new_price + " TSH", "success");
                     
+                    // Update trigger data
                     $('.quick-price-btn[data-id="' + id + '"]')
                         .data('price', valTsh)
                         .data('price-usd', valUsd);

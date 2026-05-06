@@ -14,98 +14,77 @@
 </div>
 
 <!-- Stats Row -->
-<div class="row mb-4">
-    <!-- Total Products -->
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #4e54c8 0%, #8f94fb 100%);">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-glass text-white fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Products</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ $myStock->count() }}</h3>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Total drink variants</small>
-                </div>
+<div class="row">
+    <div class="col-md-3">
+        <div class="widget-small primary coloured-icon">
+            <i class="icon fa fa-glass fa-3x"></i>
+            <div class="info">
+                <h4>Products</h4>
+                <p><b>{{ $myStock->count() }}</b></p>
             </div>
         </div>
     </div>
     
-    <!-- In Stock -->
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #11998e 0%, #38ef7d 100%);">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-cubes text-white fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">In Stock</h6>
-                        <h3 class="text-white mb-0 font-weight-bold">{{ number_format($myStock->sum('current_stock_pics'), 0) }}</h3>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: 85%; border-radius: 10px;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Total physical bottles/pics</small>
-                </div>
+    <div class="col-md-3">
+        <div class="widget-small info coloured-icon">
+            <i class="icon fa fa-cubes fa-3x"></i>
+            <div class="info">
+                <h4>In Stock</h4>
+                <p><b>{{ number_format($myStock->sum('current_stock_pics'), 0) }}</b></p>
+            </div>
+        </div>
+    </div>
+
+    @php
+        $isManager = in_array(strtolower(Auth::guard('staff')->user()->role), ['manager', 'admin', 'super_admin', 'owner']);
+    @endphp
+
+    @if($isManager)
+    <div class="col-md-3">
+        <div class="widget-small warning coloured-icon">
+            <i class="icon fa fa-money fa-3x"></i>
+            <div class="info">
+                <h4>Revenue</h4>
+                <p><b>{{ number_format($myStock->sum('revenue_generated'), 0) }}</b></p>
             </div>
         </div>
     </div>
     
-    <!-- Revenue -->
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #e67e22 0%, #f39c12 100%);">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-money text-white fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Revenue</h6>
-                        <h3 class="text-white mb-0 font-weight-bold" style="font-size: 1.25rem;">{{ number_format($myStock->sum('revenue_generated'), 0) }}</h3>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Total TSH generated</small>
-                </div>
+    <div class="col-md-3">
+        <div class="widget-small danger coloured-icon">
+            <i class="icon fa fa-line-chart fa-3x"></i>
+            <div class="info">
+                <h4>Stock Value</h4>
+                <p><b>{{ number_format($myStock->sum('revenue_serving'), 0) }}</b></p>
+            </div>
+        </div>
+    </div>
+    @else
+    @php
+        $lowStockCount = $myStock->filter(function($item) {
+            return $item['current_stock_pics'] <= ($item['minimum_stock'] ?: 3);
+        })->count();
+    @endphp
+    <div class="col-md-3">
+        <div class="widget-small danger coloured-icon">
+            <i class="icon fa fa-exclamation-triangle fa-3x"></i>
+            <div class="info">
+                <h4>Low Stock</h4>
+                <p><b>{{ $lowStockCount }}</b></p>
             </div>
         </div>
     </div>
     
-    <!-- Stock Value -->
-    <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="background: linear-gradient(45deg, #1d2b64 0%, #f8cdda 100%);">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px; background: rgba(255,255,255,0.2);">
-                        <i class="fa fa-line-chart text-white fa-lg"></i>
-                    </div>
-                    <div>
-                        <h6 class="text-white-50 text-uppercase mb-0 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 1px;">Stock Value</h6>
-                        <h3 class="text-white mb-0 font-weight-bold" style="font-size: 1.25rem;">{{ number_format($myStock->sum('revenue_serving'), 0) }}</h3>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="progress" style="height: 4px; background: rgba(255,255,255,0.15); border-radius: 10px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: 100%; border-radius: 10px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <small class="text-white-50 mt-1 d-block" style="font-size: 0.65rem;">Potential worth (TSH)</small>
-                </div>
+    <div class="col-md-3">
+        <div class="widget-small success coloured-icon">
+            <i class="icon fa fa-list fa-3x"></i>
+            <div class="info">
+                <h4>Categories</h4>
+                <p><b>{{ $categories->count() }}</b></p>
             </div>
         </div>
     </div>
+    @endif
 </div>
 
 <div class="row">
@@ -140,57 +119,103 @@
                     <p>You haven't received any stock transfers yet.</p>
                 </div>
                 @else
-                <!-- Enhanced Category Tabs -->
-                <ul class="nav nav-pills nav-fill mb-2" role="tablist" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 5px; border-radius: 8px;">
-                    <li class="nav-item">
-                        <a class="nav-link active py-1" id="all-tab" data-toggle="tab" href="#all" role="tab" style="border-radius: 6px; font-weight: 600; color: white; font-size: 13px;">
-                            <i class="fa fa-th-large"></i> All
-                            <span class="badge badge-light ml-1" style="font-size: 10px;">{{ $myStock->count() }}</span>
-                        </a>
-                    </li>
-                    @php
-                        $categoryIcons = [
-                            'spirits' => 'fa-glass',
-                            'wines' => 'fa-glass',
-                            'alcoholic_beverage' => 'fa-glass',
-                            'non_alcoholic_beverage' => 'fa-glass',
-                            'water' => 'fa-tint',
-                            'juices' => 'fa-glass',
-                            'energy_drinks' => 'fa-bolt',
-                            'hot_beverages' => 'fa-coffee',
-                            'cocktails' => 'fa-glass',
-                        ];
-                    @endphp
-                    @foreach($categories as $category => $items)
-                    <li class="nav-item">
-                        <a class="nav-link py-1" id="{{ $category }}-tab" data-toggle="tab" href="#{{ $category }}" role="tab" style="border-radius: 6px; font-weight: 600; color: rgba(255,255,255,0.8); font-size: 13px;">
-                            <i class="fa {{ $categoryIcons[$category] ?? 'fa-tag' }}"></i> {{ $items->first()['category_name'] ?? ucfirst(str_replace('_', ' ', $category)) }}
-                            <span class="badge badge-light ml-1" style="font-size: 10px;">{{ $items->count() }}</span>
-                        </a>
-                    </li>
-                    @endforeach
-                </ul>
-
-                <div class="tab-content" style="background: #fff; padding: 10px 0;">
-                    <!-- All Products Tab -->
-                    <div class="tab-pane fade show active" id="all" role="tabpanel">
-                        <div class="row" id="inventoryCards">
+                <div class="table-responsive mt-3">
+                    <table class="table table-hover table-bordered bg-white" id="stockTable">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 40px;" class="text-center">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="masterCheckbox">
+                                        <label class="custom-control-label" for="masterCheckbox"></label>
+                                    </div>
+                                </th>
+                                <th style="width: 50px;">Image</th>
+                                <th>Product Details</th>
+                                <th>Category</th>
+                                <th>Current Stock</th>
+                                @if($isManager)
+                                <th>Revenue</th>
+                                <th>Potential</th>
+                                @endif
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                             @foreach($myStock as $item)
-                            @include('dashboard.partials.bar-stock-card', ['item' => $item])
+                            <tr class="inventory-card" data-name="{{ strtolower($item['product_name']) }}" data-brand="{{ strtolower($item['brand_name']) }}" data-variant="{{ strtolower($item['variant_name']) }}">
+                                <td class="text-center align-middle">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input stock-checkbox" id="check-{{ $item['variant_id'] }}" value="{{ $item['variant_id'] }}">
+                                        <label class="custom-control-label" for="check-{{ $item['variant_id'] }}"></label>
+                                    </div>
+                                </td>
+                                <td class="align-middle">
+                                    @if($item['product_image'])
+                                        <img src="{{ asset('storage/' . ltrim($item['product_image'], '/')) }}" class="rounded shadow-sm" style="width: 40px; height: 40px; object-fit: cover;">
+                                    @else
+                                        <div class="rounded bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                            <i class="fa fa-glass text-muted"></i>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="align-middle">
+                                    <div class="font-weight-bold text-primary">{{ $item['product_name'] }}</div>
+                                    <small class="text-muted">{{ $item['brand_name'] }} | {{ $item['variant_name'] }}</small>
+                                </td>
+                                <td class="align-middle text-uppercase">
+                                    <span class="badge badge-light border">{{ $item['category_name'] }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    @php
+                                        $isLow = $item['current_stock_pics'] <= $item['minimum_stock'];
+                                        $stockColor = $isLow ? 'text-danger' : 'text-success';
+                                    @endphp
+                                    <div class="{{ $stockColor }} font-weight-bold" style="font-size: 1.1rem;">
+                                        {{ $item['full_bottles'] }} {{ ucfirst($item['packaging']) }}
+                                        @if($item['servings_per_pic'] > 1)
+                                            <small class="text-muted ml-1" style="font-size: 0.75rem;">(+{{ $item['open_servings'] }} servings)</small>
+                                        @endif
+                                    </div>
+                                    @if($isLow)
+                                        <span class="badge badge-danger" style="font-size: 9px;">LOW STOCK</span>
+                                    @endif
+                                </td>
+                                @if($isManager)
+                                <td class="align-middle font-weight-bold">
+                                    {{ number_format($item['revenue_generated'], 0) }}
+                                </td>
+                                <td class="align-middle text-info font-weight-bold">
+                                    {{ number_format($item['revenue_serving'], 0) }}
+                                </td>
+                                @endif
+                                <td class="text-center align-middle">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-sm btn-info view-track-btn" 
+                                                data-variant-id="{{ $item['variant_id'] }}" 
+                                                data-item-name="{{ $item['product_name'] }}"
+                                                title="Usage History">
+                                            <i class="fa fa-history"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-primary settings-stock-btn" 
+                                                data-variant-id="{{ $item['variant_id'] }}" 
+                                                data-item-name="{{ $item['product_name'] }}"
+                                                data-minimum-stock="{{ $item['minimum_stock'] }}"
+                                                data-price-pic="{{ $item['selling_price_per_pic'] }}"
+                                                data-price-glass="{{ $item['selling_price_per_serving'] }}"
+                                                data-price-pic-usd="{{ $item['selling_price_per_pic_usd'] ?? 0 }}"
+                                                data-price-glass-usd="{{ $item['selling_price_per_serving_usd'] ?? 0 }}"
+                                                title="Pricing & Alerts">
+                                            <i class="fa fa-cog"></i>
+                                        </button>
+                                        <a href="{{ route('bar-keeper.purchase-requests.create', ['ids' => $item['variant_id']]) }}" class="btn btn-sm btn-warning" title="Restock">
+                                            <i class="fa fa-shopping-cart"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
                             @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Category Tabs -->
-                    @foreach($categories as $category => $items)
-                    <div class="tab-pane fade" id="{{ $category }}" role="tabpanel">
-                        <div class="row">
-                            @foreach($items as $item)
-                            @include('dashboard.partials.bar-stock-card', ['item' => $item])
-                            @endforeach
-                        </div>
-                    </div>
-                    @endforeach
+                        </tbody>
+                    </table>
                 </div>
                 @endif
             </div>
@@ -360,19 +385,22 @@ $(document).ready(function() {
 
     $(document).on('change', '.stock-checkbox', function() {
         if ($(this).is(':checked')) {
-            $(this).closest('.inventory-card').find('.card').css('border-color', '#e77a31');
-            $(this).closest('.inventory-card').find('.card').addClass('shadow-lg');
+            $(this).closest('.inventory-card').addClass('table-warning');
         } else {
-            $(this).closest('.inventory-card').find('.card').css('border-color', '');
-            $(this).closest('.inventory-card').find('.card').removeClass('shadow-lg');
+            $(this).closest('.inventory-card').removeClass('table-warning');
+            $('#masterCheckbox').prop('checked', false);
         }
         updateBulkBar();
     });
 
+    $('#masterCheckbox').on('change', function() {
+        var isChecked = $(this).is(':checked');
+        $('.inventory-card:not([style*="display: none"]) .stock-checkbox').prop('checked', isChecked).trigger('change');
+    });
+
     $('#selectAllBtn').on('click', function() {
-        var activeTabId = $('.tab-pane.active').attr('id');
-        var visibleCheckboxes = $('#' + activeTabId).find('.inventory-card:not([style*="display: none"]) .stock-checkbox');
-        visibleCheckboxes.prop('checked', true).trigger('change');
+        $('.inventory-card:not([style*="display: none"]) .stock-checkbox').prop('checked', true).trigger('change');
+        $('#masterCheckbox').prop('checked', true);
     });
 
     $('#clearSelectionBtn').on('click', function() {
@@ -395,18 +423,18 @@ $(document).ready(function() {
         var visibleCount = 0;
         
         $('.inventory-card').each(function() {
-            var $card = $(this);
-            var name = $card.data('name') || '';
-            var variant = $card.data('variant') || '';
-            var brand = $card.data('brand') || '';
+            var $row = $(this);
+            var name = $row.data('name') || '';
+            var variant = $row.data('variant') || '';
+            var brand = $row.data('brand') || '';
             
             var matchesSearch = searchTerm === '' || name.includes(searchTerm) || variant.includes(searchTerm) || brand.includes(searchTerm);
             
             if (matchesSearch) {
-                $card.show();
+                $row.show();
                 visibleCount++;
             } else {
-                $card.hide();
+                $row.hide();
             }
         });
         $('#resultCount').text(visibleCount);

@@ -743,10 +743,18 @@ class ReceptionController extends Controller
                         $requestedCheckOut = \Carbon\Carbon::parse($booking->extension_requested_to);
                         $extensionNights = $originalCheckOut->diffInDays($requestedCheckOut);
                         if ($extensionNights > 0 && $booking->room) {
-                            $extensionCostUsd = $booking->room->price_per_night * $extensionNights;
+                            $nightlyPrice = ($booking->guest_type === 'tanzanian') 
+                                ? (float) ($booking->room->price_per_night_tzs ?? 0) 
+                                : (float) ($booking->room->price_per_night ?? 0);
+                            $extensionCostRaw = $nightlyPrice * $extensionNights;
                         }
                     }
-                    $extensionCostTsh = $extensionCostUsd * $bookingExchangeRate;
+                    
+                    if ($booking->guest_type === 'tanzanian') {
+                        $extensionCostTsh = (float) ($extensionCostRaw ?? 0);
+                    } else {
+                        $extensionCostTsh = (float) ($extensionCostRaw ?? 0) * $bookingExchangeRate;
+                    }
                     
                     // Check payment responsibility - if self-paid, exclude service charges from company bill
                     $paymentResponsibility = $booking->payment_responsibility ?? 'company';
@@ -762,7 +770,8 @@ class ReceptionController extends Controller
                     
                     // Company's total bill (room + company-responsible services + extensions)
                     // Note: extensionCostTsh is already included in booking->total_price
-                    $companyBillTsh = ($booking->total_price * $bookingExchangeRate) + $companyResponsibleServiceChargesTsh;
+                    $roomCostTsh = ($booking->guest_type === 'tanzanian') ? (float) $booking->total_price : ((float) $booking->total_price * $bookingExchangeRate);
+                    $companyBillTsh = $roomCostTsh + $companyResponsibleServiceChargesTsh;
                     
                     // Identify what portion of amount_paid was for guest-paid services
                     // Logic: If payment_responsibility is 'self', only services paid via 'cash' (bar) or any method at reception 
@@ -790,7 +799,8 @@ class ReceptionController extends Controller
                     $companyPaidTsh = max(0, $totalPaidTsh - $guestPaidServicesTsh);
                     
                     // Defensive check: Company paid cannot exceed the Room price (unless they prepaid)
-                    $roomPriceWithExtensionsTsh = ($booking->total_price * $bookingExchangeRate) + $extensionCostTsh;
+                    $roomCostTsh = ($booking->guest_type === 'tanzanian') ? (float) $booking->total_price : ((float) $booking->total_price * $bookingExchangeRate);
+                    $roomPriceWithExtensionsTsh = $roomCostTsh + $extensionCostTsh;
                     if ($companyPaidTsh > $roomPriceWithExtensionsTsh) {
                          // Surplus might be from another source, but for checkout display, we cap it
                          // unless we are sure about the company's exact deposit.
@@ -813,7 +823,8 @@ class ReceptionController extends Controller
                     
                     // Total bill for display (room + services)
                     // Note: total_price already includes extensions if they were approved
-                    $totalBillTsh = round(($booking->total_price * $bookingExchangeRate) + $totalServiceChargesTsh, 2);
+                    $roomCostTsh = ($booking->guest_type === 'tanzanian') ? (float) $booking->total_price : ((float) $booking->total_price * $bookingExchangeRate);
+                    $totalBillTsh = round($roomCostTsh + $totalServiceChargesTsh, 2);
                     $totalBillUsd = round($totalBillTsh / $bookingExchangeRate, 2);
                     
                     // Treat very small amounts (less than $2.00 or 5000 TZS) as fully paid (rounding differences)

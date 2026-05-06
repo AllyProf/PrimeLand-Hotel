@@ -1533,8 +1533,14 @@ class BookingController extends Controller
         $totalOutstanding = 0;
         foreach ($activeBookings as $booking) {
             $bookingExchangeRate = $booking->locked_exchange_rate ?? $exchangeRate;
-            $totalBill = ($booking->total_price * $bookingExchangeRate) + ($booking->total_service_charges_tsh ?? 0);
-            $amountPaid = ($booking->amount_paid ?? 0) * $bookingExchangeRate;
+            
+            if ($booking->guest_type === 'tanzanian') {
+                $totalBill = (float) $booking->total_price + ($booking->total_service_charges_tsh ?? 0);
+                $amountPaid = (float) ($booking->amount_paid ?? 0);
+            } else {
+                $totalBill = ((float) $booking->total_price * $bookingExchangeRate) + ($booking->total_service_charges_tsh ?? 0);
+                $amountPaid = (float) ($booking->amount_paid ?? 0) * $bookingExchangeRate;
+            }
             
             // Deduct services that are marked as paid
             $paidServices = $booking->serviceRequests ? 
@@ -3293,7 +3299,11 @@ class BookingController extends Controller
             $isExtension = $nightsDifference > 0;
             
             // For extensions, calculate additional cost. For decreases, no refund (cost difference = 0)
-            $costDifference = $isExtension ? ($room->price_per_night * abs($nightsDifference)) : 0;
+            // Use correct price field based on guest type
+            $nightlyPrice = ($booking->guest_type === 'tanzanian') 
+                ? (float) ($room->price_per_night_tzs ?? 0) 
+                : (float) ($room->price_per_night ?? 0);
+            $costDifference = $isExtension ? ($nightlyPrice * abs($nightsDifference)) : 0;
             $requestType = $isExtension ? 'extension' : 'decrease';
 
             // Update booking - preserve original_check_out if not already set

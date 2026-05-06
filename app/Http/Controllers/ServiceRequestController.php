@@ -1157,20 +1157,43 @@ class ServiceRequestController extends Controller
                     $extensionNights = $originalCheckOut->diffInDays($requestedCheckOut);
                     
                     if ($extensionNights > 0 && $booking->room) {
-                        $extensionCostUsd = $booking->room->price_per_night * $extensionNights;
+                        // Use correct price field based on guest type to determine extension portion
+                        $nightlyPrice = ($booking->guest_type === 'tanzanian') 
+                            ? (float) ($booking->room->price_per_night_tzs ?? 0) 
+                            : (float) ($booking->room->price_per_night ?? 0);
+                        $extensionCostRaw = $nightlyPrice * $extensionNights;
                     }
                 }
                 
                 // Ensure extension cost doesn't exceed total_price, and base price is the remainder
-                $extensionCostUsd = min($extensionCostUsd, $booking->total_price);
-                $baseRoomPriceUsd = $booking->total_price - $extensionCostUsd;
+                $extensionCostRaw = min($extensionCostRaw ?? 0, (float) $booking->total_price);
+                $baseRoomPriceRaw = (float) $booking->total_price - $extensionCostRaw;
             } else {
                 // No extension, whole total_price is the base room price
-                $baseRoomPriceUsd = $booking->total_price;
+                $baseRoomPriceRaw = (float) $booking->total_price;
+                $extensionCostRaw = 0;
             }
             
-            $extensionCostTsh = $extensionCostUsd * $exchangeRate;
-            $roomPriceTsh = $baseRoomPriceUsd * $exchangeRate;
+            // Handle TZS vs USD conversion based on guest type
+            if ($booking->guest_type === 'tanzanian') {
+                $extensionCostTsh = $extensionCostRaw;
+                $roomPriceTsh = $baseRoomPriceRaw;
+                $bookingPaidTsh = (float) ($booking->amount_paid ?? 0);
+                
+                // Calculate USD equivalents for display in the view's USD columns
+                $baseRoomPriceUsd = round($roomPriceTsh / $exchangeRate, 2);
+                $extensionCostUsd = round($extensionCostTsh / $exchangeRate, 2);
+                $amountPaidUsd = round($bookingPaidTsh / $exchangeRate, 2);
+            } else {
+                // For international guests, raw values are already in USD
+                $baseRoomPriceUsd = $baseRoomPriceRaw;
+                $extensionCostUsd = $extensionCostRaw;
+                $amountPaidUsd = (float) ($booking->amount_paid ?? 0);
+                
+                $extensionCostTsh = $extensionCostUsd * $exchangeRate;
+                $roomPriceTsh = $baseRoomPriceUsd * $exchangeRate;
+                $bookingPaidTsh = $amountPaidUsd * $exchangeRate;
+            }
 
             // Calculate original nights (excluding extension) for display
             $originalCheckOutDate = $booking->original_check_out 
@@ -1185,8 +1208,6 @@ class ServiceRequestController extends Controller
             
             // Calculate Room portion vs Service portion
             $totalRoomCostTsh = $roomPriceTsh + $extensionCostTsh;
-            $bookingPaidUsd = $booking->amount_paid ?? 0;
-            $bookingPaidTsh = $bookingPaidUsd * $exchangeRate;
             
             // Room Balance is (Room + Extension) - Booking level payment
             $roomBalanceTsh = max(0, $totalRoomCostTsh - $bookingPaidTsh);

@@ -349,10 +349,17 @@
                   $originalCheckOut = $booking->original_check_out ? \Carbon\Carbon::parse($booking->original_check_out) : \Carbon\Carbon::parse($booking->check_out);
                   $originalNights = $booking->check_in->diffInDays($originalCheckOut);
                 @endphp
+                @php
+                  // Determine display price per night
+                  $displayNightlyPrice = ($booking->guest_type === 'tanzanian') 
+                      ? ($booking->room->price_per_night_tzs ?? 0) 
+                      : ($booking->room->price_per_night ?? 0);
+                  $currencySymbol = ($booking->guest_type === 'tanzanian') ? 'TZS ' : '$';
+                @endphp
                 <tr>
                   <td>Room Accommodation (Original Booking)</td>
                   <td>{{ $originalNights }}</td>
-                  <td>${{ number_format($booking->room->price_per_night, 2) }}</td>
+                  <td>{{ $currencySymbol }}{{ number_format($displayNightlyPrice, 2) }}</td>
                   <td><strong>${{ number_format($baseRoomPriceUsd, 2) }}</strong></td>
                   <td><strong>{{ number_format($roomPriceTsh, 2) }} TZS</strong></td>
                 </tr>
@@ -360,7 +367,7 @@
                 <tr style="background-color: #fff3cd;">
                   <td>Room Extension (Additional Nights)</td>
                   <td>{{ $extensionNights }}</td>
-                  <td>${{ number_format($booking->room->price_per_night, 2) }}</td>
+                  <td>{{ $currencySymbol }}{{ number_format($displayNightlyPrice, 2) }}</td>
                   <td><strong>${{ number_format($extensionCostUsd, 2) }}</strong></td>
                   <td><strong>{{ number_format($extensionCostTsh, 2) }} TZS</strong></td>
                 </tr>
