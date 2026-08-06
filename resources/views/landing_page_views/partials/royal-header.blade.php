@@ -22,7 +22,7 @@
                 <ul class="nav navbar-nav menu_nav ml-auto">
                     <li class="nav-item {{ request()->is('/') ? 'active' : '' }}"><a class="nav-link" href="{{ url('/') }}">Home</a></li> 
                     <li class="nav-item {{ request()->is('about-us') ? 'active' : '' }}"><a class="nav-link" href="{{ url('/about-us') }}">About us</a></li>
-                    <li class="nav-item {{ request()->routeIs('booking.index') ? 'active' : '' }}"><a class="nav-link" href="{{ route('booking.index') }}">Book Now</a></li>
+                    <li class="nav-item {{ request()->routeIs('booking.index') ? 'active' : '' }}"><a class="nav-link" href="{{ config('services.aiosell.booking_url') }}">Book Now</a></li>
                     <li class="nav-item {{ request()->is('services') ? 'active' : '' }}"><a class="nav-link" href="{{ url('/services') }}">Services</a></li>
                     <li class="nav-item {{ request()->is('contact') ? 'active' : '' }}"><a class="nav-link" href="{{ url('/contact') }}">Contact</a></li>
                     <li class="nav-item {{ request()->is('login') ? 'active' : '' }}"><a class="nav-link" href="{{ url('/login') }}">Login</a></li>

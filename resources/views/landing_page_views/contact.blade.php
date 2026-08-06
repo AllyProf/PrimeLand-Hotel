@@ -37,7 +37,7 @@
                     <div class="gt-contact-left-items">
                         <div class="gt-section-title">
                             <h6 class="wow fadeInUp"> CONTACT US </h6>
-                            <h2 class="wow fadeInUp" data-wow-delay=".2s"> Hotels near Moshi Town Center – Get in Touch </h2>
+                            <h2 class="wow fadeInUp" data-wow-delay=".2s">Get in Touch</h2>
                             <div class="prl-divider wow fadeInUp" data-wow-delay=".3s">
                                 <div class="prl-line"></div>
                                 <div class="prl-dot"></div>

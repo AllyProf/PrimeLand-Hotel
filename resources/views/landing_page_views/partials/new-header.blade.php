@@ -121,7 +121,7 @@
                             </div>
                         </li>
                     </ul>
-                    <a href="{{ url('/contact') }}" class="gt-theme-btn">BOOK NOW</a>
+                    <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn">BOOK NOW</a>
                     <div class="prl-social-grid mt-4">
                         <a href="https://www.instagram.com/primeland_hotel?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
                             target="_blank" class="ig" title="Instagram"><i class="fab fa-instagram"></i></a>
@@ -147,11 +147,11 @@
                 <div class="logo">
                     <a href="{{ url('/') }}" class="header-logo">
                         <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="Primeland Hotel Moshi Logo"
-                            style="max-width: 150px; height: auto;">
+                            style="max-width: 110px; height: auto;">
                     </a>
                     <a href="{{ url('/') }}" class="header-logo-2">
                         <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="Primeland Hotel Moshi Logo"
-                            style="max-width: 150px; height: auto;">
+                            style="max-width: 110px; height: auto;">
                     </a>
                 </div>
                 <div class="header-right d-flex justify-content-end align-items-center">
@@ -182,9 +182,6 @@
                                     <li class="{{ Request::is('contact') ? 'active' : '' }}">
                                         <a href="{{ url('/contact') }}">Contact Us</a>
                                     </li>
-                                    <li>
-                                        <a href="{{ route('login') }}">Login</a>
-                                    </li>
                                 </ul>
                             </nav>
                         </div>
@@ -193,7 +190,7 @@
                         <i class="fa-regular fa-magnifying-glass"></i>
                     </a>
                     <div class="hero-button">
-                        <a href="{{ url('/contact') }}" class="gt-theme-btn">Book now</a>
+                        <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn">Book now</a>
                     </div>
                     <div class="header__hamburger my-auto d-xl-none">
                         <div class="sidebar__toggle">

@@ -66,7 +66,12 @@
                                         02 Guests
                                     </li>
                                 </ul>
-                                <a href="{{ url('/rooms/twin-room') }}" class="gt-link-btn">DISCOVER MORE</a>
+                                <div class="prl-room-card-actions">
+                                    <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn prl-book-now-btn">
+                                        <i class="fa-regular fa-calendar-check"></i> BOOK NOW
+                                    </a>
+                                    <a href="{{ url('/rooms/twin-room') }}" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -95,7 +100,12 @@
                                         02 Guests
                                     </li>
                                 </ul>
-                                <a href="{{ url('/rooms/double-room') }}" class="gt-link-btn">DISCOVER MORE</a>
+                                <div class="prl-room-card-actions">
+                                    <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn prl-book-now-btn">
+                                        <i class="fa-regular fa-calendar-check"></i> BOOK NOW
+                                    </a>
+                                    <a href="{{ url('/rooms/double-room') }}" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -124,7 +134,12 @@
                                         01 Guest
                                     </li>
                                 </ul>
-                                <a href="{{ url('/rooms/single-room') }}" class="gt-link-btn">DISCOVER MORE</a>
+                                <div class="prl-room-card-actions">
+                                    <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn prl-book-now-btn">
+                                        <i class="fa-regular fa-calendar-check"></i> BOOK NOW
+                                    </a>
+                                    <a href="{{ url('/rooms/single-room') }}" class="gt-link-btn">DISCOVER MORE</a>
+                                </div>
                             </div>
                         </div>
                     </div>

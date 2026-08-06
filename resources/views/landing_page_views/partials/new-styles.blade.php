@@ -219,4 +219,229 @@
         right: auto !important;
         bottom: auto !important;
     }
+
+    /* ===== Booking strip (homepage) ===== */
+    .prl-booking-strip {
+        padding: 36px 44px !important;
+    }
+
+    .prl-booking-strip-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 32px;
+        width: 100%;
+    }
+
+    .prl-booking-strip-copy {
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+    }
+
+    .prl-booking-strip-copy h3 {
+        color: #e77a3a !important;
+        font-size: 28px !important;
+        font-weight: 600;
+        line-height: 1.3;
+        margin: 0 0 8px !important;
+    }
+
+    .prl-booking-strip-copy p {
+        color: rgba(255, 255, 255, 0.88) !important;
+        font-size: 16px;
+        line-height: 1.6;
+        margin: 0 !important;
+    }
+
+    .prl-booking-strip .prl-booking-strip-btn {
+        flex-shrink: 0;
+        background-color: #ffffff !important;
+        color: #e77a3a !important;
+        min-width: 170px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .prl-booking-strip .prl-booking-strip-btn::before {
+        background-color: #e77a3a !important;
+    }
+
+    .prl-booking-strip .prl-booking-strip-btn:hover {
+        color: #ffffff !important;
+    }
+
+    .prl-booking-strip-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px 12px;
+        margin-top: 22px !important;
+        padding-top: 0 !important;
+        border-top: none !important;
+        text-align: left;
+    }
+
+    .prl-booking-strip-meta span {
+        color: rgba(255, 255, 255, 0.78) !important;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .prl-booking-strip-meta .prl-booking-dot {
+        opacity: 0.45;
+    }
+
+    @media (max-width: 991px) {
+        .prl-booking-strip {
+            padding: 28px 22px !important;
+        }
+
+        .prl-booking-strip-inner {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .prl-booking-strip-copy {
+            text-align: center;
+        }
+
+        .prl-booking-strip-copy h3 {
+            font-size: 24px !important;
+        }
+
+        .prl-booking-strip .prl-booking-strip-btn {
+            width: 100%;
+        }
+
+        .prl-booking-strip-meta {
+            justify-content: center;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .prl-booking-strip-meta .prl-booking-dot {
+            display: none;
+        }
+    }
+
+    /* ===== Room Slider Actions (Homepage Room Cards) ===== */
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .gt-theme-btn {
+        padding: 8px 13px !important;
+        font-size: 11px !important;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        line-height: 1.2;
+        border-radius: 6px;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .prl-btn-book {
+        background-color: #e77a3a !important;
+        color: #ffffff !important;
+        border: 1px solid #e77a3a !important;
+    }
+
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .prl-btn-book::before,
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .prl-btn-book::after {
+        background-color: #1a2e2b !important;
+    }
+
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .prl-btn-book:hover {
+        color: #ffffff !important;
+        border-color: #1a2e2b !important;
+    }
+
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .prl-btn-details {
+        background-color: transparent !important;
+        color: #1a2e2b !important;
+        border: 1px solid rgba(231, 122, 58, 0.45) !important;
+    }
+
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .prl-btn-details::before,
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .prl-btn-details::after {
+        background-color: #e77a3a !important;
+    }
+
+    .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .prl-btn-details:hover {
+        color: #ffffff !important;
+        border-color: #e77a3a !important;
+    }
+
+    @media (max-width: 1399px) {
+        .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns {
+            width: 100%;
+            justify-content: flex-start;
+            margin-top: 10px;
+        }
+    }
+
+    /* ===== Services Section: 1 Row Layout & Uniform Card Dimensions ===== */
+    .gt-service-box-section .service-box-items {
+        height: 100% !important;
+        min-height: 190px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 30px 12px 25px !important;
+        margin-top: 0 !important;
+        background-color: #f2f9f5 !important;
+        border: 1px solid rgba(231, 122, 58, 0.12) !important;
+        border-radius: 12px !important;
+        transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
+    }
+
+    .gt-service-box-section .service-box-items .icon {
+        font-size: 42px !important;
+        color: #e77a3a !important;
+        margin-bottom: 16px !important;
+        line-height: 1 !important;
+        transition: transform 0.3s ease !important;
+    }
+
+    .gt-service-box-section .service-box-items h4 {
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        color: #1a2e2b !important;
+        margin: 0 !important;
+        line-height: 1.4 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        text-align: center !important;
+    }
+
+    .gt-service-box-section .service-box-items:hover {
+        background-color: #ffffff !important;
+        border-color: rgba(231, 122, 58, 0.45) !important;
+        transform: translateY(-6px) !important;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .gt-service-box-section .service-box-items:hover .icon {
+        transform: scale(1.12) !important;
+    }
+
+    @media (max-width: 1199px) {
+        .gt-service-box-section .service-box-items {
+            min-height: 175px !important;
+            padding: 24px 10px 20px !important;
+        }
+
+        .gt-service-box-section .service-box-items h4 {
+            font-size: 11px !important;
+        }
+    }
 </style>

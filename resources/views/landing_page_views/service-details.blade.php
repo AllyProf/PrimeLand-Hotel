@@ -287,56 +287,6 @@
                                 </li>
                             </ul>
                         </div>
-                        <div class="gt-single-sideber-widget">
-                            <div class="gt-widget-title">
-                                <h3>Hotel Booking</h3>
-                            </div>
-                            <div class="booking-item">
-                                <form action="{{ route('booking.index') }}">
-                                    <div class="row g-4">
-                                        <div class="col-lg-12">
-                                            <div class="form-clt">
-                                                <input type="text" placeholder="Check In">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-12">
-                                            <div class="form-clt">
-                                                <input type="text" placeholder="Check Out">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-12">
-                                            <div class="form-clt">
-                                                <div class="form">
-                                                    <select class="single-select w-100">
-                                                        <option>Room</option>
-                                                        <option>01</option>
-                                                        <option>02</option>
-                                                        <option>03</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-12">
-                                            <div class="form-clt">
-                                                <div class="form">
-                                                    <select class="single-select w-100">
-                                                        <option>Guest</option>
-                                                        <option>01</option>
-                                                        <option>02</option>
-                                                        <option>03</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-12">
-                                            <button class="gt-theme-btn w-100" type="submit">
-                                                CHECK AVAILABILITY
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
                         <div class="service-details-contact-bg text-center bg-cover"
                             style="background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('{{ asset('assets/img/new_images/coffee_.jpg') }}');">
                             <h3>

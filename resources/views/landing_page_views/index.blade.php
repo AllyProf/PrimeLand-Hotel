@@ -45,24 +45,7 @@
 </section>
 
 <!-- GT Booking Section Start -->
-<section class="gt-booking section-bg-3">
-    <div class="container">
-        <div class="gt-booking-reserve-wrapper style-2">
-            <div class="row align-items-center justify-content-center text-center">
-                <div class="col-12 wow fadeInUp">
-                    <h3 class="text-white mb-2" style="font-size: 28px; font-weight: 600;">Online Booking System
-                        Coming Soon</h3>
-                    <p class="text-white mb-0" style="font-size: 16px;">In the meantime, please contact us directly
-                        by phone or email to make a reservation.</p>
-                    <a href="tel:+255677155156" class="gt-theme-btn mt-4"
-                        style="background-color: white !important; color: var(--prl-brand) !important;">Call Us
-                        Now</a>
-                </div>
-            </div>
-            
-        </div>
-    </div>
-</section>
+@include('landing_page_views.partials.online-booking-section')
 
 <!-- GT About Section Start -->
 <section class="gt-about-section fix section-padding pt-0" style="margin-top:40px;">
@@ -133,8 +116,8 @@
 
 <section class="gt-service-box-section fix section-padding pt-5">
     <div class="container">
-        <div class="row g-4">
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".2s">
+        <div class="row g-3 align-items-stretch justify-content-center">
+            <div class="col-lg-2 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".2s">
                 <div class="service-box-items">
                     <div class="icon">
                         <i class="flaticon-hotel-service"></i>
@@ -142,7 +125,7 @@
                     <h4>ACCOMMODATION</h4>
                 </div>
             </div>
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".3s">
+            <div class="col-lg-2 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".3s">
                 <div class="service-box-items">
                     <div class="icon">
                         <i class="flaticon-24-hour-service"></i>
@@ -150,7 +133,7 @@
                     <h4>24/7 FRONT DESK SERVICE</h4>
                 </div>
             </div>
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".4s">
+            <div class="col-lg-2 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".4s">
                 <div class="service-box-items">
                     <div class="icon">
                         <i class="flaticon-swimming"></i>
@@ -158,7 +141,7 @@
                     <h4>SWIMMING POOL</h4>
                 </div>
             </div>
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".5s">
+            <div class="col-lg-2 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".5s">
                 <div class="service-box-items">
                     <div class="icon">
                         <i class="flaticon-fast-food"></i>
@@ -166,7 +149,7 @@
                     <h4>RESTAURANT AND POOL BAR</h4>
                 </div>
             </div>
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".6s">
+            <div class="col-lg-2 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".6s">
                 <div class="service-box-items">
                     <div class="icon">
                         <i class="flaticon-wifi-router"></i>
@@ -174,7 +157,7 @@
                     <h4>FREE WIFI</h4>
                 </div>
             </div>
-            <div class="col-xxl-2 col-xl-3 col-lg-3 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".7s">
+            <div class="col-lg-2 col-md-4 col-sm-6 wow fadeInUp" data-wow-delay=".7s">
                 <div class="service-box-items">
                     <div class="icon">
                         <i class="flaticon-disinfect"></i>
@@ -288,7 +271,10 @@
                                     <li> <img src="{{ asset('assets/img/home-3/room/man.png') }}" alt="img"> 1 Guest </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/room.png') }}" alt="img"> B&amp;B Basis </li>
                                 </ul>
-                                <a href="{{ url('/rooms/single-room') }}" class="gt-theme-btn">ROOM DETAILS</a>
+                                <div class="prl-room-slider-btns">
+                                    <a href="{{ config('services.aiosell.booking_url') }}" target="_blank" class="gt-theme-btn prl-btn-book"><i class="fa fa-calendar-check me-1"></i> BOOK NOW</a>
+                                    <a href="{{ url('/rooms/single-room') }}" class="gt-theme-btn prl-btn-details">ROOM DETAILS</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -305,7 +291,10 @@
                                     <li> <img src="{{ asset('assets/img/home-3/room/man.png') }}" alt="img"> 2 Guests </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/room.png') }}" alt="img"> B&amp;B Basis </li>
                                 </ul>
-                                <a href="{{ url('/rooms/double-room') }}" class="gt-theme-btn">ROOM DETAILS</a>
+                                <div class="prl-room-slider-btns">
+                                    <a href="{{ config('services.aiosell.booking_url') }}" target="_blank" class="gt-theme-btn prl-btn-book"><i class="fa fa-calendar-check me-1"></i> BOOK NOW</a>
+                                    <a href="{{ url('/rooms/double-room') }}" class="gt-theme-btn prl-btn-details">ROOM DETAILS</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -322,7 +311,10 @@
                                     <li> <img src="{{ asset('assets/img/home-3/room/man.png') }}" alt="img"> 2 Guests </li>
                                     <li> <img src="{{ asset('assets/img/home-3/room/room.png') }}" alt="img"> B&amp;B Basis </li>
                                 </ul>
-                                <a href="{{ url('/rooms/twin-room') }}" class="gt-theme-btn">ROOM DETAILS</a>
+                                <div class="prl-room-slider-btns">
+                                    <a href="{{ config('services.aiosell.booking_url') }}" target="_blank" class="gt-theme-btn prl-btn-book"><i class="fa fa-calendar-check me-1"></i> BOOK NOW</a>
+                                    <a href="{{ url('/rooms/twin-room') }}" class="gt-theme-btn prl-btn-details">ROOM DETAILS</a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -587,7 +579,7 @@
                             check-in options.
                         </p>
                         <div class="offer-btn wow fadeInUp" data-wow-delay="1s">
-                            <a href="{{ url('/contact') }}" class="gt-theme-btn">Claim This Offer <i class="fa-solid fa-arrow-right-long ms-2"></i></a>
+                            <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn">Claim This Offer <i class="fa-solid fa-arrow-right-long ms-2"></i></a>
                         </div>
                     </div>
                 </div>

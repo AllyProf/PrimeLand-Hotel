@@ -30,8 +30,9 @@ class BookingController extends Controller
      */
     public function index(Request $request)
     {
-        // Online booking is temporarily disabled - show coming soon page
-        return view('landing_page_views.booking-coming-soon');
+        return view('landing_page_views.booking-redirect', [
+            'bookingUrl' => config('services.aiosell.booking_url'),
+        ]);
     }
 
     /**

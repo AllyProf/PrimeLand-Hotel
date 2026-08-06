@@ -81,7 +81,7 @@
                                     <li><i class="fa-solid fa-circle-check"></i> Late checkout later than 5:00pm is subject to a full room rate.</li>
                                 </ul>
                                 <div class="mt-4">
-                                    <a href="{{ url('/contact') }}" class="gt-theme-btn">Book This Room</a>
+                                    <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn">Book This Room</a>
                                 </div>
                             </div>
                         </div>
@@ -93,12 +93,12 @@
                                     <h3>Hotel Booking</h3>
                                 </div>
                                 <div class="booking-item">
-                                    <p style="font-size: 15px; color: #555; margin-bottom: 16px;">Our online booking is currently unavailable. Please contact us directly to make a reservation.</p>
-                                    <a href="tel:+255677155156" class="gt-theme-btn w-100 d-block text-center mb-3">
-                                        <i class="fa-solid fa-phone me-2"></i> Call Us Now
+                                    <p style="font-size: 15px; color: #555; margin-bottom: 16px;">Book your stay online in just a few clicks.</p>
+                                    <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn w-100 d-block text-center mb-3">
+                                        <i class="fa-solid fa-calendar-check me-2"></i> Book Now
                                     </a>
-                                    <a href="{{ url('/contact') }}" class="gt-theme-btn gt-border-style w-100 d-block text-center">
-                                        Send Enquiry
+                                    <a href="tel:+255677155156" class="gt-theme-btn gt-border-style w-100 d-block text-center">
+                                        <i class="fa-solid fa-phone me-2"></i> Call Us
                                     </a>
                                 </div>
                             </div>

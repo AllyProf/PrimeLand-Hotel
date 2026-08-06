@@ -68,4 +68,8 @@ return [
         'base_url'  => env('WHATSAPP_BASE_URL', 'https://messaging-service.co.tz'),
     ],
 
+    'aiosell' => [
+        'booking_url' => env('AIOSELL_BOOKING_URL', 'https://be.aiosell.com/book/d90c1b0297'),
+    ],
+
 ];

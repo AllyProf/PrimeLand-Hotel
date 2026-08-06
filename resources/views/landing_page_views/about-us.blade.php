@@ -43,7 +43,7 @@
                                     About Us
                                 </h6>
                                 <h2 class="wow fadeInUp" data-wow-delay=".2s">
-                                    Welcome to Primeland Hotel – Boutique Accommodation in Moshi, Tanzania
+                                    Welcome to Primeland Hotel
                                 </h2>
                                 <div class="prl-divider mt-3 mb-4 wow fadeInUp" data-wow-delay=".3s">
                                     <div class="prl-divider-line"></div>
@@ -52,39 +52,39 @@
                                 </div>
                             </div>
                             <div class="gt-about-box-items">
-                                <div class="row align-items-center">
-                                    <div class="col-lg-5 wow fadeInUp" data-wow-delay=".4s">
-                                        <div class="gt-about-images">
+                                <div class="row g-4 align-items-stretch">
+                                    <div class="col-md-5 wow fadeInUp" data-wow-delay=".4s">
+                                        <div class="gt-about-images h-100">
                                             <img src="{{ asset('assets/img/new_images/restaurant outside_.jpg') }}"
                                                 alt="Restaurant Outside"
-                                                style="border-radius: 10px; width: 100%; object-fit: cover;">
+                                                style="border-radius: 10px; width: 100%; height: 100%; min-height: 280px; object-fit: cover;">
                                             <span class="title-box">
                                                 <img src="{{ asset('assets/img/home-2/about/tir-vector.png') }}" alt="img">
                                                 SINCE 2007
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="col-lg-7 wow fadeInUp" data-wow-delay=".6s">
-                                        <div class="about-content-icon">
-                                            <div class="gt-icon-box">
+                                    <div class="col-md-7 wow fadeInUp" data-wow-delay=".6s">
+                                        <div class="about-content-icon prl-about-widgets">
+                                            <div class="gt-icon-box prl-about-widget">
                                                 <div class="icon">
                                                     <i class="flaticon-target"></i>
                                                 </div>
                                                 <div class="content">
                                                     <h3>Best Hotel in Moshi for Tourists</h3>
-                                                    <p>Primeland Hotel is a small hotel with great service in Moshi, located in the heart of Moshi Town, Kilimanjaro &ndash; Tanzania. The perfect boutique choice for tourists and travelers.</p>
+                                                    <p>A boutique hotel in the heart of Moshi Town, Kilimanjaro — Tanzania, with great service for travelers.</p>
                                                 </div>
                                             </div>
-                                            <div class="gt-icon-box style-2">
+                                            <div class="gt-icon-box style-2 prl-about-widget">
                                                 <div class="icon">
                                                     <i class="flaticon-leadership"></i>
                                                 </div>
                                                 <div class="content">
-                                                    <h3>Perfect for Safaris & Trekking</h3>
-                                                    <p>Conveniently located near the town center and 45 minutes from JRO Airport. We are the top choice for hotels for safari adventures in the Kilimanjaro region.</p>
+                                                    <h3>Perfect for Safaris &amp; Trekking</h3>
+                                                    <p>Near the town center and 45 minutes from JRO Airport — an ideal base for safari and Kilimanjaro trips.</p>
                                                 </div>
                                             </div>
-                                            <a href="{{ url('/about-us') }}" class="gt-theme-btn">DISCOVER MORE</a>
+                                            <a href="{{ config('services.aiosell.booking_url') }}" class="gt-theme-btn">Book Now</a>
                                         </div>
                                     </div>
                                 </div>
@@ -240,7 +240,7 @@
     <!-- GT Hotel Feature Section Start -->
     <section class="gt-hotel-feature-section-2 section-padding fix pt-0">
         <div class="container">
-            <div class="gt-hotel-feature-area">
+            <div class="gt-hotel-feature-area prl-feature-widgets">
                 <div class="gt-hotel-feature-items wow fadeInUp" data-wow-delay=".2s">
                     <div class="icon"> <i class="flaticon-fitness-center"></i> </div>
                     <div class="content"> <h3>Fitness Center</h3> <p>Fully equipped daily</p> </div>
