@@ -251,7 +251,7 @@
                         <div class="prl-line"></div>
                     </div>
                 </div>
-                <a href="{{ url('/rooms') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".4s">VIEW All DETAILS</a>
+                <a href="{{ url('/rooms') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".4s">VIEW ALL ROOMS</a>
             </div>
 
         </div>

@@ -229,7 +229,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <a href="{{ url('/rooms') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".6s">VIEW All DETAILS</a>
+                            <a href="{{ url('/rooms') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".6s">VIEW ALL ROOMS</a>
                         </div>
                     </div>
                 </div>
