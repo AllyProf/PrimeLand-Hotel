@@ -444,4 +444,55 @@
             font-size: 11px !important;
         }
     }
+
+    /* ===== FIX: Mobile Room Slider Image Aspect & Zoom ===== */
+    @media (max-width: 767px) {
+        .room-slider-image-3 .room-thumb {
+            height: 400px !important;
+            border-radius: 16px !important;
+            overflow: hidden !important;
+        }
+
+        .room-slider-image-3 .room-thumb img {
+            height: 100% !important;
+            width: 100% !important;
+            object-fit: cover !important;
+            object-position: center center !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content {
+            bottom: 15px !important;
+            left: 15px !important;
+            right: 15px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content {
+            padding: 14px 16px !important;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .room-slider-image-3 .room-thumb {
+            height: 360px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content {
+            bottom: 12px !important;
+            left: 12px !important;
+            right: 12px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content span {
+            font-size: 13px !important;
+            padding: 6px 14px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content {
+            padding: 12px 12px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content ul {
+            gap: 8px 12px !important;
+        }
+    }
 </style>
