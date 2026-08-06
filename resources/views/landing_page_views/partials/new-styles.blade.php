@@ -445,10 +445,10 @@
         }
     }
 
-    /* ===== FIX: Mobile Room Slider Image Aspect & Zoom ===== */
+    /* ===== FIX: Mobile Room Slider Image & Content Layout ===== */
     @media (max-width: 767px) {
         .room-slider-image-3 .room-thumb {
-            height: 400px !important;
+            height: 460px !important;
             border-radius: 16px !important;
             overflow: hidden !important;
         }
@@ -461,38 +461,93 @@
         }
 
         .room-slider-image-3 .room-thumb .room-content {
-            bottom: 15px !important;
-            left: 15px !important;
-            right: 15px !important;
-        }
-
-        .room-slider-image-3 .room-thumb .room-content .content {
-            padding: 14px 16px !important;
-        }
-    }
-
-    @media (max-width: 575px) {
-        .room-slider-image-3 .room-thumb {
-            height: 360px !important;
-        }
-
-        .room-slider-image-3 .room-thumb .room-content {
             bottom: 12px !important;
             left: 12px !important;
             right: 12px !important;
         }
 
-        .room-slider-image-3 .room-thumb .room-content span {
-            font-size: 13px !important;
-            padding: 6px 14px !important;
+        .room-slider-image-3 .room-thumb .room-content .content {
+            padding: 14px 14px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            border-radius: 12px !important;
         }
 
-        .room-slider-image-3 .room-thumb .room-content .content {
-            padding: 12px 12px !important;
+        .room-slider-image-3 .room-thumb .room-content .content h3 {
+            font-size: 17px !important;
+            margin: 0 !important;
+            width: 100% !important;
+            padding-bottom: 6px !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
         }
 
         .room-slider-image-3 .room-thumb .room-content .content ul {
-            gap: 8px 12px !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 6px 10px !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content ul li {
+            font-size: 12px !important;
+            font-weight: 500 !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns {
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin-top: 2px !important;
+            margin-left: 0 !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .gt-theme-btn {
+            flex: 1 !important;
+            text-align: center !important;
+            justify-content: center !important;
+            padding: 9px 8px !important;
+            font-size: 11px !important;
+        }
+    }
+
+    @media (max-width: 575px) {
+        .room-slider-image-3 .room-thumb {
+            height: 440px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content {
+            bottom: 10px !important;
+            left: 8px !important;
+            right: 8px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content span {
+            font-size: 12px !important;
+            padding: 5px 12px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content {
+            padding: 12px 10px !important;
+            gap: 8px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content h3 {
+            font-size: 16px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content ul li {
+            font-size: 11px !important;
+        }
+
+        .room-slider-image-3 .room-thumb .room-content .content .prl-room-slider-btns .gt-theme-btn {
+            padding: 8px 4px !important;
+            font-size: 10.5px !important;
         }
     }
 </style>
