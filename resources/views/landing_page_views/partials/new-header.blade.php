@@ -20,11 +20,11 @@
             
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
-                    // Smooth minimum visibility duration for mobile
-                    setTimeout(hidePreloader, 300);
+                    // Visible for 0.8s so mobile users clearly see the smooth spinner
+                    setTimeout(hidePreloader, 800);
                 });
             } else {
-                setTimeout(hidePreloader, 300);
+                setTimeout(hidePreloader, 800);
             }
 
             // Safety timeout: force hide after 1.8 seconds max
