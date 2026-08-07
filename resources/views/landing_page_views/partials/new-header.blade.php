@@ -20,10 +20,11 @@
             
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
-                    setTimeout(hidePreloader, 500);
+                    // Smooth minimum visibility duration for mobile
+                    setTimeout(hidePreloader, 300);
                 });
             } else {
-                setTimeout(hidePreloader, 500);
+                setTimeout(hidePreloader, 300);
             }
 
             // Safety timeout: force hide after 1.8 seconds max

@@ -2,7 +2,8 @@
     align-items: center;
     background-color: $gt-white;
     display: flex;
-    height: 100%;
+    height: 100vh;
+    min-height: 100dvh;
     justify-content: center;
     position: fixed;
     left: 0;
@@ -34,10 +35,10 @@
     .preloader-spinner {
         animation: spinner 0.65s linear infinite;
         border-radius: 50%;
-        border: 2px solid rgba(231, 122, 58, 0.12);
+        border: 3px solid rgba(231, 122, 58, 0.2);
         border-top-color: $gt-theme-color;
-        height: 36px;
-        width: 36px;
+        height: 40px;
+        width: 40px;
     }
 
     &.loaded {
