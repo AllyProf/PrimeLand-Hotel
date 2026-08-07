@@ -1,9 +1,6 @@
 <!-- Preloader Start -->
 <div id="preloader" class="preloader">
     <div class="preloader-inner">
-        <div class="preloader-logo-container">
-            <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="Primeland Hotel Moshi" class="preloader-logo">
-        </div>
         <div class="preloader-spinner"></div>
     </div>
 </div>
