@@ -536,11 +536,13 @@
     }); // End Document Ready Function
 
      function loader() {
-            $windowOn.on('load', function() {
-                // Animate loader off screen
-                $(".preloader").addClass('loaded');
-                $(".preloader").delay(200).fadeOut();
-            });
+            setTimeout(function() {
+                var $preloader = $(".preloader");
+                if ($preloader.length && !$preloader.hasClass('loaded')) {
+                    $preloader.addClass('loaded');
+                    $preloader.fadeOut(400);
+                }
+            }, 1000);
         }
         
         loader();

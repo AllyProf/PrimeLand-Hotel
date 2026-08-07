@@ -504,8 +504,9 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.55); // 55% dark
+        background: transparent;
         z-index: -1; 
+        display: none;
     }
 
     .hero-video {

@@ -1,56 +1,39 @@
 <!-- Preloader Start -->
 <div id="preloader" class="preloader">
-    <div class="animation-preloader">
-        <div class="spinner">
+    <div class="preloader-inner">
+        <div class="preloader-logo-container">
+            <img src="{{ asset('assets/img/new_images/primeland_logo.png') }}" alt="Primeland Hotel Moshi" class="preloader-logo">
         </div>
-        <div class="txt-loading">
-            <span data-text-preloader="P" class="letters-loading">
-                P
-            </span>
-            <span data-text-preloader="R" class="letters-loading">
-                R
-            </span>
-            <span data-text-preloader="I" class="letters-loading">
-                I
-            </span>
-            <span data-text-preloader="M" class="letters-loading">
-                M
-            </span>
-            <span data-text-preloader="E" class="letters-loading">
-                E
-            </span>
-            <span data-text-preloader="L" class="letters-loading">
-                L
-            </span>
-            <span data-text-preloader="A" class="letters-loading">
-                A
-            </span>
-            <span data-text-preloader="N" class="letters-loading">
-                D
-            </span>
-            <span data-text-preloader="D" class="letters-loading">
-                D
-            </span>
-        </div>
-        <p class="text-center">Loading</p>
-    </div>
-    <div class="loader">
-        <div class="row">
-            <div class="col-3 loader-section section-left">
-                <div class="bg"></div>
-            </div>
-            <div class="col-3 loader-section section-left">
-                <div class="bg"></div>
-            </div>
-            <div class="col-3 loader-section section-right">
-                <div class="bg"></div>
-            </div>
-            <div class="col-3 loader-section section-right">
-                <div class="bg"></div>
-            </div>
-        </div>
+        <div class="preloader-spinner"></div>
     </div>
 </div>
+
+<script>
+    (function() {
+        var preloader = document.getElementById('preloader');
+        if (preloader) {
+            var hidePreloader = function() {
+                if (!preloader.classList.contains('loaded')) {
+                    preloader.classList.add('loaded');
+                    setTimeout(function() {
+                        preloader.style.display = 'none';
+                    }, 500);
+                }
+            };
+            
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    setTimeout(hidePreloader, 500);
+                });
+            } else {
+                setTimeout(hidePreloader, 500);
+            }
+
+            // Safety timeout: force hide after 1.8 seconds max
+            setTimeout(hidePreloader, 1800);
+        }
+    })();
+</script>
 
 
 <!-- GT Back To Top Start -->
@@ -172,7 +155,7 @@
                                         </ul>
                                     </li>
                                     <li class="has-dropdown {{ Request::is('rooms*') ? 'active' : '' }}">
-                                        <a href="{{ url('/rooms') }}">Rooms</a>
+                                        <a href="#">Rooms</a>
                                         <ul class="submenu">
                                             <li><a href="{{ url('/rooms/single-room') }}">Single Room</a></li>
                                             <li><a href="{{ url('/rooms/double-room') }}">Double Room</a></li>

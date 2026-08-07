@@ -38,7 +38,7 @@
 
             <div class="hero-button wow fadeInUp" data-wow-delay=".7s">
                 <a href="{{ config('services.aiosell.booking_url') }}" target="_blank" class="gt-theme-btn">Book Now</a>
-                <a href="{{ url('/rooms') }}" class="gt-theme-btn style-2">Our Rooms</a>
+                <a href="{{ url('/contact') }}" class="gt-theme-btn style-2">Contact Us</a>
             </div>
         </div>
     </div>
@@ -251,7 +251,7 @@
                         <div class="prl-line"></div>
                     </div>
                 </div>
-                <a href="{{ url('/rooms') }}" class="gt-theme-btn wow fadeInUp" data-wow-delay=".4s">VIEW ALL ROOMS</a>
+                <a href="{{ config('services.aiosell.booking_url') }}" target="_blank" class="gt-theme-btn wow fadeInUp" data-wow-delay=".4s">BOOK NOW</a>
             </div>
 
         </div>

@@ -95,7 +95,7 @@
                 </div>
                 <div class="col-lg-7">
                     <div class="gt-contact-right-items h-100 d-flex align-items-center justify-content-center">
-                        <img src="{{ asset('assets/img/new_images/reception_.jpg') }}" alt="Primeland Hotel Reception"
+                        <img src="{{ asset('assets/img/new_images/contact_img.png') }}" alt="Contact Primeland Hotel Moshi"
                             class="rounded shadow-lg w-100 h-100 object-fit-cover wow fadeInUp" data-wow-delay=".4s"
                             style="object-fit: cover; border-radius: 10px;">
                     </div>

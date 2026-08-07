@@ -536,11 +536,13 @@
     }); // End Document Ready Function
 
      function loader() {
-            // Make preloader disappear faster
             setTimeout(function() {
-                $(".preloader").addClass('loaded');
-                $(".preloader").fadeOut(400);
-            }, 800); // 800ms is enough for a quick brand glimpse
+                var $preloader = $(".preloader");
+                if ($preloader.length && !$preloader.hasClass('loaded')) {
+                    $preloader.addClass('loaded');
+                    $preloader.fadeOut(400);
+                }
+            }, 1000);
         }
         
         loader();
