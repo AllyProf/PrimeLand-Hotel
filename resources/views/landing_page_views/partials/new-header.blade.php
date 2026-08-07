@@ -20,15 +20,15 @@
             
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
-                    // Visible for 0.8s so mobile users clearly see the smooth spinner
-                    setTimeout(hidePreloader, 800);
+                    // Visible for a full 2.0 seconds before fading out
+                    setTimeout(hidePreloader, 2000);
                 });
             } else {
-                setTimeout(hidePreloader, 800);
+                setTimeout(hidePreloader, 2000);
             }
 
-            // Safety timeout: force hide after 1.8 seconds max
-            setTimeout(hidePreloader, 1800);
+            // Safety timeout: force hide after 2.0 seconds max
+            setTimeout(hidePreloader, 2000);
         }
     })();
 </script>
