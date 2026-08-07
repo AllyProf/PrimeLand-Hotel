@@ -10,30 +10,15 @@
     </video>
     <div class="container">
         <div class="hero-content">
-            <!-- Hotel name eyebrow -->
-            <p class="wow fadeInUp" data-wow-delay=".1s"
-                style="font-size:13px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:#e77a3a;margin-bottom:10px;">
-                PRIMELAND HOTEL
-            </p>
-
             <!-- Main headline -->
-            <h1 class="wow fadeInUp" data-wow-delay=".3s" style="margin-bottom:0;">
-                Comfort In Every Stay
+            <h1 class="wow fadeInUp" data-wow-delay=".2s" style="margin-bottom: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 2px;">
+                PRIMELAND HOTEL
             </h1>
 
-            <!-- Decorative divider -->
-            <div class="wow fadeInUp" data-wow-delay=".4s"
-                style="display:flex;align-items:center;gap:12px;margin:18px 0 16px;">
-                <div style="height:2px;width:50px;background:#e77a3a;"></div>
-                <span
-                    style="color:#e77a3a;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-weight:600;">Best Hotel In Kilimanjaro for your Stay</span>
-                <div style="height:2px;width:50px;background:#e77a3a;"></div>
-            </div>
-
-            <!-- Sub-caption -->
-            <p class="wow fadeInUp" data-wow-delay=".5s"
-                style="font-size:16px;color:rgba(255,255,255,0.85);margin-bottom:30px;">
-                STAY WITH US: Relax & Unwind
+            <!-- Tagline -->
+            <p class="wow fadeInUp" data-wow-delay=".4s"
+                style="font-size: 26px; font-weight: 500; color: #e77a3a; letter-spacing: 1.5px; margin-bottom: 35px; text-transform: capitalize;">
+                Comfort In Every Stay
             </p>
 
             <div class="hero-button wow fadeInUp" data-wow-delay=".7s">
@@ -44,11 +29,8 @@
     </div>
 </section>
 
-<!-- GT Booking Section Start -->
-@include('landing_page_views.partials.online-booking-section')
-
 <!-- GT About Section Start -->
-<section class="gt-about-section fix section-padding pt-0" style="margin-top:40px;">
+<section class="gt-about-section fix section-padding">
     <div class="gt-right-shape">
         <img src="{{ asset('assets/img/home-1/about/right-shape.png') }}" alt="img">
     </div>
@@ -61,7 +43,7 @@
                             <img src="{{ asset('assets/img/home-1/about/about-01.jpg') }}" alt="img" class="wow fadeInUp"
                                 data-wow-delay=".2s">
                             <div class="gt-about-image-2 wow fadeInUp" data-wow-delay=".4s">
-                                <img src="{{ asset('assets/img/home-1/about/about-02.jpg') }}" alt="img">
+                                <img src="{{ asset('assets/img/new_images/about_us.png') }}" alt="Primeland Hotel About Us">
                             </div>
                         </div>
                     </div>
