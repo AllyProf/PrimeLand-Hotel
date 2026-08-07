@@ -14,21 +14,20 @@
                     preloader.classList.add('loaded');
                     setTimeout(function() {
                         preloader.style.display = 'none';
-                    }, 500);
+                    }, 250);
                 }
             };
             
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
-                    // Visible for a full 2.0 seconds before fading out
-                    setTimeout(hidePreloader, 2000);
+                    setTimeout(hidePreloader, 1000);
                 });
             } else {
-                setTimeout(hidePreloader, 2000);
+                setTimeout(hidePreloader, 1000);
             }
 
-            // Safety timeout: force hide after 2.0 seconds max
-            setTimeout(hidePreloader, 2000);
+            // Safety timeout: force hide after 1.0 second
+            setTimeout(hidePreloader, 1000);
         }
     })();
 </script>
